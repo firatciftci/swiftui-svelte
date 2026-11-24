@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/firatciftci/swiftui-svelte/security/advisories/new
+    about: Report it privately, not in a public issue.
+  - name: Questions about Svelte's custom renderer API
+    url: https://github.com/sveltejs/svelte/discussions
+    about: For questions about the custom renderer API itself, use the Svelte discussions.
