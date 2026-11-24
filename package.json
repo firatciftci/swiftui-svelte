@@ -1,8 +1,21 @@
 {
   "name": "swiftui-svelte",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
   "description": "Render Svelte components as native SwiftUI views",
+  "keywords": [
+    "svelte",
+    "swiftui",
+    "ios",
+    "custom-renderer",
+    "javascriptcore"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/firatciftci/swiftui-svelte.git"
+  },
+  "homepage": "https://github.com/firatciftci/swiftui-svelte#readme",
+  "bugs": "https://github.com/firatciftci/swiftui-svelte/issues",
   "type": "module",
   "files": [
     "dist"

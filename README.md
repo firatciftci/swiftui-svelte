@@ -1,6 +1,6 @@
 # swiftui-svelte
 
-Render Svelte 5 components as native SwiftUI views, using the experimental API for custom renderers that shipped in Svelte 5.59. It's an experiment: neither package is published yet, and the element set covers only what the example app needs.
+Render Svelte 5 components as native SwiftUI views, using the experimental API for custom renderers that shipped in Svelte 5.59. It's an early release: the element set covers only what the example app needs, and the API may change.
 
 The repository holds two packages that work together:
 
@@ -10,6 +10,12 @@ The repository holds two packages that work together:
 ## Using it
 
 ### The Svelte app
+
+Install the package alongside Svelte and Vite:
+
+```sh
+npm install -D swiftui-svelte svelte vite @sveltejs/vite-plugin-svelte
+```
 
 Point the Svelte compiler at the renderer in `svelte.config.js`:
 
@@ -49,7 +55,7 @@ Add `"swiftui-svelte/elements"` to `compilerOptions.types` in `tsconfig.json`, s
 
 ### The iOS app
 
-Add this repository as a Swift package dependency, add `app.js` to the app's resources, and show it with `SvelteView`:
+In Xcode, choose File › Add Package Dependencies, enter `https://github.com/firatciftci/swiftui-svelte`, and add the `SvelteSwiftUI` library to your app target. Then add `app.js` to the app's resources and show it with `SvelteView`:
 
 ```swift
 import SvelteSwiftUI
