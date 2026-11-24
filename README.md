@@ -30,7 +30,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/screens-dark.webp">
-    <img src=".github/assets/screens-light.webp" width="720" alt="Three screens of the example app on an iPhone: a to-do list with toggles and a Clear done button, a to-do's detail screen with a Done toggle and a Delete button, and a playground with a counter, a text field, and the Svelte logo with the repository's star count fetched from GitHub">
+    <img src=".github/assets/screens-light.webp" width="800" alt="Three iPhones running the example app: a to-do list with toggles, the Playground tab with a sheet open over a counter and the Svelte repository's star count, and an alert asking whether to clear finished to-dos">
   </picture>
 </p>
 
