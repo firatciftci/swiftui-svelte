@@ -1,0 +1,5 @@
+node_modules
+.DS_Store
+ios/build
+ios/SvelteHost.xcodeproj
+ios/SvelteHost/Resources/app.js

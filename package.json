@@ -1,0 +1,25 @@
+{
+  "name": "swiftui-svelte",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "bench": "vite build --mode bench",
+    "ios:project": "xcodegen generate --spec ios/project.yml",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "format": "oxfmt --check",
+    "format:fix": "oxfmt"
+  },
+  "imports": {
+    "#renderer": "./src/renderer.ts"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "oxfmt": "0.79.0",
+    "svelte": "5.59.1",
+    "svelte-check": "4.7.8",
+    "typescript": "6.0.3",
+    "vite": "8.3.8"
+  }
+}
