@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src=".github/assets/logo.svg" width="96" height="115" alt="swiftui-svelte logo">
+
 <h1>swiftui-svelte</h1>
 
 <p><strong>Build iOS apps with Svelte 5, rendered as native SwiftUI views.</strong></p>
