@@ -247,7 +247,13 @@ private struct Screen: View {
         .toolbar {
             ForEach(node.attachments("toolbar")) { toolbar in
                 ToolbarItemGroup(placement: placement(toolbar.attributes["placement"]?.string)) {
-                    NodeView(node: toolbar)
+                    ForEach(toolbar.renderedChildren) { item in
+                        if item.name == "btn" {
+                            ActionButton(node: item)
+                        } else {
+                            NodeView(node: item)
+                        }
+                    }
                 }
             }
         }
