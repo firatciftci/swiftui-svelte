@@ -17,6 +17,8 @@ Install the package alongside Svelte and Vite:
 npm install -D swiftui-svelte svelte vite @sveltejs/vite-plugin-svelte
 ```
 
+Svelte's custom renderer API is experimental and can change in a minor release, so this package only accepts Svelte 5.59 patch releases (`~5.59.1`), the versions it's been tested with. A new release of this package will widen the range once a newer Svelte is tested.
+
 Point the Svelte compiler at the renderer in `svelte.config.js`:
 
 ```js
