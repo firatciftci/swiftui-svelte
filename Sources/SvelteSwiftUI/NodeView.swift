@@ -10,6 +10,7 @@ struct NodeView: View {
             Text(node.text)
         case .element:
             element.modifier(NodeModifiers(node: node))
+                .layoutPriority(node.name == "spacer" ? -1 : 0)
         case .fragment:
             children
         case .comment:
