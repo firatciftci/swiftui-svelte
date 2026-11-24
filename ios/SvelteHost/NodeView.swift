@@ -26,7 +26,33 @@ struct NodeView: View {
     case "navstack":
       NavStack(node: node)
     case "screen":
-      Group { children }.navigationTitle(node.attributes["title"]?.string ?? "")
+      Group { children }
+        .navigationTitle(node.attributes["title"]?.string ?? "")
+        .sheet(
+          item: Binding {
+            node.attachment("sheet")
+          } set: { sheet in
+            if sheet == nil, let current = node.attachment("sheet") {
+              runtime.dispatch(current.id, "dismiss")
+            }
+          }
+        ) { sheet in
+          NodeView(node: sheet)
+            .presentationDetents(
+              sheet.attributes["detent"]?.string == "medium" ? [.medium, .large] : [.large])
+        }
+    case "sheet", "swipeactions", "tab":
+      Group { children }
+    case "tabview":
+      TabView {
+        ForEach(node.renderedChildren) { tab in
+          NodeView(node: tab).tabItem {
+            Label(
+              tab.attributes["title"]?.string ?? "",
+              systemImage: tab.attributes["symbol"]?.string ?? "circle")
+          }
+        }
+      }
     case "vstack":
       VStack(alignment: horizontalAlignment, spacing: spacing) { children }
     case "hstack":
@@ -46,12 +72,13 @@ struct NodeView: View {
     case "sfsymbol":
       Image(systemName: node.attributes["name"]?.string ?? "questionmark")
     case "btn":
-      let button = Button {
+      let button = Button(role: buttonRole(node)) {
         runtime.dispatch(node.id, "click")
       } label: {
         children
       }
       switch node.attributes["variant"]?.string {
+      case "automatic": button
       case "bordered": button.buttonStyle(.bordered)
       case "prominent": button.buttonStyle(.borderedProminent)
       default: button.buttonStyle(.borderless)
@@ -142,9 +169,15 @@ private struct NodeModifiers: ViewModifier {
       .font(font(attributes["font"]?.string))
       .fontWeight(weight(attributes["weight"]?.string))
       .ifLet(color(attributes["color"]?.string)) { $0.foregroundStyle($1) }
+      .ifLet(color(attributes["tint"]?.string)) { $0.tint($1) }
       .background(color(attributes["background"]?.string) ?? .clear)
       .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
       .opacity(attributes["opacity"]?.number ?? 1)
+      .ifLet(node.attachment("swipeactions")) { view, actions in
+        view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
+          ForEach(actions.renderedChildren) { SwipeButton(node: $0) }
+        }
+      }
   }
 
   private func padding(_ value: JSONValue?) -> CGFloat {
@@ -182,29 +215,57 @@ private struct NodeModifiers: ViewModifier {
     default: nil
     }
   }
+}
 
-  private func color(_ name: String?) -> Color? {
-    switch name {
-    case "primary": .primary
-    case "secondary": .secondary
-    case "accent": .accentColor
-    case "red": .red
-    case "orange": .orange
-    case "yellow": .yellow
-    case "green": .green
-    case "mint": .mint
-    case "teal": .teal
-    case "cyan": .cyan
-    case "blue": .blue
-    case "indigo": .indigo
-    case "purple": .purple
-    case "pink": .pink
-    case "brown": .brown
-    case "gray": .gray
-    case "white": .white
-    case "black": .black
-    default: nil
+private struct SwipeButton: View {
+  let node: Node
+  @Environment(Runtime.self) private var runtime
+
+  var body: some View {
+    Button(role: buttonRole(node)) {
+      runtime.dispatch(node.id, "click")
+    } label: {
+      ForEach(node.renderedChildren) { child in
+        switch child.name {
+        case "sfsymbol": Image(systemName: child.attributes["name"]?.string ?? "questionmark")
+        case "txt": Text(child.children.filter { $0.kind == .text }.map(\.text).joined())
+        default: Text(child.text)
+        }
+      }
     }
+    .tint(color(node.attributes["tint"]?.string))
+  }
+}
+
+private func buttonRole(_ node: Node) -> ButtonRole? {
+  switch node.attributes["role"]?.string {
+  case "destructive": .destructive
+  case "cancel": .cancel
+  default: nil
+  }
+}
+
+private func color(_ name: String?) -> Color? {
+  switch name {
+  case "primary": .primary
+  case "secondary": .secondary
+  case "accent": .accentColor
+  case "red": .red
+  case "orange": .orange
+  case "yellow": .yellow
+  case "green": .green
+  case "mint": .mint
+  case "teal": .teal
+  case "cyan": .cyan
+  case "blue": .blue
+  case "indigo": .indigo
+  case "purple": .purple
+  case "pink": .pink
+  case "brown": .brown
+  case "gray": .gray
+  case "white": .white
+  case "black": .black
+  default: nil
   }
 }
 

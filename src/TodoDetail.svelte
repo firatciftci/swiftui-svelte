@@ -18,7 +18,8 @@
         Done
       </toggle>
       <btn
-        color="red"
+        variant="automatic"
+        role="destructive"
         onclick={() => {
           onclose();
           removeTodo(id);

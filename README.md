@@ -35,13 +35,18 @@ The elements are typed in `src/native.d.ts`, so `svelte-check` catches typos and
 | `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                               |
 | `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                      |
 | `txt`                          | `Text`                         |                                                      |
-| `btn`                          | `Button`                       | `variant`, `onclick`                                 |
+| `btn`                          | `Button`                       | `variant`, `role`, `onclick`                         |
 | `sfsymbol`                     | `Image(systemName:)`           | `name`                                               |
 | `textfield`                    | `TextField`                    | `value`, `placeholder`, `oninput(value)`, `onsubmit` |
 | `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                       |
 | `spacer`, `divider`            | `Spacer`, `Divider`            |                                                      |
+| `tabview`, `tab`               | `TabView`, a tab               | `title`, `symbol` (on `tab`)                         |
+| `sheet`                        | `.sheet`                       | `detent`, `ondismiss`                                |
+| `swipeactions`                 | `.swipeActions`                | `edge`                                               |
 
-Every element also accepts `padding`, `font`, `weight`, `color`, `background`, `radius`, and `opacity`.
+Every element also accepts `padding`, `font`, `weight`, `color`, `tint`, `background`, `radius`, and `opacity`.
+
+`sheet` and `swipeactions` aren't drawn where they appear. A `sheet` inside a `screen` is presented over it while it's rendered, so you show and hide it with `{#if}`; when the user swipes it down, `ondismiss` fires so you can update your state. A `swipeactions` inside a list row adds its buttons as the row's swipe actions. Set `variant="automatic"` on a button to use SwiftUI's default style, which in a list makes the whole row tappable.
 
 A few names are shortened (`txt`, `btn`, `sfsymbol`) because `text`, `button`, `image`, and `symbol` are already HTML or SVG elements in `svelte/elements`, and their types can't be overridden.
 
@@ -99,14 +104,14 @@ xcrun devicectl device process launch --console --terminate-existing --device DE
 
 Results on an iPhone 17 Pro, Release build, over two runs:
 
-| Scenario           | Svelte          | Swift  | Longest frame |
-| ------------------ | --------------- | ------ | ------------- |
-| Create 1,000 rows  | 79ms            | 36ms   | 129–140ms     |
-| Update all labels  | 24–33ms         | 3ms    | 33–36ms       |
-| Update one label   | 1ms             | 0.1ms  | 17ms          |
-| Reverse            | 122ms           | 11ms   | 139–142ms     |
-| Clear              | 14–15ms         | 3–11ms | 38–52ms       |
-| Keystroke (median) | 0.6–0.9ms total |        | 52ms          |
+| Scenario           | Svelte          | Swift   | Longest frame |
+| ------------------ | --------------- | ------- | ------------- |
+| Create 1,000 rows  | 79ms            | 28–31ms | 129–140ms     |
+| Update all labels  | 24–33ms         | 3ms     | 33–36ms       |
+| Update one label   | 1ms             | 0.1ms   | 17ms          |
+| Reverse            | 122ms           | 1ms     | 139–142ms     |
+| Clear              | 9–15ms          | 3–17ms  | 38–52ms       |
+| Keystroke (median) | 0.6–0.9ms total |         | 52ms          |
 
 Released nodes are cleaned up on both sides: after creating and clearing 6,000 rows, 13 to 20 nodes were still alive in JavaScript, and the same number in Swift.
 
@@ -126,6 +131,5 @@ With the JIT off, an iPhone 18 Pro simulator was within about 1.5 times the devi
 - Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - JavaScript runs on the main thread, so large updates (creating or reversing 1,000 rows) block a few frames.
 - In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms. The longest frame falls from about 140ms to about 70ms.
-- Each move in Swift searches the parent's children twice to find positions, so reordering a long list costs time proportional to the square of its length on the Swift side too.
-- Ops are sent as JSON objects. Decoding the 1.4 MB payload for 1,000 new rows takes about 24ms of Swift's 36ms.
-- There are no animations or transitions, gestures beyond taps and swiping back, sheets, tab views, or `List` features like swipe actions.
+- Ops are sent as JSON objects. Decoding the 1.4 MB payload for 1,000 new rows takes about 24ms of the 30ms that Swift spends.
+- There are no animations or transitions, gestures beyond taps and swipes, toolbars, or alerts.

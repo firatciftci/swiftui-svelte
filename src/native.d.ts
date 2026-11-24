@@ -35,6 +35,7 @@ type Modifiers = {
   font?: Font;
   weight?: Weight;
   color?: Color;
+  tint?: Color;
   background?: Color;
   radius?: number;
   opacity?: number;
@@ -44,6 +45,10 @@ declare module "svelte/elements" {
   interface SvelteHTMLElements {
     navstack: Modifiers & { onpop?: (depth: number) => void };
     screen: Modifiers & { title?: string };
+    sheet: Modifiers & { detent?: "medium" | "large"; ondismiss?: () => void };
+    tabview: Modifiers;
+    tab: Modifiers & { title: string; symbol?: string };
+    swipeactions: { edge?: "leading" | "trailing" };
     vstack: Modifiers & {
       spacing?: number;
       alignment?: "leading" | "center" | "trailing";
@@ -59,7 +64,8 @@ declare module "svelte/elements" {
     divider: Modifiers;
     txt: Modifiers;
     btn: Modifiers & {
-      variant?: "borderless" | "bordered" | "prominent";
+      variant?: "automatic" | "borderless" | "bordered" | "prominent";
+      role?: "destructive" | "cancel";
       onclick?: () => void;
     };
     sfsymbol: Modifiers & { name: string };

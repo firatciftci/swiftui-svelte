@@ -52,6 +52,10 @@ final class Node: Identifiable {
   var attributes: [String: JSONValue] = [:]
   var children: [Node] = []
   @ObservationIgnored var parentID: Int?
+  @ObservationIgnored var previousID: Int?
+  @ObservationIgnored var nextID: Int?
+  @ObservationIgnored var firstID: Int?
+  @ObservationIgnored var lastID: Int?
 
   init(id: Int, kind: Kind, name: String, text: String) {
     self.id = id
@@ -60,10 +64,16 @@ final class Node: Identifiable {
     self.text = text
   }
 
+  private static let attachments: Set<String> = ["sheet", "swipeactions"]
+
+  func attachment(_ name: String) -> Node? {
+    children.first { $0.kind == .element && $0.name == name }
+  }
+
   var renderedChildren: [Node] {
     children.filter { child in
       switch child.kind {
-      case .element: true
+      case .element: !Self.attachments.contains(child.name)
       case .text: !child.text.allSatisfy(\.isWhitespace)
       case .fragment, .comment: false
       }
@@ -129,7 +139,7 @@ enum Op: Decodable {
 final class NodeStore {
   private(set) var root: Node?
   @ObservationIgnored private var nodes: [Int: Node] = [:]
-  @ObservationIgnored private var pending: [Int: (parent: Node, children: [Node])] = [:]
+  @ObservationIgnored private var dirty: Set<Int> = []
 
   var nodeCount: Int { nodes.count }
 
@@ -144,22 +154,46 @@ final class NodeStore {
       return
     }
     for op in ops { apply(op) }
-    for (parent, children) in pending.values { parent.children = children }
-    pending.removeAll(keepingCapacity: true)
-  }
-
-  private func updateChildren(of parent: Node, _ update: (inout [Node]) -> Void) {
-    var entry = pending.removeValue(forKey: parent.id) ?? (parent, parent.children)
-    update(&entry.children)
-    pending[parent.id] = entry
+    for id in dirty {
+      guard let parent = nodes[id] else { continue }
+      var children: [Node] = []
+      var childID = parent.firstID
+      while let id = childID, let child = nodes[id] {
+        children.append(child)
+        childID = child.nextID
+      }
+      parent.children = children
+    }
+    dirty.removeAll(keepingCapacity: true)
   }
 
   private func detach(_ node: Node) {
     guard let parentID = node.parentID, let parent = nodes[parentID] else { return }
-    updateChildren(of: parent) { children in
-      if let index = children.firstIndex(where: { $0.id == node.id }) { children.remove(at: index) }
+    if let previousID = node.previousID {
+      nodes[previousID]?.nextID = node.nextID
+    } else {
+      parent.firstID = node.nextID
+    }
+    if let nextID = node.nextID {
+      nodes[nextID]?.previousID = node.previousID
+    } else {
+      parent.lastID = node.previousID
     }
     node.parentID = nil
+    node.previousID = nil
+    node.nextID = nil
+    dirty.insert(parentID)
+  }
+
+  private func insert(_ node: Node, into parent: Node, before next: Node?) {
+    detach(node)
+    let previousID = next.map(\.previousID) ?? parent.lastID
+    node.previousID = previousID
+    node.nextID = next?.id
+    if let previousID { nodes[previousID]?.nextID = node.id } else { parent.firstID = node.id }
+    if let next { next.previousID = node.id } else { parent.lastID = node.id }
+    node.parentID = parent.id
+    dirty.insert(parent.id)
   }
 
   private func apply(_ op: Op) {
@@ -170,12 +204,7 @@ final class NodeStore {
       nodes[id] = Node(id: id, kind: kind, name: name ?? "", text: text ?? "")
     case let .insert(parentID, id, beforeID):
       guard let parent = nodes[parentID], let node = nodes[id] else { return }
-      detach(node)
-      updateChildren(of: parent) { children in
-        let index = beforeID.flatMap { before in children.firstIndex { $0.id == before } }
-        children.insert(node, at: index ?? children.endIndex)
-      }
-      node.parentID = parentID
+      insert(node, into: parent, before: beforeID.flatMap { nodes[$0] })
     case let .remove(id):
       if let node = nodes[id] { detach(node) }
     case let .attribute(id, name, value):
@@ -185,6 +214,7 @@ final class NodeStore {
     case let .text(id, text):
       nodes[id]?.text = text
     case let .release(id):
+      if let node = nodes[id] { detach(node) }
       nodes[id] = nil
     }
   }
