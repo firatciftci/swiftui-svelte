@@ -1,22 +1,13 @@
 import SwiftUI
 
-@main
-struct SvelteHostApp: App {
-  @State private var runtime = Runtime()
+public struct SvelteView: View {
+  @State private var runtime: Runtime
 
-  var body: some Scene {
-    WindowGroup {
-      RootView()
-        .environment(runtime)
-        .task { runtime.start() }
-    }
+  public init(source: URL, reloadsOnChange: Bool = false) {
+    _runtime = State(initialValue: Runtime(source: source, reloadsOnChange: reloadsOnChange))
   }
-}
 
-private struct RootView: View {
-  @Environment(Runtime.self) private var runtime
-
-  var body: some View {
+  public var body: some View {
     VStack(spacing: 0) {
       if let root = runtime.store.root {
         NodeView(node: root)
@@ -34,5 +25,7 @@ private struct RootView: View {
           .padding()
       }
     }
+    .environment(runtime)
+    .task { runtime.start() }
   }
 }

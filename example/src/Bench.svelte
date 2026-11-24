@@ -1,6 +1,6 @@
 <script lang="ts">
   import { flushSync, onMount } from "svelte";
-  import { stats } from "#renderer";
+  import { stats } from "swiftui-svelte";
 
   const ROWS = 1000;
 

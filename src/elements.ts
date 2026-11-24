@@ -1,3 +1,5 @@
+export type { SvelteHTMLElements } from "svelte/elements";
+
 type Font =
   | "largeTitle"
   | "title"
@@ -93,5 +95,3 @@ declare global {
   ): void;
   var __svelteDispatch: (id: number, type: string, payload: unknown) => void;
 }
-
-export {};

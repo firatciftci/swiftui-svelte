@@ -4,5 +4,11 @@
   "printWidth": 80,
   "sortPackageJson": false,
   "objectWrap": "collapse",
-  "ignorePatterns": ["node_modules", "pnpm-lock.yaml", "ios"]
+  "ignorePatterns": [
+    "node_modules",
+    "pnpm-lock.yaml",
+    "example/ios",
+    "dist",
+    ".build"
+  ]
 }

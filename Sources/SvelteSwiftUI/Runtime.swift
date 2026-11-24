@@ -14,33 +14,30 @@ final class Runtime {
   @ObservationIgnored private var loadedVersion: Date?
   @ObservationIgnored private var watcher: Task<Void, Never>?
   @ObservationIgnored private let frames = FrameMonitor()
+  @ObservationIgnored private let source: URL
+  @ObservationIgnored private let reloadsOnChange: Bool
 
-  private static var bundleURL: URL {
-    #if targetEnvironment(simulator)
-      URL(filePath: #filePath).deletingLastPathComponent().appending(path: "Resources/app.js")
-    #else
-      Bundle.main.url(forResource: "app", withExtension: "js")
-        ?? Bundle.main.bundleURL.appending(path: "app.js")
-    #endif
+  init(source: URL, reloadsOnChange: Bool) {
+    self.source = source
+    self.reloadsOnChange = reloadsOnChange
   }
 
   private var bundleVersion: Date? {
-    try? Self.bundleURL.resourceValues(forKeys: [.contentModificationDateKey])
-      .contentModificationDate
+    try? source.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
   }
 
   func start() {
+    guard context == nil else { return }
     frames.start()
     reload()
-    #if targetEnvironment(simulator)
-      watcher = Task { [weak self] in
-        while !Task.isCancelled {
-          try? await Task.sleep(for: .milliseconds(500))
-          guard let self, bundleVersion != loadedVersion else { continue }
-          reload()
-        }
+    guard reloadsOnChange else { return }
+    watcher = Task { [weak self] in
+      while !Task.isCancelled {
+        try? await Task.sleep(for: .milliseconds(500))
+        guard let self, bundleVersion != loadedVersion else { continue }
+        reload()
       }
-    #endif
+    }
   }
 
   func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull()) {
@@ -55,10 +52,10 @@ final class Runtime {
     error = nil
     loadedVersion = bundleVersion
 
-    guard let source = try? String(contentsOf: Self.bundleURL, encoding: .utf8),
+    guard let script = try? String(contentsOf: source, encoding: .utf8),
       let context = JSContext()
     else {
-      error = "Couldn't load \(Self.bundleURL.path()). Run `nr build` first."
+      error = "Couldn't load \(source.path())."
       return
     }
 
@@ -74,7 +71,7 @@ final class Runtime {
     }
     install(into: context)
     self.context = context
-    context.evaluateScript(source, withSourceURL: Self.bundleURL)
+    context.evaluateScript(script, withSourceURL: source)
   }
 
   private func install(into context: JSContext) {

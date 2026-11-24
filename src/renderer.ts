@@ -1,3 +1,4 @@
+import "./host.ts";
 import { mount, type Component } from "svelte";
 import { createRenderer } from "svelte/renderer";
 

@@ -1,5 +1,4 @@
-import "./host.ts";
-import { mountApp } from "#renderer";
+import { mountApp } from "swiftui-svelte";
 import App from "./App.svelte";
 import Bench from "./Bench.svelte";
 

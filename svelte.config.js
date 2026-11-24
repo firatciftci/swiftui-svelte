@@ -1,3 +1,5 @@
 export default {
-  compilerOptions: { experimental: { customRenderer: "#renderer" } },
+  compilerOptions: {
+    experimental: { customRenderer: "swiftui-svelte/renderer" },
+  },
 };

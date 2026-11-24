@@ -1,6 +1,9 @@
 node_modules
 .DS_Store
-ios/build
-ios/SvelteHost.xcodeproj
-ios/SvelteHost/Resources/app.js
-ios/Local.xcconfig
+dist
+.build
+.swiftpm
+example/ios/build
+example/ios/SvelteHost.xcodeproj
+example/ios/SvelteHost/Resources/app.js
+example/ios/Local.xcconfig

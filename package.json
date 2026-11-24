@@ -1,18 +1,48 @@
 {
   "name": "swiftui-svelte",
+  "version": "0.0.1",
   "private": true,
+  "description": "Render Svelte components as native SwiftUI views",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer.d.ts",
+      "default": "./dist/renderer.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./elements": {
+      "types": "./dist/elements.d.ts"
+    }
+  },
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
     "bench": "vite build --mode bench",
-    "ios:project": "xcodegen generate --spec ios/project.yml",
+    "package": "tsc -p tsconfig.lib.json",
+    "prepack": "tsc -p tsconfig.lib.json",
+    "ios:project": "xcodegen generate --spec example/ios/project.yml",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "format": "oxfmt --check",
     "format:fix": "oxfmt"
   },
-  "imports": {
-    "#renderer": "./src/renderer.ts"
+  "peerDependencies": {
+    "svelte": "^5.59.0",
+    "vite": ">=7"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",

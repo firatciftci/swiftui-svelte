@@ -1,32 +1,105 @@
 # swiftui-svelte
 
-A spike that renders Svelte 5 components as native SwiftUI views, using the experimental custom renderer API that shipped in Svelte 5.59.
+Render Svelte 5 components as native SwiftUI views, using the experimental API for custom renderers that shipped in Svelte 5.59. It's an experiment: neither package is published yet, and the element set covers only what the example app needs.
 
-## How it works
+The repository holds two packages that work together:
 
-1. `src/renderer.ts` is a Svelte custom renderer. It keeps a lightweight node tree in JavaScript (Svelte needs to query it synchronously) and records every mutation as an op: `create`, `insert`, `remove`, `attr`, `unattr`, `text`, `release`.
-2. Ops are batched per microtask and sent to Swift as one JSON string through `__nativeCommit`.
-3. Vite bundles the app into a single IIFE at `ios/SvelteHost/Resources/app.js`.
-4. The iOS host (`ios/SvelteHost`) runs that bundle in JavaScriptCore. `NodeStore` mirrors the tree as `@Observable` nodes, and `NodeView` interprets it recursively: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
-5. Native events go back through `__svelteDispatch(id, type, payload)`, which calls the handlers Svelte registered with `addEventListener`.
-6. The host provides `setTimeout`, `setInterval`, and `console`. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release` so Swift drops its copy too.
+- `swiftui-svelte` on npm: the custom renderer, the element types, and a Vite plugin that bundles your app for iOS.
+- `SvelteSwiftUI`, a Swift package: a `SvelteView` that runs the bundle in JavaScriptCore and renders it with SwiftUI.
 
-## Running it
+## Using it
+
+### The Svelte app
+
+Point the Svelte compiler at the renderer in `svelte.config.js`:
+
+```js
+export default {
+  compilerOptions: {
+    experimental: { customRenderer: "swiftui-svelte/renderer" },
+  },
+};
+```
+
+Add the Vite plugin, which bundles the app into the single file the iOS app loads:
+
+```ts
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { defineConfig } from "vite";
+import { swiftui } from "swiftui-svelte/vite";
+
+export default defineConfig({
+  plugins: [
+    svelte(),
+    swiftui({ entry: "src/main.ts", outFile: "ios/MyApp/Resources/app.js" }),
+  ],
+});
+```
+
+Mount your root component in `src/main.ts`:
+
+```ts
+import { mountApp } from "swiftui-svelte";
+import App from "./App.svelte";
+
+mountApp(App);
+```
+
+Add `"swiftui-svelte/elements"` to `compilerOptions.types` in `tsconfig.json`, so `svelte-check` knows the elements and their attributes.
+
+### The iOS app
+
+Add this repository as a Swift package dependency, add `app.js` to the app's resources, and show it with `SvelteView`:
+
+```swift
+import SvelteSwiftUI
+import SwiftUI
+
+@main
+struct MyApp: App {
+  var body: some Scene {
+    WindowGroup {
+      SvelteView(source: Bundle.main.bundleURL.appending(path: "app.js"))
+    }
+  }
+}
+```
+
+With `reloadsOnChange: true`, `SvelteView` reloads whenever the file at `source` changes. In the simulator, point `source` at the file in your source tree and run `vite build --watch` to get live reload without rebuilding in Xcode. `example/ios/SvelteHost/SvelteHostApp.swift` shows how.
+
+## Running the example
+
+`example/` has a demo app with two tabs: a to-do list with navigation and swipe to delete, and a playground with a counter, a text field, and a sheet.
 
 ```sh
 ni
 nr build
 nr ios:project
-open ios/SvelteHost.xcodeproj
+open example/ios/SvelteHost.xcodeproj
 ```
 
-Run the `SvelteHost` scheme on a simulator. While it's running, `nr dev` rebuilds the bundle on save. In the simulator, the app reads `app.js` straight from the source tree and reloads when it changes, so you don't need to rebuild in Xcode. On a device, the app uses the copy bundled at build time.
+Run the `SvelteHost` scheme on a simulator. While it's running, `nr dev` rebuilds the bundle on save and the app reloads. To debug the JavaScript, open Safari's Develop menu and pick the "Svelte" context under the simulator (Debug builds only).
 
-To debug the JavaScript, open Safari's Develop menu and pick the "Svelte" context under the simulator (Debug builds only).
+The simulator runs JavaScriptCore with its JIT, but apps on iOS devices can't use it. To see device-like speed, launch the app with the JIT turned off:
+
+```sh
+SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --terminate-running-process booted com.example.SvelteHost
+```
+
+`nr package` builds the npm package into `dist/`.
+
+## How it works
+
+1. `src/renderer.ts` is a Svelte custom renderer. It keeps a lightweight node tree in JavaScript (Svelte needs to query it synchronously) and records every mutation as an op: `create`, `insert`, `remove`, `attr`, `unattr`, `text`, `release`.
+2. Ops are batched per microtask and sent to Swift as one JSON string through `__nativeCommit`.
+3. Vite bundles the app into a single IIFE at the plugin's `outFile`.
+4. `SvelteView` (`Sources/SvelteSwiftUI`) runs that bundle in JavaScriptCore. `NodeStore` mirrors the tree as `@Observable` nodes, and `NodeView` interprets it recursively: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
+5. Native events go back through `__svelteDispatch(id, type, payload)`, which calls the handlers Svelte registered with `addEventListener`.
+6. The host provides `setTimeout`, `setInterval`, and `console`. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release` so Swift drops its copy too.
 
 ## Elements
 
-The elements are typed in `src/native.d.ts`, so `svelte-check` catches typos and wrong attribute values.
+The elements are typed in `src/elements.ts`, so `svelte-check` catches typos and wrong attribute values.
 
 | Element                        | SwiftUI                        | Attributes and events                                |
 | ------------------------------ | ------------------------------ | ---------------------------------------------------- |
@@ -70,11 +143,11 @@ Svelte owns the navigation stack. The first `screen` in a `navstack` is the root
 </navstack>
 ```
 
-Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the demo, the to-do list and its detail screens share state through `src/todos.svelte.ts`.
+Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the demo, the to-do list and its detail screens share state through `example/src/todos.svelte.ts`.
 
 ## Benchmark
 
-`nr bench` builds `src/Bench.svelte` instead of the demo. It runs through a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a loop that creates and clears rows and checks that nodes get released) and logs one `BENCH` line per scenario to the console. Run `nr build` afterward to get the demo back.
+`nr bench` builds `example/src/Bench.svelte` instead of the demo. It runs through a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a loop that creates and clears rows and checks that nodes get released) and logs one `BENCH` line per scenario to the console. Run `nr build` afterward to get the demo back.
 
 Each line reports the time Svelte spent updating, the time spent serializing ops, the time Swift spent decoding and applying them, the op count and payload size, and the longest frame during the scenario, which includes SwiftUI's own rendering.
 
@@ -82,7 +155,7 @@ Benchmark a Release build. Debug builds of the Swift side are several times slow
 
 ### On a device
 
-To sign for a device, create `ios/Local.xcconfig` (it's ignored by git) with your team ID and a bundle ID that's free on your account, then regenerate the project:
+To sign for a device, create `example/ios/Local.xcconfig` (it's ignored by git) with your team ID and a bundle ID that's free on your account, then regenerate the project:
 
 ```xcconfig
 DEVELOPMENT_TEAM = YOUR_TEAM_ID
@@ -94,9 +167,9 @@ Then build, install, and launch with the console attached:
 ```sh
 nr bench
 nr ios:project
-xcodebuild -project ios/SvelteHost.xcodeproj -scheme SvelteHost -configuration Release \
-  -destination 'id=DEVICE_ID' -derivedDataPath ios/build -allowProvisioningUpdates build
-xcrun devicectl device install app --device DEVICE_ID ios/build/Build/Products/Release-iphoneos/SvelteHost.app
+xcodebuild -project example/ios/SvelteHost.xcodeproj -scheme SvelteHost -configuration Release \
+  -destination 'id=DEVICE_ID' -derivedDataPath example/ios/build -allowProvisioningUpdates build
+xcrun devicectl device install app --device DEVICE_ID example/ios/build/Build/Products/Release-iphoneos/SvelteHost.app
 xcrun devicectl device process launch --console --terminate-existing --device DEVICE_ID com.yourname.SvelteHost
 ```
 
