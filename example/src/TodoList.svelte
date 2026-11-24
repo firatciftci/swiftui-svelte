@@ -3,7 +3,7 @@
   import { addTodo, removeTodo, todos } from "./todos.svelte";
 
   let draft = $state("");
-  let stack: Array<number> = $state([]);
+  const stack: Array<number> = $state([]);
   let confirming = $state(false);
 
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
@@ -39,11 +39,11 @@
             {todo.title}
           </toggle>
           <btn onclick={() => stack.push(todo.id)}>
-            <sfsymbol name="chevron.right" color="secondary" />
+            <sfsymbol name="chevron.right" label="Details" color="secondary" />
           </btn>
           <swipeactions>
             <btn role="destructive" onclick={() => removeTodo(todo.id)}>
-              <sfsymbol name="trash" />
+              <sfsymbol name="trash" label="Delete" />
             </btn>
           </swipeactions>
         </hstack>

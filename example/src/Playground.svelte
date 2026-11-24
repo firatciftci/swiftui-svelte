@@ -43,11 +43,11 @@
         <txt font="headline">Counter</txt>
         <hstack spacing={16}>
           <btn onclick={() => count--}>
-            <sfsymbol name="minus.circle.fill" font="title" />
+            <sfsymbol name="minus.circle.fill" label="Decrease" font="title" />
           </btn>
           <txt font="title" weight="bold">{count}</txt>
           <btn onclick={() => count++}>
-            <sfsymbol name="plus.circle.fill" font="title" />
+            <sfsymbol name="plus.circle.fill" label="Increase" font="title" />
           </btn>
         </hstack>
         <txt font="caption" color="secondary">Running for {seconds}s</txt>
@@ -85,7 +85,7 @@
         </vstack>
         <spacer />
         <btn variant="borderless" onclick={loadStars}>
-          <sfsymbol name="arrow.clockwise" />
+          <sfsymbol name="arrow.clockwise" label="Refresh" />
         </btn>
       </hstack>
 

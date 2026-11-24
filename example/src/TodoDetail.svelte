@@ -1,7 +1,7 @@
 <script lang="ts">
   import { removeTodo, todos } from "./todos.svelte";
 
-  let { id, onclose }: { id: number; onclose: () => void } = $props();
+  const { id, onclose }: { id: number; onclose: () => void } = $props();
 
   const todo = $derived(todos.find((todo) => todo.id === id));
 </script>

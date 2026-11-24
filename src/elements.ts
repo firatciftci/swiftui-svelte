@@ -79,7 +79,7 @@ declare module "svelte/elements" {
       role?: "destructive" | "cancel";
       onclick?: () => void;
     };
-    sfsymbol: Modifiers & { name: string };
+    sfsymbol: Modifiers & { name: string; label?: string };
     textfield: Modifiers & {
       value?: string;
       placeholder?: string;

@@ -36,6 +36,16 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
 
+      - name: Install tools
+        run: brew bundle
+
+      - name: Show versions
+        run: |
+          xcodebuild -version
+          xcrun swift-format --version
+          swiftlint version
+          xcodegen --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -45,22 +55,37 @@ jobs:
       - name: Check types
         run: pnpm run check
 
+      - name: Lint
+        run: pnpm run lint
+
       - name: Build the package
         run: pnpm run package
 
       - name: Bundle the example app
         run: pnpm run build
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
       - name: Build the Swift package and the example app
         run: |
-          xcodebuild -version
+          mkdir -p build
           pnpm run ios:project
-          xcodebuild build \
+          if ! xcodebuild build \
             -project example/ios/SvelteHost.xcodeproj \
             -scheme SvelteHost \
             -destination "generic/platform=iOS Simulator" \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO
+            -derivedDataPath build/derived \
+            CODE_SIGNING_ALLOWED=NO > build/xcodebuild.log 2>&1; then
+            sed -nE '/(error|warning):/p' build/xcodebuild.log | sort -u
+            tail -n 20 build/xcodebuild.log
+            exit 1
+          fi
+
+      - name: Analyze the Swift code
+        run: swiftlint analyze --strict --quiet --compiler-log-path build/xcodebuild.log
+
+      - name: Upload the build log
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-log
+          path: build/xcodebuild.log
+          if-no-files-found: ignore

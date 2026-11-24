@@ -28,8 +28,6 @@ function load(): Array<Todo> {
 
 export const todos: Array<Todo> = $state(load());
 
-let nextId = Math.max(0, ...todos.map((todo) => todo.id)) + 1;
-
 $effect.root(() => {
   $effect(() => {
     localStorage.setItem(storageKey, JSON.stringify(todos));
@@ -37,7 +35,8 @@ $effect.root(() => {
 });
 
 export function addTodo(title: string) {
-  todos.push({ id: nextId++, title, done: false });
+  const id = Math.max(0, ...todos.map((todo) => todo.id)) + 1;
+  todos.push({ id, title, done: false });
 }
 
 export function removeTodo(id: number) {

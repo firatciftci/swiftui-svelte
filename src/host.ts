@@ -1,6 +1,7 @@
-globalThis.queueMicrotask ??= (task) => void Promise.resolve().then(task);
+const resolved = Promise.resolve();
+globalThis.queueMicrotask ??= (task) => void resolved.then(task);
 
-function format(value: unknown) {
+function format(value: unknown): string {
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.stack ?? value.message;
   try {
@@ -13,7 +14,7 @@ function format(value: unknown) {
 if (typeof __nativeLog === "function") {
   for (const level of ["log", "info", "warn", "error", "debug"] as const) {
     console[level] = (...args: Array<unknown>) =>
-      __nativeLog(level, args.map(format).join(" "));
+      __nativeLog(level, args.map((arg) => format(arg)).join(" "));
   }
 }
 
@@ -25,12 +26,12 @@ if (typeof __nativeStorageLoad === "function") {
       if (typeof value === "string") items.set(key, value);
     }
   }
-  let saving = false;
-  const save = () => {
-    if (saving) return;
-    saving = true;
+  let isSaving = false;
+  const save = (): void => {
+    if (isSaving) return;
+    isSaving = true;
     queueMicrotask(() => {
-      saving = false;
+      isSaving = false;
       __nativeStorageSave(JSON.stringify(Object.fromEntries(items)));
     });
   };
@@ -38,14 +39,20 @@ if (typeof __nativeStorageLoad === "function") {
     get length() {
       return items.size;
     },
-    key: (index) => [...items.keys()][index] ?? null,
-    getItem: (key) => items.get(String(key)) ?? null,
+    key(index) {
+      let position = 0;
+      for (const key of items.keys()) {
+        if (position++ === index) return key;
+      }
+      return null;
+    },
+    getItem: (key) => items.get(key) ?? null,
     setItem(key, value) {
-      items.set(String(key), String(value));
+      items.set(key, value);
       save();
     },
     removeItem(key) {
-      items.delete(String(key));
+      items.delete(key);
       save();
     },
     clear() {
@@ -67,23 +74,23 @@ if (typeof __nativeFetch === "function") {
         ]),
       );
     }
-    get(name: string) {
+    get(name: string): string | null {
       return this.#values.get(name.toLowerCase()) ?? null;
     }
-    has(name: string) {
+    has(name: string): boolean {
       return this.#values.has(name.toLowerCase());
     }
-    entries() {
+    entries(): MapIterator<[string, string]> {
       return this.#values.entries();
     }
   }
 
   class NativeResponse {
+    #body: string;
     readonly ok: boolean;
     readonly status: number;
     readonly url: string;
     readonly headers: NativeHeaders;
-    #body: string;
     constructor(response: NativeFetchResponse) {
       this.status = response.status;
       this.ok = response.status >= 200 && response.status < 300;
@@ -91,7 +98,7 @@ if (typeof __nativeFetch === "function") {
       this.headers = new NativeHeaders(response.headers);
       this.#body = response.body;
     }
-    async text() {
+    async text(): Promise<string> {
       return this.#body;
     }
     async json(): Promise<unknown> {
@@ -99,10 +106,10 @@ if (typeof __nativeFetch === "function") {
     }
   }
 
-  const nativeFetch = (
+  const nativeFetch = async (
     input: string | URL,
     init?: { method?: string; headers?: Record<string, string>; body?: string },
-  ) =>
+  ): Promise<NativeResponse> =>
     new Promise<NativeResponse>((resolve, reject) => {
       __nativeFetch(
         JSON.stringify({
@@ -117,5 +124,6 @@ if (typeof __nativeFetch === "function") {
         },
       );
     });
-  globalThis.fetch ??= nativeFetch as unknown as typeof fetch;
+  if (globalThis.fetch == null)
+    Object.assign(globalThis, { fetch: nativeFetch });
 }

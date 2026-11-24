@@ -1,5 +1,6 @@
 import "./host.ts";
-import { mount, type Component } from "svelte";
+import type { Component } from "svelte";
+import { mount } from "svelte";
 import { createRenderer } from "svelte/renderer";
 
 type Handler = (payload: unknown) => void;
@@ -51,15 +52,14 @@ const finalizer = new FinalizationRegistry<number>((id) => {
   stats.live--;
   send({ op: "release", id });
 });
-let nextId = 1;
-let scheduled = false;
+const state = { nextId: 1, isScheduled: false };
 
-function send(op: Op) {
+function send(op: Op): void {
   queue.push(op);
-  if (scheduled) return;
-  scheduled = true;
+  if (state.isScheduled) return;
+  state.isScheduled = true;
   queueMicrotask(() => {
-    scheduled = false;
+    state.isScheduled = false;
     const ops = queue.splice(0);
     const start = __nativeNow();
     const json = JSON.stringify(ops);
@@ -81,7 +81,7 @@ function track<T extends FragmentNode | ChildNode>(node: T, op: Op): T {
   return node;
 }
 
-function detach(node: ChildNode) {
+function detach(node: ChildNode): void {
   const { parent, prev, next } = node;
   if (parent == null) return;
   if (prev == null) parent.first = next;
@@ -95,7 +95,7 @@ function insertChild(
   parent: ParentNode,
   node: ChildNode,
   anchor: ChildNode | null,
-) {
+): void {
   detach(node);
   const prev = anchor == null ? parent.last : anchor.prev;
   node.parent = parent;
@@ -122,7 +122,7 @@ const renderer = createRenderer<{
   createFragment() {
     const node: FragmentNode = {
       kind: "fragment",
-      id: nextId++,
+      id: state.nextId++,
       first: null,
       last: null,
     };
@@ -131,7 +131,7 @@ const renderer = createRenderer<{
   createElement(name) {
     const node: ElementNode = {
       kind: "element",
-      id: nextId++,
+      id: state.nextId++,
       name,
       parent: null,
       prev: null,
@@ -147,7 +147,7 @@ const renderer = createRenderer<{
   createText(data) {
     const node: TextNode = {
       kind: "text",
-      id: nextId++,
+      id: state.nextId++,
       data,
       parent: null,
       prev: null,
@@ -158,7 +158,7 @@ const renderer = createRenderer<{
   createComment(data) {
     const node: TextNode = {
       kind: "comment",
-      id: nextId++,
+      id: state.nextId++,
       data,
       parent: null,
       prev: null,
@@ -246,10 +246,11 @@ const renderer = createRenderer<{
 
 globalThis.__svelteDispatch = (id, type, payload) => {
   const element = elements.get(id)?.deref();
-  for (const handler of element?.listeners.get(type) ?? []) handler(payload);
+  const handlers = element?.listeners.get(type) ?? [];
+  for (const handler of handlers) handler(payload);
 };
 
-export function mountApp(component: Component) {
+export function mountApp(component: Component): void {
   const target = renderer.createFragment();
   send({ op: "root", id: target.id });
   mount(component, { target, renderer });
