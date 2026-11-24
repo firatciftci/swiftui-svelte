@@ -18,12 +18,15 @@ targets:
           - Resources/**
       - path: SvelteHost/Resources
         buildPhase: resources
+    configFiles:
+      Debug: SvelteHost.xcconfig
+      Release: SvelteHost.xcconfig
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.SvelteHost
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
+    scheme: {}

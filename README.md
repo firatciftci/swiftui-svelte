@@ -69,9 +69,48 @@ Each pushed screen is a regular component, so it's mounted when it's pushed and 
 
 ## Benchmark
 
-`nr bench` builds `src/Bench.svelte` instead of the demo. It runs through a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a create/clear churn that checks nodes get released) and logs one `BENCH` line per scenario to the console. Run `nr build` afterward to get the demo back.
+`nr bench` builds `src/Bench.svelte` instead of the demo. It runs through a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a loop that creates and clears rows and checks that nodes get released) and logs one `BENCH` line per scenario to the console. Run `nr build` afterward to get the demo back.
 
 Each line reports the time Svelte spent updating, the time spent serializing ops, the time Swift spent decoding and applying them, the op count and payload size, and the longest frame during the scenario, which includes SwiftUI's own rendering.
+
+Benchmark a Release build. Debug builds of the Swift side are several times slower.
+
+### On a device
+
+To sign for a device, create `ios/Local.xcconfig` (it's ignored by git) with your team ID and a bundle ID that's free on your account, then regenerate the project:
+
+```xcconfig
+DEVELOPMENT_TEAM = YOUR_TEAM_ID
+PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*] = com.yourname.SvelteHost
+```
+
+Then build, install, and launch with the console attached:
+
+```sh
+nr bench
+nr ios:project
+xcodebuild -project ios/SvelteHost.xcodeproj -scheme SvelteHost -configuration Release \
+  -destination 'id=DEVICE_ID' -derivedDataPath ios/build -allowProvisioningUpdates build
+xcrun devicectl device install app --device DEVICE_ID ios/build/Build/Products/Release-iphoneos/SvelteHost.app
+xcrun devicectl device process launch --console --terminate-existing --device DEVICE_ID com.yourname.SvelteHost
+```
+
+`xcrun devicectl list devices` shows the device ID.
+
+Results on an iPhone 17 Pro, Release build, over two runs:
+
+| Scenario           | Svelte          | Swift  | Longest frame |
+| ------------------ | --------------- | ------ | ------------- |
+| Create 1,000 rows  | 79ms            | 36ms   | 129–140ms     |
+| Update all labels  | 24–33ms         | 3ms    | 33–36ms       |
+| Update one label   | 1ms             | 0.1ms  | 17ms          |
+| Reverse            | 122ms           | 11ms   | 139–142ms     |
+| Clear              | 14–15ms         | 3–11ms | 38–52ms       |
+| Keystroke (median) | 0.6–0.9ms total |        | 52ms          |
+
+Released nodes are cleaned up on both sides: after creating and clearing 6,000 rows, 13 to 20 nodes were still alive in JavaScript, and the same number in Swift.
+
+### In the simulator
 
 Apps on iOS devices run JavaScriptCore without its JIT, but the simulator has it. To get closer to device numbers, launch with the JIT turned off:
 
@@ -79,26 +118,14 @@ Apps on iOS devices run JavaScriptCore without its JIT, but the simulator has it
 SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --console-pty --terminate-running-process booted com.example.SvelteHost
 ```
 
-Benchmark a Release build. Debug builds of the Swift side are several times slower.
-
-Results on an iPhone 18 Pro simulator, Release build, JIT off:
-
-| Scenario           | Svelte      | Swift | Longest frame |
-| ------------------ | ----------- | ----- | ------------- |
-| Create 1,000 rows  | 64ms        | 36ms  | 170ms         |
-| Update all labels  | 12ms        | 2ms   | 17ms          |
-| Update one label   | 0.2ms       | 0.0ms | 17ms          |
-| Reverse            | 82ms        | 11ms  | 147ms         |
-| Clear              | 8ms         | 2ms   | 45ms          |
-| Keystroke (median) | 0.3ms total |       | 36ms          |
-
-Released nodes are cleaned up on both sides: after creating and clearing 6,000 rows, 19 nodes were still alive in JavaScript and the same 19 in Swift.
+With the JIT off, an iPhone 18 Pro simulator was within about 1.5 times the device numbers: Svelte took 64ms to create 1,000 rows and 82ms to reverse them, and Swift's times were about the same as on the device.
 
 ## Known gaps
 
 - `bind:` isn't allowed on elements in custom renderer components, so inputs are controlled: pass `value` and update it in `oninput`.
 - Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - JavaScript runs on the main thread, so large updates (creating or reversing 1,000 rows) block a few frames.
+- In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms. The longest frame falls from about 140ms to about 70ms.
+- Each move in Swift searches the parent's children twice to find positions, so reordering a long list costs time proportional to the square of its length on the Swift side too.
 - Ops are sent as JSON objects. Decoding the 1.4 MB payload for 1,000 new rows takes about 24ms of Swift's 36ms.
 - There are no animations or transitions, gestures beyond taps and swiping back, sheets, tab views, or `List` features like swipe actions.
-- None of this has been measured on a physical device yet.

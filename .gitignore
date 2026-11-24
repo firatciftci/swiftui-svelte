@@ -3,3 +3,4 @@ node_modules
 ios/build
 ios/SvelteHost.xcodeproj
 ios/SvelteHost/Resources/app.js
+ios/Local.xcconfig
