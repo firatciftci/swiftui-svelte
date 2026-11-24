@@ -41,6 +41,7 @@ type Modifiers = {
   background?: Color;
   radius?: number;
   opacity?: number;
+  animated?: boolean;
 };
 
 declare module "svelte/elements" {
@@ -48,6 +49,8 @@ declare module "svelte/elements" {
     navstack: Modifiers & { onpop?: (depth: number) => void };
     screen: Modifiers & { title?: string };
     sheet: Modifiers & { detent?: "medium" | "large"; ondismiss?: () => void };
+    alert: { title: string; ondismiss?: () => void };
+    toolbar: { placement?: "leading" | "trailing" | "bottom" };
     tabview: Modifiers;
     tab: Modifiers & { title: string; symbol?: string };
     swipeactions: { edge?: "leading" | "trailing" };

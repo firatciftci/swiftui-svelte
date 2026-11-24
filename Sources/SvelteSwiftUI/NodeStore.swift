@@ -64,10 +64,14 @@ final class Node: Identifiable {
     self.text = text
   }
 
-  private static let attachments: Set<String> = ["sheet", "swipeactions"]
+  private static let attachments: Set<String> = ["alert", "sheet", "swipeactions", "toolbar"]
 
   func attachment(_ name: String) -> Node? {
     children.first { $0.kind == .element && $0.name == name }
+  }
+
+  func attachments(_ name: String) -> [Node] {
+    children.filter { $0.kind == .element && $0.name == name }
   }
 
   var renderedChildren: [Node] {

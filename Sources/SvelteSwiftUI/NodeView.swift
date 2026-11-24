@@ -26,22 +26,8 @@ struct NodeView: View {
     case "navstack":
       NavStack(node: node)
     case "screen":
-      Group { children }
-        .navigationTitle(node.attributes["title"]?.string ?? "")
-        .sheet(
-          item: Binding {
-            node.attachment("sheet")
-          } set: { sheet in
-            if sheet == nil, let current = node.attachment("sheet") {
-              runtime.dispatch(current.id, "dismiss")
-            }
-          }
-        ) { sheet in
-          NodeView(node: sheet)
-            .presentationDetents(
-              sheet.attributes["detent"]?.string == "medium" ? [.medium, .large] : [.large])
-        }
-    case "sheet", "swipeactions", "tab":
+      Screen(node: node)
+    case "sheet", "swipeactions", "tab", "toolbar":
       Group { children }
     case "tabview":
       TabView {
@@ -173,9 +159,12 @@ private struct NodeModifiers: ViewModifier {
       .background(color(attributes["background"]?.string) ?? .clear)
       .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
       .opacity(attributes["opacity"]?.number ?? 1)
+      .ifLet(attributes["animated"]?.bool == true ? node.children.map(\.id) : nil) {
+        $0.animation(.default, value: $1)
+      }
       .ifLet(node.attachment("swipeactions")) { view, actions in
         view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
-          ForEach(actions.renderedChildren) { SwipeButton(node: $0) }
+          ForEach(actions.renderedChildren) { ActionButton(node: $0) }
         }
       }
   }
@@ -217,7 +206,66 @@ private struct NodeModifiers: ViewModifier {
   }
 }
 
-private struct SwipeButton: View {
+private struct Screen: View {
+  let node: Node
+  @Environment(Runtime.self) private var runtime
+
+  var body: some View {
+    let alert = node.attachment("alert")
+    Group {
+      ForEach(node.renderedChildren) { NodeView(node: $0) }
+    }
+    .navigationTitle(node.attributes["title"]?.string ?? "")
+    .toolbar {
+      ForEach(node.attachments("toolbar")) { toolbar in
+        ToolbarItemGroup(placement: placement(toolbar.attributes["placement"]?.string)) {
+          NodeView(node: toolbar)
+        }
+      }
+    }
+    .sheet(
+      item: Binding {
+        node.attachment("sheet")
+      } set: { sheet in
+        if sheet == nil, let current = node.attachment("sheet") {
+          runtime.dispatch(current.id, "dismiss")
+        }
+      }
+    ) { sheet in
+      NodeView(node: sheet)
+        .presentationDetents(
+          sheet.attributes["detent"]?.string == "medium" ? [.medium, .large] : [.large])
+    }
+    .alert(
+      alert?.attributes["title"]?.string ?? "",
+      isPresented: Binding {
+        node.attachment("alert") != nil
+      } set: { presented in
+        if !presented, let current = node.attachment("alert") {
+          runtime.dispatch(current.id, "dismiss")
+        }
+      },
+      presenting: alert
+    ) { alert in
+      ForEach(alert.renderedChildren.filter { $0.name == "btn" }) { ActionButton(node: $0) }
+    } message: { alert in
+      Text(
+        alert.renderedChildren.filter { $0.name == "txt" }
+          .map { $0.children.filter { $0.kind == .text }.map(\.text).joined() }
+          .joined(separator: "\n"))
+    }
+  }
+
+  private func placement(_ name: String?) -> ToolbarItemPlacement {
+    switch name {
+    case "leading": .topBarLeading
+    case "bottom": .bottomBar
+    default: .topBarTrailing
+    }
+  }
+}
+
+private struct ActionButton: View {
   let node: Node
   @Environment(Runtime.self) private var runtime
 

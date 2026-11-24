@@ -4,8 +4,10 @@
 
   let draft = $state("");
   let stack: Array<number> = $state([]);
+  let confirming = $state(false);
 
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
+  const finished = $derived(todos.length - remaining);
 
   function add() {
     const title = draft.trim();
@@ -17,7 +19,7 @@
 
 <navstack onpop={(depth) => (stack.length = depth)}>
   <screen title="To-dos">
-    <list>
+    <list animated>
       <hstack>
         <textfield
           placeholder="New to-do"
@@ -51,6 +53,34 @@
         {remaining === 0 ? "All done" : `${remaining} left`}
       </txt>
     </list>
+
+    {#if finished > 0}
+      <toolbar>
+        <btn onclick={() => (confirming = true)}>Clear done</btn>
+      </toolbar>
+    {/if}
+
+    {#if confirming}
+      <alert
+        title="Clear finished to-dos?"
+        ondismiss={() => (confirming = false)}
+      >
+        <txt
+          >{finished === 1 ? "1 to-do" : `${finished} to-dos`} will be removed.</txt
+        >
+        <btn role="cancel">Cancel</btn>
+        <btn
+          role="destructive"
+          onclick={() => {
+            for (const todo of todos.filter((todo) => todo.done)) {
+              removeTodo(todo.id);
+            }
+          }}
+        >
+          Clear
+        </btn>
+      </alert>
+    {/if}
   </screen>
 
   {#each stack as id, depth (depth)}

@@ -116,10 +116,12 @@ The elements are typed in `src/elements.ts`, so `svelte-check` catches typos and
 | `tabview`, `tab`               | `TabView`, a tab               | `title`, `symbol` (on `tab`)                         |
 | `sheet`                        | `.sheet`                       | `detent`, `ondismiss`                                |
 | `swipeactions`                 | `.swipeActions`                | `edge`                                               |
+| `toolbar`                      | `.toolbar`                     | `placement`                                          |
+| `alert`                        | `.alert`                       | `title`, `ondismiss`                                 |
 
-Every element also accepts `padding`, `font`, `weight`, `color`, `tint`, `background`, `radius`, and `opacity`.
+Every element also accepts `padding`, `font`, `weight`, `color`, `tint`, `background`, `radius`, and `opacity`, plus `animated`, which animates its children when they're added, removed, or reordered.
 
-`sheet` and `swipeactions` aren't drawn where they appear. A `sheet` inside a `screen` is presented over it while it's rendered, so you show and hide it with `{#if}`; when the user swipes it down, `ondismiss` fires so you can update your state. A `swipeactions` inside a list row adds its buttons as the row's swipe actions. Set `variant="automatic"` on a button to use SwiftUI's default style, which in a list makes the whole row tappable.
+`sheet`, `alert`, `toolbar`, and `swipeactions` aren't drawn where they appear. Put `sheet`, `alert`, and `toolbar` inside a `screen`. A `sheet` or `alert` is presented while it's rendered, so you show and hide it with `{#if}`; when the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions. A `toolbar` puts its children in the navigation bar, or in the bottom bar with `placement="bottom"`. A `swipeactions` inside a list row adds its buttons as the row's swipe actions. Set `variant="automatic"` on a button to use SwiftUI's default style, which in a list makes the whole row tappable.
 
 A few names are shortened (`txt`, `btn`, `sfsymbol`) because `text`, `button`, `image`, and `symbol` are already HTML or SVG elements in `svelte/elements`, and their types can't be overridden.
 
@@ -205,4 +207,4 @@ With the JIT off, an iPhone 18 Pro simulator was within about 1.5 times the devi
 - JavaScript runs on the main thread, so large updates (creating or reversing 1,000 rows) block a few frames.
 - In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms. The longest frame falls from about 140ms to about 70ms.
 - Ops are sent as JSON objects. Decoding the 1.4 MB payload for 1,000 new rows takes about 24ms of the 30ms that Swift spends.
-- There are no animations or transitions, gestures beyond taps and swipes, toolbars, or alerts.
+- Animation is limited to `animated` on containers: there are no transitions, custom animations, or gestures beyond taps and swipes.
