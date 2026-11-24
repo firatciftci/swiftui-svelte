@@ -41,6 +41,8 @@ type Modifiers = {
   background?: Color;
   radius?: number;
   opacity?: number;
+  width?: number;
+  height?: number;
   animated?: boolean;
 };
 
@@ -67,7 +69,11 @@ declare module "svelte/elements" {
     list: Modifiers;
     spacer: Modifiers;
     divider: Modifiers;
-    txt: Modifiers;
+    txt: Modifiers & {
+      lines?: number;
+      align?: "leading" | "center" | "trailing";
+    };
+    asyncimage: Modifiers & { src: string; fit?: "fit" | "fill" };
     btn: Modifiers & {
       variant?: "automatic" | "borderless" | "bordered" | "prominent";
       role?: "destructive" | "cancel";
@@ -97,4 +103,16 @@ declare global {
     message: string,
   ): void;
   var __svelteDispatch: (id: number, type: string, payload: unknown) => void;
+  function __nativeStorageLoad(): string;
+  function __nativeStorageSave(json: string): void;
+  function __nativeFetch(
+    request: string,
+    callback: (error: string | null, response?: NativeFetchResponse) => void,
+  ): void;
+  type NativeFetchResponse = {
+    status: number;
+    url: string;
+    headers: Record<string, string>;
+    body: string;
+  };
 }

@@ -110,6 +110,56 @@ final class Runtime {
     context.setObject(now, forKeyedSubscript: "__nativeNow" as NSString)
     context.setObject(collectGarbage, forKeyedSubscript: "__nativeGC" as NSString)
     context.setObject(stats, forKeyedSubscript: "__nativeStats" as NSString)
+
+    let storageKey = "SvelteSwiftUI.localStorage"
+    let loadStorage: @convention(block) () -> String = {
+      UserDefaults.standard.string(forKey: storageKey) ?? "{}"
+    }
+    let saveStorage: @convention(block) (String) -> Void = { json in
+      UserDefaults.standard.set(json, forKey: storageKey)
+    }
+    let fetch: @convention(block) (String, JSValue) -> Void = { json, callback in
+      Task {
+        do {
+          let (data, response) = try await URLSession.shared.data(for: Self.request(from: json))
+          var headers: [String: String] = [:]
+          for (name, value) in (response as? HTTPURLResponse)?.allHeaderFields ?? [:] {
+            headers[String(describing: name).lowercased()] = String(describing: value)
+          }
+          let result: [String: Any] = [
+            "status": (response as? HTTPURLResponse)?.statusCode ?? 200,
+            "url": response.url?.absoluteString ?? "",
+            "headers": headers,
+            "body": String(decoding: data, as: UTF8.self),
+          ]
+          callback.call(withArguments: [NSNull(), result])
+        } catch {
+          callback.call(withArguments: [error.localizedDescription])
+        }
+      }
+    }
+    context.setObject(loadStorage, forKeyedSubscript: "__nativeStorageLoad" as NSString)
+    context.setObject(saveStorage, forKeyedSubscript: "__nativeStorageSave" as NSString)
+    context.setObject(fetch, forKeyedSubscript: "__nativeFetch" as NSString)
+  }
+
+  private struct FetchRequest: Decodable {
+    let url: String
+    let method: String?
+    let headers: [String: String]?
+    let body: String?
+  }
+
+  private static func request(from json: String) throws -> URLRequest {
+    let fetch = try JSONDecoder().decode(FetchRequest.self, from: Data(json.utf8))
+    guard let url = URL(string: fetch.url) else { throw URLError(.badURL) }
+    var request = URLRequest(url: url)
+    request.httpMethod = fetch.method ?? "GET"
+    for (name, value) in fetch.headers ?? [:] {
+      request.setValue(value, forHTTPHeaderField: name)
+    }
+    request.httpBody = fetch.body.map { Data($0.utf8) }
+    return request
   }
 
   private func schedule(_ callback: JSValue, after delay: JSValue, repeats: Bool) -> Int {

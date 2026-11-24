@@ -55,6 +55,18 @@ struct NodeView: View {
       Divider()
     case "txt":
       Text(node.children.filter { $0.kind == .text }.map(\.text).joined())
+        .lineLimit(node.attributes["lines"]?.number.map { Int($0) })
+        .multilineTextAlignment(textAlignment)
+    case "asyncimage":
+      AsyncImage(url: URL(string: node.attributes["src"]?.string ?? "")) { image in
+        if node.attributes["fit"]?.string == "fill" {
+          image.resizable().scaledToFill()
+        } else {
+          image.resizable().scaledToFit()
+        }
+      } placeholder: {
+        ProgressView()
+      }
     case "sfsymbol":
       Image(systemName: node.attributes["name"]?.string ?? "questionmark")
     case "btn":
@@ -97,6 +109,14 @@ struct NodeView: View {
       }
     default:
       Text("Unknown element <\(node.name)>").foregroundStyle(.red)
+    }
+  }
+
+  private var textAlignment: TextAlignment {
+    switch node.attributes["align"]?.string {
+    case "center": .center
+    case "trailing": .trailing
+    default: .leading
     }
   }
 
@@ -151,6 +171,7 @@ private struct NodeModifiers: ViewModifier {
   func body(content: Content) -> some View {
     let attributes = node.attributes
     content
+      .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
       .padding(padding(attributes["padding"]))
       .font(font(attributes["font"]?.string))
       .fontWeight(weight(attributes["weight"]?.string))
@@ -167,6 +188,12 @@ private struct NodeModifiers: ViewModifier {
           ForEach(actions.renderedChildren) { ActionButton(node: $0) }
         }
       }
+  }
+
+  private func frame(_ attributes: [String: JSONValue]) -> (width: CGFloat?, height: CGFloat?)? {
+    let width = attributes["width"]?.number.map { CGFloat($0) }
+    let height = attributes["height"]?.number.map { CGFloat($0) }
+    return width == nil && height == nil ? nil : (width, height)
   }
 
   private func padding(_ value: JSONValue?) -> CGFloat {

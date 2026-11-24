@@ -101,7 +101,7 @@ SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --terminate-running-process bo
 3. Vite bundles the app into a single IIFE at the plugin's `outFile`.
 4. `SvelteView` (`Sources/SvelteSwiftUI`) runs that bundle in JavaScriptCore. `NodeStore` mirrors the tree as `@Observable` nodes, and `NodeView` interprets it recursively: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
 5. Native events go back through `__svelteDispatch(id, type, payload)`, which calls the handlers Svelte registered with `addEventListener`.
-6. The host provides `setTimeout`, `setInterval`, and `console`. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release` so Swift drops its copy too.
+6. The host provides `setTimeout`, `setInterval`, and `console`, plus `fetch` (backed by `URLSession`) and `localStorage` (saved in `UserDefaults`, so it survives relaunches). `fetch` covers the common case: `method`, `headers`, and a string `body` in, and `ok`, `status`, `headers`, `text()`, and `json()` out. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release` so Swift drops its copy too.
 
 ## Elements
 
@@ -113,9 +113,10 @@ The elements are typed in `src/elements.ts`, so `svelte-check` catches typos and
 | `screen`                       | A screen in the stack          | `title`                                              |
 | `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                               |
 | `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                      |
-| `txt`                          | `Text`                         |                                                      |
+| `txt`                          | `Text`                         | `lines`, `align`                                     |
 | `btn`                          | `Button`                       | `variant`, `role`, `onclick`                         |
 | `sfsymbol`                     | `Image(systemName:)`           | `name`                                               |
+| `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                         |
 | `textfield`                    | `TextField`                    | `value`, `placeholder`, `oninput(value)`, `onsubmit` |
 | `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                       |
 | `spacer`, `divider`            | `Spacer`, `Divider`            |                                                      |
@@ -125,7 +126,9 @@ The elements are typed in `src/elements.ts`, so `svelte-check` catches typos and
 | `toolbar`                      | `.toolbar`                     | `placement`                                          |
 | `alert`                        | `.alert`                       | `title`, `ondismiss`                                 |
 
-Every element also accepts `padding`, `font`, `weight`, `color`, `tint`, `background`, `radius`, and `opacity`, plus `animated`, which animates its children when they're added, removed, or reordered.
+Every element also accepts `padding`, `font`, `weight`, `color`, `tint`, `background`, `radius`, `opacity`, `width`, and `height`, plus `animated`, which animates its children when they're added, removed, or reordered.
+
+An `asyncimage` shows a spinner while it loads and scales the image to fit its frame, or to fill it with `fit="fill"`; give it a `width` and `height`. On `txt`, `lines` caps the number of lines and `align` sets the alignment of wrapped text (`leading`, `center`, or `trailing`).
 
 `sheet`, `alert`, `toolbar`, and `swipeactions` aren't drawn where they appear. Put `sheet`, `alert`, and `toolbar` inside a `screen`. A `sheet` or `alert` is presented while it's rendered, so you show and hide it with `{#if}`; when the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions. A `toolbar` puts its children in the navigation bar, or in the bottom bar with `placement="bottom"`. A `swipeactions` inside a list row adds its buttons as the row's swipe actions. Set `variant="automatic"` on a button to use SwiftUI's default style, which in a list makes the whole row tappable.
 

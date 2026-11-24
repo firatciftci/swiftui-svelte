@@ -3,6 +3,32 @@
   let seconds = $state(0);
   let name = $state("");
   let showSheet = $state(false);
+  let stars = $state<number | null>(null);
+  let fetchError = $state<string | null>(null);
+
+  async function loadStars() {
+    fetchError = null;
+    try {
+      const response = await fetch(
+        "https://api.github.com/repos/sveltejs/svelte",
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const repo: unknown = await response.json();
+      if (
+        typeof repo === "object" &&
+        repo != null &&
+        "stargazers_count" in repo
+      ) {
+        stars = Number(repo.stargazers_count);
+      }
+    } catch (error) {
+      fetchError = error instanceof Error ? error.message : String(error);
+    }
+  }
+
+  $effect(() => {
+    loadStars();
+  });
 
   $effect(() => {
     const interval = setInterval(() => seconds++, 1000);
@@ -37,6 +63,31 @@
           <txt color="accent">Hello, {name.trim()}!</txt>
         {/if}
       </vstack>
+
+      <hstack spacing={12}>
+        <asyncimage
+          src="https://github.com/sveltejs.png"
+          width={48}
+          height={48}
+          radius={10}
+        />
+        <vstack alignment="leading" spacing={2}>
+          <txt font="headline">sveltejs/svelte</txt>
+          {#if fetchError != null}
+            <txt font="caption" color="red" lines={2}>{fetchError}</txt>
+          {:else if stars == null}
+            <txt font="caption" color="secondary">Loading stars…</txt>
+          {:else}
+            <txt font="caption" color="secondary">
+              {stars.toLocaleString()} stars on GitHub
+            </txt>
+          {/if}
+        </vstack>
+        <spacer />
+        <btn variant="borderless" onclick={loadStars}>
+          <sfsymbol name="arrow.clockwise" />
+        </btn>
+      </hstack>
 
       <btn variant="automatic" onclick={() => (showSheet = true)}>
         Show a sheet
