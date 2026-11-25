@@ -70,7 +70,17 @@ final class NodeStore {
         error = nil
     }
 
-    func apply(_ json: String) {
+    func apply(_ json: String, animation: String? = nil) {
+        guard let animation, let value = try? JSONValue(parsing: animation) else {
+            commit(json)
+            return
+        }
+        var transaction = Transaction(animation: MotionCurve(value)?.animation)
+        transaction.disablesAnimations = value == .bool(false)
+        withTransaction(transaction) { commit(json) }
+    }
+
+    private func commit(_ json: String) {
         var json = json
         let failure: BridgeError? = json.withUTF8 { bytes in
             var reader = BridgeReader(bytes)

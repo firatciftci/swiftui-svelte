@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { withAnimation } from "swiftui-svelte";
   import { Sheet, TextField } from "swiftui-svelte/components";
 
   let count = $state(0);
@@ -45,14 +46,15 @@
       <vstack alignment="leading" spacing={8}>
         <txt font="headline">Counter</txt>
         <hstack spacing={16}>
-          <btn onclick={() => count--}>
+          <btn onclick={() => withAnimation(() => count--, "bouncy")}>
             <sfsymbol name="minus.circle.fill" label="Decrease" font="title" />
           </btn>
           <txt font="title" weight="bold">{count}</txt>
-          <btn onclick={() => count++}>
+          <btn onclick={() => withAnimation(() => count++, "bouncy")}>
             <sfsymbol name="plus.circle.fill" label="Increase" font="title" />
           </btn>
         </hstack>
+        <progressview value={Math.min(Math.max(count, 0), 10)} total={10} />
         <txt font="caption" color="secondary">Running for {seconds}s</txt>
       </vstack>
 

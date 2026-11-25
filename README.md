@@ -284,6 +284,26 @@ Svelte's `transition:`, `in:`, and `out:` directives need the DOM, so the compil
 - `animation` sets the curve: `default`, `linear`, `easeIn`, `easeOut`, `easeInOut`, `spring`, `smooth`, `snappy`, or `bouncy`. For more control, pass an object. Its `type` is the curve, `duration` and `delay` are in milliseconds, and `bounce` goes from -1 to 1 for the spring curves. It also takes `speed`, `repeat` (a count, or `true` to repeat forever), and `autoreverses`.
 - `animation` also sets the curve that `animated` uses when a container's children change.
 
+#### Animating a state change
+
+To animate everything that one state change does to the screen, wrap the change in `withAnimation`, the way you would in SwiftUI:
+
+```svelte
+<script lang="ts">
+  import { withAnimation } from "swiftui-svelte";
+
+  let count = $state(0);
+</script>
+
+<btn onclick={() => withAnimation(() => count++, "bouncy")}>Add one</btn>
+<progressview value={count} total={10} />
+```
+
+- `withAnimation` runs the callback, flushes the updates it causes right away, and sends them to SwiftUI inside an animation. Changed attributes, text, and added or removed elements all animate together. Updates that were already waiting go out first, without animation.
+- The second argument takes the same values as the `animation` attribute. Leave it out for SwiftUI's default animation, or pass `false` to turn animations off for that change.
+- It returns whatever the callback returns. Only changes made synchronously in the callback animate, so for async work, call `withAnimation` again once the data arrives.
+- Call it from event handlers, timers, and other callbacks, not from inside `$effect` or `$derived`.
+
 ### Sheets, alerts, toolbars, and swipe actions
 
 These four elements aren't drawn where they appear. Instead, they attach to the element around them, the way their SwiftUI modifiers do:
@@ -504,7 +524,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **Large lists take a few frames.** Svelte's work happens off the main thread, but SwiftUI still needs several frames to lay out 1,000 new rows.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.
-- **Limited animation.** Transitions and `animated` cover elements that are added, removed, or reordered, but there's no way yet to animate a change to an attribute, and no gestures beyond taps and swipes. Inside a `list` row, the row resizes on its own when an element leaves, so a removal transition there can look abrupt.
+- **Limited animation.** Transitions, `animated`, and `withAnimation` cover most changes, but there are no gestures beyond taps and swipes yet. Inside a `list` row, the row resizes on its own when an element leaves, so a removal transition there can look abrupt.
 
 ## Example app
 

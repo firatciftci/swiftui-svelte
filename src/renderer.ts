@@ -1,8 +1,9 @@
 import "./host.ts";
 import type { Component } from "svelte";
-import { mount, unmount } from "svelte";
+import { flushSync, mount, unmount } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import { createRenderer } from "svelte/renderer";
+import type { AnimationOptions } from "./elements.ts";
 
 type Handler = (payload: unknown) => void;
 type Container = { first: ChildNode | null; last: ChildNode | null };
@@ -170,7 +171,7 @@ function flushInserts(): void {
   pending.length = 0;
 }
 
-function commit(): void {
+function commit(animation?: AnimationOptions): void {
   scheduler.isScheduled = false;
   const start = __nativeNow();
   flushAttributes();
@@ -180,12 +181,24 @@ function commit(): void {
   const json = JSON.stringify(batch, wire);
   batch.length = 0;
   const serialized = __nativeNow();
-  __nativeCommit(json);
+  if (animation === undefined) __nativeCommit(json);
+  else __nativeCommit(json, JSON.stringify(animation));
   stats.lastCommitEnd = __nativeNow();
   stats.commits++;
   stats.bytes += json.length;
   stats.serializeMs += serialized - start;
   stats.nativeMs += stats.lastCommitEnd - serialized;
+}
+
+export function withAnimation<T>(
+  fn: () => T,
+  animation: AnimationOptions = true,
+): T {
+  flushSync();
+  commit();
+  const result = flushSync(fn);
+  commit(animation);
+  return result;
 }
 
 function changeAttribute(element: ElementNode, name: string): void {

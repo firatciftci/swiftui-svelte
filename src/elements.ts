@@ -54,7 +54,7 @@ type Curve =
   | "bouncy"
   | "smooth"
   | "snappy";
-type AnimationOptions =
+export type AnimationOptions =
   | boolean
   | Curve
   | {
@@ -180,7 +180,7 @@ declare module "svelte/elements" {
 }
 
 declare global {
-  function __nativeCommit(json: string): void;
+  function __nativeCommit(json: string, animation?: string): void;
   function __nativeNow(): number;
   function __nativeGC(): void;
   function __nativeRequestFrame(): void;

@@ -38,6 +38,22 @@ struct RuntimeTests {
         #expect(runtime.error == nil)
     }
 
+    @Test func appliesAnimatedCommitsWhateverTheAnimationSays() throws {
+        let runtime = try runtime(
+            mount + """
+                __nativeCommit(JSON.stringify([7, "a", 4, 2, names++, 1]), JSON.stringify({ type: "bouncy", duration: 300 }));
+                __nativeCommit(JSON.stringify([7, "b", 4, 2, names++, 2]), "false");
+                __nativeCommit(JSON.stringify([7, "c", 4, 2, names++, 3]), "{not json");
+                __nativeCommit(JSON.stringify([7, "d", 4, 2, names++, 4]), 42);
+                """)
+        let attributes = runtime.store.node(2)?.attributes
+        #expect(attributes?["a"] == .number(1))
+        #expect(attributes?["b"] == .number(2))
+        #expect(attributes?["c"] == .number(3))
+        #expect(attributes?["d"] == .number(4))
+        #expect(runtime.error == nil)
+    }
+
     @Test func dispatchesEventsWithPayloads() throws {
         let runtime = try runtime(mount)
         runtime.dispatch(2, "input", "hello")

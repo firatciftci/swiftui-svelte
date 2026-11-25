@@ -33,6 +33,7 @@ type Op =
 const nodes = new Map<number, MirrorNode>();
 const names: Array<string> = [];
 export const commits: Array<string> = [];
+export const animations: Array<string | undefined> = [];
 export const ops: Array<Op> = [];
 export const native = {
   root: null as MirrorNode | null,
@@ -322,6 +323,7 @@ export function findAll(
 
 export function reset(): void {
   commits.length = 0;
+  animations.length = 0;
   ops.length = 0;
 }
 
@@ -384,8 +386,9 @@ export function lastMount(): number {
 
 export function installBridge(): void {
   Object.assign(globalThis, {
-    __nativeCommit(json: string): void {
+    __nativeCommit(json: string, animation?: string): void {
       commits.push(json);
+      animations.push(animation);
       const cursor = new Cursor(JSON.parse(json) as Array<unknown>);
       while (!cursor.isDone) {
         const op = cursor.op();

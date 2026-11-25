@@ -117,7 +117,7 @@ public final class SvelteRuntime {
         let start = CACurrentMediaTime()
         for message in messages {
             switch message {
-            case let .commit(json): store.apply(json)
+            case let .commit(json, animation): store.apply(json, animation: animation)
             case let .action(mount, name, json): perform(mount, name, json)
             case let .error(error): report(error)
             case .requestFrame: isFrameRequested = true

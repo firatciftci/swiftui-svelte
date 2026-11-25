@@ -1,7 +1,8 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { protocol } from "swiftui-svelte";
+import { protocol, withAnimation } from "swiftui-svelte";
 import {
+  animations,
   byTestId,
   commits,
   dispatch,
@@ -255,6 +256,62 @@ describe("blocks", () => {
     await update(() => (state.show = false));
     expect(find("divider")).toBeUndefined();
     expect(find("spacer")).toBeDefined();
+  });
+});
+
+describe("withAnimation", () => {
+  it("sends the callback's changes in their own animated commit", async () => {
+    await render(Items);
+    reset();
+    state.padding = 4;
+    withAnimation(
+      () => {
+        state.show = false;
+      },
+      { type: "bouncy", duration: 300 },
+    );
+    expect(animations).toEqual([
+      undefined,
+      JSON.stringify({ type: "bouncy", duration: 300 }),
+    ]);
+    expect(JSON.parse(commits[0] ?? "[]")).toContain(4);
+    expect(find("list")?.attributes.get("padding")).toBe(4);
+    expect(find("divider")).toBeUndefined();
+    expect(find("spacer")).toBeDefined();
+  });
+
+  it("returns the callback's result and defaults to SwiftUI's animation", async () => {
+    await render(Items);
+    reset();
+    const result = withAnimation(() => {
+      state.items.push(4);
+      return "pushed";
+    });
+    expect(result).toBe("pushed");
+    expect(animations).toEqual(["true"]);
+    expect(findAll("txt")).toHaveLength(4);
+  });
+
+  it("sends nothing when the callback changes nothing", async () => {
+    await render(Items);
+    reset();
+    withAnimation(() => {}, "snappy");
+    expect(commits).toEqual([]);
+  });
+
+  it("passes false through so the host can turn animations off", async () => {
+    await render(Items);
+    reset();
+    withAnimation(() => (state.show = false), false);
+    expect(animations).toEqual(["false"]);
+  });
+
+  it("leaves later commits unanimated", async () => {
+    await render(Items);
+    reset();
+    withAnimation(() => (state.show = false), "smooth");
+    await update(() => (state.show = true));
+    expect(animations).toEqual(['"smooth"', undefined]);
   });
 });
 

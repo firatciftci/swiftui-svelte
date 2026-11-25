@@ -10,7 +10,7 @@ nonisolated struct Unchecked<Value>: @unchecked Sendable {
 
 nonisolated final class ScriptEngine: @unchecked Sendable {
     enum Message: Sendable {
-        case commit(String)
+        case commit(String, String?)
         case action(Int, String, String)
         case error(ScriptError)
         case requestFrame
@@ -91,8 +91,8 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     }
 
     private func install(into context: JSContext) {
-        let commit: @convention(block) (String) -> Void = { [weak self] json in
-            self?.post(.commit(json))
+        let commit: @convention(block) (String, JSValue) -> Void = { [weak self] json, animation in
+            self?.post(.commit(json, animation.isString ? animation.toString() : nil))
         }
         let log: @convention(block) (String, String) -> Void = { level, message in
             print("[js:\(level)] \(message)")
