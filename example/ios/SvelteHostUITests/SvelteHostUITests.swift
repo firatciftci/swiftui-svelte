@@ -282,7 +282,9 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(caption.waitForExistence(timeout: 15), "the failure caption never appeared")
         XCTAssertTrue(app.images["Image failed to load"].exists)
     }
+}
 
+extension SvelteHostUITests {
     func testEditsInputs() {
         tab("Playground")
         let inputs = app.buttons["Inputs"]
@@ -443,5 +445,89 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Show a full-screen cover"].isHittable, "the list behind the short sheet isn't usable")
         dismissSheet(from: sheetText)
         XCTAssertTrue(sheetText.waitForNonExistence(timeout: 5))
+    }
+
+    func testNavigatesWithToolbarsAndPages() {
+        XCTAssertEqual(app.tabBars.buttons["To-dos"].value as? String, "1 item")
+        tab("Playground")
+        let section = app.buttons["Navigation"]
+        scroll(to: section)
+        section.tap()
+        let open = app.buttons["Open a screen with toolbars"]
+        let carousel = app.collectionViews["carousel"]
+        scroll(to: carousel, attempts: 3)
+        waitFor(carousel.staticTexts["First"])
+        carousel.swipeLeft()
+        XCTAssertTrue(app.pageIndicators["carousel"].waitForExistence(timeout: 5))
+        XCTAssertTrue(carousel.staticTexts["Second"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.pageIndicators["carousel"].value as? String, "page 2 of 3")
+        attachScreenshot("page carousel")
+        carousel.swipeLeft()
+        XCTAssertTrue(carousel.staticTexts["Third"].waitForExistence(timeout: 5))
+        carousel.swipeRight()
+        carousel.swipeRight()
+        XCTAssertTrue(carousel.staticTexts["First"].waitForExistence(timeout: 5))
+
+        open.tap()
+        let page = app.staticTexts["page"]
+        waitFor(page)
+        XCTAssertTrue(app.navigationBars["Toolbars"].staticTexts["Items in every placement"].exists)
+        XCTAssertFalse(app.tabBars.buttons["Playground"].isHittable, "the tab bar covers the bottom toolbar")
+        app.buttons["Next page"].tap()
+        app.buttons["Next page"].tap()
+        app.buttons["Next page"].tap()
+        XCTAssertEqual(page.label, "Page 3 of 3")
+        app.buttons["Previous page"].tap()
+        XCTAssertEqual(page.label, "Page 2 of 3")
+
+        let action = app.staticTexts["bar-action"]
+        app.buttons["toolbar-menu"].tap()
+        app.buttons["Rename"].tap()
+        XCTAssertEqual(action.label, "Last action: Rename")
+        app.buttons["TopOverflowBarButtonItem"].tap()
+        app.buttons["Pin"].tap()
+        XCTAssertEqual(action.label, "Last action: Pin")
+        attachScreenshot("toolbars")
+
+        app.switches["Hide the navigation bar"].switches.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Toolbars"].waitForNonExistence(timeout: 5))
+        attachScreenshot("hidden navigation bar")
+        app.switches["Hide the navigation bar"].switches.firstMatch.tap()
+        waitFor(app.navigationBars["Toolbars"])
+        app.switches["Hide the back button"].switches.firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Toolbars"].buttons["BackButton"].waitForNonExistence(timeout: 5))
+        app.switches["Color the navigation bar"].switches.firstMatch.tap()
+        attachScreenshot("colored navigation bar without a back button")
+        app.switches["Hide the back button"].switches.firstMatch.tap()
+        waitFor(app.navigationBars["Toolbars"].buttons["BackButton"])
+        app.switches["Hide the tab bar"].switches.firstMatch.tap()
+        XCTAssertTrue(app.tabBars.buttons["Playground"].waitForHittable())
+
+        app.navigationBars["Toolbars"].buttons["BackButton"].tap()
+        waitFor(open)
+        XCTAssertFalse(app.navigationBars["Toolbars"].exists)
+    }
+
+    func testShowsTabSectionsInTheSidebar() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "the sidebar only shows on iPad")
+        let tabBar = app.otherElements.containing(.button, identifier: "ToggleSideBar").firstMatch
+        waitFor(tabBar.buttons["Examples"])
+        attachScreenshot("tab bar with a section")
+        app.buttons["ToggleSideBar"].firstMatch.tap()
+        let playground = app.cells.containing(.staticText, identifier: "Playground").firstMatch
+        waitFor(playground)
+        XCTAssertTrue(app.staticTexts["Examples"].exists)
+        attachScreenshot("sidebar")
+        playground.tap()
+        waitFor(app.navigationBars["Playground"])
+        XCTAssertTrue(tabBar.buttons["Examples"].firstMatch.isSelected)
+    }
+}
+
+extension XCUIElement {
+    func waitForHittable(timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        while !isHittable, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }
+        return isHittable
     }
 }

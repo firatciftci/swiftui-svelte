@@ -44,7 +44,9 @@ final class Node: Identifiable {
         hostsInspector = name == "screen"
     }
 
-    private static let attachments: Set<String> = Presenting.names.union(["background", "overlay", "swipeactions", "toolbar"])
+    private static let attachments: Set<String> = Presenting.names.union([
+        "background", "overlay", "swipeactions", "toolbar", "toolbarspacer",
+    ])
     private static let slots: [String: Set<String>] = [
         "asyncimage": ["placeholder", "failure"], "controlgroup": ["label"], "labelview": ["icon"], "disclosuregroup": ["label"],
         "groupbox": ["label"], "picker": ["label"], "labeledcontent": ["label"], "menuview": ["label"],
@@ -54,10 +56,6 @@ final class Node: Identifiable {
 
     func attachment(_ name: String) -> Node? {
         children.first { $0.kind == .element && $0.name == name }
-    }
-
-    func attachments(_ name: String) -> Array<Node> {
-        children.filter { $0.kind == .element && $0.name == name }
     }
 
     var renderedChildren: Array<Node> {

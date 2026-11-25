@@ -142,36 +142,6 @@ struct NodeView: View {
     }
 }
 
-private struct Tabs: View {
-    let node: Node
-    @Environment(SvelteRuntime.self) private var runtime
-
-    var body: some View {
-        let tabs = node.renderedChildren
-        TabView(
-            selection: Binding {
-                node.attributes["selection"] ?? tabs.first.map { Self.value(of: $0, in: tabs) } ?? .null
-            } set: { value in
-                runtime.edit(node, "selection", to: value, event: "change", payload: value.object)
-            }
-        ) {
-            ForEach(tabs) { tab in
-                NodeView(node: tab)
-                    .tabItem {
-                        Label(
-                            tab.attributes["title"]?.string ?? "",
-                            systemImage: tab.attributes["symbol"]?.string ?? "circle")
-                    }
-                    .tag(Self.value(of: tab, in: tabs))
-            }
-        }
-    }
-
-    private static func value(of tab: Node, in tabs: Array<Node>) -> JSONValue {
-        tab.attributes["value"] ?? .number(Double(tabs.firstIndex { $0 === tab } ?? 0))
-    }
-}
-
 private struct NavStack: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
@@ -253,46 +223,6 @@ private struct NodeModifiers: ViewModifier {
         let width = attributes["width"]?.number.map { CGFloat($0) }
         let height = attributes["height"]?.number.map { CGFloat($0) }
         return width == nil && height == nil ? nil : (width, height)
-    }
-}
-
-private struct Screen: View {
-    let node: Node
-
-    var body: some View {
-        Group {
-            Slot(node: node)
-        }
-        .navigationTitle(node.attributes["title"]?.string ?? "")
-        .toolbar {
-            ForEach(node.attachments("toolbar")) { toolbar in
-                ToolbarItemGroup(placement: placement(toolbar.attributes["placement"]?.string)) {
-                    ForEach(toolbar.renderedChildren) { item in
-                        if item.name == "btn" {
-                            ActionButton(node: item)
-                        } else {
-                            NodeView(node: item)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func placement(_ name: String?) -> ToolbarItemPlacement {
-        #if os(macOS)
-            switch name {
-            case "leading": .navigation
-            case "bottom": .automatic
-            default: .primaryAction
-            }
-        #else
-            switch name {
-            case "leading": .topBarLeading
-            case "bottom": .bottomBar
-            default: .topBarTrailing
-            }
-        #endif
     }
 }
 

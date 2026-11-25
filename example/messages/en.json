@@ -1,6 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_todos": "To-dos",
+  "tab_section_examples": "Examples",
   "tab_playground": "Playground",
   "tab_settings": "Settings",
   "settings_title": "Settings",

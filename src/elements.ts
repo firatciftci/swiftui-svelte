@@ -269,6 +269,21 @@ type TextValue = {
   debounce?: number;
   oninput?: (value: string) => void;
 };
+type BarVisibility = boolean | "automatic" | "visible" | "hidden";
+type ToolbarPlacement =
+  | "leading"
+  | "trailing"
+  | "bottom"
+  | "principal"
+  | "status"
+  | "keyboard"
+  | "navigation"
+  | "primaryAction"
+  | "secondaryAction"
+  | "confirmationAction"
+  | "cancellationAction"
+  | "destructiveAction"
+  | "automatic";
 type Detent = "medium" | "large" | number;
 type PresentationOptions = {
   detents?: Array<Detent>;
@@ -320,7 +335,15 @@ type Modifiers = {
 declare module "svelte/elements" {
   interface SvelteHTMLElements {
     navstack: Modifiers & { onpop?: (depth: number) => void };
-    screen: Modifiers & { title?: string };
+    screen: Modifiers & {
+      title?: string;
+      subtitle?: string;
+      titledisplaymode?: "automatic" | "inline" | "large";
+      backbuttonhidden?: boolean;
+      navbarvisibility?: BarVisibility;
+      tabbarvisibility?: BarVisibility;
+      navbarbackground?: ShapeStyle;
+    };
     sheet: Modifiers & PresentationOptions & { detent?: "medium" | "large" };
     fullscreencover: Modifiers & {
       dismissible?: boolean;
@@ -346,15 +369,25 @@ declare module "svelte/elements" {
       titlevisibility?: "automatic" | "visible" | "hidden";
       ondismiss?: () => void;
     };
-    toolbar: { placement?: "leading" | "trailing" | "bottom" };
+    toolbar: { placement?: ToolbarPlacement };
+    toolbarspacer: {
+      placement?: ToolbarPlacement;
+      variant?: "flexible" | "fixed";
+    };
     tabview: Modifiers & {
       selection?: string | number;
       onchange?: (selection: string | number) => void;
+      variant?: "automatic" | "page" | "sidebarAdaptable" | "tabBarOnly";
+      indexdisplay?: "automatic" | "always" | "never";
+      minimize?: "automatic" | "never" | "onScrollDown" | "onScrollUp";
     };
+    tabsection: { title: string };
     tab: Modifiers & {
       title: string;
       symbol?: string;
       value?: string | number;
+      badge?: string | number;
+      role?: "search";
     };
     swipeactions: { edge?: "leading" | "trailing" };
     vstack: Modifiers & { spacing?: number; alignment?: HorizontalAlignment };

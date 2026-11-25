@@ -131,12 +131,12 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 
 - [x] `navstack` with a Svelte-owned path, `screen`, `tabview`, `tab`, `sheet`, `alert`, `toolbar`, and `swipeactions`
 - [ ] `navsplitview` with two and three columns and column visibility
-- [ ] `tabview` selection, badges, `page` style, tab sections, and the sidebar-adaptable style
-- [ ] `screen` title display mode, toolbar visibility, a hidden back button, toolbar background, and subtitle
+- [x] `tabview` selection, badges, `page` style, tab sections, and the sidebar-adaptable style
+- [x] `screen` title display mode, toolbar visibility, a hidden back button, toolbar background, and subtitle
 - [x] `fullscreencover`, `popover`, and `inspector`
 - [x] `confirmationdialog`
 - [x] `sheet` detents (fractions and heights), drag indicator, locked interactive dismissal, and background interaction
-- [ ] `toolbar` items in every placement, menus in toolbars, and `toolbaritemgroup` spacing
+- [x] `toolbar` items in every placement, menus in toolbars, and `toolbaritemgroup` spacing
 - [ ] `searchable`, with tokens, suggestions, scopes, and `onsubmit`
 - [ ] `refreshable`, with an async handler that SwiftUI awaits
 - [ ] `contextmenu`, with a preview

@@ -13,6 +13,7 @@
     Popover,
     SecureField,
     Sheet,
+    TabView,
     TextEditor,
     TextField,
     Toggle,
@@ -57,6 +58,21 @@
   let confirmsDeletion = $state(false);
   let deleted = $state(false);
   let showsShortSheet = $state(false);
+  let showsNavigation = $state(false);
+  let showsToolbars = $state(false);
+  let page = $state(1);
+  let barAction = $state<string | null>(null);
+  let hidesNavBar = $state(false);
+  let hidesTabBar = $state(true);
+  let hidesBackButton = $state(false);
+  let colorsNavBar = $state(false);
+  let slide = $state<string | number>("first");
+
+  const cards = [
+    { value: "first", title: "First", color: "indigo" },
+    { value: "second", title: "Second", color: "teal" },
+    { value: "third", title: "Third", color: "orange" },
+  ] as const;
 
   const swatches = [
     "red",
@@ -103,7 +119,7 @@
   });
 </script>
 
-<navstack>
+<navstack onpop={() => (showsToolbars = false)}>
   <screen title="Playground">
     <list>
       <vstack alignment="leading" spacing={8}>
@@ -580,6 +596,31 @@
           </txt>
         </Sheet>
       </DisclosureGroup>
+
+      <DisclosureGroup title="Navigation" bind:expanded={showsNavigation}>
+        <btn onclick={() => (showsToolbars = true)}>
+          Open a screen with toolbars
+        </btn>
+        <txt font="caption" color="secondary">Swipe between pages</txt>
+        <TabView
+          bind:selection={slide}
+          variant="page"
+          indexdisplay="always"
+          height={140}
+          testid="carousel"
+        >
+          {#each cards as card (card.value)}
+            <tab title={card.title} value={card.value}>
+              <zstack>
+                <roundedrectangle cornerradius={16} fill={card.color} />
+                <txt font="title2" weight="semibold" color="white">
+                  {card.title}
+                </txt>
+              </zstack>
+            </tab>
+          {/each}
+        </TabView>
+      </DisclosureGroup>
     </list>
 
     <Inspector
@@ -625,4 +666,55 @@
       </vstack>
     </Sheet>
   </screen>
+
+  {#if showsToolbars}
+    <screen
+      title="Toolbars"
+      subtitle="Items in every placement"
+      titledisplaymode="inline"
+      navbarvisibility={hidesNavBar ? "hidden" : "automatic"}
+      tabbarvisibility={hidesTabBar ? "hidden" : "automatic"}
+      backbuttonhidden={hidesBackButton}
+      navbarbackground={colorsNavBar ? "mint" : undefined}
+    >
+      <list>
+        <txt color="secondary">
+          Toolbar items sit in the navigation bar, the bottom bar, and the More
+          menu.
+        </txt>
+        <Toggle bind:checked={hidesNavBar}>Hide the navigation bar</Toggle>
+        <Toggle bind:checked={hidesTabBar}>Hide the tab bar</Toggle>
+        <Toggle bind:checked={hidesBackButton}>Hide the back button</Toggle>
+        <Toggle bind:checked={colorsNavBar}>Color the navigation bar</Toggle>
+        <txt testid="bar-action" font="caption" color="secondary">
+          {barAction == null ? "No action yet" : `Last action: ${barAction}`}
+        </txt>
+      </list>
+      <toolbar placement="primaryAction">
+        <menuview title="Edit" symbol="pencil.circle" testid="toolbar-menu">
+          <btn onclick={() => (barAction = "Duplicate")}>Duplicate</btn>
+          <btn onclick={() => (barAction = "Rename")}>Rename</btn>
+        </menuview>
+      </toolbar>
+      <toolbar placement="secondaryAction">
+        <btn onclick={() => (barAction = "Pin")}>Pin</btn>
+        <btn onclick={() => (barAction = "Share")}>Share</btn>
+      </toolbar>
+      <toolbar placement="bottom">
+        <btn onclick={() => (page = Math.max(page - 1, 1))}>
+          <sfsymbol name="chevron.backward" label="Previous page" />
+        </btn>
+      </toolbar>
+      <toolbarspacer placement="bottom" />
+      <toolbar placement="bottom">
+        <txt testid="page">Page {page} of 3</txt>
+      </toolbar>
+      <toolbarspacer placement="bottom" />
+      <toolbar placement="bottom">
+        <btn onclick={() => (page = Math.min(page + 1, 3))}>
+          <sfsymbol name="chevron.forward" label="Next page" />
+        </btn>
+      </toolbar>
+    </screen>
+  {/if}
 </navstack>

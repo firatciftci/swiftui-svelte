@@ -1,6 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_todos": "المهام",
+  "tab_section_examples": "أمثلة",
   "tab_playground": "ساحة التجربة",
   "tab_settings": "الإعدادات",
   "settings_title": "الإعدادات",
