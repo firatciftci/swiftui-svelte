@@ -34,6 +34,15 @@ import {
 } from "swiftui-svelte/web/fetch";
 import { createPerformance } from "swiftui-svelte/web/performance";
 import { createStorage } from "swiftui-svelte/web/storage";
+import {
+  ByteLengthQueuingStrategy as ByteLengthQueuingStrategyShim,
+  CountQueuingStrategy as CountQueuingStrategyShim,
+  ReadableStream as ReadableStreamShim,
+  TextDecoderStreamShim,
+  TextEncoderStreamShim,
+  TransformStream as TransformStreamShim,
+  WritableStream as WritableStreamShim,
+} from "swiftui-svelte/web/streams";
 import { URLSearchParamsShim, URLShim } from "swiftui-svelte/web/url";
 import { createWebSocket } from "swiftui-svelte/web/websocket";
 import type { Server, Web } from "./suite.ts";
@@ -135,6 +144,13 @@ const shimValues: unknown = {
   URL: URLShim,
   URLSearchParams: URLSearchParamsShim,
   structuredClone: structuredCloneShim,
+  ReadableStream: ReadableStreamShim,
+  WritableStream: WritableStreamShim,
+  TransformStream: TransformStreamShim,
+  TextEncoderStream: TextEncoderStreamShim,
+  TextDecoderStream: TextDecoderStreamShim,
+  CountQueuingStrategy: CountQueuingStrategyShim,
+  ByteLengthQueuingStrategy: ByteLengthQueuingStrategyShim,
   Blob: BlobShim,
   File: FileShim,
   FormData: FormDataShim,
@@ -188,6 +204,13 @@ const natives: Web = {
   URL,
   URLSearchParams,
   structuredClone,
+  ReadableStream,
+  WritableStream,
+  TransformStream,
+  TextEncoderStream,
+  TextDecoderStream,
+  CountQueuingStrategy,
+  ByteLengthQueuingStrategy,
   Blob,
   File,
   FormData,

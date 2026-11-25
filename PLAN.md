@@ -69,7 +69,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] `performance.now`, `performance.mark`, and `performance.measure`
 - [x] `matchMedia` for `prefers-color-scheme` and `prefers-reduced-motion`
 - [x] Every API tested with the same assertions in Node and in JavaScriptCore
-- [ ] Global `ReadableStream`, `WritableStream`, `TransformStream`, `TextDecoderStream`, and `TextEncoderStream`, so that streaming libraries such as SSE parsers and AI SDKs work
+- [x] Global `ReadableStream`, `WritableStream`, `TransformStream`, `TextDecoderStream`, and `TextEncoderStream`, so that streaming libraries such as SSE parsers and AI SDKs work
 
 ## M3. Svelte integration and ergonomics
 

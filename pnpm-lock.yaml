@@ -188,6 +188,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      web-streams-polyfill:
+        specifier: ^4.5.1
+        version: 4.5.1
     devDependencies:
       '@antfu/eslint-config':
         specifier: ^10.0.0
@@ -2833,6 +2837,10 @@ packages:
   walk-up-path@4.0.0:
     resolution: {integrity: sha512-3hu+tD8YzSLGuFYtPRb48vdhKMi0KQV5sn+uWr8+7dMEq/2G/dtLrdDinkLjqq5TIbIBjYJ4Ax/n3YiaW7QM8A==}
     engines: {node: 20 || >=22}
+
+  web-streams-polyfill@4.5.1:
+    resolution: {integrity: sha512-pFmV/G8K9uKW3I3xx3vqpKYLBer7K1wZej5uU66zhtjzG1bfE6e+OHNxhmGb9UsXe+geX4/lndxJDgs7wbYO9g==}
+    engines: {node: '>= 8'}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -5515,6 +5523,8 @@ snapshots:
       - supports-color
 
   walk-up-path@4.0.0: {}
+
+  web-streams-polyfill@4.5.1: {}
 
   which@2.0.2:
     dependencies:

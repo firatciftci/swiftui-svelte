@@ -1,5 +1,6 @@
+import type { ReadableStream } from "./streams.ts";
 import { bytesOf, encodeUTF8, TextDecoderShim } from "./encoding.ts";
-import { ReadableStreamShim } from "./streams.ts";
+import { byteStream } from "./streams.ts";
 
 const contents = new WeakMap<BlobShim, Uint8Array<ArrayBuffer>>();
 
@@ -72,18 +73,16 @@ export class BlobShim {
     return new Uint8Array(blobBytes(this));
   }
 
-  stream(): ReadableStreamShim<Uint8Array> {
+  stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
     const bytes = blobBytes(this);
     let offset = 0;
-    return new ReadableStreamShim<Uint8Array>({
-      pull(controller) {
-        if (offset >= bytes.length) {
-          controller.close();
-          return;
-        }
-        controller.enqueue(bytes.slice(offset, offset + 65_536));
-        offset += 65_536;
-      },
+    return byteStream((controller) => {
+      if (offset >= bytes.length) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(bytes.slice(offset, offset + 65_536));
+      offset += 65_536;
     });
   }
 

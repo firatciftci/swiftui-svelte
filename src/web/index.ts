@@ -33,6 +33,23 @@ import {
 } from "./fetch.ts";
 import { createPerformance } from "./performance.ts";
 import { createStorage } from "./storage.ts";
+import {
+  ByteLengthQueuingStrategy,
+  CountQueuingStrategy,
+  ReadableByteStreamController,
+  ReadableStream,
+  ReadableStreamBYOBReader,
+  ReadableStreamBYOBRequest,
+  ReadableStreamDefaultController,
+  ReadableStreamDefaultReader,
+  TextDecoderStreamShim,
+  TextEncoderStreamShim,
+  TransformStream,
+  TransformStreamDefaultController,
+  WritableStream,
+  WritableStreamDefaultController,
+  WritableStreamDefaultWriter,
+} from "./streams.ts";
 import { URLSearchParamsShim, URLShim } from "./url.ts";
 import {
   CloseEventShim,
@@ -42,8 +59,11 @@ import {
 
 function define(name: string, create: () => unknown): void {
   if (Reflect.has(globalThis, name)) return;
+  const value = create();
+  if (typeof value === "function" && value.name !== name)
+    Object.defineProperty(value, "name", { value: name, configurable: true });
   Object.defineProperty(globalThis, name, {
-    value: create(),
+    value,
     writable: true,
     configurable: true,
     enumerable: false,
@@ -72,6 +92,25 @@ export function installWebAPIs(): void {
   define("Request", () => RequestShim);
   define("Response", () => ResponseShim);
   define("structuredClone", () => structuredCloneShim);
+  const streams = {
+    ReadableStream,
+    ReadableStreamDefaultReader,
+    ReadableStreamBYOBReader,
+    ReadableStreamDefaultController,
+    ReadableByteStreamController,
+    ReadableStreamBYOBRequest,
+    WritableStream,
+    WritableStreamDefaultWriter,
+    WritableStreamDefaultController,
+    TransformStream,
+    TransformStreamDefaultController,
+    ByteLengthQueuingStrategy,
+    CountQueuingStrategy,
+    TextEncoderStream: TextEncoderStreamShim,
+    TextDecoderStream: TextDecoderStreamShim,
+  };
+  for (const [name, value] of Object.entries(streams))
+    define(name, () => value);
   define("performance", () =>
     createPerformance(
       typeof __nativeNow === "function" ? __nativeNow : Date.now,

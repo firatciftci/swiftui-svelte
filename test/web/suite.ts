@@ -25,6 +25,13 @@ export type Web = {
   URL: typeof URL;
   URLSearchParams: typeof URLSearchParams;
   structuredClone: typeof structuredClone;
+  ReadableStream: typeof ReadableStream;
+  WritableStream: typeof WritableStream;
+  TransformStream: typeof TransformStream;
+  TextEncoderStream: typeof TextEncoderStream;
+  TextDecoderStream: typeof TextDecoderStream;
+  CountQueuingStrategy: typeof CountQueuingStrategy;
+  ByteLengthQueuingStrategy: typeof ByteLengthQueuingStrategy;
   Blob: typeof Blob;
   File: typeof File;
   FormData: typeof FormData;
@@ -1115,6 +1122,308 @@ hostTest(
     environment.setEnvironment({ colorScheme: "light", reduceMotion: false });
   },
 );
+
+async function readText(
+  stream: ReadableStream<string> | ReadableStream<Uint8Array>,
+  web: Web,
+): Promise<string> {
+  const decoder = new web.TextDecoder();
+  let text = "";
+  for await (const chunk of stream)
+    text +=
+      typeof chunk === "string"
+        ? chunk
+        : decoder.decode(chunk, { stream: true });
+  return text + decoder.decode();
+}
+
+test("ReadableStream queues chunks, applies backpressure, and closes", async (web) => {
+  const pulls: Array<number | null> = [];
+  let count = 0;
+  const stream = new web.ReadableStream<number>(
+    {
+      pull(controller) {
+        pulls.push(controller.desiredSize);
+        controller.enqueue(++count);
+        if (count === 4) controller.close();
+      },
+    },
+    new web.CountQueuingStrategy({ highWaterMark: 2 }),
+  );
+  await delay(5);
+  deep(pulls, [2, 1], "fills up to the high-water mark");
+  const reader = stream.getReader();
+  deep(await reader.read(), { done: false, value: 1 });
+  deep(await reader.read(), { done: false, value: 2 });
+  deep(await reader.read(), { done: false, value: 3 });
+  deep(await reader.read(), { done: false, value: 4 });
+  deep(await reader.read(), { done: true, value: undefined });
+  await reader.closed;
+  const failing = new web.ReadableStream({
+    start(controller) {
+      controller.error(new RangeError("broken"));
+    },
+  });
+  await rejects(failing.getReader().read(), "RangeError");
+  const strategy = new web.ByteLengthQueuingStrategy({ highWaterMark: 16 });
+  equal(strategy.highWaterMark, 16);
+  equal(strategy.size(new Uint8Array(5)), 5);
+});
+
+test("ReadableStream.from, async iteration, tee, and cancel", async (web) => {
+  const Stream: typeof web.ReadableStream & {
+    from?: <T>(iterable: Iterable<T>) => ReadableStream<T>;
+  } = web.ReadableStream;
+  ok(Stream.from != null, "ReadableStream.from exists");
+  const from = Stream.from(["a", "b", "c"]);
+  equal(await readText(from, web), "abc");
+  ok(!from.locked, "iteration releases the lock");
+  const [left, right] = new web.ReadableStream<string>({
+    start(controller) {
+      controller.enqueue("x");
+      controller.enqueue("y");
+      controller.close();
+    },
+  }).tee();
+  equal(await readText(left, web), "xy");
+  equal(await readText(right, web), "xy");
+  let reason: unknown;
+  const canceled = new web.ReadableStream({
+    cancel(value) {
+      reason = value;
+    },
+  });
+  await canceled.cancel("done");
+  equal(reason, "done");
+  const locked = new web.ReadableStream();
+  locked.getReader();
+  throws(() => locked.getReader(), "TypeError");
+  await rejects(locked.cancel(), "TypeError");
+  let isReturned = false;
+  const source = new web.ReadableStream<number>({
+    pull(controller) {
+      controller.enqueue(1);
+    },
+    cancel() {
+      isReturned = true;
+    },
+  });
+  const iterator = source.values();
+  deep(await iterator.next(), { done: false, value: 1 });
+  await iterator.return?.();
+  ok(isReturned, "breaking out of the loop cancels the stream");
+});
+
+test("byte streams fill BYOB reads", async (web) => {
+  const stream = new web.ReadableStream({
+    type: "bytes",
+    pull(controller) {
+      const request = controller.byobRequest;
+      if (request?.view == null) {
+        controller.enqueue(new Uint8Array([9]));
+        return;
+      }
+      const view = new Uint8Array(
+        request.view.buffer,
+        request.view.byteOffset,
+        request.view.byteLength,
+      );
+      view.set([1, 2, 3].slice(0, view.length));
+      request.respond(Math.min(3, view.length));
+      controller.close();
+    },
+  });
+  const reader = stream.getReader({ mode: "byob" });
+  const result = await reader.read(new Uint8Array(8));
+  ok(result.value != null, "a BYOB read returns a view");
+  deep([...result.value], [1, 2, 3]);
+  const last = await reader.read(new Uint8Array(8));
+  ok(last.done, "then the stream is done");
+  const blobReader = new web.Blob(["hey"]).stream().getReader({ mode: "byob" });
+  const blobResult = await blobReader.read(new Uint8Array(2));
+  deep([...(blobResult.value ?? [])], [104, 101]);
+});
+
+test("WritableStream writes in order, applies backpressure, and aborts", async (web) => {
+  const written: Array<string> = [];
+  let isClosed = false;
+  const stream = new web.WritableStream<string>(
+    {
+      async write(chunk) {
+        await delay(1);
+        written.push(chunk);
+      },
+      close() {
+        isClosed = true;
+      },
+    },
+    { highWaterMark: 1 },
+  );
+  const writer = stream.getWriter();
+  equal(writer.desiredSize, 1);
+  void writer.write("a");
+  equal(writer.desiredSize, 0, "a pending write fills the queue");
+  await writer.ready;
+  await writer.write("b");
+  await writer.close();
+  deep(written, ["a", "b"]);
+  ok(isClosed, "the sink closes");
+  let aborted: unknown;
+  const abortable = new web.WritableStream({
+    abort(reason) {
+      aborted = reason;
+    },
+  });
+  const abortWriter = abortable.getWriter();
+  await abortWriter.abort("stop");
+  equal(aborted, "stop");
+  await rejects(abortWriter.write("late"));
+  const failing = new web.WritableStream({
+    write() {
+      throw new RangeError("full");
+    },
+  });
+  await rejects(failing.getWriter().write("x"), "RangeError");
+});
+
+test("TransformStream pipes, and pipeTo stops on an abort signal", async (web) => {
+  const upper = new web.TransformStream<string, string>({
+    transform(chunk, controller) {
+      controller.enqueue(chunk.toUpperCase());
+    },
+    flush(controller) {
+      controller.enqueue("!");
+    },
+  });
+  const source = new web.ReadableStream<string>({
+    start(controller) {
+      controller.enqueue("hi ");
+      controller.enqueue("there");
+      controller.close();
+    },
+  });
+  equal(await readText(source.pipeThrough(upper), web), "HI THERE!");
+  const sink: Array<number> = [];
+  await new web.ReadableStream<number>({
+    start(controller) {
+      controller.enqueue(1);
+      controller.enqueue(2);
+      controller.close();
+    },
+  }).pipeTo(
+    new web.WritableStream({ write: (chunk) => void sink.push(chunk) }),
+  );
+  deep(sink, [1, 2]);
+  const controller = new web.AbortController();
+  const endless = new web.ReadableStream<number>({
+    async pull(stream) {
+      await delay(2);
+      stream.enqueue(0);
+    },
+  });
+  const piping = endless.pipeTo(new web.WritableStream(), {
+    signal: controller.signal,
+  });
+  setTimeout(() => controller.abort(), 10);
+  await rejects(piping, "AbortError");
+});
+
+test("TextDecoderStream and TextEncoderStream handle split characters", async (web) => {
+  const encoder = new web.TextEncoderStream();
+  equal(encoder.encoding, "utf-8");
+  const encoderWriter = encoder.writable.getWriter();
+  void encoderWriter.write(`a${String.fromCharCode(0xd8_3d)}`);
+  void encoderWriter.write(`${String.fromCharCode(0xde_00)}b`);
+  void encoderWriter.write(String.fromCharCode(0xd8_3d));
+  void encoderWriter.close();
+  const encoded: Array<number> = [];
+  for await (const chunk of encoder.readable) encoded.push(...chunk);
+  equal(hex(new Uint8Array(encoded)), "61f09f988062efbfbd");
+  const decoder = new web.TextDecoderStream("utf-8", { fatal: false });
+  equal(decoder.encoding, "utf-8");
+  const decoderWriter = decoder.writable.getWriter();
+  void decoderWriter.write(new Uint8Array([0x68, 0xf0, 0x9f]));
+  void decoderWriter.write(new Uint8Array([0x98, 0x80, 0xe2]));
+  void decoderWriter.close();
+  equal(
+    await readText(decoder.readable, web),
+    `h${String.fromCodePoint(0x1_f6_00)}${String.fromCharCode(0xff_fd)}`,
+  );
+  const strict = new web.TextDecoderStream();
+  const strictWriter: WritableStreamDefaultWriter<unknown> =
+    strict.writable.getWriter();
+  const reading = strict.readable.getReader().read();
+  await rejects(strictWriter.write("text"), "TypeError");
+  await rejects(reading, "TypeError");
+});
+
+test("Response and Request bodies accept streams and report bodyUsed", async (web) => {
+  const stream = (): ReadableStream<Uint8Array> =>
+    new web.ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new web.TextEncoder().encode("from "));
+        controller.enqueue(new web.TextEncoder().encode("a stream"));
+        controller.close();
+      },
+    });
+  equal(await new web.Response(stream()).text(), "from a stream");
+  const response = new web.Response(stream());
+  equal(response.bodyUsed, false);
+  const reader = response.body?.getReader();
+  ok(reader, "the body is the stream");
+  await reader.read();
+  equal(response.bodyUsed, true, "reading the body uses it");
+  reader.releaseLock();
+  await rejects(response.text(), "TypeError");
+  const request = new web.Request("http://localhost/", {
+    method: "POST",
+    body: stream(),
+    duplex: "half",
+  } as RequestInit);
+  equal(await request.text(), "from a stream");
+  const piped = new web.Response("a\nb\n").body?.pipeThrough(
+    new web.TextDecoderStream(),
+  );
+  ok(piped, "bodies pipe through a decoder");
+  equal(await readText(piped, web), "a\nb\n");
+  const byob = new web.Response("bytes").body?.getReader({ mode: "byob" });
+  ok(byob, "bodies are byte streams");
+  const result = await byob.read(new Uint8Array(3));
+  equal(new web.TextDecoder().decode(result.value), "byt");
+});
+
+test("fetch bodies pipe through TextDecoderStream line by line", async (web, server) => {
+  const response = await web.fetch(`${server.http}/stream`);
+  ok(response.body, "the response has a body");
+  const lines: Array<string> = [];
+  let buffer = "";
+  const splitter = new web.TransformStream<string, string>({
+    transform(chunk, controller) {
+      buffer += chunk;
+      const parts = buffer.split("\n");
+      buffer = parts.pop() ?? "";
+      for (const part of parts) controller.enqueue(part);
+    },
+  });
+  const lineStream = response.body
+    .pipeThrough(new web.TextDecoderStream())
+    .pipeThrough(splitter);
+  for await (const line of lineStream) lines.push(line);
+  deep(lines, ["one", "two", "three"]);
+  equal(response.bodyUsed, true);
+  const upload = new web.ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new web.TextEncoder().encode("streamed upload"));
+      controller.close();
+    },
+  });
+  const echo = await web.fetch(`${server.http}/echo`, {
+    method: "POST",
+    body: upload,
+    duplex: "half",
+  } as RequestInit);
+  equal(((await echo.json()) as { body: string }).body, "streamed upload");
+});
 
 export async function runCases(
   web: Web,

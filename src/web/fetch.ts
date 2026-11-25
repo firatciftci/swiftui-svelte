@@ -1,3 +1,4 @@
+import type { ByteStream, ReadableByteStreamController } from "./streams.ts";
 import { AbortSignalShim } from "./abort.ts";
 import { blobBytes, BlobShim, FileShim } from "./blob.ts";
 import {
@@ -7,7 +8,13 @@ import {
   TextDecoderShim,
 } from "./encoding.ts";
 import { isIterable } from "./iterable.ts";
-import { ReadableStreamShim, readAll } from "./streams.ts";
+import {
+  byteStream,
+  isDisturbed,
+  isReadableStream,
+  ReadableStream,
+  readAll,
+} from "./streams.ts";
 import {
   compareCodeUnits,
   formEncoding,
@@ -363,14 +370,11 @@ function parseMultipart(bytes: Uint8Array, boundary: string): FormDataShim {
   return form;
 }
 
-type BodySource =
-  | Uint8Array<ArrayBuffer>
-  | ReadableStreamShim<Uint8Array>
-  | null;
+type BodySource = Uint8Array<ArrayBuffer> | ByteStream | null;
 type BodyState = {
   source: BodySource;
   used: boolean;
-  stream: ReadableStreamShim<Uint8Array> | null;
+  stream: ByteStream | null;
 };
 
 const bodies = new WeakMap<object, BodyState>();
@@ -383,7 +387,7 @@ export type BodyInitShim =
   | URLSearchParamsShim
   | URLSearchParams
   | FormDataShim
-  | ReadableStreamShim<Uint8Array>
+  | ByteStream
   | null;
 
 function extractBody(init: BodyInitShim | undefined): {
@@ -416,7 +420,7 @@ function extractBody(init: BodyInitShim | undefined): {
       type: `multipart/form-data; boundary=${boundary}`,
     };
   }
-  if (init instanceof ReadableStreamShim) return { source: init, type: null };
+  if (isReadableStream(init)) return { source: init, type: null };
   return { source: encodeUTF8(String(init)), type: "text/plain;charset=UTF-8" };
 }
 
@@ -426,32 +430,34 @@ function state(target: object): BodyState {
   return value;
 }
 
+function streamOf(body: BodyState): ByteStream | null {
+  return body.source == null || body.source instanceof Uint8Array
+    ? body.stream
+    : body.source;
+}
+
 async function consume(target: BodyShim): Promise<Uint8Array<ArrayBuffer>> {
   const body = state(target);
-  const stream =
-    body.source instanceof ReadableStreamShim ? body.source : body.stream;
-  if (target.bodyUsed || stream?.locked === true)
+  if (target.bodyUsed || streamOf(body)?.locked === true)
     throw new TypeError("Body is unusable: Body has already been read");
   body.used = true;
   if (body.source == null) return new Uint8Array();
-  if (body.source instanceof ReadableStreamShim) return readAll(body.source);
-  return new Uint8Array(body.source);
+  if (body.source instanceof Uint8Array) return new Uint8Array(body.source);
+  return readAll(body.source);
 }
 
 abstract class BodyShim {
   abstract readonly headers: HeadersShim;
 
-  get body(): ReadableStreamShim<Uint8Array> | null {
+  get body(): ByteStream | null {
     const body = state(this);
     if (body.source == null) return null;
-    if (body.source instanceof ReadableStreamShim) return body.source;
+    if (!(body.source instanceof Uint8Array)) return body.source;
     if (body.stream == null) {
       const bytes = body.source;
-      body.stream = new ReadableStreamShim<Uint8Array>({
-        start(controller) {
-          if (bytes.length > 0) controller.enqueue(new Uint8Array(bytes));
-          controller.close();
-        },
+      body.stream = byteStream((controller) => {
+        if (bytes.length > 0) controller.enqueue(new Uint8Array(bytes));
+        controller.close();
       });
     }
     return body.stream;
@@ -459,9 +465,8 @@ abstract class BodyShim {
 
   get bodyUsed(): boolean {
     const body = state(this);
-    const stream =
-      body.source instanceof ReadableStreamShim ? body.source : body.stream;
-    return body.used || stream?.disturbed === true;
+    const stream = streamOf(body);
+    return body.used || (stream != null && isDisturbed(stream));
   }
 
   async arrayBuffer(): Promise<ArrayBuffer> {
@@ -508,18 +513,14 @@ abstract class BodyShim {
 
 function cloneBody(source: object, target: object): void {
   const body = state(source);
-  if (
-    body.used ||
-    (body.source instanceof ReadableStreamShim && body.source.locked)
-  ) {
+  if (body.used || streamOf(body)?.locked === true)
     throw new TypeError("Body has already been consumed");
-  }
-  if (body.source instanceof ReadableStreamShim) {
+  if (body.source == null || body.source instanceof Uint8Array) {
+    bodies.set(target, { source: body.source, used: false, stream: null });
+  } else {
     const [left, right] = body.source.tee();
     body.source = left;
     bodies.set(target, { source: right, used: false, stream: null });
-  } else {
-    bodies.set(target, { source: body.source, used: false, stream: null });
   }
 }
 
@@ -758,7 +759,7 @@ export class ResponseShim extends BodyShim {
       redirected: boolean;
       headers: Array<[string, string]>;
     },
-    body: ReadableStreamShim<Uint8Array> | Uint8Array<ArrayBuffer> | null,
+    body: ByteStream | Uint8Array<ArrayBuffer> | null,
   ): ResponseShim {
     const response = Object.create(this.prototype) as ResponseShim;
     const headers = new HeadersShim();
@@ -938,11 +939,7 @@ export function createFetch(native: NativeFetchBridge) {
     signal.throwIfAborted();
     const id = fetchIds.next++;
     const { promise, resolve, reject } = Promise.withResolvers<ResponseShim>();
-    let controller: {
-      enqueue: (chunk: Uint8Array) => void;
-      close: () => void;
-      error: (reason: unknown) => void;
-    } | null = null;
+    let controller: ReadableByteStreamController | null = null;
     let isFinished = false;
     const onAbort = (): void => {
       if (isFinished) return;
@@ -971,7 +968,8 @@ export function createFetch(native: NativeFetchBridge) {
           redirected: boolean;
           headers: Array<[string, string]>;
         };
-        const stream = new ReadableStreamShim<Uint8Array>({
+        const stream = new ReadableStream({
+          type: "bytes",
           start(streamController) {
             controller = streamController;
           },
@@ -984,7 +982,7 @@ export function createFetch(native: NativeFetchBridge) {
         resolve(ResponseShim.native(meta, stream));
       },
       (chunk) => {
-        if (!isFinished) controller?.enqueue(chunk);
+        if (!isFinished && chunk.byteLength > 0) controller?.enqueue(chunk);
       },
       (error) => {
         if (isFinished) return;

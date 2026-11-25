@@ -93,5 +93,8 @@
     "vitest": "^5.1.1",
     "ws": "^8.23.0"
   },
-  "packageManager": "pnpm@12.23.0"
+  "packageManager": "pnpm@12.23.0",
+  "dependencies": {
+    "web-streams-polyfill": "^4.5.1"
+  }
 }
