@@ -305,6 +305,7 @@ flowchart LR
 3. `SvelteView` runs the bundle in JavaScriptCore. `NodeStore` mirrors the tree as `@Observable` nodes, and `NodeView` turns each node into a SwiftUI view: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
 4. Native events go back through `__svelteDispatch`, which calls the handlers that Svelte registered.
 5. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release`, so Swift drops its copy too.
+6. The first commit carries the bridge protocol version. If the bundle was built with a release of swiftui-svelte that doesn't match the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering a broken tree.
 
 ## Performance
 

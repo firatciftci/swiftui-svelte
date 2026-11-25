@@ -21,7 +21,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Ops batched per microtask and committed as one JSON array
 - [x] Nodes released through `FinalizationRegistry`
 - [x] Live reload of the bundle in the simulator
-- [ ] Protocol version handshake: the renderer sends its version in the first commit, and `SvelteView` shows an error screen when it doesn't match
+- [x] Protocol version handshake: the renderer sends its version in the first commit, and `SvelteView` shows an error screen when it doesn't match
 - [x] macOS 15 and visionOS 2 in `Package.swift`, with iOS-only APIs behind `#if os(iOS)`
 - [ ] Test infrastructure
   - [x] Vitest for the JS package, with a fake native bridge that records ops and dispatches events

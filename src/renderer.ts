@@ -24,7 +24,7 @@ type ParentNode = FragmentNode | ElementNode;
 type ChildNode = ElementNode | TextNode;
 
 type Op =
-  | { op: "root"; id: number }
+  | { op: "root"; id: number; protocol: number }
   | { op: "create"; id: number; kind: "fragment" }
   | { op: "create"; id: number; kind: "element"; name: string }
   | { op: "create"; id: number; kind: "text" | "comment"; text: string }
@@ -34,6 +34,8 @@ type Op =
   | { op: "unattr"; id: number; name: string }
   | { op: "text"; id: number; text: string }
   | { op: "release"; id: number };
+
+export const protocol = 1;
 
 export const stats = {
   live: 0,
@@ -252,7 +254,7 @@ globalThis.__svelteDispatch = (id, type, payload) => {
 
 export function mountApp(component: Component): () => void {
   const target = renderer.createFragment();
-  send({ op: "root", id: target.id });
+  send({ op: "root", id: target.id, protocol });
   const instance = mount(component, { target, renderer });
   return () => void unmount(instance);
 }

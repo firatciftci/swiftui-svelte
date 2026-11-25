@@ -17,7 +17,7 @@ struct NodeStoreTests {
 
     private let base: Array<[String: Any]> = [
         ["op": "create", "id": 1, "kind": "fragment"],
-        ["op": "root", "id": 1],
+        ["op": "root", "id": 1, "protocol": 1],
         ["op": "create", "id": 2, "kind": "element", "name": "vstack"],
         ["op": "insert", "parent": 1, "id": 2, "before": NSNull()],
         ["op": "create", "id": 3, "kind": "text", "text": "a"],
@@ -37,6 +37,23 @@ struct NodeStoreTests {
         #expect(store.root?.id == 1)
         #expect(texts(store) == ["a", "b", "c"])
         #expect(store.nodeCount == 5)
+    }
+
+    @Test(arguments: [2, nil])
+    func refusesAnIncompatibleBundle(version: Int?) {
+        let store = store([
+            ["op": "create", "id": 1, "kind": "fragment"],
+            version.map { ["op": "root", "id": 1, "protocol": $0] } ?? ["op": "root", "id": 1],
+        ])
+        #expect(store.root == nil)
+        #expect(!store.isCompatible)
+        #expect(store.bundleProtocolVersion == version)
+    }
+
+    @Test func acceptsTheCurrentProtocol() {
+        let store = store(base)
+        #expect(store.isCompatible)
+        #expect(store.bundleProtocolVersion == NodeStore.protocolVersion)
     }
 
     @Test func insertsBeforeAnAnchor() {

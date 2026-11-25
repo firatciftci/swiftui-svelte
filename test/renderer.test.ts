@@ -61,6 +61,15 @@ describe("mounting", () => {
     `);
   });
 
+  it("announces the bridge protocol with the root", async () => {
+    await render(Counter);
+    expect(JSON.parse(commits[0] ?? "[]")).toContainEqual({
+      op: "root",
+      id: native.root?.id,
+      protocol: 1,
+    });
+  });
+
   it("commits the initial render in one batch", async () => {
     await render(Counter);
     expect(commits).toHaveLength(1);

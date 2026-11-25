@@ -1,1 +1,1 @@
-export { mountApp, stats } from "./renderer.ts";
+export { mountApp, protocol, stats } from "./renderer.ts";

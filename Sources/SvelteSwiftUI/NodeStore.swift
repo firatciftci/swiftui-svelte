@@ -82,7 +82,7 @@ final class Node: Identifiable {
 }
 
 enum Op: Decodable {
-    case root(id: Int)
+    case root(id: Int, protocolVersion: Int?)
     case create(id: Int, kind: Node.Kind, name: String?, text: String?)
     case insert(parent: Int, id: Int, before: Int?)
     case remove(id: Int)
@@ -93,6 +93,7 @@ enum Op: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case op, id, kind, name, text, parent, before, value
+        case protocolVersion = "protocol"
     }
 
     init(from decoder: Decoder) throws {
@@ -100,7 +101,7 @@ enum Op: Decodable {
         let id = try container.decode(Int.self, forKey: .id)
         switch try container.decode(String.self, forKey: .op) {
         case "root":
-            self = .root(id: id)
+            self = .root(id: id, protocolVersion: try container.decodeIfPresent(Int.self, forKey: .protocolVersion))
         case "create":
             self = .create(
                 id: id,
@@ -137,7 +138,11 @@ enum Op: Decodable {
 
 @Observable
 final class NodeStore {
+    static let protocolVersion = 1
+
     private(set) var root: Node?
+    private(set) var bundleProtocolVersion: Int?
+    private(set) var isCompatible = true
     @ObservationIgnored private var nodes: [Int: Node] = [:]
     @ObservationIgnored private var dirty: Set<Int> = []
 
@@ -198,8 +203,10 @@ final class NodeStore {
 
     private func apply(_ op: Op) {
         switch op {
-        case let .root(id):
-            root = nodes[id]
+        case let .root(id, version):
+            bundleProtocolVersion = version
+            isCompatible = version == Self.protocolVersion
+            root = isCompatible ? nodes[id] : nil
         case let .create(id, kind, name, text):
             nodes[id] = Node(id: id, kind: kind, name: name ?? "", text: text ?? "")
         case let .insert(parentID, id, beforeID):

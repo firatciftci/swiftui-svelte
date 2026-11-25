@@ -22,7 +22,7 @@ struct RuntimeTests {
     private let mount = """
         __nativeCommit(JSON.stringify([
           { op: "create", id: 1, kind: "fragment" },
-          { op: "root", id: 1 },
+          { op: "root", id: 1, protocol: 1 },
           { op: "create", id: 2, kind: "element", name: "txt" },
           { op: "insert", parent: 1, id: 2, before: null },
         ]));
