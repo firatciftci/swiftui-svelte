@@ -41,7 +41,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Event modifiers that make sense natively: `once`, and an opt-in debounced `oninput`
 - [x] `requestAnimationFrame` and `cancelAnimationFrame`, driven by `CADisplayLink`
 - [x] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
-- [ ] The failed snippet of `<svelte:boundary>` renders natively
+- [x] The failed snippet of `<svelte:boundary>` renders natively
 - [x] Source maps: Vite emits them, and the runtime maps stack traces with them
 - [ ] Safari Web Inspector works with debug builds in the simulator and on devices (verify `isInspectable` and document it)
 - [ ] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency

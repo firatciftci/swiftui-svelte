@@ -14,6 +14,7 @@ import {
   serialize,
   settle,
 } from "./bridge.ts";
+import Boundary from "./components/Boundary.svelte";
 import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Items from "./components/Items.svelte";
@@ -166,6 +167,25 @@ describe("blocks", () => {
     await update(() => (state.show = false));
     expect(find("divider")).toBeUndefined();
     expect(find("spacer")).toBeDefined();
+  });
+});
+
+describe("boundaries", () => {
+  it("renders the failed snippet natively and recovers on reset", async () => {
+    await render(Boundary);
+    await update(() => (state.label = "boom"));
+    expect(byTestId("failed")?.children[0]?.text).toBe("bad label");
+    await update(() => dispatch(byTestId("retry"), "click"));
+    expect(byTestId("failed")).toBeUndefined();
+    expect(findAll("txt").map((node) => node.children[0]?.text)).toEqual([
+      "fine",
+    ]);
+  });
+
+  it("renders the failed snippet when the first render throws", async () => {
+    state.label = "boom";
+    await render(Boundary);
+    expect(byTestId("failed")?.children[0]?.text).toBe("bad label");
   });
 });
 
