@@ -358,9 +358,9 @@
     {
       "label": "Values: mount",
       "commits": [
-        "[0,122,2,7,\"data-number\",7,\"data-boolean\",7,\"data-string\",7,\"data-array\",7,\"data-object\",7,\"data-date\",1,122,0,125,0,6,11,1.5,12,true,13,\"text\",14,[1,\"two\",false],15,{\"b\":2,\"a\":[1]},16,\"2026-01-02T03:04:05.006Z\",0]"
+        "[0,122,2,7,\"data-number\",7,\"data-boolean\",7,\"data-string\",7,\"data-array\",7,\"data-object\",7,\"data-date\",7,\"data-big\",7,\"data-map\",7,\"data-special\",7,\"data-nested\",1,122,0,125,0,10,11,1.5,12,true,13,\"text\",14,[1,\"two\",false],15,{\"b\":2,\"a\":[1]},16,\"2026-01-02T03:04:05.006Z\",17,12,18,{\"a\":1,\"b\":[\"x\"]},19,[null,null,null,null,0],20,{\"at\":\"2026-01-02T03:04:05.006Z\"},0]"
       ],
-      "tree": "#fragment\n  <vstack data-array=[1,\"two\",false] data-boolean=true data-date=\"2026-01-02T03:04:05.006Z\" data-number=1.5 data-object={\"a\":[1],\"b\":2} data-string=\"text\">"
+      "tree": "#fragment\n  <vstack data-array=[1,\"two\",false] data-big=12 data-boolean=true data-date=\"2026-01-02T03:04:05.006Z\" data-map={\"a\":1,\"b\":[\"x\"]} data-nested={\"at\":\"2026-01-02T03:04:05.006Z\"} data-number=1.5 data-object={\"a\":[1],\"b\":2} data-special=[null,null,null,null,0] data-string=\"text\">"
     },
     {
       "label": "Values: unmount",

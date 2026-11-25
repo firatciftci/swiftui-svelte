@@ -9,4 +9,9 @@
   data-array={state.values.array}
   data-object={state.values.object}
   data-date={state.values.date}
+  data-big={state.values.big}
+  data-map={state.values.map}
+  data-special={state.values.special}
+  data-nested={state.values.nested}
+  data-none={state.values.none}
 />

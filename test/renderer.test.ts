@@ -195,6 +195,18 @@ describe("attributes", () => {
       "data-array": [1, "two", false],
       "data-object": { a: [1], b: 2 },
       "data-date": "2026-01-02T03:04:05.006Z",
+      "data-big": 12,
+      "data-map": { a: 1, b: ["x"] },
+      "data-special": [null, null, null, null, 0],
+      "data-nested": { at: "2026-01-02T03:04:05.006Z" },
     });
+  });
+
+  it("sends a changed attribute value", async () => {
+    await render(Values);
+    await update(() => (state.values.number = 2));
+    expect(find("vstack")?.attributes.get("data-number")).toBe(2);
+    await update(() => (state.values.big = 2n ** 70n));
+    expect(find("vstack")?.attributes.get("data-big")).toBe(2 ** 70);
   });
 });

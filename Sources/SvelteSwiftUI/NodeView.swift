@@ -104,11 +104,7 @@ struct NodeView: View {
         case "toggle":
             Toggle(
                 isOn: Binding {
-                    switch node.attributes["checked"] {
-                    case let .bool(checked): checked
-                    case nil, .null: false
-                    default: true
-                    }
+                    node.attributes["checked"]?.isTrue ?? false
                 } set: { value in
                     node.attributes["checked"] = .bool(value)
                     runtime.dispatch(node.id, "change", value)
@@ -200,7 +196,7 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
-            .ifLet(attributes["animated"] == .bool(true) ? node.children.map(\.id) : nil) {
+            .ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) {
                 $0.animation(.default, value: $1)
             }
             .ifLet(node.attachment("swipeactions")) { view, actions in

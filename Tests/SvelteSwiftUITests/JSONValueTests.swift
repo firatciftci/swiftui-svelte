@@ -40,6 +40,44 @@ struct JSONValueTests {
         #expect(try decode("true") != .number(1))
     }
 
+    @Test(arguments: [
+        (JSONValue.string("8"), Optional(8.0)),
+        (.string(" 2.5 "), 2.5),
+        (.number(3), 3),
+        (.string("wide"), nil),
+        (.bool(true), nil),
+        (.null, nil),
+    ])
+    func readsNumbers(value: JSONValue, expected: Double?) {
+        #expect(value.number == expected)
+    }
+
+    @Test(arguments: [
+        (JSONValue.string("a"), Optional("a")),
+        (.number(42), "42"),
+        (.number(1.5), "1.5"),
+        (.bool(false), "false"),
+        (.null, nil),
+        (.array([]), nil),
+    ])
+    func readsStrings(value: JSONValue, expected: String?) {
+        #expect(value.string == expected)
+    }
+
+    @Test(arguments: [
+        (JSONValue.bool(true), true),
+        (.bool(false), false),
+        (.string(""), true),
+        (.string("false"), false),
+        (.number(0), false),
+        (.number(2), true),
+        (.null, false),
+        (.object([:]), true),
+    ])
+    func readsTruth(value: JSONValue, expected: Bool) {
+        #expect(value.isTrue == expected)
+    }
+
     @Test func readsDates() throws {
         #expect(try decode("\"2026-01-02T03:04:05.006Z\"").date == Date(timeIntervalSince1970: 1_767_323_045.006))
         #expect(try decode("\"2026-01-02T03:04:05Z\"").date == Date(timeIntervalSince1970: 1_767_323_045))

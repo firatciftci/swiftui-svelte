@@ -1,23 +1,6 @@
 import Foundation
 import Observation
 
-enum JSONValue: Hashable {
-    case null
-    case bool(Bool)
-    case number(Double)
-    case string(String)
-    case array(Array<Self>)
-    case object([String: Self])
-
-    var string: String? {
-        if case let .string(value) = self { value } else { nil }
-    }
-
-    var number: Double? {
-        if case let .number(value) = self { value } else { nil }
-    }
-}
-
 @Observable
 final class Node: Identifiable {
     enum Kind {

@@ -56,10 +56,17 @@ const finalizer = new FinalizationRegistry<number>((id) => {
 });
 const state = { nextId: 1, isScheduled: false };
 
+function wire(_key: string, value: unknown): unknown {
+  if (typeof value === "bigint") return Number(value);
+  if (value instanceof Map) return Object.fromEntries(value);
+  if (value instanceof Set) return [...value];
+  return value;
+}
+
 function commit(): void {
   state.isScheduled = false;
   const start = __nativeNow();
-  const json = JSON.stringify(batch);
+  const json = JSON.stringify(batch, wire);
   batch.length = 0;
   const serialized = __nativeNow();
   __nativeCommit(json);

@@ -34,7 +34,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 ## M1. Bridge, protocol, and runtime
 
 - [x] Compact op encoding: flat arrays with interned attribute and element names instead of JSON objects, decoded without `Codable` overhead
-- [ ] Attribute values keep `null`, booleans, numbers, strings, arrays, objects, and `Date` exactly, and the coercion rules are documented
+- [x] Attribute values keep `null`, booleans, numbers, strings, arrays, objects, and `Date` exactly, and the coercion rules are documented
 - [ ] Redundant ops in a batch are coalesced, such as an attribute set twice or an insert followed by a remove
 - [ ] Controlled inputs without lag or cursor jumps: native state leads, and JS echoes are ignored unless they differ from the latest native value
 - [ ] Typed event payloads, including structured ones like `{ x, y }` and `{ from, to }`

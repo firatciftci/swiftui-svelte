@@ -1,24 +1,5 @@
 import SwiftUI
 
-extension JSONValue {
-    var date: Date? {
-        guard let string else { return nil }
-        return (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(string))
-            ?? (try? Date.ISO8601FormatStyle().parse(string))
-    }
-
-    var object: Any {
-        switch self {
-        case .null: NSNull()
-        case let .bool(value): value
-        case let .number(value): value
-        case let .string(value): value
-        case let .array(values): values.map(\.object)
-        case let .object(values): values.mapValues(\.object)
-        }
-    }
-}
-
 private struct ControlLabel: View {
     let node: Node
 
