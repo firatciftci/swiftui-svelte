@@ -247,6 +247,15 @@ final class SvelteHostUITests: XCTestCase {
         let lazy = app.staticTexts["lazyvstack"].frame
         XCTAssertEqual(eager.midY, lazy.midY, accuracy: 1)
         XCTAssertLessThan(eager.maxX, lazy.minX)
+
+        let caption = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Scrolled'")).firstMatch
+        waitFor(caption)
+        XCTAssertTrue(caption.label.hasPrefix("Scrolled 0 pt across a "))
+        XCTAssertFalse(caption.label.hasSuffix(" 0 pt carousel"))
+        app.staticTexts["Card 2"].swipeLeft()
+        let scrolled = NSPredicate(format: "NOT (label BEGINSWITH 'Scrolled 0 pt')")
+        expectation(for: scrolled, evaluatedWith: caption)
+        waitForExpectations(timeout: 5)
         attachScreenshot("layouts")
     }
 }

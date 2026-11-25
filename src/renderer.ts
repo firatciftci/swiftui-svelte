@@ -391,6 +391,18 @@ function linked(): Linked {
   return { parent: null, prev: null, next: null, state: State.Local };
 }
 
+const observedEvents = new Set(["resize", "scroll"]);
+
+function updateListens(element: ElementNode): void {
+  const types: Array<string> = [];
+  for (const type of observedEvents) {
+    if ((element.listeners.get(type)?.size ?? 0) > 0) types.push(type);
+  }
+  if (types.length > 0) element.attributes.set("listens", types);
+  else element.attributes.delete("listens");
+  changeAttribute(element, "listens");
+}
+
 const renderer = createRenderer<{
   fragment: FragmentNode;
   element: ElementNode;
@@ -501,9 +513,12 @@ const renderer = createRenderer<{
       element.listeners.set(type, handlers);
     }
     handlers.add(handler);
+    if (observedEvents.has(type) && handlers.size === 1) updateListens(element);
   },
   removeEventListener(element, type, handler: Handler) {
-    element.listeners.get(type)?.delete(handler);
+    const handlers = element.listeners.get(type);
+    if (handlers?.delete(handler) !== true) return;
+    if (observedEvents.has(type) && handlers.size === 0) updateListens(element);
   },
 });
 

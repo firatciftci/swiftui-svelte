@@ -14,6 +14,8 @@
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
   let showsLayouts = $state(false);
+  let carouselOffset = $state(0);
+  let carouselWidth = $state(0);
 
   const swatches = [
     "red",
@@ -169,6 +171,24 @@
             <txt design="monospaced">lazyhstack</txt>
           </gridrow>
         </grid>
+        <scrollview
+          axes="horizontal"
+          snap="view"
+          indicators={false}
+          onscroll={(scroll) => (carouselOffset = Math.round(scroll.x))}
+          onresize={(size) => (carouselWidth = Math.round(size.width))}
+        >
+          <hstack spacing={12}>
+            {#each swatches as color, index (color)}
+              <zstack width={140} height={72} background={color} radius={12}>
+                <txt weight="bold" color="white">Card {index + 1}</txt>
+              </zstack>
+            {/each}
+          </hstack>
+        </scrollview>
+        <txt font="caption" color="secondary">
+          Scrolled {carouselOffset} pt across a {carouselWidth} pt carousel
+        </txt>
         <viewthatfits axes="horizontal">
           <txt lines={1}
             >This whole sentence shows when it fits on one line.</txt

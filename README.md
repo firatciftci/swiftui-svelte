@@ -170,37 +170,37 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                           |
-| ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------- |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                  |
-| `screen`                            | A screen in the stack               | `title`                                                                         |
-| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)       |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                          |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                     |
-| `scrollview`, `list`                | `ScrollView`, `List`                |                                                                                 |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                           |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)      |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                          |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                      |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                       |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more  |
-| `btn`                               | `Button`                            | `variant`, `role`, `onclick`                                                    |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`                                                                 |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`                                                                    |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                |
-| `toggle`                            | `Toggle`                            | `checked`, `onchange(checked)`                                                  |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                           |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`) |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`              |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                       |
-| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                           |
-| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                            |
-| `toolbar`                           | `.toolbar`                          | `placement`                                                                     |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                          |
+| Element                             | SwiftUI                             | Attributes and events                                                                  |
+| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                         |
+| `screen`                            | A screen in the stack               | `title`                                                                                |
+| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)              |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                 |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                            |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`) |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                       |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                  |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)             |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                 |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                             |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                              |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more         |
+| `btn`                               | `Button`                            | `variant`, `role`, `onclick`                                                           |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`                                                                        |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`                                                                           |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                       |
+| `toggle`                            | `Toggle`                            | `checked`, `onchange(checked)`                                                         |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                  |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)        |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                     |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                       |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                       |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                       |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                              |
+| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                  |
+| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                   |
+| `toolbar`                           | `.toolbar`                          | `placement`                                                                            |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                 |
 
 Every element also accepts these modifiers:
 
@@ -213,6 +213,7 @@ Every element also accepts these modifiers:
 | `radius`, `opacity`                | Rounds the corners and sets the opacity                                                               |
 | `animated`, `animation`            | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
 | `lang`, `dir`                      | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
+| `onresize`                         | Reports the element's size whenever it changes                                                        |
 
 A few details:
 
@@ -224,6 +225,8 @@ A few details:
 - **Grids.** A `grid` lays out `gridrow` children as a table whose columns line up across rows. `spacing` sets both gaps, and `hspacing` and `vspacing` set them separately. Inside a grid, any element takes `colspan` to span several columns, `columnalignment` to align its whole column, and `cellanchor` to place itself in its cell. An element that isn't in a `gridrow`, like a `divider`, spans the whole width.
 - **Fitting content.** A `viewthatfits` shows the first child that fits in the available space. `axes` limits the check to `horizontal` or `vertical`.
 - **Groups.** A `group` applies its modifiers to each child without adding a container. A `groupbox` draws its children in a box, and a `controlgroup` joins buttons into one control. A `disclosuregroup` shows its children when the user expands it. Its `expanded` attribute and `ontoggle` event work like a toggle's `checked` and `onchange`, and the `DisclosureGroup` component supports `bind:expanded`. All three take a `title`, or a `label` child for a custom view.
+- **Scrolling.** A `scrollview` scrolls vertically unless you set `axes` to `horizontal` or `both`. Set `snap="paging"` to stop on each screen-sized page, or `snap="view"` to stop at the start of each child of the stack inside it, like a carousel. `indicators={false}` hides the scroll bars, `bounce="basedOnSize"` only bounces when the content is larger than the view, and `anchor="bottom"` starts at the bottom, as a chat does. `scrollview` and `list` both send `onscroll` with `{ x, y, width, height, contentWidth, contentHeight }`: the scroll offset from the top leading corner, the visible size, and the size of the content, all in points. To scroll from code, use a [ref](#element-refs-and-focus).
+- **Sizes.** Any element sends `onresize` with its `{ width, height }` in points when it first appears and whenever its size changes, so you can lay out by size without SwiftUI's `GeometryReader`. The host only reports scroll and size changes for elements that have a handler.
 - **Event handlers.** Handlers receive the new value itself, such as the text for `oninput` or the boolean for a toggle's `onchange`, rather than a DOM event. Because there's no event object, there's nothing to prevent or stop. To react to an event only once, keep a flag in your state and check it in the handler.
 - **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires.
 - **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.

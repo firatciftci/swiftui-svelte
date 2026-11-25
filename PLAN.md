@@ -97,9 +97,9 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] `grid` and `gridrow`, with cell spans and alignment
 - [x] `viewthatfits`
 - [x] `group`, `groupbox`, `controlgroup`, and `disclosuregroup` (with `expanded` and `ontoggle`)
-- [ ] `scrollview` axes, indicators, scroll position, `onscroll`, paging, and `scrollTo`
+- [x] `scrollview` axes, indicators, scroll position, `onscroll`, paging, and `scrollTo`
 - [x] `spacer` `minlength`
-- [ ] An `onresize` event that reports an element's size, in place of `GeometryReader`
+- [x] An `onresize` event that reports an element's size, in place of `GeometryReader`
 
 ### Text and images
 

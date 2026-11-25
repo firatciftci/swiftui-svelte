@@ -22,6 +22,7 @@ import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
+import Scrolling from "./components/Scrolling.svelte";
 import Slots from "./components/Slots.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
 import Texts from "./components/Texts.svelte";
@@ -219,6 +220,24 @@ describe("events", () => {
       dispatch(find("textfield"), "input", "x");
     });
     expect(commits.length - before).toBe(1);
+  });
+});
+
+describe("observed events", () => {
+  it("tells the host which elements listen for scroll and resize", async () => {
+    await render(Scrolling);
+    expect(byTestId("scroller")?.attributes.get("listens")).toEqual(["scroll"]);
+    expect(byTestId("box")?.attributes.has("listens")).toBe(false);
+    await update(() => dispatch(byTestId("scroller"), "scroll", { y: 42 }));
+    expect(findAll("txt")[0]?.children[0]?.text).toBe("Offset 42");
+    await update(() => dispatch(byTestId("toggle-size"), "click"));
+    expect(byTestId("box")?.attributes.get("listens")).toEqual(["resize"]);
+    await update(() =>
+      dispatch(byTestId("box"), "resize", { width: 320, height: 40 }),
+    );
+    expect(findAll("txt")[1]?.children[0]?.text).toBe("Width 320");
+    await update(() => dispatch(byTestId("toggle-scroll"), "click"));
+    expect(byTestId("scroller")?.attributes.has("listens")).toBe(false);
   });
 });
 

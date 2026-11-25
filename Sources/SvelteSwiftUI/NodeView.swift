@@ -40,9 +40,17 @@ struct NodeView: View {
         case "zstack":
             ZStack(alignment: Styles.alignment(alignment)) { children }
         case "scrollview":
-            ScrollView { children }.modifier(Scrollable())
+            ScrollView(Self.axes(node.attributes["axes"]?.string)) {
+                if node.attributes["snap"]?.string == "view" {
+                    children.scrollTargetLayout()
+                } else {
+                    children
+                }
+            }
+            .modifier(Scrollable())
+            .modifier(ScrollOptions(node: node))
         case "list":
-            List { children }.modifier(Scrollable())
+            List { children }.modifier(Scrollable()).modifier(ScrollOptions(node: node))
         case "formview":
             Form { children }
         case "sectionview":
@@ -120,6 +128,14 @@ struct NodeView: View {
 
     private var spacing: CGFloat? {
         node.attributes["spacing"]?.number.map { CGFloat($0) }
+    }
+
+    private static func axes(_ name: String?) -> Axis.Set {
+        switch name {
+        case "horizontal": .horizontal
+        case "both": [.horizontal, .vertical]
+        default: .vertical
+        }
     }
 
     private var alignment: String? {
@@ -205,6 +221,7 @@ private struct NodeModifiers: ViewModifier {
             .modifier(Layers(node: node))
             .modifier(Measured(node: node))
             .modifier(GridCell(attributes: attributes))
+            .modifier(Resizing(node: node))
             .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
                 $0.environment(\.locale, $1)
             }

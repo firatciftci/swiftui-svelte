@@ -110,6 +110,21 @@ type GridItem =
   | (GridItemOptions & { adaptive: number; max?: number })
   | (GridItemOptions & { min?: number; max?: number });
 type Pinned = "headers" | "footers" | "both";
+export type Size = { width: number; height: number };
+export type ScrollGeometry = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  contentWidth: number;
+  contentHeight: number;
+};
+type ScrollOptions = {
+  indicators?: boolean | "automatic" | "visible" | "hidden" | "never";
+  bounce?: "automatic" | "always" | "basedOnSize";
+  anchor?: Exclude<LayerAlignment, `${string}Baseline`>;
+  onscroll?: (scroll: ScrollGeometry) => void;
+};
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
@@ -132,6 +147,7 @@ type Modifiers = {
   colspan?: number;
   columnalignment?: HorizontalAlignment;
   cellanchor?: Exclude<LayerAlignment, `${string}Baseline`>;
+  onresize?: (size: Size) => void;
   lang?: string;
   dir?: "ltr" | "rtl";
 };
@@ -194,8 +210,12 @@ declare module "svelte/elements" {
       expanded?: boolean;
       ontoggle?: (expanded: boolean) => void;
     };
-    scrollview: Modifiers;
-    list: Modifiers;
+    scrollview: Modifiers &
+      ScrollOptions & {
+        axes?: "vertical" | "horizontal" | "both";
+        snap?: "paging" | "view";
+      };
+    list: Modifiers & ScrollOptions;
     spacer: Modifiers & { minlength?: number };
     divider: Modifiers;
     txt: Modifiers & {
