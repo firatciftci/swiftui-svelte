@@ -170,57 +170,60 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                                     |
-| ----------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                            |
-| `screen`                            | A screen in the stack               | `title`                                                                                   |
-| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                 |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                    |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                               |
-| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)    |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                          |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                     |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                    |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                 |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more            |
-| `btn`                               | `Button`                            | `variant`, `role`, `onclick`                                                              |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active` |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                |
-| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                             |
-| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                     |
-| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                            |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                          |
-| `toggle`                            | `Toggle`                            | `checked`, `onchange(checked)`                                                            |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                     |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)           |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                        |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                          |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                          |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                          |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                 |
-| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                     |
-| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                      |
-| `toolbar`                           | `.toolbar`                          | `placement`                                                                               |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                    |
+| Element                             | SwiftUI                             | Attributes and events                                                                       |
+| ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                              |
+| `screen`                            | A screen in the stack               | `title`                                                                                     |
+| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                   |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                      |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                                 |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)      |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                            |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                       |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                  |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                      |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                  |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                   |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more              |
+| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                       |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`   |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                  |
+| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                               |
+| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                       |
+| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                              |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit` |
+| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                           |
+| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                   |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                       |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)             |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                          |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                            |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                            |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                            |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                   |
+| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                       |
+| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                        |
+| `toolbar`                           | `.toolbar`                          | `placement`                                                                                 |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                      |
 
 Every element also accepts these modifiers:
 
-| Modifier                           | What it does                                                                                          |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `padding`                          | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute |
-| `width`, `height`                  | Sets a fixed size                                                                                     |
-| `font`, `size`, `design`, `weight` | Sets the text style or a fixed size, the design, and the weight                                       |
-| `color`, `tint`, `background`      | Colors the content, the controls, or the background. See [Colors and shapes](#colors-and-shapes)      |
-| `radius`, `opacity`                | Rounds the corners and sets the opacity                                                               |
-| `animated`, `animation`            | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
-| `lang`, `dir`                      | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
-| `onresize`                         | Reports the element's size whenever it changes                                                        |
+| Modifier                           | What it does                                                                                           |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `padding`                          | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute  |
+| `width`, `height`                  | Sets a fixed size                                                                                      |
+| `font`, `size`, `design`, `weight` | Sets the text style or a fixed size, the design, and the weight                                        |
+| `color`, `tint`, `background`      | Colors the content, the controls, or the background. See [Colors and shapes](#colors-and-shapes)       |
+| `controlsize`                      | Sets the size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge` |
+| `radius`, `opacity`                | Rounds the corners and sets the opacity                                                                |
+| `animated`, `animation`            | Animates children as they're added, removed, or reordered, with the curve from `animation`             |
+| `lang`, `dir`                      | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it     |
+| `onresize`                         | Reports the element's size whenever it changes                                                         |
 
 A few details:
 
-- **Buttons.** `variant` is `automatic`, `borderless`, `bordered`, or `prominent`, and `role` is `destructive` or `cancel`. With `variant="automatic"`, a button in a list makes its whole row tappable.
+- **Buttons.** `variant` is `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The two glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. With `variant="automatic"`, a button in a list makes its whole row tappable. `role` is `destructive` or `cancel`, or on iOS 26, `confirm` or `close`. `bordershape` is `capsule`, `circle`, `roundedRectangle`, or a corner radius in points, and applies to bordered and glass buttons. With `repeat`, holding the button down fires `onclick` again and again, as a stepper does.
+- **Toggles.** `variant="switch"` always draws a switch, and `variant="button"` draws a button that stays highlighted while it's on.
 - **Stacks.** `alignment` takes any of SwiftUI's alignment guides. On a `vstack` that's `leading`, `center`, `trailing`, `listRowSeparatorLeading`, or `listRowSeparatorTrailing`. On an `hstack` it's `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`, which lines up text of different sizes. A `zstack` takes a corner or edge such as `topLeading`, or a baseline alignment such as `leadingFirstTextBaseline`. A `spacer` with `minlength` never shrinks below that many points.
 - **Text.** `lines` caps the number of lines, and `truncation` picks where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`. `minscale` lets the text shrink to that fraction of its size before it truncates. `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`. `linespacing` adds points of space between lines, `kerning` and `tracking` adjust the space between letters, and `selectable` lets the user select and copy the text.
 - **Fonts.** `font` picks a text style that follows Dynamic Type, such as `headline` or `caption`. `size` sets a fixed size in points instead, like `.system(size:)`, so it doesn't follow Dynamic Type. `design` is `rounded`, `serif`, or `monospaced`, and `weight` goes from `ultraLight` to `black`. These work on any element and apply to all the text inside it.
@@ -231,7 +234,10 @@ A few details:
 - **Scrolling.** A `scrollview` scrolls vertically unless you set `axes` to `horizontal` or `both`. Set `snap="paging"` to stop on each screen-sized page, or `snap="view"` to stop at the start of each child of the stack inside it, like a carousel. `indicators={false}` hides the scroll bars, `bounce="basedOnSize"` only bounces when the content is larger than the view, and `anchor="bottom"` starts at the bottom, as a chat does. `scrollview` and `list` both send `onscroll` with `{ x, y, width, height, contentWidth, contentHeight }`: the scroll offset from the top leading corner, the visible size, and the size of the content, all in points. To scroll from code, use a [ref](#element-refs-and-focus).
 - **Sizes.** Any element sends `onresize` with its `{ width, height }` in points when it first appears and whenever its size changes, so you can lay out by size without SwiftUI's `GeometryReader`. The host only reports scroll and size changes for elements that have a handler.
 - **Event handlers.** Handlers receive the new value itself, such as the text for `oninput` or the boolean for a toggle's `onchange`, rather than a DOM event. Because there's no event object, there's nothing to prevent or stop. To react to an event only once, keep a flag in your state and check it in the handler.
-- **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires.
+- **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires. With `axis="vertical"`, the field grows as the user types more lines, up to `lines`, which is a maximum such as `4` or a range such as `[2, 4]`. `variant` is `plain` or `roundedBorder`.
+- **Keyboards.** `textfield`, `securefield`, and `texteditor` take `keyboard` to pick the keyboard (such as `email`, `url`, `number`, `decimal`, or `phone`), and `contenttype` to tell iOS what the text is (such as `email`, `username`, `password`, `newPassword`, or `oneTimeCode`), so it can offer AutoFill and passwords. `autocapitalize` is `never`, `words`, `sentences`, or `characters`, `autocorrect={false}` turns off autocorrection, and `submitlabel` names the Return key: `done`, `go`, `next`, `search`, `send`, and so on.
+- **Number fields.** A `textfield` with a `format` edits a number. `format` is `number`, `integer`, `percent`, or `{ currency: "EUR" }` with an ISO currency code. The field shows the value formatted, `value` is a number or `null`, and `oninput` receives the parsed number when the user presses Return or leaves the field, or `null` if they clear it. Use the `NumberField` component for `bind:value`.
+- **Secure fields and text editors.** A `securefield` hides what the user types, for passwords. A `texteditor` edits many lines of text and scrolls; give it a `height`. Both work like a `textfield`, with `value`, `oninput`, `debounce`, and `focused`.
 - **Images.** An `imageview` shows an image from the asset catalog with `name`, or a file in the app bundle with `file`, such as `file="photos/beach.jpg"`. It keeps the image's own size unless you set `fit` to `fit` or `fill` to scale it into its frame, `stretch` to fill the frame exactly, or `tile` to repeat it. `renderingmode="template"` draws it in the foreground color. VoiceOver reads an asset image's name unless you set `label`, and skips the image entirely with `decorative`.
 - **Remote images.** `asyncimage` loads `src` and scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`. It shows a spinner while it loads, or the children of a `placeholder` element, and the children of a `failure` element if the image can't load. `onload` fires when the image appears, and `onerror` receives the error message.
 - **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`. `variant` adds variants like `fill` or `circle fill`, and `value` with a value from 0 to 1 fills a variable symbol such as `wifi` part of the way. `rendering` is `monochrome`, `hierarchical`, `palette`, or `multicolor`; with `palette`, `colors` lists up to three colors. `effect` animates the symbol. `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, and `scale` run while `active` is true, which is the default. With a `trigger` value, every effect except `scale` plays once each time the value changes, and `bounce` only works this way.
@@ -337,18 +343,21 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 <Sheet bind:presented={editing}><txt>Editing {name}</txt></Sheet>
 ```
 
-| Component         | Binds       | Element           |
-| ----------------- | ----------- | ----------------- |
-| `TextField`       | `value`     | `textfield`       |
-| `Toggle`          | `checked`   | `toggle`          |
-| `Picker`          | `value`     | `picker`          |
-| `Slider`          | `value`     | `slider`          |
-| `Stepper`         | `value`     | `stepper`         |
-| `DatePicker`      | `value`     | `datepicker`      |
-| `DisclosureGroup` | `expanded`  | `disclosuregroup` |
-| `TabView`         | `selection` | `tabview`         |
-| `Sheet`           | `presented` | `sheet`           |
-| `Alert`           | `presented` | `alert`           |
+| Component         | Binds       | Element                     |
+| ----------------- | ----------- | --------------------------- |
+| `TextField`       | `value`     | `textfield`                 |
+| `NumberField`     | `value`     | `textfield` with a `format` |
+| `SecureField`     | `value`     | `securefield`               |
+| `TextEditor`      | `value`     | `texteditor`                |
+| `Toggle`          | `checked`   | `toggle`                    |
+| `Picker`          | `value`     | `picker`                    |
+| `Slider`          | `value`     | `slider`                    |
+| `Stepper`         | `value`     | `stepper`                   |
+| `DatePicker`      | `value`     | `datepicker`                |
+| `DisclosureGroup` | `expanded`  | `disclosuregroup`           |
+| `TabView`         | `selection` | `tabview`                   |
+| `Sheet`           | `presented` | `sheet`                     |
+| `Alert`           | `presented` | `alert`                     |
 
 Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. `Sheet` and `Alert` are presented while `presented` is true, and set it to false when the user dismisses them.
 

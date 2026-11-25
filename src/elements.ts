@@ -207,6 +207,74 @@ type ScrollOptions = {
   anchor?: UnitPointName;
   onscroll?: (scroll: ScrollGeometry) => void;
 };
+type TextInput = Modifiers & {
+  placeholder?: string;
+  focused?: boolean;
+  keyboard?:
+    | "default"
+    | "ascii"
+    | "numbersAndPunctuation"
+    | "url"
+    | "number"
+    | "phone"
+    | "namePhone"
+    | "email"
+    | "decimal"
+    | "twitter"
+    | "webSearch"
+    | "asciiNumber";
+  contenttype?:
+    | "name"
+    | "givenName"
+    | "middleName"
+    | "familyName"
+    | "nickname"
+    | "jobTitle"
+    | "organization"
+    | "email"
+    | "phone"
+    | "url"
+    | "username"
+    | "password"
+    | "newPassword"
+    | "oneTimeCode"
+    | "streetAddress"
+    | "addressLine1"
+    | "addressLine2"
+    | "city"
+    | "state"
+    | "postalCode"
+    | "country"
+    | "creditCardNumber"
+    | "location"
+    | "birthdate";
+  autocapitalize?: "never" | "words" | "sentences" | "characters";
+  autocorrect?: boolean;
+  submitlabel?:
+    | "done"
+    | "go"
+    | "send"
+    | "join"
+    | "route"
+    | "search"
+    | "return"
+    | "next"
+    | "continue";
+  onsubmit?: () => void;
+  onfocus?: () => void;
+  onblur?: () => void;
+};
+type TextValue = {
+  value?: string;
+  debounce?: number;
+  oninput?: (value: string) => void;
+};
+type FieldVariant = "automatic" | "plain" | "roundedBorder";
+export type NumberFormat =
+  | "number"
+  | "integer"
+  | "percent"
+  | { currency: string };
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
@@ -215,6 +283,7 @@ type Modifiers = {
   weight?: Weight;
   color?: ShapeStyle;
   tint?: Color;
+  controlsize?: "mini" | "small" | "regular" | "large" | "extraLarge";
   background?: ShapeStyle;
   radius?: number;
   opacity?: number;
@@ -359,8 +428,22 @@ declare module "svelte/elements" {
     failure: Record<string, never>;
     icon: Record<string, never>;
     btn: Modifiers & {
-      variant?: "automatic" | "borderless" | "bordered" | "prominent";
-      role?: "destructive" | "cancel";
+      variant?:
+        | "automatic"
+        | "borderless"
+        | "plain"
+        | "bordered"
+        | "prominent"
+        | "glass"
+        | "glassProminent";
+      role?: "destructive" | "cancel" | "confirm" | "close";
+      bordershape?:
+        | "automatic"
+        | "capsule"
+        | "roundedRectangle"
+        | "circle"
+        | number;
+      repeat?: boolean;
       onclick?: () => void;
     };
     sfsymbol: Modifiers & {
@@ -381,18 +464,26 @@ declare module "svelte/elements" {
       trigger?: string | number | boolean;
       active?: boolean;
     };
-    textfield: Modifiers & {
-      value?: string;
-      placeholder?: string;
-      debounce?: number;
-      focused?: boolean;
-      oninput?: (value: string) => void;
-      onsubmit?: () => void;
-      onfocus?: () => void;
-      onblur?: () => void;
-    };
+    textfield: TextInput &
+      (
+        | (TextValue & {
+            format?: undefined;
+            variant?: FieldVariant;
+            axis?: "horizontal" | "vertical";
+            lines?: number | [number, number];
+          })
+        | {
+            format: NumberFormat;
+            variant?: FieldVariant;
+            value?: number | null;
+            oninput?: (value: number | null) => void;
+          }
+      );
+    securefield: TextInput & TextValue & { variant?: FieldVariant };
+    texteditor: Omit<TextInput, "placeholder"> & TextValue;
     toggle: Modifiers & {
       checked?: boolean;
+      variant?: "automatic" | "switch" | "button" | "checkbox";
       onchange?: (checked: boolean) => void;
     };
     formview: Modifiers;

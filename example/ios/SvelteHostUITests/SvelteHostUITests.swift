@@ -279,4 +279,44 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(caption.waitForExistence(timeout: 15), "the failure caption never appeared")
         XCTAssertTrue(app.images["Image failed to load"].exists)
     }
+
+    func testEditsInputs() {
+        tab("Playground")
+        let inputs = app.buttons["Inputs"]
+        for _ in 0..<6 where !inputs.isHittable { app.swipeUp() }
+        inputs.tap()
+        let repeatButton = app.buttons["Hold to repeat"]
+        for _ in 0..<6 where !repeatButton.isHittable { app.swipeUp() }
+        XCTAssertTrue(app.buttons["Glass"].exists)
+        XCTAssertTrue(app.buttons["Prominent glass"].exists)
+        repeatButton.press(forDuration: 2)
+        attachScreenshot("buttons")
+        let repeats = app.staticTexts["repeats"].label
+        let count = Int(repeats.split(separator: " ")[1]) ?? 0
+        XCTAssertGreaterThan(count, 2, repeats)
+        let favorite = app.switches["favorite"]
+        XCTAssertEqual(favorite.value as? String, "0")
+        favorite.staticTexts["Favorite"].tap()
+        XCTAssertEqual(favorite.value as? String, "1")
+        XCTAssertTrue(app.images["star.fill"].exists)
+        let email = app.textFields["email"]
+        email.tap()
+        email.typeText("ada@example.com\n")
+        XCTAssertEqual(email.value as? String, "ada@example.com")
+        let password = app.secureTextFields["password"]
+        password.tap()
+        password.typeText("hunter2\n")
+        XCTAssertNotEqual(password.value as? String, "hunter2")
+        XCTAssertEqual((password.value as? String)?.count, 7)
+        let price = app.textFields["price"]
+        price.tap()
+        price.typeText("12.5\n")
+        XCTAssertTrue(app.staticTexts["Price: 12.5"].waitForExistence(timeout: 3))
+        for _ in 0..<3 where !app.textViews["journal"].isHittable { app.swipeUp() }
+        let journal = app.textViews["journal"]
+        journal.tap()
+        journal.typeText("Hello")
+        XCTAssertTrue(app.staticTexts["5 characters"].waitForExistence(timeout: 3))
+        attachScreenshot("inputs")
+    }
 }

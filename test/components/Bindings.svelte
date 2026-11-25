@@ -3,11 +3,14 @@
     Alert,
     DatePicker,
     DisclosureGroup,
+    NumberField,
     Picker,
+    SecureField,
     Sheet,
     Slider,
     Stepper,
     TabView,
+    TextEditor,
     TextField,
     Toggle,
   } from "swiftui-svelte/components";
@@ -25,6 +28,9 @@
   let submitted = $state(0);
   let changes = $state(0);
   let isExpanded = $state(false);
+  let password = $state("");
+  let notes = $state("");
+  let price = $state<number | null>(4.5);
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -32,6 +38,9 @@
   testid="short"
   bind:value={() => short, (next) => (short = next.slice(0, 3))}
 />
+<SecureField testid="password" bind:value={password} contenttype="password" />
+<TextEditor testid="notes" bind:value={notes} />
+<NumberField testid="price" bind:value={price} format={{ currency: "USD" }} />
 <Toggle testid="on" bind:checked={isOn} onchange={() => changes++}>Wi-Fi</Toggle
 >
 <Picker testid="flavor" bind:value={flavor}>
@@ -72,5 +81,8 @@
     submitted,
     changes,
     isExpanded,
+    password,
+    notes,
+    price,
   })}</txt
 >

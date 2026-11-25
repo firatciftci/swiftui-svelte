@@ -1,7 +1,15 @@
 <script lang="ts">
   import { withAnimation } from "swiftui-svelte";
   import { onBackground } from "swiftui-svelte/app";
-  import { DisclosureGroup, Sheet, TextField } from "swiftui-svelte/components";
+  import {
+    DisclosureGroup,
+    NumberField,
+    SecureField,
+    Sheet,
+    TextEditor,
+    TextField,
+    Toggle,
+  } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
 
   let count = $state(0);
@@ -19,6 +27,14 @@
   let imageFailed = $state(false);
   let carouselOffset = $state(0);
   let carouselWidth = $state(0);
+  let showsInputs = $state(false);
+  let repeats = $state(0);
+  let isFavorite = $state(false);
+  let email = $state("");
+  let password = $state("");
+  let price = $state<number | null>(null);
+  let notes = $state("");
+  let journal = $state("");
 
   const swatches = [
     "red",
@@ -323,6 +339,73 @@
             </txt>
           {/if}
         </hstack>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Inputs" bind:expanded={showsInputs}>
+        <hstack spacing={12}>
+          <btn variant="glass">Glass</btn>
+          <btn variant="glassProminent" bordershape="capsule">
+            Prominent glass
+          </btn>
+          <btn
+            variant="bordered"
+            bordershape="circle"
+            controlsize="large"
+            testid="favorite-shape"
+          >
+            <sfsymbol name="heart.fill" label="Heart" />
+          </btn>
+        </hstack>
+        <hstack spacing={12}>
+          <btn variant="bordered" repeat onclick={() => repeats++}>
+            Hold to repeat
+          </btn>
+          <txt testid="repeats" color="secondary">Repeated {repeats} times</txt>
+        </hstack>
+        <Toggle variant="button" bind:checked={isFavorite} testid="favorite">
+          <labelview
+            title="Favorite"
+            symbol={isFavorite ? "star.fill" : "star"}
+          />
+        </Toggle>
+        <TextField
+          placeholder="Email"
+          keyboard="email"
+          contenttype="email"
+          autocapitalize="never"
+          autocorrect={false}
+          submitlabel="next"
+          bind:value={email}
+          testid="email"
+        />
+        <SecureField
+          placeholder="Password"
+          contenttype="password"
+          submitlabel="done"
+          bind:value={password}
+          testid="password"
+        />
+        <NumberField
+          placeholder="Price"
+          format={{ currency: "USD" }}
+          submitlabel="done"
+          bind:value={price}
+          testid="price"
+        />
+        <txt testid="price-value" color="secondary">
+          {price == null ? "No price" : `Price: ${price}`}
+        </txt>
+        <TextField
+          placeholder="Notes, up to four lines"
+          axis="vertical"
+          lines={[2, 4]}
+          bind:value={notes}
+          testid="notes"
+        />
+        <TextEditor height={80} bind:value={journal} testid="journal" />
+        <txt testid="journal-count" font="caption" color="secondary">
+          {journal.length} characters
+        </txt>
       </DisclosureGroup>
     </list>
 

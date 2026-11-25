@@ -50,6 +50,9 @@ describe("bindable components", () => {
       edit(byTestId("tabs"), "change", "selection", "settings"),
     );
     await update(() => edit(byTestId("more"), "toggle", "expanded", true));
+    await update(() => edit(byTestId("password"), "input", "value", "hunter2"));
+    await update(() => edit(byTestId("notes"), "input", "value", "Line\nTwo"));
+    await update(() => edit(byTestId("price"), "input", "value", 12.25));
     expect(state()).toMatchObject({
       name: "Ada",
       isOn: true,
@@ -60,7 +63,12 @@ describe("bindable components", () => {
       tab: "settings",
       changes: 1,
       isExpanded: true,
+      password: "hunter2",
+      notes: "Line\nTwo",
+      price: 12.25,
     });
+    await update(() => edit(byTestId("price"), "input", "value", null));
+    expect(state().price).toBeNull();
   });
 
   it("send the bound value to the native control", () => {
@@ -68,6 +76,13 @@ describe("bindable components", () => {
     expect(byTestId("flavor")?.attributes.get("value")).toBe("vanilla");
     expect(byTestId("volume")?.attributes.get("value")).toBe(0.5);
     expect(byTestId("tabs")?.attributes.get("selection")).toBe("home");
+    expect(byTestId("price")?.attributes.get("value")).toBe(4.5);
+    expect(byTestId("price")?.attributes.get("format")).toEqual({
+      currency: "USD",
+    });
+    expect(byTestId("password")?.attributes.get("contenttype")).toBe(
+      "password",
+    );
   });
 
   it("let a function binding change the value the control shows", async () => {

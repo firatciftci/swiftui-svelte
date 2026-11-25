@@ -1,6 +1,7 @@
 export type {
   AnimationOptions,
   Color,
+  NumberFormat,
   ScrollGeometry,
   ShapeStyle,
   Size,

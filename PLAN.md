@@ -115,10 +115,10 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 ### Controls
 
 - [x] `btn`, `textfield`, `toggle`, `picker`, `slider`, `stepper`, `datepicker`, and `progressview`
-- [ ] `btn` styles: `plain` and `glass`, control size, button border shape, and `repeat`
-- [ ] `textfield` options: keyboard type, content type, autocapitalization, autocorrection, submit label, `axis` for multiline input, and number formats
-- [ ] `securefield` and `texteditor`
-- [ ] `toggle` styles (`switch` and `button`)
+- [x] `btn` styles: `plain` and `glass`, control size, button border shape, and `repeat`
+- [x] `textfield` options: keyboard type, content type, autocapitalization, autocorrection, submit label, `axis` for multiline input, and number formats
+- [x] `securefield` and `texteditor`
+- [x] `toggle` styles (`switch` and `button`)
 - [ ] `picker` with multiple selection in lists
 - [ ] `multidatepicker` and `colorpicker`
 - [ ] `gauge`

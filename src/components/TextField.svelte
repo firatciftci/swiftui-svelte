@@ -8,7 +8,7 @@
     onfocus,
     onblur,
     ...rest
-  }: SvelteHTMLElements["textfield"] = $props();
+  }: SvelteHTMLElements["textfield"] & { format?: undefined } = $props();
 </script>
 
 <textfield

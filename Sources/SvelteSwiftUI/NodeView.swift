@@ -2,7 +2,6 @@ import SwiftUI
 
 struct NodeView: View {
     let node: Node
-    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         switch node.kind {
@@ -90,29 +89,13 @@ struct NodeView: View {
         case "sfsymbol":
             Symbol(node: node)
         case "btn":
-            let button = Button(role: buttonRole(node)) {
-                runtime.dispatch(node.id, "click", waits: false)
-            } label: {
-                children
-            }
-            switch node.attributes["variant"]?.string {
-            case "automatic": button
-            case "bordered": button.buttonStyle(.bordered)
-            case "prominent": button.buttonStyle(.borderedProminent)
-            default: button.buttonStyle(.borderless)
-            }
-        case "textfield":
-            TextFieldControl(node: node)
+            ButtonElement(node: node)
+        case "textfield" where node.attributes["format"] != nil:
+            NumberFieldControl(node: node)
+        case "textfield", "securefield", "texteditor":
+            TextInputControl(node: node)
         case "toggle":
-            Toggle(
-                isOn: Binding {
-                    node.attributes["checked"]?.isTrue ?? false
-                } set: { value in
-                    runtime.edit(node, "checked", to: .bool(value), event: "change", payload: value)
-                }
-            ) {
-                children
-            }
+            ToggleElement(node: node)
         case "picker":
             PickerControl(node: node)
         case "slider":
@@ -216,6 +199,7 @@ private struct NodeModifiers: ViewModifier {
             .fontWeight(Styles.weight(attributes["weight"]?.string))
             .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }
             .ifLet(Palette.color(attributes["tint"]?.string)) { $0.tint($1) }
+            .ifLet(Inputs.controlSize(attributes["controlsize"]?.string)) { $0.controlSize($1) }
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
@@ -331,7 +315,7 @@ private struct ActionButton: View {
     @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
-        Button(role: buttonRole(node)) {
+        Button(role: Inputs.role(node.attributes["role"]?.string)) {
             runtime.dispatch(node.id, "click", waits: false)
         } label: {
             ForEach(node.renderedChildren) { child in
@@ -343,14 +327,6 @@ private struct ActionButton: View {
             }
         }
         .tint(Palette.color(node.attributes["tint"]?.string))
-    }
-}
-
-private func buttonRole(_ node: Node) -> ButtonRole? {
-    switch node.attributes["role"]?.string {
-    case "destructive": .destructive
-    case "cancel": .cancel
-    default: nil
     }
 }
 

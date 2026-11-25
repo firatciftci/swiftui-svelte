@@ -1,47 +1,5 @@
 import SwiftUI
 
-struct TextFieldControl: View {
-    let node: Node
-    @Environment(SvelteRuntime.self) private var runtime
-    @State private var text: String
-    @State private var pending: Task<Void, Never>?
-
-    init(node: Node) {
-        self.node = node
-        _text = State(initialValue: node.attributes["value"]?.string ?? "")
-    }
-
-    var body: some View {
-        let value = node.attributes["value"]?.string
-        TextField(node.attributes["placeholder"]?.string ?? "", text: $text)
-            .onSubmit {
-                if pending != nil { send() }
-                runtime.dispatch(node.id, "submit")
-            }
-            .onChange(of: text) { _, typed in
-                guard typed != node.attributes["value"]?.string else { return }
-                node.attributes["value"] = .string(typed)
-                pending?.cancel()
-                guard let delay = node.attributes["debounce"]?.number, delay > 0 else { return send() }
-                pending = Task {
-                    try? await Task.sleep(for: .milliseconds(delay))
-                    if !Task.isCancelled { send() }
-                }
-            }
-            .onChange(of: value) { _, value in
-                if let value, value != text { text = value }
-            }
-            .modifier(Focusable(node: node))
-    }
-
-    private func send() {
-        pending?.cancel()
-        pending = nil
-        runtime.dispatch(node.id, "input", text)
-        if let settled = node.attributes["value"]?.string, settled != text { text = settled }
-    }
-}
-
 struct PickerControl: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
