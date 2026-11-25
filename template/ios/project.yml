@@ -1,5 +1,6 @@
 name: __APP_NAME__
 options:
+  xcodeVersion: "16.0"
   deploymentTarget:
     iOS: "18.0"
 packages:
