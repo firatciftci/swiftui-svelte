@@ -31,7 +31,6 @@ func dump(_ node: Node?, depth: Int = 0) -> String {
             "\(indent)<\(node.name)\(node.attributes.keys.sorted().map { " \($0)=\(node.attributes[$0]?.canonical ?? "null")" }.joined())>"
         case .fragment: "\(indent)#fragment"
         case .text: "\(indent)#text \(quoted(node.text))"
-        case .comment: "\(indent)#comment \(quoted(node.text))"
         }
     return ([line] + node.children.map { dump($0, depth: depth + 1) }).joined(separator: "\n")
 }

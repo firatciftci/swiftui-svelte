@@ -300,12 +300,12 @@ flowchart LR
   D -->|"taps, text, and toggles"| A
 ```
 
-1. [`src/renderer.ts`](src/renderer.ts) is a Svelte custom renderer. It keeps a lightweight node tree in JavaScript, because Svelte needs to read it synchronously, and records every change as an op: `create`, `insert`, `remove`, `attr`, `unattr`, `text`, or `release`.
-2. The ops are batched per microtask and sent to Swift as one JSON string.
-3. `SvelteView` runs the bundle in JavaScriptCore. `NodeStore` mirrors the tree as `@Observable` nodes, and `NodeView` turns each node into a SwiftUI view: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
+1. [`src/renderer.ts`](src/renderer.ts) is a Svelte custom renderer. It keeps a lightweight node tree in JavaScript, because Svelte needs to read it synchronously, and tracks which nodes Swift already has. Swift only gets the nodes that are attached to the screen: Svelte's comment anchors, whitespace-only text, and nodes that are still being built stay in JavaScript.
+2. Changes are batched per microtask into one flat JSON array of numbers and values. A new subtree goes over in a single `insert`, with its attributes and children inline, and element and attribute names are sent once and then referred to by number. The other ops are `move`, `remove`, `attr`, `unattr`, and `text`.
+3. `SvelteView` runs the bundle in JavaScriptCore. `NodeStore` reads each batch with a small UTF-8 scanner instead of `Codable`, mirrors the tree as `@Observable` nodes, and `NodeView` turns each node into a SwiftUI view: `vstack` becomes a `VStack`, `btn` becomes a `Button`, and so on. Only the nodes that change are re-rendered.
 4. Native events go back through `__svelteDispatch`, which calls the handlers that Svelte registered.
-5. When a JavaScript node is garbage-collected, a `FinalizationRegistry` sends `release`, so Swift drops its copy too.
-6. The first commit carries the bridge protocol version. If the bundle was built with a release of swiftui-svelte that doesn't match the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering a broken tree.
+5. When Svelte removes a subtree, Swift drops it and all of its descendants right away, so Swift never holds nodes that aren't on screen.
+6. The first commit carries the version of the bridge protocol. If the bundle was built with a release of swiftui-svelte that doesn't match the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering a broken tree.
 
 ## Performance
 
@@ -322,7 +322,9 @@ On an iPhone 17 Pro, with a Release build, over two runs of the benchmark on a l
 
 "Svelte" is the time Svelte spent updating its tree, "Swift" is the time Swift spent decoding and applying the ops, and "Longest frame" includes SwiftUI's own rendering. Updates to a few nodes, like a keystroke or a single label, fit within a frame. Creating or reversing 1,000 rows at once blocks a few frames, mostly in Svelte's part.
 
-Released nodes are cleaned up on both sides: after 6,000 rows were created and cleared, 13 to 20 nodes were still alive in JavaScript, and the same number in Swift.
+The table above was measured with version 0.2.0. Since then, the bridge sends only what's on screen, in the compact encoding described in [How it works](#how-it-works). In an iPhone 18 Pro simulator with the JIT off and a Debug build, creating 1,000 rows now takes Swift 4ms instead of 37ms, with 1,004 ops instead of 30,008 and a 67 KB payload instead of 1.4 MB. Clearing them takes Swift under 1ms instead of 7ms.
+
+Released nodes are cleaned up on both sides: after 6,000 rows were created and cleared, 13 nodes were still alive in JavaScript, and Swift held only the 7 nodes on screen.
 
 <details>
 <summary>Running the benchmark</summary>
@@ -363,7 +365,6 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **One thread.** JavaScript runs on the main thread, so large updates, like creating or reversing 1,000 rows, block a few frames.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.
-- **JSON ops.** Ops are sent as JSON. Decoding the 1.4 MB payload for 1,000 new rows takes about 24ms of the 30ms that Swift spends.
 - **Limited animation.** Animation is limited to `animated` on containers. There are no transitions, custom animations, or gestures beyond taps and swipes.
 
 ## Example app

@@ -3,11 +3,13 @@ import { SvelteDate } from "svelte/reactivity";
 export const state: {
   items: Array<number>;
   show: boolean;
+  label: string;
   padding: number | undefined;
   values: Record<string, unknown>;
 } = $state({
   items: [1, 2, 3],
   show: true,
+  label: "",
   padding: 8,
   values: {
     number: 1.5,
@@ -22,5 +24,6 @@ export const state: {
 export function resetState(): void {
   state.items = [1, 2, 3];
   state.show = true;
+  state.label = "";
   state.padding = 8;
 }

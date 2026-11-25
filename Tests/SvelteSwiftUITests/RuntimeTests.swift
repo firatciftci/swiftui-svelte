@@ -20,15 +20,11 @@ struct RuntimeTests {
     }
 
     private let mount = """
-        __nativeCommit(JSON.stringify([
-          { op: "create", id: 1, kind: "fragment" },
-          { op: "root", id: 1, protocol: 1 },
-          { op: "create", id: 2, kind: "element", name: "txt" },
-          { op: "insert", parent: 1, id: 2, before: null },
-        ]));
-        globalThis.__svelteDispatch = (id, type, payload) => {
-          __nativeCommit(JSON.stringify([{ op: "attr", id, name: type, value: payload }]));
-        };
+        __nativeCommit(JSON.stringify([0, 1, 2, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
+        let names = 1;
+        const attr = (id, name, value) => __nativeCommit(JSON.stringify([7, name, 4, id, names++, value]));
+        globalThis.__svelteDispatch = (id, type, payload) => attr(id, type, payload);
+
         """
 
     @Test func appliesCommitsFromTheBundle() throws {
@@ -56,11 +52,11 @@ struct RuntimeTests {
                   ticks++;
                   if (ticks === 3) {
                     clearInterval(interval);
-                    __nativeCommit(JSON.stringify([{ op: "attr", id: 2, name: "ticks", value: ticks }]));
+                    attr(2, "ticks", ticks);
                   }
                 }, 5);
                 const canceled = setTimeout(() => {
-                  __nativeCommit(JSON.stringify([{ op: "attr", id: 2, name: "canceled", value: true }]));
+                  attr(2, "canceled", true);
                 }, 5);
                 clearTimeout(canceled);
                 """)
@@ -68,6 +64,12 @@ struct RuntimeTests {
         try await Task.sleep(for: .milliseconds(50))
         #expect(runtime.store.node(2)?.attributes["ticks"] == .number(3))
         #expect(runtime.store.node(2)?.attributes["canceled"] == nil)
+    }
+
+    @Test func reportsBridgeErrors() throws {
+        let runtime = try runtime(mount + "__nativeCommit('[42]');")
+        #expect(runtime.store.error?.contains("42") == true)
+        #expect(runtime.store.root?.children.first?.name == "txt")
     }
 
     @Test func reportsExceptions() throws {

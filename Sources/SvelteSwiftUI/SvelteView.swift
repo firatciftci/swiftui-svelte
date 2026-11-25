@@ -25,7 +25,7 @@ public struct SvelteView: View {
             }
         }
         .overlay(alignment: .bottom) {
-            if let error = runtime.error {
+            if let error = runtime.error ?? runtime.store.error {
                 Text(error)
                     .font(.caption.monospaced())
                     .foregroundStyle(.white)

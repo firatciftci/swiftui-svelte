@@ -5,7 +5,7 @@ import Testing
 
 struct JSONValueTests {
     private func decode(_ json: String) throws -> JSONValue {
-        try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
+        try JSONValue(parsing: json)
     }
 
     @Test(arguments: [
@@ -19,9 +19,20 @@ struct JSONValueTests {
         ("\"\"", .string("")),
         ("[1,\"a\",null]", .array([.number(1), .string("a"), .null])),
         ("{\"a\":{\"b\":[true]}}", .object(["a": .object(["b": .array([.bool(true)])])])),
+        ("1e3", .number(1000)),
+        ("-0.5E-2", .number(-0.005)),
+        ("[]", .array([])),
+        ("{}", .object([:])),
+        (" { \"k\" : [ 1 , null ] } ", .object(["k": .array([.number(1), .null])])),
+        ("\"\\u0041\\n\\\"\"", .string("A\n\"")),
     ])
     func decodes(json: String, expected: JSONValue) throws {
         #expect(try decode(json) == expected)
+    }
+
+    @Test(arguments: ["", "nul", "[1,", "{\"a\" 1}", "\"unterminated", "1 2", "-", "{1:2}"])
+    func rejectsMalformedJSON(json: String) {
+        #expect(throws: BridgeError.self) { try decode(json) }
     }
 
     @Test func keepsNumbersAndBooleansApart() throws {

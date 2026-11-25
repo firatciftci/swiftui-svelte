@@ -3,369 +3,397 @@
     {
       "label": "Counter: mount",
       "commits": [
-        "[{\"op\":\"create\",\"id\":1,\"kind\":\"fragment\"},{\"op\":\"root\",\"id\":1,\"protocol\":1},{\"op\":\"create\",\"id\":2,\"kind\":\"text\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":1,\"id\":2,\"before\":null},{\"op\":\"create\",\"id\":3,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":4,\"kind\":\"element\",\"name\":\"vstack\"},{\"op\":\"create\",\"id\":5,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":6,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"attr\",\"id\":6,\"name\":\"font\",\"value\":\"headline\"},{\"op\":\"create\",\"id\":7,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":8,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":7,\"id\":8,\"before\":null},{\"op\":\"insert\",\"parent\":6,\"id\":8,\"before\":null},{\"op\":\"insert\",\"parent\":5,\"id\":6,\"before\":null},{\"op\":\"create\",\"id\":9,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":5,\"id\":9,\"before\":null},{\"op\":\"create\",\"id\":10,\"kind\":\"element\",\"name\":\"btn\"},{\"op\":\"create\",\"id\":11,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":12,\"kind\":\"text\",\"text\":\"Increment\"},{\"op\":\"insert\",\"parent\":11,\"id\":12,\"before\":null},{\"op\":\"insert\",\"parent\":10,\"id\":12,\"before\":null},{\"op\":\"insert\",\"parent\":5,\"id\":10,\"before\":null},{\"op\":\"create\",\"id\":13,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":5,\"id\":13,\"before\":null},{\"op\":\"create\",\"id\":14,\"kind\":\"element\",\"name\":\"textfield\"},{\"op\":\"insert\",\"parent\":5,\"id\":14,\"before\":null},{\"op\":\"create\",\"id\":15,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":5,\"id\":15,\"before\":null},{\"op\":\"create\",\"id\":16,\"kind\":\"comment\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":5,\"id\":16,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":6,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":9,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":10,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":13,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":14,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":15,\"before\":null},{\"op\":\"insert\",\"parent\":4,\"id\":16,\"before\":null},{\"op\":\"insert\",\"parent\":3,\"id\":4,\"before\":null},{\"op\":\"attr\",\"id\":4,\"name\":\"spacing\",\"value\":8},{\"op\":\"text\",\"id\":8,\"text\":\"Count: 0\"},{\"op\":\"attr\",\"id\":14,\"name\":\"value\",\"value\":\"\"},{\"op\":\"insert\",\"parent\":1,\"id\":4,\"before\":2}]"
+        "[0,1,2,7,\"vstack\",7,\"spacing\",7,\"txt\",7,\"font\",7,\"btn\",7,\"textfield\",7,\"value\",1,1,0,4,0,1,1,8,3,6,2,1,3,\"headline\",1,-8,\"Count: 0\",10,4,0,1,-12,\"Increment\",14,5,1,6,\"\",0]"
       ],
-      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 0\"\n    #text \" \"\n    <btn>\n      #text \"Increment\"\n    #text \" \"\n    <textfield value=\"\">\n    #text \" \"\n    #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 0\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"\">"
     },
     {
       "label": "Counter: click twice",
       "commits": [
-        "[{\"op\":\"text\",\"id\":8,\"text\":\"Count: 2\"}]"
+        "[6,8,\"Count: 2\"]"
       ],
-      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    #text \" \"\n    <btn>\n      #text \"Increment\"\n    #text \" \"\n    <textfield value=\"\">\n    #text \" \"\n    #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"\">"
     },
     {
       "label": "Counter: type a name",
       "commits": [
-        "[{\"op\":\"create\",\"id\":17,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":18,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":19,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":20,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":19,\"id\":20,\"before\":null},{\"op\":\"insert\",\"parent\":18,\"id\":20,\"before\":null},{\"op\":\"insert\",\"parent\":17,\"id\":18,\"before\":null},{\"op\":\"text\",\"id\":20,\"text\":\"Hello, Ada \\\"Lovelace\\\" ✨!\"},{\"op\":\"insert\",\"parent\":4,\"id\":18,\"before\":16},{\"op\":\"attr\",\"id\":14,\"name\":\"value\",\"value\":\"Ada \\\"Lovelace\\\" ✨\"}]"
+        "[1,4,0,18,2,0,1,-20,\"Hello, Ada \\\"Lovelace\\\" ✨!\",4,14,6,\"Ada \\\"Lovelace\\\" ✨\"]"
       ],
-      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    #text \" \"\n    <btn>\n      #text \"Increment\"\n    #text \" \"\n    <textfield value=\"Ada \\\"Lovelace\\\" ✨\">\n    #text \" \"\n    <txt>\n      #text \"Hello, Ada \\\"Lovelace\\\" ✨!\"\n    #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"Ada \\\"Lovelace\\\" ✨\">\n    <txt>\n      #text \"Hello, Ada \\\"Lovelace\\\" ✨!\""
     },
     {
       "label": "Counter: clear the name",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":18},{\"op\":\"attr\",\"id\":14,\"name\":\"value\",\"value\":\"\"}]"
+        "[3,18,4,14,6,\"\"]"
       ],
-      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    #text \" \"\n    <btn>\n      #text \"Increment\"\n    #text \" \"\n    <textfield value=\"\">\n    #text \" \"\n    #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"\">"
     },
     {
       "label": "Counter: unmount",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":4},{\"op\":\"remove\",\"id\":2}]"
+        "[3,4]"
       ],
       "tree": "#fragment"
     },
     {
       "label": "Items: mount",
       "commits": [
-        "[{\"op\":\"create\",\"id\":21,\"kind\":\"fragment\"},{\"op\":\"root\",\"id\":21,\"protocol\":1},{\"op\":\"create\",\"id\":22,\"kind\":\"text\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":21,\"id\":22,\"before\":null},{\"op\":\"create\",\"id\":23,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":24,\"kind\":\"element\",\"name\":\"list\"},{\"op\":\"insert\",\"parent\":23,\"id\":24,\"before\":null},{\"op\":\"create\",\"id\":25,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":23,\"id\":25,\"before\":null},{\"op\":\"create\",\"id\":26,\"kind\":\"comment\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":23,\"id\":26,\"before\":null},{\"op\":\"create\",\"id\":27,\"kind\":\"text\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":24,\"id\":27,\"before\":null},{\"op\":\"create\",\"id\":28,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":29,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":30,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":31,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":30,\"id\":31,\"before\":null},{\"op\":\"insert\",\"parent\":29,\"id\":31,\"before\":null},{\"op\":\"insert\",\"parent\":28,\"id\":29,\"before\":null},{\"op\":\"text\",\"id\":31,\"text\":\"1\"},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":27},{\"op\":\"create\",\"id\":32,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":33,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":34,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":35,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":34,\"id\":35,\"before\":null},{\"op\":\"insert\",\"parent\":33,\"id\":35,\"before\":null},{\"op\":\"insert\",\"parent\":32,\"id\":33,\"before\":null},{\"op\":\"text\",\"id\":35,\"text\":\"2\"},{\"op\":\"insert\",\"parent\":24,\"id\":33,\"before\":27},{\"op\":\"create\",\"id\":36,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":37,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":38,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":39,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":38,\"id\":39,\"before\":null},{\"op\":\"insert\",\"parent\":37,\"id\":39,\"before\":null},{\"op\":\"insert\",\"parent\":36,\"id\":37,\"before\":null},{\"op\":\"text\",\"id\":39,\"text\":\"3\"},{\"op\":\"insert\",\"parent\":24,\"id\":37,\"before\":27},{\"op\":\"create\",\"id\":40,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":41,\"kind\":\"element\",\"name\":\"divider\"},{\"op\":\"insert\",\"parent\":40,\"id\":41,\"before\":null},{\"op\":\"insert\",\"parent\":23,\"id\":41,\"before\":26},{\"op\":\"attr\",\"id\":24,\"name\":\"padding\",\"value\":8},{\"op\":\"insert\",\"parent\":21,\"id\":24,\"before\":22},{\"op\":\"insert\",\"parent\":21,\"id\":25,\"before\":22},{\"op\":\"insert\",\"parent\":21,\"id\":41,\"before\":22},{\"op\":\"insert\",\"parent\":21,\"id\":26,\"before\":22}]"
+        "[0,21,2,7,\"list\",7,\"padding\",1,21,0,24,7,1,8,8,3,29,2,0,1,-31,\"1\",33,2,0,1,-35,\"2\",37,2,0,1,-39,\"3\",7,\"divider\",1,21,0,41,9,0,0]"
       ],
-      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"2\"\n    <txt>\n      #text \"3\"\n    #text \"\"\n  #text \" \"\n  <divider>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"2\"\n    <txt>\n      #text \"3\"\n  <divider>"
     },
     {
       "label": "Items: reverse",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":37,\"before\":29},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":27}]"
+        "[2,24,29,37,2,24,0,29]"
       ],
-      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"2\"\n    <txt>\n      #text \"1\"\n    #text \"\"\n  #text \" \"\n  <divider>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"2\"\n    <txt>\n      #text \"1\"\n  <divider>"
     },
     {
       "label": "Items: splice, push, and unshift",
       "commits": [
-        "[{\"op\":\"create\",\"id\":42,\"kind\":\"text\",\"text\":\"\"},{\"op\":\"create\",\"id\":43,\"kind\":\"fragment\"},{\"op\":\"insert\",\"parent\":43,\"id\":42,\"before\":null},{\"op\":\"create\",\"id\":44,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":45,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":46,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":47,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":46,\"id\":47,\"before\":null},{\"op\":\"insert\",\"parent\":45,\"id\":47,\"before\":null},{\"op\":\"insert\",\"parent\":44,\"id\":45,\"before\":null},{\"op\":\"text\",\"id\":47,\"text\":\"0\"},{\"op\":\"insert\",\"parent\":43,\"id\":45,\"before\":42},{\"op\":\"create\",\"id\":48,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":49,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":50,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":51,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":50,\"id\":51,\"before\":null},{\"op\":\"insert\",\"parent\":49,\"id\":51,\"before\":null},{\"op\":\"insert\",\"parent\":48,\"id\":49,\"before\":null},{\"op\":\"text\",\"id\":51,\"text\":\"4\"},{\"op\":\"insert\",\"parent\":43,\"id\":49,\"before\":42},{\"op\":\"create\",\"id\":52,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":53,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":54,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":55,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":54,\"id\":55,\"before\":null},{\"op\":\"insert\",\"parent\":53,\"id\":55,\"before\":null},{\"op\":\"insert\",\"parent\":52,\"id\":53,\"before\":null},{\"op\":\"text\",\"id\":55,\"text\":\"5\"},{\"op\":\"insert\",\"parent\":43,\"id\":53,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":45,\"before\":37},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":27},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":27},{\"op\":\"remove\",\"id\":33}]"
+        "[1,24,37,45,2,0,1,-47,\"0\",1,24,0,49,2,0,1,-51,\"4\",1,24,0,53,2,0,1,-55,\"5\",3,33]"
       ],
-      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <divider>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <divider>"
     },
     {
       "label": "Items: swap branches",
       "commits": [
-        "[{\"op\":\"create\",\"id\":56,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":57,\"kind\":\"element\",\"name\":\"spacer\"},{\"op\":\"insert\",\"parent\":56,\"id\":57,\"before\":null},{\"op\":\"insert\",\"parent\":21,\"id\":57,\"before\":26},{\"op\":\"remove\",\"id\":41}]"
+        "[7,\"spacer\",1,21,0,57,10,0,0,3,41]"
       ],
-      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
     {
       "label": "Items: remove padding",
       "commits": [
-        "[{\"op\":\"unattr\",\"id\":24,\"name\":\"padding\"}]"
+        "[5,24,8]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 0",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":27}]"
+        "[2,24,0,49]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"4\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"4\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 1",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":27}]"
+        "[2,24,0,53]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 2",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":45}]"
+        "[3,45]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 3",
       "commits": [
-        "[{\"op\":\"create\",\"id\":58,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":59,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":60,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":61,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":60,\"id\":61,\"before\":null},{\"op\":\"insert\",\"parent\":59,\"id\":61,\"before\":null},{\"op\":\"insert\",\"parent\":58,\"id\":59,\"before\":null},{\"op\":\"text\",\"id\":61,\"text\":\"100\"},{\"op\":\"insert\",\"parent\":43,\"id\":59,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":29}]"
+        "[1,24,29,59,2,0,1,-61,\"100\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 4",
       "commits": [
-        "[{\"op\":\"create\",\"id\":62,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":63,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":64,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":65,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":64,\"id\":65,\"before\":null},{\"op\":\"insert\",\"parent\":63,\"id\":65,\"before\":null},{\"op\":\"insert\",\"parent\":62,\"id\":63,\"before\":null},{\"op\":\"text\",\"id\":65,\"text\":\"101\"},{\"op\":\"insert\",\"parent\":43,\"id\":63,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":27}]"
+        "[1,24,0,63,2,0,1,-65,\"101\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 5",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":29}]"
+        "[2,24,29,53]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 6",
       "commits": [
-        "[{\"op\":\"create\",\"id\":66,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":67,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":68,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":69,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":68,\"id\":69,\"before\":null},{\"op\":\"insert\",\"parent\":67,\"id\":69,\"before\":null},{\"op\":\"insert\",\"parent\":66,\"id\":67,\"before\":null},{\"op\":\"text\",\"id\":69,\"text\":\"102\"},{\"op\":\"insert\",\"parent\":43,\"id\":67,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":37}]"
+        "[1,24,37,67,2,0,1,-69,\"102\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 7",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":27}]"
+        "[2,24,67,63,2,24,67,49,2,24,67,29,2,24,67,53,2,24,67,59,2,24,0,67]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 8",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":63},{\"op\":\"insert\",\"parent\":24,\"id\":37,\"before\":63},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":63},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":63},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":63},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":27}]"
+        "[2,24,63,67,2,24,63,37,2,24,63,59,2,24,63,53,2,24,63,29,2,24,0,63]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 9",
       "commits": [
-        "[{\"op\":\"create\",\"id\":70,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":71,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":72,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":73,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":72,\"id\":73,\"before\":null},{\"op\":\"insert\",\"parent\":71,\"id\":73,\"before\":null},{\"op\":\"insert\",\"parent\":70,\"id\":71,\"before\":null},{\"op\":\"text\",\"id\":73,\"text\":\"103\"},{\"op\":\"insert\",\"parent\":43,\"id\":71,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":71,\"before\":63}]"
+        "[1,24,63,71,2,0,1,-73,\"103\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 10",
       "commits": [
-        "[{\"op\":\"create\",\"id\":74,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":75,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":76,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":77,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":76,\"id\":77,\"before\":null},{\"op\":\"insert\",\"parent\":75,\"id\":77,\"before\":null},{\"op\":\"insert\",\"parent\":74,\"id\":75,\"before\":null},{\"op\":\"text\",\"id\":77,\"text\":\"104\"},{\"op\":\"insert\",\"parent\":43,\"id\":75,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":71}]"
+        "[1,24,71,75,2,0,1,-77,\"104\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"101\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"101\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 11",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":71,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":27}]"
+        "[2,24,67,63,2,24,67,71,2,24,67,75,2,24,67,49,2,24,67,29,2,24,67,53,2,24,67,59,2,24,0,67]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 12",
       "commits": [
-        "[{\"op\":\"create\",\"id\":78,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":79,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":80,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":81,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":80,\"id\":81,\"before\":null},{\"op\":\"insert\",\"parent\":79,\"id\":81,\"before\":null},{\"op\":\"insert\",\"parent\":78,\"id\":79,\"before\":null},{\"op\":\"text\",\"id\":81,\"text\":\"105\"},{\"op\":\"insert\",\"parent\":43,\"id\":79,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":49}]"
+        "[1,24,49,79,2,0,1,-81,\"105\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 13",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":79}]"
+        "[2,24,79,63]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 14",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":37}]"
+        "[3,37]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 15",
       "commits": [
-        "[{\"op\":\"create\",\"id\":82,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":83,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":84,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":85,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":84,\"id\":85,\"before\":null},{\"op\":\"insert\",\"parent\":83,\"id\":85,\"before\":null},{\"op\":\"insert\",\"parent\":82,\"id\":83,\"before\":null},{\"op\":\"text\",\"id\":85,\"text\":\"106\"},{\"op\":\"insert\",\"parent\":43,\"id\":83,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":29}]"
+        "[1,24,29,83,2,0,1,-85,\"106\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 16",
       "commits": [
-        "[{\"op\":\"create\",\"id\":86,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":87,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":88,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":89,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":88,\"id\":89,\"before\":null},{\"op\":\"insert\",\"parent\":87,\"id\":89,\"before\":null},{\"op\":\"insert\",\"parent\":86,\"id\":87,\"before\":null},{\"op\":\"text\",\"id\":89,\"text\":\"107\"},{\"op\":\"insert\",\"parent\":43,\"id\":87,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":87,\"before\":29}]"
+        "[1,24,29,87,2,0,1,-89,\"107\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 17",
       "commits": [],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"103\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 18",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":87,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":71},{\"op\":\"insert\",\"parent\":24,\"id\":71,\"before\":27}]"
+        "[2,24,71,67,2,24,71,59,2,24,71,53,2,24,71,29,2,24,71,87,2,24,71,83,2,24,71,49,2,24,71,79,2,24,71,63,2,24,0,71]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"103\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"103\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 19",
       "commits": [
-        "[{\"op\":\"create\",\"id\":90,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":91,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":92,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":93,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":92,\"id\":93,\"before\":null},{\"op\":\"insert\",\"parent\":91,\"id\":93,\"before\":null},{\"op\":\"insert\",\"parent\":90,\"id\":91,\"before\":null},{\"op\":\"text\",\"id\":93,\"text\":\"108\"},{\"op\":\"insert\",\"parent\":43,\"id\":91,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":71}]"
+        "[1,24,71,91,2,0,1,-93,\"108\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"103\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"103\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 20",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":71}]"
+        "[3,71]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"108\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"108\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 21",
       "commits": [
-        "[{\"op\":\"create\",\"id\":94,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":95,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":96,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":97,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":96,\"id\":97,\"before\":null},{\"op\":\"insert\",\"parent\":95,\"id\":97,\"before\":null},{\"op\":\"insert\",\"parent\":94,\"id\":95,\"before\":null},{\"op\":\"text\",\"id\":97,\"text\":\"109\"},{\"op\":\"insert\",\"parent\":43,\"id\":95,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":95,\"before\":91}]"
+        "[1,24,91,95,2,0,1,-97,\"109\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 22",
       "commits": [
-        "[{\"op\":\"create\",\"id\":98,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":99,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":100,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":101,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":100,\"id\":101,\"before\":null},{\"op\":\"insert\",\"parent\":99,\"id\":101,\"before\":null},{\"op\":\"insert\",\"parent\":98,\"id\":99,\"before\":null},{\"op\":\"text\",\"id\":101,\"text\":\"110\"},{\"op\":\"insert\",\"parent\":43,\"id\":99,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":99,\"before\":67}]"
+        "[1,24,67,99,2,0,1,-101,\"110\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"110\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"110\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 23",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":99}]"
+        "[3,99]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 24",
       "commits": [
-        "[{\"op\":\"create\",\"id\":102,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":103,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":104,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":105,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":104,\"id\":105,\"before\":null},{\"op\":\"insert\",\"parent\":103,\"id\":105,\"before\":null},{\"op\":\"insert\",\"parent\":102,\"id\":103,\"before\":null},{\"op\":\"text\",\"id\":105,\"text\":\"111\"},{\"op\":\"insert\",\"parent\":43,\"id\":103,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":103,\"before\":27}]"
+        "[1,24,0,103,2,0,1,-105,\"111\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 25",
       "commits": [
-        "[{\"op\":\"create\",\"id\":106,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":107,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":108,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":109,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":108,\"id\":109,\"before\":null},{\"op\":\"insert\",\"parent\":107,\"id\":109,\"before\":null},{\"op\":\"insert\",\"parent\":106,\"id\":107,\"before\":null},{\"op\":\"text\",\"id\":109,\"text\":\"112\"},{\"op\":\"insert\",\"parent\":43,\"id\":107,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":107,\"before\":87}]"
+        "[1,24,87,107,2,0,1,-109,\"112\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 26",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":79}]"
+        "[2,24,79,75]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 27",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":103,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":95,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":87,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":107,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":27}]"
+        "[2,24,67,103,2,24,67,91,2,24,67,95,2,24,67,63,2,24,67,79,2,24,67,75,2,24,67,49,2,24,67,83,2,24,67,87,2,24,67,107,2,24,67,29,2,24,67,53,2,24,0,67]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 28",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":79}]"
+        "[2,24,79,91]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 29",
       "commits": [
-        "[{\"op\":\"create\",\"id\":110,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":111,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":112,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":113,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":112,\"id\":113,\"before\":null},{\"op\":\"insert\",\"parent\":111,\"id\":113,\"before\":null},{\"op\":\"insert\",\"parent\":110,\"id\":111,\"before\":null},{\"op\":\"text\",\"id\":113,\"text\":\"113\"},{\"op\":\"insert\",\"parent\":43,\"id\":111,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":111,\"before\":67}]"
+        "[1,24,67,111,2,0,1,-113,\"113\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 30",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":111,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":107,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":87,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":103,\"before\":27}]"
+        "[2,24,103,67,2,24,103,111,2,24,103,59,2,24,103,53,2,24,103,29,2,24,103,107,2,24,103,87,2,24,103,83,2,24,103,49,2,24,103,75,2,24,103,79,2,24,103,91,2,24,103,63,2,24,0,103]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 31",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":103,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":95,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":63,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":87,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":107,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":67},{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":27}]"
+        "[2,24,67,103,2,24,67,95,2,24,67,63,2,24,67,91,2,24,67,79,2,24,67,75,2,24,67,49,2,24,67,83,2,24,67,87,2,24,67,107,2,24,67,29,2,24,67,53,2,24,67,59,2,24,0,67]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"109\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 32",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":95}]"
+        "[3,95]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 33",
       "commits": [
-        "[{\"op\":\"create\",\"id\":114,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":115,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":116,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":117,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":116,\"id\":117,\"before\":null},{\"op\":\"insert\",\"parent\":115,\"id\":117,\"before\":null},{\"op\":\"insert\",\"parent\":114,\"id\":115,\"before\":null},{\"op\":\"text\",\"id\":117,\"text\":\"114\"},{\"op\":\"insert\",\"parent\":43,\"id\":115,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":115,\"before\":91}]"
+        "[1,24,91,115,2,0,1,-117,\"114\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"107\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 34",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":87}]"
+        "[3,87]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"111\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"102\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 35",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":67,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":111,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":59,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":53,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":29,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":107,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":75,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":79,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":91,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":115,\"before\":103},{\"op\":\"insert\",\"parent\":24,\"id\":103,\"before\":27}]"
+        "[2,24,103,67,2,24,103,111,2,24,103,59,2,24,103,53,2,24,103,29,2,24,103,107,2,24,103,83,2,24,103,49,2,24,103,75,2,24,103,79,2,24,103,91,2,24,103,115,2,24,0,103]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"112\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 36",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":107}]"
+        "[3,107]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 37",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":83,\"before\":67}]"
+        "[2,24,67,83]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 38",
       "commits": [
-        "[{\"op\":\"insert\",\"parent\":24,\"id\":49,\"before\":63}]"
+        "[2,24,63,49]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: random edit 39",
       "commits": [
-        "[{\"op\":\"create\",\"id\":118,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":119,\"kind\":\"element\",\"name\":\"txt\"},{\"op\":\"create\",\"id\":120,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":121,\"kind\":\"text\",\"text\":\" \"},{\"op\":\"insert\",\"parent\":120,\"id\":121,\"before\":null},{\"op\":\"insert\",\"parent\":119,\"id\":121,\"before\":null},{\"op\":\"insert\",\"parent\":118,\"id\":119,\"before\":null},{\"op\":\"text\",\"id\":121,\"text\":\"115\"},{\"op\":\"insert\",\"parent\":43,\"id\":119,\"before\":42},{\"op\":\"insert\",\"parent\":24,\"id\":119,\"before\":115}]"
+        "[1,24,115,119,2,0,1,-121,\"115\"]"
       ],
-      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"115\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n    #text \"\"\n  #text \" \"\n  <spacer>\n  #comment \"\"\n  #text \"\""
+      "tree": "#fragment\n  <list>\n    <txt>\n      #text \"106\"\n    <txt>\n      #text \"102\"\n    <txt>\n      #text \"113\"\n    <txt>\n      #text \"100\"\n    <txt>\n      #text \"5\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"104\"\n    <txt>\n      #text \"105\"\n    <txt>\n      #text \"108\"\n    <txt>\n      #text \"115\"\n    <txt>\n      #text \"114\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"101\"\n    <txt>\n      #text \"111\"\n  <spacer>"
     },
     {
       "label": "Items: unmount",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":24},{\"op\":\"remove\",\"id\":25},{\"op\":\"remove\",\"id\":57},{\"op\":\"remove\",\"id\":26},{\"op\":\"remove\",\"id\":22}]"
+        "[3,24,3,57]"
       ],
       "tree": "#fragment"
     },
     {
       "label": "Values: mount",
       "commits": [
-        "[{\"op\":\"create\",\"id\":122,\"kind\":\"fragment\"},{\"op\":\"root\",\"id\":122,\"protocol\":1},{\"op\":\"create\",\"id\":123,\"kind\":\"text\",\"text\":\"\"},{\"op\":\"insert\",\"parent\":122,\"id\":123,\"before\":null},{\"op\":\"create\",\"id\":124,\"kind\":\"fragment\"},{\"op\":\"create\",\"id\":125,\"kind\":\"element\",\"name\":\"vstack\"},{\"op\":\"insert\",\"parent\":124,\"id\":125,\"before\":null},{\"op\":\"attr\",\"id\":125,\"name\":\"data-number\",\"value\":1.5},{\"op\":\"attr\",\"id\":125,\"name\":\"data-boolean\",\"value\":true},{\"op\":\"attr\",\"id\":125,\"name\":\"data-string\",\"value\":\"text\"},{\"op\":\"attr\",\"id\":125,\"name\":\"data-array\",\"value\":[1,\"two\",false]},{\"op\":\"attr\",\"id\":125,\"name\":\"data-object\",\"value\":{\"b\":2,\"a\":[1]}},{\"op\":\"attr\",\"id\":125,\"name\":\"data-date\",\"value\":\"2026-01-02T03:04:05.006Z\"},{\"op\":\"insert\",\"parent\":122,\"id\":125,\"before\":123}]"
+        "[0,122,2,7,\"data-number\",7,\"data-boolean\",7,\"data-string\",7,\"data-array\",7,\"data-object\",7,\"data-date\",1,122,0,125,0,6,11,1.5,12,true,13,\"text\",14,[1,\"two\",false],15,{\"b\":2,\"a\":[1]},16,\"2026-01-02T03:04:05.006Z\",0]"
       ],
-      "tree": "#fragment\n  <vstack data-array=[1,\"two\",false] data-boolean=true data-date=\"2026-01-02T03:04:05.006Z\" data-number=1.5 data-object={\"a\":[1],\"b\":2} data-string=\"text\">\n  #text \"\""
+      "tree": "#fragment\n  <vstack data-array=[1,\"two\",false] data-boolean=true data-date=\"2026-01-02T03:04:05.006Z\" data-number=1.5 data-object={\"a\":[1],\"b\":2} data-string=\"text\">"
     },
     {
       "label": "Values: unmount",
       "commits": [
-        "[{\"op\":\"remove\",\"id\":125},{\"op\":\"remove\",\"id\":123}]"
+        "[3,125]"
+      ],
+      "tree": "#fragment"
+    },
+    {
+      "label": "Texts: mount",
+      "commits": [
+        "[0,126,2,1,126,0,129,2,0,0]"
+      ],
+      "tree": "#fragment\n  <txt>"
+    },
+    {
+      "label": "Texts: show a label",
+      "commits": [
+        "[1,129,0,-131,\"Hi \\\\ \\\"there\\\" \\n 😀\"]"
+      ],
+      "tree": "#fragment\n  <txt>\n    #text \"Hi \\\\ \\\"there\\\" \\n 😀\""
+    },
+    {
+      "label": "Texts: blank the label",
+      "commits": [
+        "[6,131,\" \"]"
+      ],
+      "tree": "#fragment\n  <txt>\n    #text \" \""
+    },
+    {
+      "label": "Texts: unmount",
+      "commits": [
+        "[3,129]"
       ],
       "tree": "#fragment"
     }

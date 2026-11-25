@@ -1,30 +1,13 @@
 import Foundation
 import Observation
 
-enum JSONValue: Decodable, Hashable {
+enum JSONValue: Hashable {
     case null
     case bool(Bool)
     case number(Double)
     case string(String)
     case array(Array<Self>)
     case object([String: Self])
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if container.decodeNil() {
-            self = .null
-        } else if let value = try? container.decode(Bool.self) {
-            self = .bool(value)
-        } else if let value = try? container.decode(Double.self) {
-            self = .number(value)
-        } else if let value = try? container.decode(String.self) {
-            self = .string(value)
-        } else if let value = try? container.decode(Array<Self>.self) {
-            self = .array(value)
-        } else {
-            self = .object(try container.decode([String: Self].self))
-        }
-    }
 
     var string: String? {
         if case let .string(value) = self { value } else { nil }
@@ -37,8 +20,8 @@ enum JSONValue: Decodable, Hashable {
 
 @Observable
 final class Node: Identifiable {
-    enum Kind: String, Decodable {
-        case fragment, element, text, comment
+    enum Kind {
+        case fragment, element, text
     }
 
     let id: Int
@@ -75,75 +58,22 @@ final class Node: Identifiable {
             switch child.kind {
             case .element: !Self.attachments.contains(child.name)
             case .text: !child.text.allSatisfy(\.isWhitespace)
-            case .fragment, .comment: false
+            case .fragment: false
             }
-        }
-    }
-}
-
-enum Op: Decodable {
-    case root(id: Int, protocolVersion: Int?)
-    case create(id: Int, kind: Node.Kind, name: String?, text: String?)
-    case insert(parent: Int, id: Int, before: Int?)
-    case remove(id: Int)
-    case attribute(id: Int, name: String, value: JSONValue)
-    case removeAttribute(id: Int, name: String)
-    case text(id: Int, text: String)
-    case release(id: Int)
-
-    private enum CodingKeys: String, CodingKey {
-        case op, id, kind, name, text, parent, before, value
-        case protocolVersion = "protocol"
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let id = try container.decode(Int.self, forKey: .id)
-        switch try container.decode(String.self, forKey: .op) {
-        case "root":
-            self = .root(id: id, protocolVersion: try container.decodeIfPresent(Int.self, forKey: .protocolVersion))
-        case "create":
-            self = .create(
-                id: id,
-                kind: try container.decode(Node.Kind.self, forKey: .kind),
-                name: try container.decodeIfPresent(String.self, forKey: .name),
-                text: try container.decodeIfPresent(String.self, forKey: .text)
-            )
-        case "insert":
-            self = .insert(
-                parent: try container.decode(Int.self, forKey: .parent),
-                id: id,
-                before: try container.decodeIfPresent(Int.self, forKey: .before)
-            )
-        case "remove":
-            self = .remove(id: id)
-        case "attr":
-            self = .attribute(
-                id: id,
-                name: try container.decode(String.self, forKey: .name),
-                value: try container.decodeIfPresent(JSONValue.self, forKey: .value) ?? .null
-            )
-        case "unattr":
-            self = .removeAttribute(id: id, name: try container.decode(String.self, forKey: .name))
-        case "text":
-            self = .text(id: id, text: try container.decode(String.self, forKey: .text))
-        case "release":
-            self = .release(id: id)
-        case let op:
-            throw DecodingError.dataCorruptedError(
-                forKey: .op, in: container, debugDescription: "Unknown op \(op)")
         }
     }
 }
 
 @Observable
 final class NodeStore {
-    static let protocolVersion = 1
+    static let protocolVersion = 2
 
     private(set) var root: Node?
     private(set) var bundleProtocolVersion: Int?
     private(set) var isCompatible = true
+    private(set) var error: String?
     @ObservationIgnored private var nodes: [Int: Node] = [:]
+    @ObservationIgnored private var names: Array<String> = []
     @ObservationIgnored private var dirty: Set<Int> = []
 
     var nodeCount: Int { nodes.count }
@@ -151,25 +81,134 @@ final class NodeStore {
     func node(_ id: Int) -> Node? { nodes[id] }
 
     func apply(_ json: String) {
-        let ops: Array<Op>
-        do {
-            ops = try JSONDecoder().decode(Array<Op>.self, from: Data(json.utf8))
-        } catch {
-            print("[bridge] \(error)")
-            return
+        var json = json
+        let failure: BridgeError? = json.withUTF8 { bytes in
+            var reader = BridgeReader(bytes)
+            do throws(BridgeError) {
+                try reader.open()
+                while try !reader.isAtEnd() {
+                    try apply(&reader)
+                    guard isCompatible else { return nil }
+                }
+                try reader.finish()
+                return nil
+            } catch {
+                return error
+            }
         }
-        for op in ops { apply(op) }
+        if let failure {
+            print("[bridge] \(failure)")
+            error = failure.description
+        }
         for id in dirty {
             guard let parent = nodes[id] else { continue }
-            var children: Array<Node> = []
-            var childID = parent.firstID
-            while let id = childID, let child = nodes[id] {
-                children.append(child)
-                childID = child.nextID
-            }
-            parent.children = children
+            parent.children = children(of: parent)
         }
         dirty.removeAll(keepingCapacity: true)
+    }
+
+    private func children(of parent: Node) -> Array<Node> {
+        var children: Array<Node> = []
+        var childID = parent.firstID
+        while let id = childID, let child = nodes[id] {
+            children.append(child)
+            childID = child.nextID
+        }
+        return children
+    }
+
+    private func name(_ ref: Int) throws(BridgeError) -> String {
+        guard names.indices.contains(ref) else { throw BridgeError(description: "Unknown name \(ref)") }
+        return names[ref]
+    }
+
+    private func apply(_ reader: inout BridgeReader) throws(BridgeError) {
+        switch try reader.int() {
+        case 0:
+            let id = try reader.int()
+            let version = try reader.int()
+            if nodes[id] == nil { nodes[id] = Node(id: id, kind: .fragment, name: "", text: "") }
+            bundleProtocolVersion = version
+            isCompatible = version == Self.protocolVersion
+            root = isCompatible ? nodes[id] : nil
+        case 1:
+            let parentID = try reader.int()
+            let beforeID = try reader.int()
+            let node = try read(&reader)
+            guard let parent = nodes[parentID] else {
+                forget(node)
+                return
+            }
+            insert(node, into: parent, before: nodes[beforeID])
+        case 2:
+            let parentID = try reader.int()
+            let beforeID = try reader.int()
+            let id = try reader.int()
+            guard let parent = nodes[parentID], let node = nodes[id] else { return }
+            insert(node, into: parent, before: nodes[beforeID])
+        case 3:
+            guard let node = nodes[try reader.int()] else { return }
+            detach(node)
+            forget(node)
+        case 4:
+            let id = try reader.int()
+            let name = try name(try reader.int())
+            let value = try reader.value()
+            nodes[id]?.attributes[name] = value
+        case 5:
+            let id = try reader.int()
+            let name = try name(try reader.int())
+            nodes[id]?.attributes[name] = nil
+        case 6:
+            let id = try reader.int()
+            let text = try reader.string()
+            nodes[id]?.text = text
+        case 7:
+            names.append(try reader.string())
+        case let opcode:
+            throw BridgeError(description: "Unknown opcode \(opcode)")
+        }
+    }
+
+    private func read(_ reader: inout BridgeReader) throws(BridgeError) -> Node {
+        let id = try reader.int()
+        if id < 0 {
+            let node = Node(id: -id, kind: .text, name: "", text: try reader.string())
+            nodes[-id] = node
+            return node
+        }
+        let node = Node(id: id, kind: .element, name: try name(try reader.int()), text: "")
+        nodes[id] = node
+        var attributes: [String: JSONValue] = [:]
+        for _ in 0..<max(0, try reader.int()) {
+            let name = try name(try reader.int())
+            attributes[name] = try reader.value()
+        }
+        node.attributes = attributes
+        let count = try reader.int()
+        guard count > 0 else { return node }
+        var children: Array<Node> = []
+        children.reserveCapacity(count)
+        for _ in 0..<count {
+            let child = try read(&reader)
+            child.parentID = id
+            child.previousID = children.last?.id
+            children.last?.nextID = child.id
+            children.append(child)
+        }
+        node.firstID = children.first?.id
+        node.lastID = children.last?.id
+        node.children = children
+        return node
+    }
+
+    private func forget(_ node: Node) {
+        nodes[node.id] = nil
+        var childID = node.firstID
+        while let id = childID, let child = nodes[id] {
+            childID = child.nextID
+            forget(child)
+        }
     }
 
     private func detach(_ node: Node) {
@@ -192,6 +231,7 @@ final class NodeStore {
 
     private func insert(_ node: Node, into parent: Node, before next: Node?) {
         detach(node)
+        let next = next?.parentID == parent.id ? next : nil
         let previousID = next.map(\.previousID) ?? parent.lastID
         node.previousID = previousID
         node.nextID = next?.id
@@ -199,30 +239,5 @@ final class NodeStore {
         if let next { next.previousID = node.id } else { parent.lastID = node.id }
         node.parentID = parent.id
         dirty.insert(parent.id)
-    }
-
-    private func apply(_ op: Op) {
-        switch op {
-        case let .root(id, version):
-            bundleProtocolVersion = version
-            isCompatible = version == Self.protocolVersion
-            root = isCompatible ? nodes[id] : nil
-        case let .create(id, kind, name, text):
-            nodes[id] = Node(id: id, kind: kind, name: name ?? "", text: text ?? "")
-        case let .insert(parentID, id, beforeID):
-            guard let parent = nodes[parentID], let node = nodes[id] else { return }
-            insert(node, into: parent, before: beforeID.flatMap { nodes[$0] })
-        case let .remove(id):
-            if let node = nodes[id] { detach(node) }
-        case let .attribute(id, name, value):
-            nodes[id]?.attributes[name] = value
-        case let .removeAttribute(id, name):
-            nodes[id]?.attributes[name] = nil
-        case let .text(id, text):
-            nodes[id]?.text = text
-        case let .release(id):
-            if let node = nodes[id] { detach(node) }
-            nodes[id] = nil
-        }
     }
 }

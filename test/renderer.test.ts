@@ -1,12 +1,13 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mountApp } from "swiftui-svelte";
+import { mountApp, protocol } from "swiftui-svelte";
 import {
   commits,
   dispatch,
   find,
   findAll,
   native,
+  ops,
   reset,
   serialize,
   settle,
@@ -14,6 +15,7 @@ import {
 import Counter from "./components/Counter.svelte";
 import Items from "./components/Items.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
+import Texts from "./components/Texts.svelte";
 import Values from "./components/Values.svelte";
 
 let unmount: (() => void) | undefined;
@@ -50,24 +52,30 @@ describe("mounting", () => {
         <vstack spacing=8>
           <txt font="headline">
             #text "Count: 0"
-          #text " "
           <btn>
             #text "Increment"
-          #text " "
-          <textfield value="">
-          #text " "
-          #comment ""
-        #text """
+          <textfield value="">"
     `);
   });
 
   it("announces the bridge protocol with the root", async () => {
     await render(Counter);
-    expect(JSON.parse(commits[0] ?? "[]")).toContainEqual({
-      op: "root",
-      id: native.root?.id,
-      protocol: 1,
-    });
+    expect(ops[0]).toEqual({ op: "root", id: native.root?.id, protocol });
+  });
+
+  it("never sends comments or whitespace-only text", async () => {
+    await render(Counter);
+    expect(serialize()).not.toContain("#comment");
+    expect(serialize()).not.toMatch(/#text " *"/);
+  });
+
+  it("sends each element and attribute name once", async () => {
+    await render(Counter);
+    unmount?.();
+    reset();
+    await render(Counter);
+    expect(ops.filter((op) => op.op === "name")).toEqual([]);
+    expect(ops.filter((op) => op.op === "insert")).not.toEqual([]);
   });
 
   it("commits the initial render in one batch", async () => {
@@ -80,9 +88,7 @@ describe("mounting", () => {
     unmount?.();
     unmount = undefined;
     await settle();
-    expect(
-      native.root?.children.filter((child) => child.kind === "element"),
-    ).toEqual([]);
+    expect(native.root?.children).toEqual([]);
   });
 });
 
@@ -157,6 +163,17 @@ describe("blocks", () => {
     await update(() => (state.show = false));
     expect(find("divider")).toBeUndefined();
     expect(find("spacer")).toBeDefined();
+  });
+});
+
+describe("text", () => {
+  it("sends a text node once it has content", async () => {
+    await render(Texts);
+    expect(find("txt")?.children).toEqual([]);
+    await update(() => (state.label = "Hi"));
+    expect(find("txt")?.children.map((child) => child.text)).toEqual(["Hi"]);
+    await update(() => (state.label = ""));
+    expect(find("txt")?.children.map((child) => child.text)).toEqual([""]);
   });
 });
 

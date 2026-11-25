@@ -3,29 +3,23 @@ import Testing
 
 @testable import SvelteSwiftUI
 
-struct NodeStoreTests {
-    private func json(_ ops: Array<[String: Any]>) -> String {
-        let data = (try? JSONSerialization.data(withJSONObject: ops)) ?? Data()
-        return String(bytes: data, encoding: .utf8) ?? ""
-    }
+private func batch(_ tokens: Array<Any>) -> String {
+    let data = (try? JSONSerialization.data(withJSONObject: tokens)) ?? Data()
+    return String(bytes: data, encoding: .utf8) ?? ""
+}
 
-    private func store(_ ops: Array<[String: Any]>) -> NodeStore {
+struct NodeStoreTests {
+    private func store(_ tokens: Array<Any>) -> NodeStore {
         let store = NodeStore()
-        store.apply(json(ops))
+        store.apply(batch(base))
+        store.apply(batch(tokens))
         return store
     }
 
-    private let base: Array<[String: Any]> = [
-        ["op": "create", "id": 1, "kind": "fragment"],
-        ["op": "root", "id": 1, "protocol": 1],
-        ["op": "create", "id": 2, "kind": "element", "name": "vstack"],
-        ["op": "insert", "parent": 1, "id": 2, "before": NSNull()],
-        ["op": "create", "id": 3, "kind": "text", "text": "a"],
-        ["op": "create", "id": 4, "kind": "text", "text": "b"],
-        ["op": "create", "id": 5, "kind": "text", "text": "c"],
-        ["op": "insert", "parent": 2, "id": 3, "before": NSNull()],
-        ["op": "insert", "parent": 2, "id": 4, "before": NSNull()],
-        ["op": "insert", "parent": 2, "id": 5, "before": NSNull()],
+    private let base: Array<Any> = [
+        0, 1, NodeStore.protocolVersion,
+        7, "vstack", 7, "spacing", 7, "label", 7, "sheet", 7, "hstack",
+        1, 1, 0, 2, 0, 0, 3, -3, "a", -4, "b", -5, "c",
     ]
 
     private func texts(_ store: NodeStore, _ id: Int = 2) -> Array<String> {
@@ -33,107 +27,129 @@ struct NodeStoreTests {
     }
 
     @Test func buildsATree() {
-        let store = store(base)
+        let store = store([])
         #expect(store.root?.id == 1)
+        #expect(store.root?.kind == .fragment)
+        #expect(store.node(2)?.name == "vstack")
+        #expect(store.node(3)?.kind == .text)
         #expect(texts(store) == ["a", "b", "c"])
         #expect(store.nodeCount == 5)
+        #expect(store.error == nil)
     }
 
-    @Test(arguments: [2, nil])
-    func refusesAnIncompatibleBundle(version: Int?) {
-        let store = store([
-            ["op": "create", "id": 1, "kind": "fragment"],
-            version.map { ["op": "root", "id": 1, "protocol": $0] } ?? ["op": "root", "id": 1],
-        ])
+    @Test(arguments: [1, 3])
+    func refusesAnIncompatibleBundle(version: Int) {
+        let store = NodeStore()
+        store.apply(batch([0, 1, version, 7, "vstack", 1, 1, 0, 2, 0, 0, 0]))
         #expect(store.root == nil)
         #expect(!store.isCompatible)
         #expect(store.bundleProtocolVersion == version)
+        #expect(store.error == nil)
+        #expect(store.node(2) == nil)
     }
 
     @Test func acceptsTheCurrentProtocol() {
-        let store = store(base)
+        let store = store([])
         #expect(store.isCompatible)
         #expect(store.bundleProtocolVersion == NodeStore.protocolVersion)
     }
 
     @Test func insertsBeforeAnAnchor() {
-        let store = store(
-            base + [["op": "create", "id": 6, "kind": "text", "text": "x"], ["op": "insert", "parent": 2, "id": 6, "before": 4]])
-        #expect(texts(store) == ["a", "x", "b", "c"])
+        #expect(texts(store([1, 2, 4, -6, "x"])) == ["a", "x", "b", "c"])
+    }
+
+    @Test func appendsWhenTheAnchorBelongsToAnotherParent() {
+        let store = store([1, 1, 0, 6, 4, 0, 0, 2, 6, 3, 5])
+        #expect(texts(store) == ["a", "b"])
+        #expect(texts(store, 6) == ["c"])
     }
 
     @Test func movesAnExistingNode() {
-        let store = store(base + [["op": "insert", "parent": 2, "id": 5, "before": 3]])
-        #expect(texts(store) == ["c", "a", "b"])
+        #expect(texts(store([2, 2, 3, 5])) == ["c", "a", "b"])
     }
 
     @Test func movesANodeToAnotherParent() {
-        let store = store(
-            base + [
-                ["op": "create", "id": 6, "kind": "element", "name": "hstack"],
-                ["op": "insert", "parent": 1, "id": 6, "before": NSNull()],
-                ["op": "insert", "parent": 6, "id": 4, "before": NSNull()],
-            ])
+        let store = store([1, 1, 0, 6, 4, 0, 0, 2, 6, 0, 4])
         #expect(texts(store) == ["a", "c"])
         #expect(texts(store, 6) == ["b"])
+        #expect(store.root?.children.map(\.id) == [2, 6])
     }
 
-    @Test func removesAndReleases() {
-        let store = store(base + [["op": "remove", "id": 3], ["op": "release", "id": 4]])
-        #expect(texts(store) == ["c"])
-        #expect(store.node(3) != nil)
-        #expect(store.node(4) == nil)
-        #expect(store.nodeCount == 4)
+    @Test func insertsANestedSubtree() {
+        let store = store([1, 1, 2, 6, 4, 2, 1, 8, 2, "x", 2, 7, 0, 0, 1, -8, "deep", -9, "tail"])
+        let node = store.node(6)
+        #expect(store.root?.children.map(\.id) == [6, 2])
+        #expect(node?.attributes == ["spacing": .number(8), "label": .string("x")])
+        #expect(node?.children.map(\.id) == [7, 9])
+        #expect(texts(store, 7) == ["deep"])
+        #expect(store.nodeCount == 9)
+        let moved = self.store([1, 1, 0, 6, 4, 0, 2, -7, "x", -8, "y", 2, 6, 7, 3])
+        #expect(texts(moved, 6) == ["a", "x", "y"])
+        #expect(texts(moved) == ["b", "c"])
+    }
+
+    @Test func removesASubtree() {
+        let store = store([3, 2])
+        #expect(store.root?.children.isEmpty == true)
+        #expect(store.node(2) == nil)
+        #expect(store.node(3) == nil)
+        #expect(store.nodeCount == 1)
     }
 
     @Test func setsAndRemovesAttributes() {
-        let store = store(
-            base + [
-                ["op": "attr", "id": 2, "name": "spacing", "value": 8],
-                ["op": "attr", "id": 2, "name": "label", "value": "x"],
-                ["op": "unattr", "id": 2, "name": "label"],
-                ["op": "attr", "id": 2, "name": "empty"],
+        let store = store([4, 2, 1, 8, 4, 2, 2, "x", 5, 2, 2, 4, 2, 3, NSNull(), 4, 2, 4, ["a": [1, true]]])
+        #expect(
+            store.node(2)?.attributes == [
+                "spacing": .number(8), "sheet": .null, "hstack": .object(["a": .array([.number(1), .bool(true)])]),
             ])
-        #expect(store.node(2)?.attributes == ["spacing": .number(8), "empty": .null])
     }
 
     @Test func updatesText() {
-        let store = store(base + [["op": "text", "id": 3, "text": "z"]])
-        #expect(texts(store) == ["z", "b", "c"])
+        #expect(texts(store([6, 3, "z"])) == ["z", "b", "c"])
+    }
+
+    @Test func decodesEscapedText() {
+        let store = store([])
+        store.apply(#"[6,3,"line\nbreak \"q\" \\ \u00e9 \ud83d\ude00 \/ \t", 6,4,"\ud83d", 6,5,"plain ✨"]"#)
+        #expect(texts(store) == ["line\nbreak \"q\" \\ é 😀 / \t", "\u{FFFD}", "plain ✨"])
+        #expect(store.error == nil)
     }
 
     @Test func ignoresOpsForUnknownNodes() {
-        let store = store(
-            base + [
-                ["op": "insert", "parent": 99, "id": 3, "before": NSNull()],
-                ["op": "insert", "parent": 2, "id": 98, "before": NSNull()],
-                ["op": "attr", "id": 97, "name": "a", "value": 1],
-                ["op": "remove", "id": 96],
-                ["op": "release", "id": 95],
-            ])
+        let store = store([1, 99, 0, -9, "x", 2, 2, 0, 98, 4, 97, 1, 1, 5, 97, 1, 3, 96, 6, 95, "t", 2, 99, 0, 3])
+        #expect(texts(store) == ["a", "b", "c"])
+        #expect(store.node(9) == nil)
+        #expect(store.nodeCount == 5)
+        #expect(store.error == nil)
+    }
+
+    @Test(arguments: ["not json", "[99]", "[1,2", "[7]", "[4,2,50,1]", "[6,3,\"open]", "[6,3,\"\\x\"]", "[4,2,1,tru]", "[] x"])
+    func reportsAMalformedBatch(json: String) {
+        let store = store([])
+        store.apply(json)
+        #expect(store.error != nil)
         #expect(texts(store) == ["a", "b", "c"])
     }
 
-    @Test func keepsTheTreeWhenABatchIsMalformed() {
-        let store = store(base)
-        store.apply("not json")
-        store.apply("[{\"op\":\"bogus\",\"id\":1}]")
-        #expect(texts(store) == ["a", "b", "c"])
+    @Test func appliesOpsBeforeAMalformedOne() {
+        let store = store([])
+        store.apply("[6,3,\"z\",99]")
+        #expect(texts(store) == ["z", "b", "c"])
+        #expect(store.error?.contains("99") == true)
+    }
+
+    @Test func toleratesWhitespace() {
+        let store = store([])
+        store.apply(" [ 6 , 3 , \"z\" , 4 , 2 , 1 , { \"a\" : [ 1 , 2 ] } ] ")
+        #expect(texts(store) == ["z", "b", "c"])
+        #expect(store.node(2)?.attributes["spacing"] == .object(["a": .array([.number(1), .number(2)])]))
     }
 
     @Test func rendersOnlyMeaningfulChildren() {
-        let store = store(
-            base + [
-                ["op": "create", "id": 6, "kind": "text", "text": "  \n"],
-                ["op": "create", "id": 7, "kind": "comment", "text": ""],
-                ["op": "create", "id": 8, "kind": "element", "name": "sheet"],
-                ["op": "insert", "parent": 2, "id": 6, "before": NSNull()],
-                ["op": "insert", "parent": 2, "id": 7, "before": NSNull()],
-                ["op": "insert", "parent": 2, "id": 8, "before": NSNull()],
-            ])
+        let store = store([1, 2, 0, -6, "  \n", 1, 2, 0, 7, 3, 0, 0])
         let node = store.node(2)
         #expect(node?.renderedChildren.map(\.id) == [3, 4, 5])
-        #expect(node?.attachment("sheet")?.id == 8)
+        #expect(node?.attachment("sheet")?.id == 7)
     }
 }
 
@@ -151,13 +167,26 @@ private struct SplitMix: RandomNumberGenerator {
 
 struct NodeStoreRandomTests {
     private struct Model {
-        var children: [Int: Array<Int>] = [:]
+        var children: [Int: Array<Int>] = [1: []]
         var parent: [Int: Int] = [:]
-        var live: Set<Int> = []
+
+        var live: Array<Int> { children.keys.sorted() }
 
         mutating func detach(_ id: Int) {
             guard let parentID = parent.removeValue(forKey: id) else { return }
             children[parentID]?.removeAll { $0 == id }
+        }
+
+        mutating func attach(_ id: Int, to parentID: Int, before: Int) {
+            let siblings = children[parentID] ?? []
+            children[parentID, default: []].insert(id, at: siblings.firstIndex(of: before) ?? siblings.count)
+            parent[id] = parentID
+        }
+
+        mutating func forget(_ id: Int) {
+            for child in children[id] ?? [] { forget(child) }
+            children[id] = nil
+            parent[id] = nil
         }
 
         func isAncestor(_ id: Int, of other: Int) -> Bool {
@@ -171,45 +200,45 @@ struct NodeStoreRandomTests {
     }
 
     @Test(arguments: 1...8)
-    func matchesAReferenceModel(seed: UInt64) throws {
+    func matchesAReferenceModel(seed: UInt64) {
         var random = SplitMix(state: seed)
         var model = Model()
         let store = NodeStore()
-        var nextID = 1
+        store.apply(batch([0, 1, NodeStore.protocolVersion, 7, "e"]))
+        var nextID = 2
         for _ in 0..<150 {
-            var ops: Array<[String: Any]> = []
+            var tokens: Array<Any> = []
             for _ in 0..<Int.random(in: 1...12, using: &random) {
                 let roll = Double.random(in: 0..<1, using: &random)
-                let live = model.live.sorted()
-                if roll < 0.3 || live.count < 3 {
+                let live = model.live
+                let movable = live.filter { $0 != 1 }
+                if roll < 0.4 || movable.count < 3, let parent = live.randomElement(using: &random) {
+                    let before = model.children[parent]?.randomElement(using: &random) ?? 0
                     let id = nextID
-                    nextID += 1
-                    ops.append(["op": "create", "id": id, "kind": "element", "name": "e\(id)"])
-                    model.live.insert(id)
+                    let childCount = Int.random(in: 0...2, using: &random)
+                    tokens += [1, parent, before, id, 0, 0, childCount]
+                    model.attach(id, to: parent, before: before)
                     model.children[id] = []
-                } else if roll < 0.75, let node = live.randomElement(using: &random),
+                    for offset in 1...max(1, childCount) where childCount > 0 {
+                        tokens += [id + offset, 0, 0, 0]
+                        model.children[id + offset] = []
+                        model.attach(id + offset, to: id, before: 0)
+                    }
+                    nextID += 1 + childCount
+                } else if roll < 0.8, let node = movable.randomElement(using: &random),
                     let parent = live.filter({ !model.isAncestor(node, of: $0) }).randomElement(using: &random)
                 {
                     model.detach(node)
-                    let siblings = model.children[parent] ?? []
-                    let before = siblings.isEmpty || Bool.random(using: &random) ? nil : siblings.randomElement(using: &random)
-                    ops.append(["op": "insert", "parent": parent, "id": node, "before": before.map { $0 as Any } ?? NSNull()])
-                    let index = before.flatMap { siblings.firstIndex(of: $0) } ?? siblings.count
-                    model.children[parent, default: []].insert(node, at: index)
-                    model.parent[node] = parent
-                } else if roll < 0.9, let node = live.randomElement(using: &random) {
-                    ops.append(["op": "remove", "id": node])
+                    let before = model.children[parent]?.randomElement(using: &random) ?? 0
+                    tokens += [2, parent, before, node]
+                    model.attach(node, to: parent, before: before)
+                } else if let node = movable.randomElement(using: &random) {
+                    tokens += [3, node]
                     model.detach(node)
-                } else if let node = live.randomElement(using: &random) {
-                    ops.append(["op": "release", "id": node])
-                    model.detach(node)
-                    for child in model.children[node] ?? [] { model.parent[child] = nil }
-                    model.children[node] = nil
-                    model.live.remove(node)
+                    model.forget(node)
                 }
             }
-            let data = try JSONSerialization.data(withJSONObject: ops)
-            store.apply(String(bytes: data, encoding: .utf8) ?? "")
+            store.apply(batch(tokens))
             for id in model.live {
                 let actual = store.node(id)?.children.map(\.id) ?? []
                 let expected = model.children[id] ?? []
@@ -218,7 +247,8 @@ struct NodeStoreRandomTests {
                     return
                 }
             }
+            #expect(store.nodeCount == model.live.count)
         }
-        #expect(store.nodeCount == model.live.count)
+        #expect(store.error == nil)
     }
 }

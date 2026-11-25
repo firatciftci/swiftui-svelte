@@ -1,13 +1,6 @@
-type Op =
-  | { op: "root"; id: number }
-  | { op: "create"; id: number; kind: Kind; name?: string; text?: string }
-  | { op: "insert"; parent: number; id: number; before: number | null }
-  | { op: "remove"; id: number }
-  | { op: "attr"; id: number; name: string; value: unknown }
-  | { op: "unattr"; id: number; name: string }
-  | { op: "text"; id: number; text: string }
-  | { op: "release"; id: number };
-type Kind = "fragment" | "element" | "text" | "comment";
+import { opcodes, protocol } from "swiftui-svelte/renderer";
+
+type Kind = "fragment" | "element" | "text";
 type MirrorNode = {
   id: number;
   kind: Kind;
@@ -17,10 +10,167 @@ type MirrorNode = {
   children: Array<MirrorNode>;
   parent: MirrorNode | null;
 };
+type Record = {
+  id: number;
+  kind: "element" | "text";
+  name: string;
+  text: string;
+  attributes: Array<[string, unknown]>;
+  children: Array<Record>;
+};
+type Op =
+  | { op: "root"; id: number; protocol: number }
+  | { op: "insert"; parent: number; before: number; node: Record }
+  | { op: "move"; parent: number; before: number; id: number }
+  | { op: "remove"; id: number }
+  | { op: "attr"; id: number; name: string; value: unknown }
+  | { op: "unattr"; id: number; name: string }
+  | { op: "text"; id: number; text: string }
+  | { op: "name"; name: string };
 
 const nodes = new Map<number, MirrorNode>();
+const names: Array<string> = [];
 export const commits: Array<string> = [];
+export const ops: Array<Op> = [];
 export const native = { root: null as MirrorNode | null };
+
+class Cursor {
+  index = 0;
+  readonly tokens: Array<unknown>;
+
+  constructor(tokens: Array<unknown>) {
+    this.tokens = tokens;
+  }
+
+  get isDone(): boolean {
+    return this.index >= this.tokens.length;
+  }
+
+  value(): unknown {
+    if (this.isDone) throw new RangeError("truncated batch");
+    return this.tokens[this.index++];
+  }
+
+  int(): number {
+    const value = this.value();
+    if (typeof value !== "number" || !Number.isSafeInteger(value))
+      throw new TypeError(`expected an integer, got ${JSON.stringify(value)}`);
+    return value;
+  }
+
+  string(): string {
+    const value = this.value();
+    if (typeof value !== "string")
+      throw new TypeError(`expected a string, got ${JSON.stringify(value)}`);
+    return value;
+  }
+
+  name(): string {
+    const ref = this.int();
+    const name = names[ref];
+    if (name == null) throw new RangeError(`unknown name ${ref}`);
+    return name;
+  }
+
+  record(): Record {
+    const id = this.int();
+    if (id < 0) {
+      return {
+        id: -id,
+        kind: "text",
+        name: "",
+        text: this.string(),
+        attributes: [],
+        children: [],
+      };
+    }
+    const name = this.name();
+    const attributes: Array<[string, unknown]> = [];
+    const attributeCount = this.int();
+    for (let index = 0; index < attributeCount; index++)
+      attributes.push([this.name(), this.value()]);
+    const children: Array<Record> = [];
+    const childCount = this.int();
+    for (let index = 0; index < childCount; index++)
+      children.push(this.record());
+    return { id, kind: "element", name, text: "", attributes, children };
+  }
+
+  op(): Op {
+    const opcode = this.int();
+    switch (opcode) {
+      case opcodes.root: {
+        return { op: "root", id: this.int(), protocol: this.int() };
+      }
+      case opcodes.insert: {
+        return {
+          op: "insert",
+          parent: this.int(),
+          before: this.int(),
+          node: this.record(),
+        };
+      }
+      case opcodes.move: {
+        return {
+          op: "move",
+          parent: this.int(),
+          before: this.int(),
+          id: this.int(),
+        };
+      }
+      case opcodes.remove: {
+        return { op: "remove", id: this.int() };
+      }
+      case opcodes.attr: {
+        return {
+          op: "attr",
+          id: this.int(),
+          name: this.name(),
+          value: this.value(),
+        };
+      }
+      case opcodes.unattr: {
+        return { op: "unattr", id: this.int(), name: this.name() };
+      }
+      case opcodes.text: {
+        return { op: "text", id: this.int(), text: this.string() };
+      }
+      case opcodes.name: {
+        const name = this.string();
+        names.push(name);
+        return { op: "name", name };
+      }
+      default: {
+        throw new RangeError(`unknown opcode ${opcode}`);
+      }
+    }
+  }
+}
+
+function build(record: Record): MirrorNode {
+  if (nodes.has(record.id)) throw new Error(`node ${record.id} sent twice`);
+  const node: MirrorNode = {
+    id: record.id,
+    kind: record.kind,
+    name: record.name,
+    text: record.text,
+    attributes: new Map(record.attributes),
+    children: [],
+    parent: null,
+  };
+  nodes.set(node.id, node);
+  for (const child of record.children) {
+    const built = build(child);
+    built.parent = node;
+    node.children.push(built);
+  }
+  return node;
+}
+
+function forget(node: MirrorNode): void {
+  nodes.delete(node.id);
+  for (const child of node.children) forget(child);
+}
 
 function detach(node: MirrorNode): void {
   const { parent } = node;
@@ -29,61 +179,67 @@ function detach(node: MirrorNode): void {
   node.parent = null;
 }
 
+function existing(id: number): MirrorNode {
+  const node = nodes.get(id);
+  if (node == null) throw new Error(`unknown node ${id}`);
+  return node;
+}
+
+function place(parent: MirrorNode, node: MirrorNode, before: number): void {
+  detach(node);
+  const index =
+    before === 0
+      ? parent.children.length
+      : parent.children.indexOf(existing(before));
+  if (index === -1) throw new Error(`anchor ${before} not in parent`);
+  parent.children.splice(index, 0, node);
+  node.parent = parent;
+}
+
 function apply(op: Op): void {
   switch (op.op) {
     case "root": {
-      native.root = nodes.get(op.id) ?? null;
-      break;
-    }
-    case "create": {
-      nodes.set(op.id, {
+      if (op.protocol !== protocol) throw new Error(`protocol ${op.protocol}`);
+      const root: MirrorNode = {
         id: op.id,
-        kind: op.kind,
-        name: op.name ?? "",
-        text: op.text ?? "",
+        kind: "fragment",
+        name: "",
+        text: "",
         attributes: new Map(),
         children: [],
         parent: null,
-      });
+      };
+      nodes.set(op.id, root);
+      native.root = root;
       break;
     }
     case "insert": {
-      const parent = nodes.get(op.parent);
-      const node = nodes.get(op.id);
-      if (parent == null || node == null) throw new Error(`insert ${op.id}`);
-      detach(node);
-      const before = op.before == null ? null : nodes.get(op.before);
-      const index =
-        before == null
-          ? parent.children.length
-          : parent.children.indexOf(before);
-      if (index === -1) throw new Error(`anchor ${op.before} not in parent`);
-      parent.children.splice(index, 0, node);
-      node.parent = parent;
+      place(existing(op.parent), build(op.node), op.before);
+      break;
+    }
+    case "move": {
+      place(existing(op.parent), existing(op.id), op.before);
       break;
     }
     case "remove": {
-      const node = nodes.get(op.id);
-      if (node != null) detach(node);
+      const node = existing(op.id);
+      detach(node);
+      forget(node);
       break;
     }
     case "attr": {
-      nodes.get(op.id)?.attributes.set(op.name, op.value);
+      existing(op.id).attributes.set(op.name, op.value);
       break;
     }
     case "unattr": {
-      nodes.get(op.id)?.attributes.delete(op.name);
+      existing(op.id).attributes.delete(op.name);
       break;
     }
     case "text": {
-      const node = nodes.get(op.id);
-      if (node != null) node.text = op.text;
+      existing(op.id).text = op.text;
       break;
     }
-    case "release": {
-      const node = nodes.get(op.id);
-      if (node != null) detach(node);
-      nodes.delete(op.id);
+    case "name": {
       break;
     }
   }
@@ -149,6 +305,7 @@ export function findAll(
 
 export function reset(): void {
   commits.length = 0;
+  ops.length = 0;
 }
 
 export async function settle(): Promise<void> {
@@ -168,7 +325,12 @@ export function installBridge(): void {
   Object.assign(globalThis, {
     __nativeCommit(json: string): void {
       commits.push(json);
-      for (const op of JSON.parse(json) as Array<Op>) apply(op);
+      const cursor = new Cursor(JSON.parse(json) as Array<unknown>);
+      while (!cursor.isDone) {
+        const op = cursor.op();
+        ops.push(op);
+        apply(op);
+      }
     },
     __nativeNow: (): number => performance.now(),
   });

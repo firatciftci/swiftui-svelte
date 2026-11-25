@@ -13,8 +13,6 @@ struct NodeView: View {
                 .layoutPriority(node.name == "spacer" ? -1 : 0)
         case .fragment:
             children
-        case .comment:
-            EmptyView()
         }
     }
 

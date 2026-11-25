@@ -137,17 +137,34 @@ jobs:
       - name: Generate the Xcode project
         run: pnpm run ios:project
 
-      - name: Run the UI tests on a simulator
+      - name: Boot a simulator
         run: |
           udid=$(xcrun simctl list devices available --json | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
           echo "Using simulator $udid"
-          xcodebuild test \
+          echo "SIMULATOR_UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl bootstatus "$udid" -b
+
+      - name: Build the UI tests
+        run: |
+          xcodebuild build-for-testing \
             -project example/ios/SvelteHost.xcodeproj \
             -scheme SvelteHost \
-            -destination "id=$udid" \
+            -destination "id=$SIMULATOR_UDID" \
+            -derivedDataPath build/derived \
+            CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM=
+
+      - name: Run the UI tests on a simulator
+        run: |
+          xcodebuild test-without-building \
+            -project example/ios/SvelteHost.xcodeproj \
+            -scheme SvelteHost \
+            -destination "id=$SIMULATOR_UDID" \
             -derivedDataPath build/derived \
             -resultBundlePath build/UITests.xcresult \
-            CODE_SIGNING_ALLOWED=NO
+            -retry-tests-on-failure \
+            -test-iterations 2
 
       - name: Upload the test results
         if: failure()

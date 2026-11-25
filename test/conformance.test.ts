@@ -12,6 +12,7 @@ import {
 import Counter from "./components/Counter.svelte";
 import Items from "./components/Items.svelte";
 import { state } from "./components/state.svelte.ts";
+import Texts from "./components/Texts.svelte";
 import Values from "./components/Values.svelte";
 
 declare const process: {
@@ -30,12 +31,7 @@ async function step(label: string, change: () => void): Promise<void> {
   change();
   flushSync();
   await settle();
-  const fresh = commits.slice(recorded).map((json) => {
-    const ops = (JSON.parse(json) as Array<{ op: string }>).filter(
-      (op) => op.op !== "release",
-    );
-    return JSON.stringify(ops);
-  });
+  const fresh = commits.slice(recorded);
   recorded = commits.length;
   steps.push({ label, commits: fresh, tree: serialize() });
 }
@@ -99,6 +95,14 @@ it("records op logs that the Swift tests replay", async () => {
 
   await step("Values: mount", () => (unmount = mountApp(Values)));
   await step("Values: unmount", () => unmount());
+
+  await step("Texts: mount", () => (unmount = mountApp(Texts)));
+  await step(
+    "Texts: show a label",
+    () => (state.label = 'Hi \\ "there" \n 😀'),
+  );
+  await step("Texts: blank the label", () => (state.label = " "));
+  await step("Texts: unmount", () => unmount());
 
   const fs = process.getBuiltinModule("node:fs");
   fs.writeFileSync(

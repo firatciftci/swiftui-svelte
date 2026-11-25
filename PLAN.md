@@ -28,12 +28,12 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
   - [x] A Swift Testing target that runs with `swift test` on macOS
   - [ ] An XCUITest target in the example app, run on a simulator in CI
   - [x] Cross-language conformance: real Svelte components compiled under Node produce op logs, and Swift tests replay them and compare the resulting tree with the JS tree
-  - [x] A randomized op-sequence test (create, insert, move, remove, and release) that compares both stores with a reference model
+  - [x] A randomized op-sequence test (insert, move, and remove) that compares both stores with a reference model
 - [ ] CI runs all of the above and reports coverage for JS and Swift
 
 ## M1. Bridge, protocol, and runtime
 
-- [ ] Compact op encoding: flat arrays with interned attribute and element names instead of JSON objects, decoded without `Codable` overhead
+- [x] Compact op encoding: flat arrays with interned attribute and element names instead of JSON objects, decoded without `Codable` overhead
 - [ ] Attribute values keep `null`, booleans, numbers, strings, arrays, objects, and `Date` exactly, and the coercion rules are documented
 - [ ] Redundant ops in a batch are coalesced, such as an attribute set twice or an insert followed by a remove
 - [ ] Controlled inputs without lag or cursor jumps: native state leads, and JS echoes are ignored unless they differ from the latest native value
@@ -174,7 +174,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [ ] Lazy containers keep memory flat while scrolling 10,000 rows
 - [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device _(maintainer)_
 - [ ] A bundle size budget for the renderer and the host polyfills
-- [ ] Whitespace-only text nodes stay on the JS side instead of crossing the bridge, because SwiftUI never renders them
+- [x] Whitespace-only text nodes stay on the JS side instead of crossing the bridge, because SwiftUI never renders them
 - [ ] Device results in the README, refreshed for 1.0 _(maintainer)_
 
 ## M7. Developer experience
