@@ -12,6 +12,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     enum Message: Sendable {
         case commit(String, String?)
         case action(Int, String, String)
+        case invoke(Int, String, String)
         case error(ScriptError)
         case requestFrame
     }
@@ -117,6 +118,9 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let action: @convention(block) (Int, String, String) -> Void = { [weak self] mount, name, json in
             self?.post(.action(mount, name, json))
         }
+        let invoke: @convention(block) (Int, String, String) -> Void = { [weak self] id, method, json in
+            self?.post(.invoke(id, method, json))
+        }
         let requestFrame: @convention(block) () -> Void = { [weak self] in
             self?.post(.requestFrame)
         }
@@ -145,6 +149,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         }
         let globals: [String: Any] = [
             "__nativeCommit": commit,
+            "__nativeInvoke": invoke,
             "__nativeLog": log,
             "setTimeout": setTimeout,
             "setInterval": setInterval,

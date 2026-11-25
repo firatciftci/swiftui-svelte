@@ -78,8 +78,8 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Per-update animation: a `withAnimation(fn, options)` helper that animates the next commit
 - [x] A reactive environment module, `swiftui-svelte/env`, with the color scheme, Dynamic Type size, locale, layout direction, size class, scene phase, safe area insets, reduce motion, and keyboard height
 - [x] App lifecycle events: active, inactive, background, memory warning, and open URL
-- [ ] Focus management: a `focused` attribute, plus `focus()` and `blur()` methods through a ref helper
-- [ ] Element refs: `bind:this` returns a handle with `scrollTo`, `focus`, and measurement methods
+- [x] Focus management: a `focused` attribute, plus `focus()` and `blur()` methods through a ref helper
+- [x] Element refs: Svelte rejects `bind:this` in custom renderer components, so `ref()` attachments provide `focus`, `blur`, `scrollIntoView`, `scrollTo`, and `measure`
 - [ ] Snippets as attachments (`header`, `footer`, `label`, `background`, and `overlay`) wherever SwiftUI takes a view builder
 - [ ] Rich text: nested `txt` spans with their own font, color, and weight concatenate into one `Text`, plus a `markdown` attribute
 - [ ] Localization: the device locale is exposed to JS and works with Paraglide, and right-to-left layout follows the locale

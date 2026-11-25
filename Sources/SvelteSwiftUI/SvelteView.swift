@@ -86,7 +86,7 @@ public struct SvelteView: View {
             }
         #endif
         .environment(runtime)
-        .onOpenURL { runtime.open($0) }
+        .onOpenURL { runtime.open($0, from: handle?.id) }
         .onAppear {
             runtime.updateEnvironment(environment.dictionary)
             if handle == nil {

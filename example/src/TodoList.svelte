@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ref } from "swiftui-svelte";
   import { onOpenURL } from "swiftui-svelte/app";
   import TodoDetail from "./TodoDetail.svelte";
   import { addTodo, removeTodo, todos } from "./todos.svelte";
@@ -6,6 +7,8 @@
   let draft = $state("");
   const stack: Array<number> = $state([]);
   let confirming = $state(false);
+  const field = ref();
+  const rows = ref();
 
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
   const finished = $derived(todos.length - remaining);
@@ -21,24 +24,37 @@
 
   function add() {
     const title = draft.trim();
-    if (title === "") return;
+    if (title === "") return false;
     addTodo(title);
     draft = "";
+    return true;
   }
 </script>
 
 <navstack onpop={(depth) => (stack.length = depth)}>
   <screen title="To-dos">
-    <list animated>
+    <list animated {@attach rows}>
       <hstack>
         <textfield
           testid="new-todo"
+          {@attach field}
           placeholder="New to-do"
           value={draft}
           oninput={(value) => (draft = value)}
-          onsubmit={add}
+          onsubmit={() => {
+            if (add()) field.focus();
+          }}
         />
-        <btn variant="prominent" onclick={add}>Add</btn>
+        <btn
+          variant="prominent"
+          onclick={() => {
+            if (!add()) return;
+            field.blur();
+            rows.scrollTo("bottom");
+          }}
+        >
+          Add
+        </btn>
       </hstack>
 
       {#each todos as todo (todo.id)}

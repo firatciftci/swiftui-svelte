@@ -13,6 +13,9 @@ final class Node: Identifiable {
     var text: String
     var attributes: [String: JSONValue] = [:]
     var children: Array<Node> = []
+    var focusRequest = FocusRequest()
+    var isMeasured = false
+    @ObservationIgnored var frame: CGRect?
     @ObservationIgnored var parentID: Int?
     @ObservationIgnored var previousID: Int?
     @ObservationIgnored var nextID: Int?

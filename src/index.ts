@@ -1,2 +1,3 @@
 export type { AnimationOptions } from "./elements.ts";
-export { mountApp, protocol, stats, withAnimation } from "./renderer.ts";
+export type { Ref } from "./renderer.ts";
+export { mountApp, protocol, ref, stats, withAnimation } from "./renderer.ts";

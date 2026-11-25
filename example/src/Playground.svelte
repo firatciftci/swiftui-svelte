@@ -7,6 +7,7 @@
   let count = $state(0);
   let seconds = $state(0);
   let name = $state("");
+  let editingName = $state(false);
   let showSheet = $state(false);
   let celebrating = $state(false);
   let returns = $state(0);
@@ -75,7 +76,13 @@
           placeholder="Your name"
           debounce={150}
           bind:value={() => name, (value) => (name = value.slice(0, 12))}
+          bind:focused={editingName}
         />
+        {#if editingName}
+          <btn variant="borderless" onclick={() => (editingName = false)}>
+            Done editing
+          </btn>
+        {/if}
         {#if name.trim() !== ""}
           <txt color="accent">Hello, {name.trim()}!</txt>
         {/if}

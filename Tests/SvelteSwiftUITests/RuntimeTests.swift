@@ -84,31 +84,101 @@ struct RuntimeTests {
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
         try
             (mount + """
-                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, payload);
+                let opened = 0;
+                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
                 """).write(to: url, atomically: true, encoding: .utf8)
         let runtime = SvelteRuntime(source: url, reloadsOnChange: false)
-        runtime.open(try #require(URL(string: "sveltehost://todos/2")))
+        let link = try #require(URL(string: "sveltehost://todos/2"))
+        runtime.open(link, from: nil)
+        runtime.open(link, from: nil)
         runtime.start()
         runtime.settle()
-        #expect(runtime.store.node(2)?.attributes["openurl"] == .string("sveltehost://todos/2"))
+        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(1), .string("sveltehost://todos/2")]))
     }
 
-    @Test func opensEachURLOnceWhenSeveralViewsReceiveIt() async throws {
+    @Test func opensEachURLOnceWhenSeveralViewsReceiveIt() throws {
         let runtime = try runtime(
             mount + """
+                globalThis.__svelteMount = () => {};
                 let opened = 0;
                 globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
                 """)
+        let first = runtime.mount("First", props: "{}", actions: [:])
+        let second = runtime.mount("Second", props: "{}", actions: [:])
         let url = try #require(URL(string: "sveltehost://todos/4"))
-        runtime.open(url)
-        runtime.open(url)
+        runtime.open(url, from: second)
+        runtime.open(url, from: first)
         runtime.settle()
         #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(1), .string("sveltehost://todos/4")]))
-        try await eventually {
-            runtime.open(url)
-            runtime.settle()
-            return runtime.store.node(2)?.attributes["openurl"] == .array([.number(2), .string("sveltehost://todos/4")])
+        runtime.unmount(first)
+        runtime.open(url, from: second)
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(2), .string("sveltehost://todos/4")]))
+        runtime.open(url)
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(3), .string("sveltehost://todos/4")]))
+    }
+
+    @Test func answersMeasurementsOnceTheElementIsLaidOut() throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteReply = (request, rect) => attr(2, `reply${request}`, rect);
+                __nativeInvoke(2, "measure", JSON.stringify({ request: 1 }));
+                __nativeInvoke(99, "measure", JSON.stringify({ request: 2 }));
+                """)
+        runtime.settle()
+        let node = try #require(runtime.store.node(2))
+        #expect(node.isMeasured)
+        #expect(node.attributes["reply1"] == nil)
+        #expect(node.attributes["reply2"] == .null)
+        runtime.measured(node, frame: .zero)
+        runtime.settle()
+        #expect(node.attributes["reply1"] == nil)
+        runtime.measured(node, frame: CGRect(x: 16, y: 120, width: 370, height: 44))
+        runtime.settle()
+        let rect: JSONValue = .object(["x": .number(16), "y": .number(120), "width": .number(370), "height": .number(44)])
+        #expect(node.attributes["reply1"] == rect)
+        _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
+        runtime.settle()
+        #expect(node.attributes["reply3"] == rect)
+    }
+
+    @Test func answersPendingMeasurementsWithNullWhenTheElementIsRemoved() throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteReply = (request, rect) => { globalThis.replied = [request, rect]; };
+                __nativeInvoke(2, "measure", JSON.stringify({ request: 5 }));
+                """)
+        runtime.settle()
+        _ = runtime.evaluate { $0.evaluateScript("__nativeCommit(JSON.stringify([3, 2]))") }
+        runtime.settle()
+        let replied = runtime.evaluate { $0.evaluateScript("JSON.stringify(globalThis.replied)")?.toString() }
+        #expect(replied == "[5,null]")
+    }
+
+    @Test func turnsFocusAndScrollCallsIntoRequests() throws {
+        let runtime = try runtime(
+            mount + """
+                __nativeCommit(JSON.stringify([1, 2, 0, 8, 0, 0, 0, 1, 2, 0, 9, 0, 0, 0]));
+                __nativeInvoke(2, "focus", "{}");
+                """)
+        runtime.settle()
+        let node = try #require(runtime.store.node(2))
+        #expect(node.focusRequest.isFocused)
+        _ = runtime.evaluate {
+            $0.evaluateScript(
+                #"__nativeInvoke(2, "blur", "{}"); __nativeInvoke(2, "scrollTo", JSON.stringify({ edge: "bottom", animated: false }))"#)
         }
+        runtime.settle()
+        #expect(!node.focusRequest.isFocused)
+        #expect(runtime.scrollRequest?.target == 9)
+        #expect(runtime.scrollRequest?.anchor == .bottom)
+        #expect(runtime.scrollRequest?.isAnimated == false)
+        _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(8, "scrollIntoView", JSON.stringify({ anchor: "center" }))"#) }
+        runtime.settle()
+        #expect(runtime.scrollRequest?.target == 8)
+        #expect(runtime.scrollRequest?.anchor == .center)
+        #expect(runtime.scrollRequest?.isAnimated == true)
     }
 
     @Test func dispatchesEventsWithPayloads() throws {

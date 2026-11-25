@@ -28,6 +28,30 @@ type ElementNode = Container &
   };
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
+type Rect = { x: number; y: number; width: number; height: number };
+type ScrollOptions = {
+  anchor?:
+    | "top"
+    | "center"
+    | "bottom"
+    | "leading"
+    | "trailing"
+    | "topLeading"
+    | "topTrailing"
+    | "bottomLeading"
+    | "bottomTrailing";
+  animated?: boolean;
+};
+export type Ref = ((node: unknown) => () => void) & {
+  focus(): void;
+  blur(): void;
+  scrollIntoView(options?: ScrollOptions): void;
+  scrollTo(
+    edge: "top" | "bottom",
+    options?: Omit<ScrollOptions, "anchor">,
+  ): void;
+  measure(): Promise<Rect | null>;
+};
 type ChildNode = ElementNode | TextNode;
 
 const State = { Local: 0, Pending: 1, Native: 2 } as const;
@@ -66,7 +90,11 @@ const finalizer = new FinalizationRegistry<number>((id) => {
   elements.delete(id);
   stats.live--;
 });
-const scheduler = { nextId: 1, isScheduled: false };
+const scheduler = { nextId: 1, nextRequest: 1, isScheduled: false };
+const invocations: Array<
+  [element: ElementNode, method: string, options: Record<string, unknown>]
+> = [];
+const replies = new Map<number, (rect: Rect | null) => void>();
 
 function wire(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return Number(value);
@@ -171,13 +199,32 @@ function flushInserts(): void {
   pending.length = 0;
 }
 
+function flushInvocations(): void {
+  const waiting: typeof invocations = [];
+  for (const invocation of invocations) {
+    const [element, method, options] = invocation;
+    if (element.state === State.Native) {
+      __nativeInvoke(element.id, method, JSON.stringify(options));
+    } else if (element.state === State.Pending) {
+      waiting.push(invocation);
+    } else if (typeof options.request === "number") {
+      settle(options.request, null);
+    }
+  }
+  invocations.length = 0;
+  for (const invocation of waiting) invocations.push(invocation);
+}
+
 function commit(animation?: AnimationOptions): void {
   scheduler.isScheduled = false;
   const start = __nativeNow();
   flushAttributes();
   flushTexts();
   flushInserts();
-  if (batch.length === 0) return;
+  if (batch.length === 0) {
+    flushInvocations();
+    return;
+  }
   const json = JSON.stringify(batch, wire);
   batch.length = 0;
   const serialized = __nativeNow();
@@ -188,7 +235,67 @@ function commit(animation?: AnimationOptions): void {
   stats.bytes += json.length;
   stats.serializeMs += serialized - start;
   stats.nativeMs += stats.lastCommitEnd - serialized;
+  flushInvocations();
 }
+
+function settle(request: number, rect: Rect | null): void {
+  const resolve = replies.get(request);
+  replies.delete(request);
+  resolve?.(rect);
+}
+
+function invoke(
+  element: ElementNode | null,
+  method: string,
+  options: Record<string, unknown> = {},
+): void {
+  if (element == null) return;
+  invocations.push([element, method, options]);
+  schedule();
+}
+
+function isElement(node: unknown): node is ElementNode {
+  return (
+    typeof node === "object" &&
+    node != null &&
+    "kind" in node &&
+    node.kind === "element" &&
+    "id" in node &&
+    typeof node.id === "number" &&
+    elements.get(node.id)?.deref() === node
+  );
+}
+
+export function ref(): Ref {
+  let element: ElementNode | null = null;
+  const attach = (node: unknown): (() => void) => {
+    if (isElement(node)) element = node;
+    return () => {
+      if (element === node) element = null;
+    };
+  };
+  return Object.assign(attach, {
+    focus: () => invoke(element, "focus"),
+    blur: () => invoke(element, "blur"),
+    scrollIntoView: (options: ScrollOptions = {}) =>
+      invoke(element, "scrollIntoView", options),
+    scrollTo: (
+      edge: "top" | "bottom",
+      options: Omit<ScrollOptions, "anchor"> = {},
+    ) => invoke(element, "scrollTo", { ...options, edge }),
+    measure: async (): Promise<Rect | null> => {
+      if (element == null) return null;
+      const request = scheduler.nextRequest++;
+      const rect = new Promise<Rect | null>((resolve) =>
+        replies.set(request, resolve),
+      );
+      invoke(element, "measure", { request });
+      return rect;
+    },
+  });
+}
+
+globalThis.__svelteReply = (request, rect) => settle(request, rect);
 
 export function withAnimation<T>(
   fn: () => T,

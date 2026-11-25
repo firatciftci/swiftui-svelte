@@ -259,6 +259,45 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 
 Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. `Sheet` and `Alert` are presented while `presented` is true, and set it to false when the user dismisses them.
 
+### Element refs and focus
+
+Svelte's compiler rejects `bind:this` in custom renderer components, so swiftui-svelte gives you `ref()` instead. A ref is an attachment: put it on an element with `{@attach}`, then call its methods to move focus, scroll, or measure:
+
+```svelte
+<script lang="ts">
+  import { ref } from "swiftui-svelte";
+
+  const field = ref();
+  const rows = ref();
+</script>
+
+<list {@attach rows}>
+  <textfield {@attach field} onsubmit={() => field.focus()} />
+  <!-- rows -->
+</list>
+<btn onclick={() => rows.scrollTo("bottom")}>Jump to the end</btn>
+```
+
+| Method                                 | What it does                                                                                                                                                                                                                |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `focus()`, `blur()`                    | Moves keyboard focus to the element, or takes it away                                                                                                                                                                       |
+| `scrollIntoView({ anchor, animated })` | Scrolls the nearest `scrollview` or `list` until the element is visible. `anchor` is `top`, `center`, `bottom`, `leading`, `trailing`, or a corner such as `topLeading`. Scrolling is animated unless `animated` is `false` |
+| `scrollTo(edge, { animated })`         | On a `scrollview` or `list`, scrolls to its first child (`"top"`) or last child (`"bottom"`)                                                                                                                                |
+| `measure()`                            | Resolves to the element's `{ x, y, width, height }` in window coordinates, in points, once the element is on screen. It resolves to `null` if the element goes away first                                                   |
+
+Calls made before the element reaches SwiftUI wait for it, so you can call `focus()` right after rendering a field. When the element is gone, calls do nothing.
+
+For declarative focus, `textfield` takes a `focused` attribute and fires `onfocus` and `onblur`. The `TextField` component makes it bindable:
+
+```svelte
+<TextField bind:value={name} bind:focused={editing} />
+{#if editing}
+  <btn onclick={() => (editing = false)}>Done editing</btn>
+{/if}
+```
+
+Pressing Return in a text field ends editing, as usual in SwiftUI. To keep the keyboard up for the next entry, call `focus()` in `onsubmit`.
+
 ### Transitions and animation
 
 Svelte's `transition:`, `in:`, and `out:` directives need the DOM, so the compiler rejects them in custom renderer components. Use the `transition`, `in`, and `out` attributes instead. They work on any element and use SwiftUI's transitions:

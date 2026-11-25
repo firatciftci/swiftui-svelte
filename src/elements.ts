@@ -130,8 +130,11 @@ declare module "svelte/elements" {
       value?: string;
       placeholder?: string;
       debounce?: number;
+      focused?: boolean;
       oninput?: (value: string) => void;
       onsubmit?: () => void;
+      onfocus?: () => void;
+      onblur?: () => void;
     };
     toggle: Modifiers & {
       checked?: boolean;
@@ -182,6 +185,11 @@ declare module "svelte/elements" {
 declare global {
   function __nativeCommit(json: string, animation?: string): void;
   function __nativeNow(): number;
+  function __nativeInvoke(id: number, method: string, json: string): void;
+  var __svelteReply: (
+    request: number,
+    rect: { x: number; y: number; width: number; height: number } | null,
+  ) => void;
   function __nativeGC(): void;
   function __nativeRequestFrame(): void;
   var __svelteFrame: (time: number) => void;

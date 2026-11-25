@@ -39,6 +39,7 @@ struct TextFieldControl: View {
             .onChange(of: value) { _, value in
                 if let value, value != text { text = value }
             }
+            .modifier(Focusable(node: node))
     }
 
     private func send() {

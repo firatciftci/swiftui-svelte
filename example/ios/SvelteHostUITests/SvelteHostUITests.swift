@@ -36,6 +36,26 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(row.waitForNonExistence(timeout: 5))
     }
 
+    func testKeepsTheKeyboardUpAndScrollsToNewTodos() {
+        let field = app.textFields["new-todo"]
+        waitFor(field)
+        field.tap()
+        for index in 1...10 {
+            field.typeText("Errand \(index)\n")
+            waitFor(app.switches["Errand \(index)"])
+        }
+        XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true)
+
+        field.typeText("Errand 11")
+        app.buttons["Add"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        let last = app.switches["Errand 11"]
+        waitFor(last)
+        let deadline = Date().addingTimeInterval(5)
+        while !last.isHittable, Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.2)) }
+        XCTAssertTrue(last.isHittable)
+    }
+
     func testNavigatesToADetailScreenAndBack() {
         waitFor(app.switches["Render Svelte with SwiftUI"])
         app.buttons.matching(identifier: "Details").element(boundBy: 1).tap()
@@ -94,6 +114,9 @@ final class SvelteHostUITests: XCTestCase {
         name.typeText(" Lovelace, Countess")
         waitFor(app.staticTexts["Hello, Ada Lovelace!"])
         XCTAssertEqual(name.value as? String, "Ada Lovelace")
+        app.buttons["Done editing"].tap()
+        XCTAssertTrue(app.buttons["Done editing"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
 
         app.buttons["Show a sheet"].tap()
         waitFor(app.staticTexts["Hello from a sheet"])
@@ -151,6 +174,8 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["compact"].exists)
         XCTAssertTrue(
             app.staticTexts.matching(NSPredicate(format: "label MATCHES '[1-9][0-9]* pt top, [1-9][0-9]* pt bottom'")).firstMatch.exists)
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label MATCHES '[1-9][0-9]* × [1-9][0-9]* pt'")).firstMatch.exists)
 
         tab("To-dos")
         waitFor(app.switches["Render Svelte with SwiftUI"])

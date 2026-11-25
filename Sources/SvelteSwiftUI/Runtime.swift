@@ -3,6 +3,7 @@ import JavaScriptCore
 import Network
 import Observation
 import QuartzCore
+import SwiftUI
 
 #if canImport(UIKit)
     import UIKit
@@ -20,6 +21,7 @@ public final class SvelteRuntime {
 
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
+    private(set) var scrollRequest: ScrollRequest?
 
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
@@ -31,8 +33,9 @@ public final class SvelteRuntime {
     @ObservationIgnored private let frames = FrameMonitor()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
     @ObservationIgnored private var memoryObserver: (any NSObjectProtocol)?
-    @ObservationIgnored private var openingURLs: Set<URL> = []
     @ObservationIgnored private var pendingURLs: Array<URL> = []
+    @ObservationIgnored private var measureRequests: [Int: Array<Int>] = [:]
+    @ObservationIgnored private var requestSerial = 0
     @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
     @ObservationIgnored private let reloadsOnChange: Bool
@@ -133,9 +136,13 @@ public final class SvelteRuntime {
             switch message {
             case let .commit(json, animation): store.apply(json, animation: animation)
             case let .action(mount, name, json): perform(mount, name, json)
+            case let .invoke(id, method, json): invoke(id, method, json)
             case let .error(error): report(error)
             case .requestFrame: isFrameRequested = true
             }
+        }
+        for id in measureRequests.keys where store.node(id) == nil {
+            for request in measureRequests.removeValue(forKey: id) ?? [] { reply(request, frame: nil) }
         }
         let nodes = store.nodeCount
         let elapsed = (CACurrentMediaTime() - start) * 1000
@@ -143,6 +150,57 @@ public final class SvelteRuntime {
             stats.nodes = nodes
             stats.applyTime += elapsed
         }
+    }
+
+    private func invoke(_ id: Int, _ method: String, _ json: String) {
+        let options =
+            (try? JSONValue(parsing: json)).flatMap { value -> [String: JSONValue]? in
+                if case let .object(options) = value { options } else { nil }
+            } ?? [:]
+        let request = options["request"]?.number.map { Int($0) }
+        guard let node = store.node(id) else {
+            if let request { reply(request, frame: nil) }
+            return
+        }
+        requestSerial += 1
+        switch method {
+        case "focus", "blur":
+            node.focusRequest = FocusRequest(isFocused: method == "focus", serial: requestSerial)
+        case "scrollIntoView":
+            scroll(to: id, anchor: UnitPoint(anchor: options["anchor"]?.string), options)
+        case "scrollTo":
+            let isBottom = options["edge"]?.string == "bottom"
+            let children = node.renderedChildren
+            guard let target = isBottom ? children.last : children.first else { return }
+            scroll(to: target.id, anchor: isBottom ? .bottom : .top, options)
+        case "measure":
+            guard let request else { return }
+            if let frame = node.frame, frame.size != .zero {
+                reply(request, frame: frame)
+            } else {
+                measureRequests[id, default: []].append(request)
+                node.isMeasured = true
+            }
+        default:
+            break
+        }
+    }
+
+    private func scroll(to target: Int, anchor: UnitPoint?, _ options: [String: JSONValue]) {
+        let isAnimated = options["animated"].map { $0 != .bool(false) } ?? true
+        scrollRequest = ScrollRequest(target: target, anchor: anchor, isAnimated: isAnimated, serial: requestSerial)
+    }
+
+    func measured(_ node: Node, frame: CGRect) {
+        node.frame = frame
+        guard frame.size != .zero else { return }
+        for request in measureRequests.removeValue(forKey: node.id) ?? [] { reply(request, frame: frame) }
+    }
+
+    private func reply(_ request: Int, frame: CGRect?) {
+        let rect: Any =
+            frame.map { ["x": $0.minX, "y": $0.minY, "width": $0.width, "height": $0.height] } ?? NSNull()
+        call("__svelteReply", [request, rect], waits: false)
     }
 
     private func perform(_ mount: Int, _ name: String, _ json: String) {
@@ -177,11 +235,16 @@ public final class SvelteRuntime {
     }
 
     public func open(_ url: URL) {
-        guard openingURLs.insert(url).inserted else { return }
-        DispatchQueue.main.async { [weak self] in
-            MainActor.assumeIsolated { _ = self?.openingURLs.remove(url) }
+        if isStarted {
+            deliver(url)
+        } else if !pendingURLs.contains(url) {
+            pendingURLs.append(url)
         }
-        if isStarted { deliver(url) } else { pendingURLs.append(url) }
+    }
+
+    func open(_ url: URL, from mount: Int?) {
+        if let mount, let first = mounts.keys.min(), mount != first { return }
+        open(url)
     }
 
     private func deliver(_ url: URL) {

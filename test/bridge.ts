@@ -34,6 +34,13 @@ const nodes = new Map<number, MirrorNode>();
 const names: Array<string> = [];
 export const commits: Array<string> = [];
 export const animations: Array<string | undefined> = [];
+export const invocations: Array<{
+  id: number;
+  method: string;
+  options: Record<string, unknown>;
+  afterCommit: number;
+  known: boolean;
+}> = [];
 export const ops: Array<Op> = [];
 export const native = {
   root: null as MirrorNode | null,
@@ -324,6 +331,7 @@ export function findAll(
 export function reset(): void {
   commits.length = 0;
   animations.length = 0;
+  invocations.length = 0;
   ops.length = 0;
 }
 
@@ -402,6 +410,15 @@ export function installBridge(): void {
     },
     __nativeRequestFrame(): void {
       native.frameRequests++;
+    },
+    __nativeInvoke(id: number, method: string, json: string): void {
+      invocations.push({
+        id,
+        method,
+        options: JSON.parse(json) as Record<string, unknown>,
+        afterCommit: commits.length,
+        known: nodes.has(id),
+      });
     },
   });
 }

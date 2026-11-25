@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { ref } from "swiftui-svelte";
   import {
     DatePicker,
     Picker,
@@ -25,11 +26,23 @@
   let tone = $state<string | number>("chime");
 
   const done = $derived(todos.filter((todo) => todo.done).length);
+
+  const form = ref();
+  let formSize = $state("");
+
+  $effect(() => {
+    void env.horizontalSizeClass;
+    void form.measure().then((rect) => {
+      if (rect != null) {
+        formSize = `${Math.round(rect.width)} × ${Math.round(rect.height)} pt`;
+      }
+    });
+  });
 </script>
 
 <navstack>
   <screen title="Settings">
-    <formview tint={accent}>
+    <formview tint={accent} {@attach form}>
       <sectionview header="Accent color">
         <Picker
           label="Accent color"
@@ -103,6 +116,7 @@
           "Safe area",
           `${Math.round(env.safeAreaInsets.top)} pt top, ${Math.round(env.safeAreaInsets.bottom)} pt bottom`,
         )}
+        {@render row("Form size", formSize)}
       </sectionview>
     </formview>
   </screen>

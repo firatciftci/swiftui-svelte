@@ -37,9 +37,9 @@ struct NodeView: View {
         case "zstack":
             ZStack { children }
         case "scrollview":
-            ScrollView { children }
+            ScrollView { children }.modifier(Scrollable())
         case "list":
-            List { children }
+            List { children }.modifier(Scrollable())
         case "formview":
             Form { children }
         case "sectionview":
@@ -212,6 +212,7 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
+            .modifier(Measured(node: node))
         styled
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
             .ifLet(transition) { $0.transition($1) }
