@@ -1,13 +1,5 @@
 import SwiftUI
 
-private struct ControlLabel: View {
-    let node: Node
-
-    var body: some View {
-        ForEach(node.renderedChildren) { NodeView(node: $0) }
-    }
-}
-
 struct TextFieldControl: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
@@ -56,7 +48,6 @@ struct PickerControl: View {
 
     var body: some View {
         let picker = Picker(
-            node.attributes["label"]?.string ?? "",
             selection: Binding {
                 node.attributes["value"] ?? .null
             } set: { value in
@@ -73,6 +64,12 @@ struct PickerControl: View {
                     }
                 }
                 .tag(choice.attributes["value"] ?? .null)
+            }
+        } label: {
+            if let label = node.attachment("label") {
+                Slot(node: label)
+            } else {
+                Text(node.attributes["label"]?.string ?? "")
             }
         }
         switch node.attributes["variant"]?.string {
@@ -101,9 +98,9 @@ struct SliderControl: View {
             runtime.edit(node, "value", to: .number(value), event: "input", payload: value)
         }
         if let step = node.attributes["step"]?.number {
-            Slider(value: value, in: bounds, step: step, label: { ControlLabel(node: node) }, onEditingChanged: editingChanged)
+            Slider(value: value, in: bounds, step: step, label: { Slot(node: node) }, onEditingChanged: editingChanged)
         } else {
-            Slider(value: value, in: bounds, label: { ControlLabel(node: node) }, onEditingChanged: editingChanged)
+            Slider(value: value, in: bounds, label: { Slot(node: node) }, onEditingChanged: editingChanged)
         }
     }
 
@@ -129,7 +126,7 @@ struct StepperControl: View {
             in: lower...max(lower, node.attributes["max"]?.number ?? .infinity),
             step: node.attributes["step"]?.number ?? 1
         ) {
-            ControlLabel(node: node)
+            Slot(node: node)
         }
     }
 }
@@ -150,7 +147,7 @@ struct DatePickerControl: View {
             in: lower...max(lower, node.attributes["max"]?.date ?? .distantFuture),
             displayedComponents: components
         ) {
-            ControlLabel(node: node)
+            Slot(node: node)
         }
         switch node.attributes["variant"]?.string {
         case "compact": picker.datePickerStyle(.compact)
@@ -180,12 +177,12 @@ struct ProgressControl: View {
             if node.renderedChildren.isEmpty {
                 ProgressView(value: min(value, total), total: total)
             } else {
-                ProgressView(value: min(value, total), total: total) { ControlLabel(node: node) }
+                ProgressView(value: min(value, total), total: total) { Slot(node: node) }
             }
         } else if node.renderedChildren.isEmpty {
             ProgressView()
         } else {
-            ProgressView { ControlLabel(node: node) }
+            ProgressView { Slot(node: node) }
         }
     }
 }

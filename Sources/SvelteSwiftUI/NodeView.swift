@@ -46,9 +46,17 @@ struct NodeView: View {
             Section {
                 children
             } header: {
-                if let header = node.attributes["header"]?.string { Text(header) }
+                if let header = node.attachment("header") {
+                    Slot(node: header)
+                } else if let header = node.attributes["header"]?.string {
+                    Text(header)
+                }
             } footer: {
-                if let footer = node.attributes["footer"]?.string { Text(footer) }
+                if let footer = node.attachment("footer") {
+                    Slot(node: footer)
+                } else if let footer = node.attributes["footer"]?.string {
+                    Text(footer)
+                }
             }
         case "spacer":
             Spacer()
@@ -212,6 +220,7 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
+            .modifier(Layers(node: node))
             .modifier(Measured(node: node))
         styled
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
@@ -273,7 +282,7 @@ private struct Screen: View {
     var body: some View {
         let alert = node.attachment("alert")
         Group {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            Slot(node: node)
         }
         .navigationTitle(node.attributes["title"]?.string ?? "")
         .toolbar {

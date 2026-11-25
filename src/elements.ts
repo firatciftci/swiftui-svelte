@@ -66,6 +66,16 @@ export type AnimationOptions =
       repeat?: boolean | number;
       autoreverses?: boolean;
     };
+type LayerAlignment =
+  | "center"
+  | "top"
+  | "bottom"
+  | "leading"
+  | "trailing"
+  | "topLeading"
+  | "topTrailing"
+  | "bottomLeading"
+  | "bottomTrailing";
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
@@ -142,6 +152,8 @@ declare module "svelte/elements" {
     };
     formview: Modifiers;
     sectionview: Modifiers & { header?: string; footer?: string };
+    background: { alignment?: LayerAlignment };
+    overlay: { alignment?: LayerAlignment };
     picker: Modifiers & {
       label?: string;
       value?: string | number;

@@ -99,7 +99,17 @@
           width={48}
           height={48}
           radius={10}
-        />
+        >
+          <overlay alignment="bottomTrailing">
+            <sfsymbol
+              name="checkmark.seal.fill"
+              label="Verified"
+              color="accent"
+              background="white"
+              radius={8}
+            />
+          </overlay>
+        </asyncimage>
         <vstack alignment="leading" spacing={2}>
           <txt font="headline">sveltejs/svelte</txt>
           {#if fetchError != null}

@@ -85,3 +85,44 @@ struct Scrollable: ViewModifier {
         }
     }
 }
+
+struct Slot: View {
+    let node: Node
+
+    var body: some View {
+        ForEach(node.renderedChildren) { NodeView(node: $0) }
+    }
+}
+
+extension Alignment {
+    init(slot node: Node?) {
+        self =
+            switch node?.attributes["alignment"]?.string {
+            case "top": .top
+            case "bottom": .bottom
+            case "leading": .leading
+            case "trailing": .trailing
+            case "topLeading": .topLeading
+            case "topTrailing": .topTrailing
+            case "bottomLeading": .bottomLeading
+            case "bottomTrailing": .bottomTrailing
+            default: .center
+            }
+    }
+}
+
+struct Layers: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
+        let background = node.attachment("background")
+        let overlay = node.attachment("overlay")
+        content
+            .background(alignment: Alignment(slot: background)) {
+                if let background { Slot(node: background) }
+            }
+            .overlay(alignment: Alignment(slot: overlay)) {
+                if let overlay { Slot(node: overlay) }
+            }
+    }
+}

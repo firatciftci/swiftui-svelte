@@ -104,9 +104,14 @@
       </sectionview>
 
       <sectionview
-        header="This device"
         footer="These values update as you change the device's settings."
       >
+        <header>
+          <hstack spacing={6}>
+            <sfsymbol name="iphone" />
+            <txt>This device</txt>
+          </hstack>
+        </header>
         {@render row("Appearance", env.colorScheme)}
         {@render row("Text size", env.dynamicTypeSize)}
         {@render row("Locale", env.locale)}

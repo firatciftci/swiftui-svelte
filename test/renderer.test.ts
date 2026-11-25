@@ -22,6 +22,7 @@ import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
+import Slots from "./components/Slots.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
 import Texts from "./components/Texts.svelte";
 import Values from "./components/Values.svelte";
@@ -256,6 +257,40 @@ describe("blocks", () => {
     await update(() => (state.show = false));
     expect(find("divider")).toBeUndefined();
     expect(find("spacer")).toBeDefined();
+  });
+});
+
+describe("slots", () => {
+  it("renders snippets into header, footer, label, overlay, and background elements", async () => {
+    await render(Slots);
+    expect(serialize()).toMatchInlineSnapshot(`
+      "#fragment
+        <sectionview>
+          <header>
+            <hstack>
+              <sfsymbol name="leaf">
+              <txt>
+                #text "Fruit"
+          <txt>
+            #text "Apple"
+          <footer>
+            <txt>
+              #text "Seasonal"
+        <picker value="a">
+          <label>
+            <hstack>
+              <sfsymbol name="leaf">
+              <txt>
+                #text "Pick one"
+          <choice value="a">
+            #text "A"
+        <txt>
+          #text "Badge "
+          <overlay alignment="topTrailing">
+            <sfsymbol name="circle.fill">
+          <background>
+            <zstack>"
+    `);
   });
 });
 

@@ -29,7 +29,8 @@ final class Node: Identifiable {
         self.text = text
     }
 
-    private static let attachments: Set<String> = ["alert", "sheet", "swipeactions", "toolbar"]
+    private static let attachments: Set<String> = ["alert", "background", "overlay", "sheet", "swipeactions", "toolbar"]
+    private static let slots: [String: Set<String>] = ["picker": ["label"], "sectionview": ["header", "footer"]]
 
     func attachment(_ name: String) -> Node? {
         children.first { $0.kind == .element && $0.name == name }
@@ -40,9 +41,10 @@ final class Node: Identifiable {
     }
 
     var renderedChildren: Array<Node> {
-        children.filter { child in
+        let slots = Self.slots[name] ?? []
+        return children.filter { child in
             switch child.kind {
-            case .element: !Self.attachments.contains(child.name)
+            case .element: !Self.attachments.contains(child.name) && !slots.contains(child.name)
             case .text: !child.text.allSatisfy(\.isWhitespace)
             case .fragment: false
             }

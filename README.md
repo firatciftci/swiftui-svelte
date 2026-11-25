@@ -343,6 +343,36 @@ To animate everything that one state change does to the screen, wrap the change 
 - It returns whatever the callback returns. Only changes made synchronously in the callback animate, so for async work, call `withAnimation` again once the data arrives.
 - Call it from event handlers, timers, and other callbacks, not from inside `$effect` or `$derived`.
 
+### Header, footer, label, background, and overlay
+
+Where SwiftUI takes a view builder, swiftui-svelte takes a child element with the builder's name. Its children become the view, so a header can hold a symbol, a badge can sit over an image, and a snippet can fill any of them:
+
+```svelte
+{#snippet heading(text: string)}
+  <hstack spacing={6}><sfsymbol name="iphone" /><txt>{text}</txt></hstack>
+{/snippet}
+
+<sectionview>
+  <header>{@render heading("This device")}</header>
+  <!-- rows -->
+  <footer><txt>Updated just now</txt></footer>
+</sectionview>
+
+<asyncimage src={avatar} width={48} height={48}>
+  <overlay alignment="bottomTrailing">
+    <sfsymbol name="checkmark.seal.fill" label="Verified" />
+  </overlay>
+</asyncimage>
+```
+
+| Element                 | Goes inside   | SwiftUI                                                                                                                                                  |
+| ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `header`, `footer`      | `sectionview` | `Section`'s `header` and `footer`                                                                                                                        |
+| `label`                 | `picker`      | `Picker`'s `label`                                                                                                                                       |
+| `background`, `overlay` | Any element   | `.background(alignment:)` and `.overlay(alignment:)`. `alignment` is `center` (the default), an edge such as `top`, or a corner such as `bottomTrailing` |
+
+The slot elements aren't laid out with the other children. A `header` or `footer` element replaces the attribute of the same name, and `background` and `overlay` draw behind or in front of the element at its size.
+
 ### Sheets, alerts, toolbars, and swipe actions
 
 These four elements aren't drawn where they appear. Instead, they attach to the element around them, the way their SwiftUI modifiers do:
