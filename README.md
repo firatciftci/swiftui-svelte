@@ -177,7 +177,7 @@ The elements and their attributes are typed in [`src/elements.ts`](src/elements.
 | `tabview`, `tab`               | `TabView`, a tab               | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)       |
 | `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                                                          |
 | `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                                                 |
-| `txt`                          | `Text`                         | `lines`, `align`                                                                |
+| `txt`                          | `Text`                         | `lines`, `align`, `italic`, `underline`, `strikethrough`, `href`, `markdown`    |
 | `btn`                          | `Button`                       | `variant`, `role`, `onclick`                                                    |
 | `sfsymbol`                     | `Image(systemName:)`           | `name`, `label`                                                                 |
 | `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                                                    |
@@ -223,6 +223,30 @@ A few details:
 - **Attribute values.** Attributes reach Swift as JSON, so `null`, booleans, numbers, strings, arrays, and objects keep their types, and functions are never sent. A `Date` becomes an ISO 8601 string, a `BigInt` becomes a number, a `Map` becomes an object, and a `Set` becomes an array. `NaN`, `Infinity`, and `undefined` inside arrays become `null`, and `undefined` properties are dropped. An attribute set to `null` or `undefined` is removed. Where an element expects a number, a numeric string like `spacing="8"` works too. Where it expects a string, a number or boolean is converted. Where it expects a boolean (like `checked` or `animated`), the values `false`, `0`, `null`, and `"false"` are false, and anything else, including the empty string of a bare attribute, is true.
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
 - **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, and `progressview` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, and `progress` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
+
+### Rich text
+
+A `txt` inside another `txt` styles part of the text, the way a `<span>` does. The spans join into one SwiftUI `Text`, so the text wraps as a whole, and each span keeps its own `font`, `weight`, `color`, and `background` on top of the styles around it:
+
+```svelte
+<txt color="secondary">
+  The counter is at <txt weight="bold" color="primary">{count}</txt>. Read the
+  <txt href="https://svelte.dev" underline>docs</txt>.
+</txt>
+```
+
+Spans also take `italic`, `underline`, and `strikethrough`, and `href` turns a span into a link that opens in the browser. A span can turn a decoration back off with `underline={false}`.
+
+For text from Markdown, set `markdown` to the source, or set it with no value to read the text inside the element:
+
+```svelte
+<txt
+  markdown="Rendered by **[Svelte](https://svelte.dev)** as native _SwiftUI_."
+/>
+<txt markdown>Use `ref()` for **focus**.</txt>
+```
+
+Only inline Markdown works: bold, italic, strikethrough, code, and links. Headings, lists, and other blocks show up as plain text, and line breaks are kept. With `markdown`, nested `txt` elements are ignored.
 
 ### Bindable components
 

@@ -128,6 +128,11 @@ declare module "svelte/elements" {
     txt: Modifiers & {
       lines?: number;
       align?: "leading" | "center" | "trailing";
+      italic?: boolean;
+      underline?: boolean;
+      strikethrough?: boolean;
+      href?: string;
+      markdown?: boolean | string;
     };
     asyncimage: Modifiers & { src: string; fit?: "fit" | "fill" };
     btn: Modifiers & {

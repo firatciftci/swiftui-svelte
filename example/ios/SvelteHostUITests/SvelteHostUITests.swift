@@ -122,6 +122,7 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Show a sheet"].tap()
         waitFor(app.staticTexts["Hello from a sheet"])
         XCTAssertTrue(app.staticTexts["The counter is at 1."].exists)
+        XCTAssertTrue(app.staticTexts["Rendered by Svelte as native SwiftUI."].exists)
         app.buttons["Celebrate"].tap()
         waitFor(app.images["Party popper"])
         app.buttons["Calm down"].tap()

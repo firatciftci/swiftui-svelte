@@ -63,7 +63,7 @@ struct NodeView: View {
         case "divider":
             Divider()
         case "txt":
-            Text(node.children.filter { $0.kind == .text }.map(\.text).joined())
+            Styles.text(node)
                 .lineLimit(node.attributes["lines"]?.number.map { Int($0) })
                 .multilineTextAlignment(textAlignment)
         case "asyncimage":
@@ -212,11 +212,11 @@ private struct NodeModifiers: ViewModifier {
             content
             .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
             .padding(padding(attributes["padding"]))
-            .font(font(attributes["font"]?.string))
-            .fontWeight(weight(attributes["weight"]?.string))
-            .ifLet(color(attributes["color"]?.string)) { $0.foregroundStyle($1) }
-            .ifLet(color(attributes["tint"]?.string)) { $0.tint($1) }
-            .background(color(attributes["background"]?.string) ?? .clear)
+            .font(Styles.font(attributes["font"]?.string))
+            .fontWeight(Styles.weight(attributes["weight"]?.string))
+            .ifLet(Styles.color(attributes["color"]?.string)) { $0.foregroundStyle($1) }
+            .ifLet(Styles.color(attributes["tint"]?.string)) { $0.tint($1) }
+            .background(Styles.color(attributes["background"]?.string) ?? .clear)
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
@@ -243,34 +243,6 @@ private struct NodeModifiers: ViewModifier {
         case let .number(length): length
         case .bool(true): 16
         default: 0
-        }
-    }
-
-    private func font(_ name: String?) -> Font? {
-        switch name {
-        case "largeTitle": .largeTitle
-        case "title": .title
-        case "title2": .title2
-        case "title3": .title3
-        case "headline": .headline
-        case "subheadline": .subheadline
-        case "body": .body
-        case "callout": .callout
-        case "footnote": .footnote
-        case "caption": .caption
-        case "caption2": .caption2
-        default: nil
-        }
-    }
-
-    private func weight(_ name: String?) -> Font.Weight? {
-        switch name {
-        case "regular": .regular
-        case "medium": .medium
-        case "semibold": .semibold
-        case "bold": .bold
-        case "heavy": .heavy
-        default: nil
         }
     }
 }
@@ -359,12 +331,12 @@ private struct ActionButton: View {
             ForEach(node.renderedChildren) { child in
                 switch child.name {
                 case "sfsymbol": Symbol(node: child)
-                case "txt": Text(child.children.filter { $0.kind == .text }.map(\.text).joined())
+                case "txt": Styles.text(child)
                 default: Text(child.text)
                 }
             }
         }
-        .tint(color(node.attributes["tint"]?.string))
+        .tint(Styles.color(node.attributes["tint"]?.string))
     }
 }
 
@@ -388,30 +360,6 @@ private func buttonRole(_ node: Node) -> ButtonRole? {
     switch node.attributes["role"]?.string {
     case "destructive": .destructive
     case "cancel": .cancel
-    default: nil
-    }
-}
-
-private func color(_ name: String?) -> Color? {
-    switch name {
-    case "primary": .primary
-    case "secondary": .secondary
-    case "accent": .accentColor
-    case "red": .red
-    case "orange": .orange
-    case "yellow": .yellow
-    case "green": .green
-    case "mint": .mint
-    case "teal": .teal
-    case "cyan": .cyan
-    case "blue": .blue
-    case "indigo": .indigo
-    case "purple": .purple
-    case "pink": .pink
-    case "brown": .brown
-    case "gray": .gray
-    case "white": .white
-    case "black": .black
     default: nil
     }
 }

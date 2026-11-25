@@ -137,7 +137,14 @@
       <vstack spacing={16} padding>
         <sfsymbol name="sparkles" font="largeTitle" color="accent" />
         <txt font="title2" weight="semibold">Hello from a sheet</txt>
-        <txt color="secondary">The counter is at {count}.</txt>
+        <txt color="secondary">
+          The counter is at <txt weight="bold" color="primary">{count}</txt>.
+        </txt>
+        <txt
+          font="footnote"
+          color="secondary"
+          markdown="Rendered by **[Svelte](https://svelte.dev)** as native **SwiftUI**."
+        />
         <btn onclick={() => (celebrating = !celebrating)}>
           {celebrating ? "Calm down" : "Celebrate"}
         </btn>
