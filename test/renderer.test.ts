@@ -303,6 +303,14 @@ describe("controlled inputs", () => {
     expect(byTestId("locked")?.attributes.has("checked")).toBe(false);
   });
 
+  it("returns to the selected tab when the handler rejects a switch", async () => {
+    await render(Controlled);
+    await update(() =>
+      edit(byTestId("pinned"), "change", "selection", "second"),
+    );
+    expect(byTestId("pinned")?.attributes.get("selection")).toBe("first");
+  });
+
   it("keeps a toggle on when the handler accepts it", async () => {
     await render(Controlled);
     await update(() => edit(byTestId("free"), "change", "checked", true));

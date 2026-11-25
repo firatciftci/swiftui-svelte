@@ -12,3 +12,7 @@
 <textfield testid="uncontrolled" oninput={() => {}} />
 <toggle testid="locked" checked={locked} onchange={() => {}} />
 <toggle testid="free" checked={free} onchange={(value) => (free = value)} />
+<tabview testid="pinned" selection="first" onchange={() => {}}>
+  <tab title="First" value="first" />
+  <tab title="Second" value="second" />
+</tabview>

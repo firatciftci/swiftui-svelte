@@ -174,7 +174,7 @@ The elements and their attributes are typed in [`src/elements.ts`](src/elements.
 | ------------------------------ | ------------------------------ | ------------------------------------------------------------------------------- |
 | `navstack`                     | `NavigationStack`              | `onpop(depth)`                                                                  |
 | `screen`                       | A screen in the stack          | `title`                                                                         |
-| `tabview`, `tab`               | `TabView`, a tab               | `title`, `symbol` (on `tab`)                                                    |
+| `tabview`, `tab`               | `TabView`, a tab               | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)       |
 | `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                                                          |
 | `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                                                 |
 | `txt`                          | `Text`                         | `lines`, `align`                                                                |
@@ -215,6 +215,7 @@ A few details:
 - **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.
 - **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`.
 - **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
+- **Tabs.** Give each `tab` a `value`, and set `selection` on the `tabview` to pick the tab that's showing. `onchange` receives the `value` of the tab the user switches to. A tab without a `value` uses its position, starting at 0.
 - **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`.
 - **Sliders and steppers.** A `slider` goes from `min` to `max`, which default to 0 and 1, and snaps to multiples of `step` when you set it. `oninput` fires while the user drags, and `onchange` fires when they let go. A `stepper` changes `value` by `step`, 1 by default, and stays between `min` and `max` if you set them.
 - **Dates.** A `datepicker` takes a `Date` or an ISO 8601 string for `value`, `min`, and `max`, and `onchange` receives a `Date`. `components` is `date`, `time`, or `datetime`, the default. `variant` is `automatic`, `compact`, `graphical`, or `wheel`.
@@ -223,11 +224,46 @@ A few details:
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
 - **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, and `progressview` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, and `progress` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
 
+### Bindable components
+
+Svelte doesn't allow `bind:` on elements in custom renderer components, so `swiftui-svelte/components` wraps the controls in components with bindable props:
+
+```svelte
+<script lang="ts">
+  import { Sheet, Slider, TextField, Toggle } from "swiftui-svelte/components";
+
+  let name = $state("");
+  let volume = $state(0.5);
+  let notify = $state(true);
+  let editing = $state(false);
+</script>
+
+<TextField placeholder="Name" bind:value={name} />
+<Slider bind:value={volume}><txt>Volume</txt></Slider>
+<Toggle bind:checked={notify}><txt>Notifications</txt></Toggle>
+<btn onclick={() => (editing = true)}>Edit</btn>
+<Sheet bind:presented={editing}><txt>Editing {name}</txt></Sheet>
+```
+
+| Component    | Binds       | Element      |
+| ------------ | ----------- | ------------ |
+| `TextField`  | `value`     | `textfield`  |
+| `Toggle`     | `checked`   | `toggle`     |
+| `Picker`     | `value`     | `picker`     |
+| `Slider`     | `value`     | `slider`     |
+| `Stepper`    | `value`     | `stepper`    |
+| `DatePicker` | `value`     | `datepicker` |
+| `TabView`    | `selection` | `tabview`    |
+| `Sheet`      | `presented` | `sheet`      |
+| `Alert`      | `presented` | `alert`      |
+
+Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. `Sheet` and `Alert` are presented while `presented` is true, and set it to false when the user dismisses them.
+
 ### Sheets, alerts, toolbars, and swipe actions
 
 These four elements aren't drawn where they appear. Instead, they attach to the element around them, the way their SwiftUI modifiers do:
 
-- A `sheet` or an `alert` inside a `screen` is presented for as long as it's rendered, so you show and hide it with `{#if}`. When the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions.
+- A `sheet` or an `alert` inside a `screen` is presented for as long as it's rendered, so you show and hide it with `{#if}`, or with the `Sheet` and `Alert` components and `bind:presented`. When the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions.
 - A `toolbar` inside a `screen` puts its children in the navigation bar, or in the bottom bar with `placement="bottom"`.
 - A `swipeactions` inside a list row adds its buttons as the row's swipe actions.
 
@@ -439,7 +475,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 
 ## Known gaps
 
-- **No `bind:`.** Svelte doesn't allow `bind:` on elements in custom renderer components, so inputs are controlled: pass `value` and update it in `oninput`. The control always ends up showing your state. If the handler trims the text, rejects a character, or ignores a toggle, the native control changes back to match, so you can use `oninput={(value) => (name = value.slice(0, 12))}` as a length limit. Update the state synchronously in the handler, because the control reverts to whatever the state holds once the handler returns. A `textfield` with no `value` keeps whatever the user types.
+- **No `bind:` on elements.** `bind:` works on the components in `swiftui-svelte/components`, but Svelte doesn't allow it on elements in custom renderer components, so elements are controlled: pass `value` and update it in `oninput`. The control always ends up showing your state. If the handler trims the text, rejects a character, or ignores a toggle, the native control changes back to match, so you can use `oninput={(value) => (name = value.slice(0, 12))}` as a length limit. Update the state synchronously in the handler, because the control reverts to whatever the state holds once the handler returns. A `textfield` with no `value` keeps whatever the user types.
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **Large lists take a few frames.** Svelte's work happens off the main thread, but SwiftUI still needs several frames to lay out 1,000 new rows.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.

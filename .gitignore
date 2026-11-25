@@ -10,3 +10,4 @@ example/ios/SvelteHost/Resources/app.js.map
 example/ios/Local.xcconfig
 /build
 /coverage
+.svelte-kit

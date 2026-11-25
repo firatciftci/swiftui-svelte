@@ -117,5 +117,9 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Glass"].tap()
         waitFor(app.buttons["Tone"])
         XCTAssertEqual(app.buttons["Tone"].value as? String, "Glass")
+
+        tab("To-dos")
+        waitFor(app.switches["Render Svelte with SwiftUI"])
+        XCTAssertTrue(app.tabBars.buttons["To-dos"].isSelected)
     }
 }

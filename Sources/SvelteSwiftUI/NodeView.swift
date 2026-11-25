@@ -29,15 +29,7 @@ struct NodeView: View {
         case "sheet", "swipeactions", "tab", "toolbar":
             Group { children }
         case "tabview":
-            TabView {
-                ForEach(node.renderedChildren) { tab in
-                    Self(node: tab).tabItem {
-                        Label(
-                            tab.attributes["title"]?.string ?? "",
-                            systemImage: tab.attributes["symbol"]?.string ?? "circle")
-                    }
-                }
-            }
+            Tabs(node: node)
         case "vstack":
             VStack(alignment: horizontalAlignment, spacing: spacing) { children }
         case "hstack":
@@ -143,6 +135,36 @@ struct NodeView: View {
         case "bottom": .bottom
         default: .center
         }
+    }
+}
+
+private struct Tabs: View {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    var body: some View {
+        let tabs = node.renderedChildren
+        TabView(
+            selection: Binding {
+                node.attributes["selection"] ?? tabs.first.map { Self.value(of: $0, in: tabs) } ?? .null
+            } set: { value in
+                runtime.edit(node, "selection", to: value, event: "change", payload: value.object)
+            }
+        ) {
+            ForEach(tabs) { tab in
+                NodeView(node: tab)
+                    .tabItem {
+                        Label(
+                            tab.attributes["title"]?.string ?? "",
+                            systemImage: tab.attributes["symbol"]?.string ?? "circle")
+                    }
+                    .tag(Self.value(of: tab, in: tabs))
+            }
+        }
+    }
+
+    private static func value(of tab: Node, in tabs: Array<Node>) -> JSONValue {
+        tab.attributes["value"] ?? .number(Double(tabs.firstIndex { $0 === tab } ?? 0))
     }
 }
 

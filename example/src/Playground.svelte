@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { Sheet, TextField } from "swiftui-svelte/components";
+
   let count = $state(0);
   let seconds = $state(0);
   let name = $state("");
@@ -54,11 +56,10 @@
       </vstack>
 
       <vstack alignment="leading" spacing={8}>
-        <textfield
+        <TextField
           placeholder="Your name"
-          value={name}
           debounce={150}
-          oninput={(value) => (name = value.slice(0, 12))}
+          bind:value={() => name, (value) => (name = value.slice(0, 12))}
         />
         {#if name.trim() !== ""}
           <txt color="accent">Hello, {name.trim()}!</txt>
@@ -95,17 +96,15 @@
       </btn>
     </list>
 
-    {#if showSheet}
-      <sheet detent="medium" ondismiss={() => (showSheet = false)}>
-        <vstack spacing={16} padding>
-          <sfsymbol name="sparkles" font="largeTitle" color="accent" />
-          <txt font="title2" weight="semibold">Hello from a sheet</txt>
-          <txt color="secondary">The counter is at {count}.</txt>
-          <btn variant="prominent" onclick={() => (showSheet = false)}>
-            Done
-          </btn>
-        </vstack>
-      </sheet>
-    {/if}
+    <Sheet detent="medium" bind:presented={showSheet}>
+      <vstack spacing={16} padding>
+        <sfsymbol name="sparkles" font="largeTitle" color="accent" />
+        <txt font="title2" weight="semibold">Hello from a sheet</txt>
+        <txt color="secondary">The counter is at {count}.</txt>
+        <btn variant="prominent" onclick={() => (showSheet = false)}>
+          Done
+        </btn>
+      </vstack>
+    </Sheet>
   </screen>
 </navstack>

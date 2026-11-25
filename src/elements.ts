@@ -54,8 +54,15 @@ declare module "svelte/elements" {
     sheet: Modifiers & { detent?: "medium" | "large"; ondismiss?: () => void };
     alert: { title: string; ondismiss?: () => void };
     toolbar: { placement?: "leading" | "trailing" | "bottom" };
-    tabview: Modifiers;
-    tab: Modifiers & { title: string; symbol?: string };
+    tabview: Modifiers & {
+      selection?: string | number;
+      onchange?: (selection: string | number) => void;
+    };
+    tab: Modifiers & {
+      title: string;
+      symbol?: string;
+      value?: string | number;
+    };
     swipeactions: { edge?: "leading" | "trailing" };
     vstack: Modifiers & {
       spacing?: number;

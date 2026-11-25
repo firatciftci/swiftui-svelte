@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "paths": {
       "swiftui-svelte": ["./src/index.ts"],
+      "swiftui-svelte/components": ["./src/components/index.ts"],
       "swiftui-svelte/*": ["./src/*.ts"]
     }
   },

@@ -10,6 +10,7 @@
     "pnpm-workspace.yaml",
     "example/ios",
     "dist",
+    ".svelte-kit",
     "build",
     ".build",
     "Tests/SvelteSwiftUITests/Fixtures"

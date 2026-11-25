@@ -1,4 +1,11 @@
 <script lang="ts">
+  import {
+    DatePicker,
+    Picker,
+    Slider,
+    Stepper,
+    Toggle,
+  } from "swiftui-svelte/components";
   import { todos } from "./todos.svelte";
 
   const accents = ["blue", "orange", "green", "pink"] as const;
@@ -23,80 +30,63 @@
   <screen title="Settings">
     <formview tint={accent}>
       <sectionview header="Accent color">
-        <picker
+        <Picker
           label="Accent color"
           variant="segmented"
-          value={accent}
-          onchange={(value) =>
-            (accent = accents.find((name) => name === value) ?? "blue")}
+          bind:value={
+            () => accent,
+            (value) =>
+              (accent = accents.find((name) => name === value) ?? "blue")
+          }
         >
           <choice value="blue">Blue</choice>
           <choice value="orange">Orange</choice>
           <choice value="green">Green</choice>
           <choice value="pink">Pink</choice>
-        </picker>
+        </Picker>
       </sectionview>
 
       <sectionview
         header="Daily goal"
         footer="Finished to-dos count toward today's goal."
       >
-        <stepper
-          value={goal}
-          min={1}
-          max={20}
-          onchange={(value) => (goal = value)}
-        >
+        <Stepper bind:value={goal} min={1} max={20}>
           <txt>{goal} {goal === 1 ? "to-do" : "to-dos"} a day</txt>
-        </stepper>
+        </Stepper>
         <progressview value={done} total={goal}>
           <txt>{Math.min(done, goal)} of {goal} done</txt>
         </progressview>
       </sectionview>
 
       <sectionview header="Reminders">
-        <toggle checked={reminds} onchange={(checked) => (reminds = checked)}>
+        <Toggle bind:checked={reminds}>
           <txt>Remind me</txt>
-        </toggle>
+        </Toggle>
         {#if reminds}
-          <datepicker
-            components="time"
-            value={reminderTime}
-            onchange={(value) => (reminderTime = value)}
-          >
+          <DatePicker components="time" bind:value={reminderTime}>
             <txt>Time</txt>
-          </datepicker>
-          <picker
-            label="Repeat"
-            variant="menu"
-            value={repeat}
-            onchange={(value) => (repeat = value)}
-          >
+          </DatePicker>
+          <Picker label="Repeat" variant="menu" bind:value={repeat}>
             <choice value="daily">Every day</choice>
             <choice value="weekdays">Weekdays</choice>
             <choice value="weekends">Weekends</choice>
-          </picker>
+          </Picker>
         {/if}
       </sectionview>
 
       <sectionview header="Sound">
         <hstack spacing={12}>
           <sfsymbol name="speaker.fill" color="secondary" />
-          <slider value={volume} oninput={(value) => (volume = value)}>
+          <Slider bind:value={volume}>
             <txt>Volume</txt>
-          </slider>
+          </Slider>
           <sfsymbol name="speaker.wave.3.fill" color="secondary" />
         </hstack>
-        <picker
-          label="Tone"
-          variant="navigation"
-          value={tone}
-          onchange={(value) => (tone = value)}
-        >
+        <Picker label="Tone" variant="navigation" bind:value={tone}>
           <choice value="chime" symbol="bell">Chime</choice>
           <choice value="glass" symbol="wineglass">Glass</choice>
           <choice value="pulse" symbol="waveform">Pulse</choice>
-        </picker>
+        </Picker>
       </sectionview>
     </formview>
   </screen>

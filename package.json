@@ -35,6 +35,11 @@
       "types": "./dist/renderer.d.ts",
       "default": "./dist/renderer.js"
     },
+    "./components": {
+      "types": "./dist/components/index.d.ts",
+      "svelte": "./dist/components/index.js",
+      "default": "./dist/components/index.js"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
@@ -47,8 +52,8 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "bench": "vite build --mode bench",
-    "package": "tsc -p tsconfig.lib.json && publint --strict && attw --pack --profile esm-only",
-    "prepack": "tsc -p tsconfig.lib.json",
+    "package": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json && publint --strict && attw --pack --profile esm-only --exclude-entrypoints ./components",
+    "prepack": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json",
     "ios:project": "xcodegen generate --spec example/ios/project.yml",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
@@ -73,6 +78,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^10.0.0",
     "@arethetypeswrong/cli": "^0.18.5",
+    "@sveltejs/package": "3.0.3",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@types/ws": "^8.18.2",
     "@vitest/coverage-v8": "^5.1.1",
