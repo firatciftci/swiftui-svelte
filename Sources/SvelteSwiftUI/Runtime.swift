@@ -3,6 +3,10 @@ import JavaScriptCore
 import Observation
 import QuartzCore
 
+#if os(macOS)
+    import AppKit
+#endif
+
 @Observable
 final class Runtime {
     private(set) var store = NodeStore()
@@ -185,7 +189,11 @@ private final class FrameMonitor: NSObject {
 
     func start() {
         guard link == nil else { return }
-        let link = CADisplayLink(target: self, selector: #selector(tick))
+        #if os(macOS)
+            guard let link = NSScreen.main?.displayLink(target: self, selector: #selector(tick)) else { return }
+        #else
+            let link = CADisplayLink(target: self, selector: #selector(tick))
+        #endif
         link.add(to: .main, forMode: .common)
         self.link = link
     }

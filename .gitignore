@@ -8,3 +8,4 @@ example/ios/SvelteHost.xcodeproj
 example/ios/SvelteHost/Resources/app.js
 example/ios/Local.xcconfig
 /build
+/coverage

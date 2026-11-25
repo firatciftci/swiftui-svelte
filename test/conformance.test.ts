@@ -1,0 +1,108 @@
+import { flushSync } from "svelte";
+import { expect, it } from "vitest";
+import { mountApp } from "swiftui-svelte";
+import {
+  commits,
+  dispatch,
+  find,
+  findAll,
+  serialize,
+  settle,
+} from "./bridge.ts";
+import Counter from "./components/Counter.svelte";
+import Items from "./components/Items.svelte";
+import { state } from "./components/state.svelte.ts";
+import Values from "./components/Values.svelte";
+
+declare const process: {
+  cwd: () => string;
+  getBuiltinModule: (name: "node:fs") => {
+    writeFileSync: (path: string, data: string) => void;
+  };
+};
+
+type Step = { label: string; commits: Array<string>; tree: string };
+
+const steps: Array<Step> = [];
+let recorded = 0;
+
+async function step(label: string, change: () => void): Promise<void> {
+  change();
+  flushSync();
+  await settle();
+  const fresh = commits.slice(recorded).map((json) => {
+    const ops = (JSON.parse(json) as Array<{ op: string }>).filter(
+      (op) => op.op !== "release",
+    );
+    return JSON.stringify(ops);
+  });
+  recorded = commits.length;
+  steps.push({ label, commits: fresh, tree: serialize() });
+}
+
+function noop(): void {}
+
+function random(seed: number): () => number {
+  let value = seed;
+  return () => {
+    value = (value * 1_103_515_245 + 12_345) % 2_147_483_648;
+    return value / 2_147_483_648;
+  };
+}
+
+it("records op logs that the Swift tests replay", async () => {
+  let unmount = noop;
+
+  await step("Counter: mount", () => (unmount = mountApp(Counter)));
+  await step("Counter: click twice", () => {
+    dispatch(find("btn"), "click");
+    dispatch(find("btn"), "click");
+  });
+  await step("Counter: type a name", () =>
+    dispatch(find("textfield"), "input", 'Ada "Lovelace" ✨'),
+  );
+  await step("Counter: clear the name", () =>
+    dispatch(find("textfield"), "input", ""),
+  );
+  await step("Counter: unmount", () => unmount());
+
+  await step("Items: mount", () => (unmount = mountApp(Items)));
+  await step("Items: reverse", () => state.items.reverse());
+  await step("Items: splice, push, and unshift", () => {
+    state.items.splice(1, 1);
+    state.items.push(4, 5);
+    state.items.unshift(0);
+  });
+  await step("Items: swap branches", () => (state.show = false));
+  await step("Items: remove padding", () => (state.padding = undefined));
+  const next = random(42);
+  let nextItem = 100;
+  for (let index = 0; index < 40; index++) {
+    await step(`Items: random edit ${index}`, () => {
+      const items = state.items;
+      const roll = next();
+      const at = Math.floor(next() * (items.length + 1));
+      if (roll < 0.35) items.splice(at, 0, nextItem++);
+      else if (roll < 0.55 && items.length > 0)
+        items.splice(Math.min(at, items.length - 1), 1);
+      else if (roll < 0.8 && items.length > 1) {
+        const [moved] = items.splice(Math.min(at, items.length - 1), 1);
+        if (moved != null)
+          items.splice(Math.floor(next() * (items.length + 1)), 0, moved);
+      } else items.reverse();
+    });
+    expect(
+      findAll("txt").map((node) => Number(node.children[0]?.text)),
+    ).toEqual(state.items);
+  }
+  await step("Items: unmount", () => unmount());
+
+  await step("Values: mount", () => (unmount = mountApp(Values)));
+  await step("Values: unmount", () => unmount());
+
+  const fs = process.getBuiltinModule("node:fs");
+  fs.writeFileSync(
+    `${process.cwd()}/Tests/SvelteSwiftUITests/Fixtures/conformance.json`,
+    `${JSON.stringify({ steps }, null, 2)}\n`,
+  );
+});

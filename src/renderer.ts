@@ -1,6 +1,6 @@
 import "./host.ts";
 import type { Component } from "svelte";
-import { mount } from "svelte";
+import { mount, unmount } from "svelte";
 import { createRenderer } from "svelte/renderer";
 
 type Handler = (payload: unknown) => void;
@@ -250,10 +250,11 @@ globalThis.__svelteDispatch = (id, type, payload) => {
   for (const handler of handlers) handler(payload);
 };
 
-export function mountApp(component: Component): void {
+export function mountApp(component: Component): () => void {
   const target = renderer.createFragment();
   send({ op: "root", id: target.id });
-  mount(component, { target, renderer });
+  const instance = mount(component, { target, renderer });
+  return () => void unmount(instance);
 }
 
 export default renderer;

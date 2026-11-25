@@ -56,9 +56,11 @@ struct PickerControl: View {
         switch node.attributes["variant"]?.string {
         case "menu": picker.pickerStyle(.menu)
         case "segmented": picker.pickerStyle(.segmented)
-        case "wheel": picker.pickerStyle(.wheel)
         case "inline": picker.pickerStyle(.inline)
-        case "navigation": picker.pickerStyle(.navigationLink)
+        #if !os(macOS)
+            case "wheel": picker.pickerStyle(.wheel)
+            case "navigation": picker.pickerStyle(.navigationLink)
+        #endif
         default: picker
         }
     }
@@ -133,7 +135,9 @@ struct DatePickerControl: View {
         switch node.attributes["variant"]?.string {
         case "compact": picker.datePickerStyle(.compact)
         case "graphical": picker.datePickerStyle(.graphical)
-        case "wheel": picker.datePickerStyle(.wheel)
+        #if !os(macOS)
+            case "wheel": picker.datePickerStyle(.wheel)
+        #endif
         default: picker
         }
     }

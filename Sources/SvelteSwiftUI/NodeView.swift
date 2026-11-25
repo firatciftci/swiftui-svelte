@@ -311,11 +311,19 @@ private struct Screen: View {
     }
 
     private func placement(_ name: String?) -> ToolbarItemPlacement {
-        switch name {
-        case "leading": .topBarLeading
-        case "bottom": .bottomBar
-        default: .topBarTrailing
-        }
+        #if os(macOS)
+            switch name {
+            case "leading": .navigation
+            case "bottom": .automatic
+            default: .primaryAction
+            }
+        #else
+            switch name {
+            case "leading": .topBarLeading
+            case "bottom": .bottomBar
+            default: .topBarTrailing
+            }
+        #endif
     }
 }
 

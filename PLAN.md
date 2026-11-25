@@ -2,6 +2,8 @@
 
 The working checklist for 1.0.0. An item is checked only when it is implemented, covered by tests, documented, and verified in the simulator if it has UI. Milestones are roughly in dependency order, and later ones depend on the earlier ones.
 
+Items marked *(maintainer)* need the maintainer to do them: an iPhone connected to the Mac, or approval of a staged release on npmjs.com.
+
 ## Definition of done for 1.0
 
 - Every SwiftUI view, control, presentation, and modifier listed below is reachable from Svelte with typed attributes and events.
@@ -20,13 +22,13 @@ The working checklist for 1.0.0. An item is checked only when it is implemented,
 - [x] Nodes released through `FinalizationRegistry`
 - [x] Live reload of the bundle in the simulator
 - [ ] Protocol version handshake: the renderer sends its version in the first commit, and `SvelteView` shows an error screen when it doesn't match
-- [ ] macOS 15 and visionOS 2 in `Package.swift`, with iOS-only APIs behind `#if os(iOS)`
+- [x] macOS 15 and visionOS 2 in `Package.swift`, with iOS-only APIs behind `#if os(iOS)`
 - [ ] Test infrastructure
-  - [ ] Vitest for the JS package, with a fake native bridge that records ops and dispatches events
-  - [ ] A Swift Testing target that runs with `swift test` on macOS
+  - [x] Vitest for the JS package, with a fake native bridge that records ops and dispatches events
+  - [x] A Swift Testing target that runs with `swift test` on macOS
   - [ ] An XCUITest target in the example app, run on a simulator in CI
-  - [ ] Cross-language conformance: real Svelte components compiled under Node produce op logs, and Swift tests replay them and compare the resulting tree with the JS tree
-  - [ ] A randomized op-sequence test (create, insert, move, remove, and release) that compares both stores with a reference model
+  - [x] Cross-language conformance: real Svelte components compiled under Node produce op logs, and Swift tests replay them and compare the resulting tree with the JS tree
+  - [x] A randomized op-sequence test (create, insert, move, remove, and release) that compares both stores with a reference model
 - [ ] CI runs all of the above and reports coverage for JS and Swift
 
 ## M1. Bridge, protocol, and runtime
@@ -43,7 +45,7 @@ The working checklist for 1.0.0. An item is checked only when it is implemented,
 - [ ] Source maps: Vite emits them, and the runtime maps stack traces with them
 - [ ] Safari Web Inspector works with debug builds in the simulator and on devices (verify `isInspectable` and document it)
 - [ ] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency
-- [ ] A startup time budget: measure cold start to first frame on a device, and speed up bundle evaluation
+- [ ] A startup time budget: measure cold start to first frame on a device, and speed up bundle evaluation *(maintainer)*
 - [ ] Memory: no leaked nodes or listeners after mounting and unmounting 10,000 elements (tested)
 - [ ] Several `SvelteView` instances in one app, each with its own context, plus an option to share one
 - [ ] Props from Swift: `SvelteView(source:props:)`, where updating the props re-renders and the component can call back into Swift
@@ -170,14 +172,15 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [ ] Benchmarks in CI (create, update, swap, reverse, and clear 1,000 and 10,000 rows) with budgets that fail the build on a regression
 - [ ] Fine-grained observation: an attribute change invalidates only the node's own view, not its parent's
 - [ ] Lazy containers keep memory flat while scrolling 10,000 rows
-- [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device
+- [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device *(maintainer)*
 - [ ] A bundle size budget for the renderer and the host polyfills
-- [ ] Device results in the README, refreshed for 1.0
+- [ ] Whitespace-only text nodes stay on the JS side instead of crossing the bridge, because SwiftUI never renders them
+- [ ] Device results in the README, refreshed for 1.0 *(maintainer)*
 
 ## M7. Developer experience
 
 - [ ] An `npm create swiftui-svelte` template: Vite, Svelte, TypeScript, and an Xcode project with the Swift package and a build phase that bundles the JS for release builds
-- [ ] Loading the bundle from the Vite dev server on a physical device over the local network, with live reload
+- [ ] Loading the bundle from the Vite dev server on a physical device over the local network, with live reload *(maintainer)*
 - [ ] Vite plugin: production minification, source maps, dev server integration, and clear errors
 - [ ] `svelte-check` and ESLint config presets for apps
 - [ ] Error messages for unknown elements and attributes in debug builds
@@ -193,4 +196,4 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 
 - [ ] A supported Svelte range, decided and tested in CI (the custom renderer API is experimental upstream)
 - [ ] A semver and deprecation policy in CONTRIBUTING.md
-- [ ] 0.x releases along the way, then 1.0.0 through the release workflow
+- [ ] 0.x releases along the way, then 1.0.0 through the release workflow *(maintainer)*

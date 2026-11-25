@@ -110,4 +110,12 @@ export default antfu({
     files: ["src/elements.ts"],
     rules: { "unicorn/consistent-boolean-name": "off", "vars-on-top": "off" },
   },
+  {
+    files: ["test/**"],
+    rules: {
+      "unicorn/better-dom-traversing": "off",
+      "unicorn/no-array-reverse": "off",
+      "unicorn/no-top-level-assignment-in-function": "off",
+    },
+  },
 );

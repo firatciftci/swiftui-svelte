@@ -58,6 +58,15 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Test the JS package
+        run: pnpm run test:coverage
+
+      - name: Check that the conformance fixtures are up to date
+        run: git diff --exit-code -- Tests/SvelteSwiftUITests/Fixtures
+
+      - name: Test the Swift package
+        run: xcrun swift test --enable-code-coverage
+
       - name: Build the package
         run: pnpm run package
 
