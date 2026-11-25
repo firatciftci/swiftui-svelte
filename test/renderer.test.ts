@@ -166,6 +166,80 @@ describe("blocks", () => {
   });
 });
 
+describe("coalescing", () => {
+  it("drops a node that is added and removed in the same batch", async () => {
+    await render(Items);
+    reset();
+    await update(() => {
+      state.show = false;
+      flushSync();
+      state.show = true;
+    });
+    expect(commits).toHaveLength(1);
+    expect(serialize()).not.toContain("spacer");
+    expect(
+      ops.flatMap((op) => (op.op === "insert" ? op.node.name : [])),
+    ).toEqual(["divider"]);
+  });
+
+  it("sends an attribute changed twice once, with its last value", async () => {
+    await render(Items);
+    reset();
+    await update(() => {
+      state.padding = 1;
+      flushSync();
+      state.padding = 2;
+    });
+    expect(ops.filter((op) => op.op === "attr")).toEqual([
+      { op: "attr", id: find("list")?.id, name: "padding", value: 2 },
+    ]);
+  });
+
+  it("sends text changed twice once", async () => {
+    await render(Counter);
+    reset();
+    await update(() => {
+      dispatch(find("btn"), "click");
+      flushSync();
+      dispatch(find("btn"), "click");
+    });
+    expect(ops).toEqual([
+      { op: "text", id: findAll("txt")[0]?.children[0]?.id, text: "Count: 2" },
+    ]);
+  });
+
+  it("folds changes to a new node into its insert", async () => {
+    await render(Items);
+    reset();
+    await update(() => {
+      state.items.push(4);
+      flushSync();
+      state.padding = 3;
+      state.items.push(5);
+    });
+    expect(ops.map((op) => op.op)).toEqual(["attr", "insert", "insert"]);
+    expect(findAll("txt").map((node) => node.children[0]?.text)).toEqual([
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+  });
+
+  it("skips a commit when changes cancel out", async () => {
+    await render(Counter);
+    reset();
+    await update(() => {
+      dispatch(find("textfield"), "input", "x");
+      flushSync();
+      dispatch(find("textfield"), "input", "");
+    });
+    expect(ops.filter((op) => op.op === "insert")).toEqual([]);
+    expect(serialize()).not.toContain("Hello");
+  });
+});
+
 describe("text", () => {
   it("sends a text node once it has content", async () => {
     await render(Texts);

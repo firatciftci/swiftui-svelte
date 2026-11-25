@@ -9,9 +9,13 @@ type Linked = {
   parent: ParentNode | null;
   prev: ChildNode | null;
   next: ChildNode | null;
-  sent: boolean;
+  state: NodeState;
 };
-type FragmentNode = Container & { kind: "fragment"; id: number; sent: boolean };
+type FragmentNode = Container & {
+  kind: "fragment";
+  id: number;
+  state: NodeState;
+};
 type ElementNode = Container &
   Linked & {
     kind: "element";
@@ -23,6 +27,9 @@ type ElementNode = Container &
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
 type ChildNode = ElementNode | TextNode;
+
+const State = { Local: 0, Pending: 1, Native: 2 } as const;
+type NodeState = (typeof State)[keyof typeof State];
 
 export const protocol = 2;
 
@@ -48,13 +55,16 @@ export const stats = {
 };
 
 const batch: Array<unknown> = [];
+const pending: Array<ChildNode> = [];
+const changedAttributes = new Map<ElementNode, Set<string>>();
+const changedTexts = new Set<TextNode>();
 const names = new Map<string, number>();
 const elements = new Map<number, WeakRef<ElementNode>>();
 const finalizer = new FinalizationRegistry<number>((id) => {
   elements.delete(id);
   stats.live--;
 });
-const state = { nextId: 1, isScheduled: false };
+const scheduler = { nextId: 1, isScheduled: false };
 
 function wire(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return Number(value);
@@ -63,26 +73,16 @@ function wire(_key: string, value: unknown): unknown {
   return value;
 }
 
-function commit(): void {
-  state.isScheduled = false;
-  const start = __nativeNow();
-  const json = JSON.stringify(batch, wire);
-  batch.length = 0;
-  const serialized = __nativeNow();
-  __nativeCommit(json);
-  stats.lastCommitEnd = __nativeNow();
-  stats.commits++;
-  stats.bytes += json.length;
-  stats.serializeMs += serialized - start;
-  stats.nativeMs += stats.lastCommitEnd - serialized;
+function schedule(): void {
+  if (scheduler.isScheduled) return;
+  scheduler.isScheduled = true;
+  queueMicrotask(commit);
 }
 
 function send(...tokens: Array<unknown>): void {
   for (const token of tokens) batch.push(token);
   stats.ops++;
-  if (state.isScheduled) return;
-  state.isScheduled = true;
-  queueMicrotask(commit);
+  schedule();
 }
 
 function nameRef(name: string): number {
@@ -102,43 +102,119 @@ function isMaterial(node: ChildNode): boolean {
 
 function anchorId(node: ChildNode): number {
   let next = node.next;
-  while (next != null && !next.sent) next = next.next;
+  while (next != null && next.state !== State.Native) next = next.next;
   return next?.id ?? 0;
 }
 
 function encode(node: ChildNode, record: Array<unknown>): void {
-  node.sent = true;
+  node.state = State.Native;
   if (node.kind !== "element") {
     record.push(-node.id, node.data);
     return;
   }
   record.push(node.id, nameRef(node.name));
-  const attributes = [...node.attributes].filter(
-    ([, value]) => typeof value !== "function",
-  );
-  record.push(attributes.length);
-  for (const [name, value] of attributes) record.push(nameRef(name), value);
-  const children: Array<ChildNode> = [];
-  for (let child = node.first; child != null; child = child.next) {
-    if (isMaterial(child)) children.push(child);
+  const attributeCount = record.length;
+  record.push(0);
+  for (const [name, value] of node.attributes) {
+    if (typeof value === "function") continue;
+    record.push(nameRef(name), value);
+    (record[attributeCount] as number)++;
   }
-  record.push(children.length);
-  for (const child of children) encode(child, record);
+  const childCount = record.length;
+  record.push(0);
+  for (let child = node.first; child != null; child = child.next) {
+    if (!isMaterial(child)) continue;
+    encode(child, record);
+    (record[childCount] as number)++;
+  }
 }
 
-function materialize(parent: ParentNode, node: ChildNode): void {
-  const record: Array<unknown> = [];
-  encode(node, record);
-  send(opcodes.insert, parent.id, anchorId(node));
-  for (const token of record) batch.push(token);
+function flushAttributes(): void {
+  for (const [element, changed] of changedAttributes) {
+    if (element.state !== State.Native) continue;
+    for (const name of changed) {
+      const value = element.attributes.get(name);
+      const ref = nameRef(name);
+      if (value === undefined || typeof value === "function") {
+        send(opcodes.unattr, element.id, ref);
+      } else {
+        send(opcodes.attr, element.id, ref, value);
+      }
+    }
+  }
+  changedAttributes.clear();
+}
+
+function flushTexts(): void {
+  for (const node of changedTexts) {
+    if (node.state === State.Native) send(opcodes.text, node.id, node.data);
+  }
+  changedTexts.clear();
+}
+
+function flushInserts(): void {
+  for (const node of pending) {
+    if (node.state !== State.Pending || node.parent?.state !== State.Native) {
+      continue;
+    }
+    if (!isMaterial(node)) {
+      node.state = State.Local;
+      continue;
+    }
+    const record: Array<unknown> = [];
+    encode(node, record);
+    send(opcodes.insert, node.parent.id, anchorId(node));
+    for (const token of record) batch.push(token);
+  }
+  pending.length = 0;
+}
+
+function commit(): void {
+  scheduler.isScheduled = false;
+  const start = __nativeNow();
+  flushAttributes();
+  flushTexts();
+  flushInserts();
+  if (batch.length === 0) return;
+  const json = JSON.stringify(batch, wire);
+  batch.length = 0;
+  const serialized = __nativeNow();
+  __nativeCommit(json);
+  stats.lastCommitEnd = __nativeNow();
+  stats.commits++;
+  stats.bytes += json.length;
+  stats.serializeMs += serialized - start;
+  stats.nativeMs += stats.lastCommitEnd - serialized;
+}
+
+function changeAttribute(element: ElementNode, name: string): void {
+  if (element.state !== State.Native) return;
+  let changed = changedAttributes.get(element);
+  if (changed == null) {
+    changed = new Set();
+    changedAttributes.set(element, changed);
+  }
+  changed.add(name);
+  schedule();
+}
+
+function materialize(node: ChildNode): void {
+  node.state = State.Pending;
+  pending.push(node);
+  schedule();
 }
 
 function unmark(node: ChildNode): void {
-  node.sent = false;
+  node.state = State.Local;
   if (node.kind !== "element") return;
   for (let child = node.first; child != null; child = child.next) {
-    if (child.sent) unmark(child);
+    if (child.state !== State.Local) unmark(child);
   }
+}
+
+function discard(node: ChildNode): void {
+  if (node.state === State.Native) send(opcodes.remove, node.id);
+  unmark(node);
 }
 
 function track<T extends FragmentNode | ChildNode>(node: T): T {
@@ -157,12 +233,27 @@ function detach(node: ChildNode): void {
   node.parent = node.prev = node.next = null;
 }
 
+function place(parent: ParentNode, node: ChildNode): void {
+  if (parent.state === State.Local) {
+    if (node.state !== State.Local) discard(node);
+    return;
+  }
+  if (node.state === State.Pending) return;
+  if (node.state === State.Native) {
+    if (parent.state === State.Native) {
+      send(opcodes.move, parent.id, anchorId(node), node.id);
+      return;
+    }
+    discard(node);
+  }
+  if (isMaterial(node)) materialize(node);
+}
+
 function insertChild(
   parent: ParentNode,
   node: ChildNode,
   anchor: ChildNode | null,
 ): void {
-  const wasSent = node.sent;
   detach(node);
   const prev = anchor == null ? parent.last : anchor.prev;
   node.parent = parent;
@@ -172,17 +263,11 @@ function insertChild(
   else prev.next = node;
   if (anchor == null) parent.last = node;
   else anchor.prev = node;
-  if (parent.sent) {
-    if (wasSent) send(opcodes.move, parent.id, anchorId(node), node.id);
-    else if (isMaterial(node)) materialize(parent, node);
-  } else if (wasSent) {
-    send(opcodes.remove, node.id);
-    unmark(node);
-  }
+  place(parent, node);
 }
 
 function linked(): Linked {
-  return { parent: null, prev: null, next: null, sent: false };
+  return { parent: null, prev: null, next: null, state: State.Local };
 }
 
 const renderer = createRenderer<{
@@ -194,17 +279,17 @@ const renderer = createRenderer<{
   createFragment() {
     return track({
       kind: "fragment",
-      id: state.nextId++,
+      id: scheduler.nextId++,
       first: null,
       last: null,
-      sent: false,
+      state: State.Local,
     });
   },
   createElement(name) {
     const node: ElementNode = {
       ...linked(),
       kind: "element",
-      id: state.nextId++,
+      id: scheduler.nextId++,
       name,
       first: null,
       last: null,
@@ -215,10 +300,15 @@ const renderer = createRenderer<{
     return track(node);
   },
   createText(data) {
-    return track({ ...linked(), kind: "text", id: state.nextId++, data });
+    return track({ ...linked(), kind: "text", id: scheduler.nextId++, data });
   },
   createComment(data) {
-    return track({ ...linked(), kind: "comment", id: state.nextId++, data });
+    return track({
+      ...linked(),
+      kind: "comment",
+      id: scheduler.nextId++,
+      data,
+    });
   },
 
   getNodeType(node) {
@@ -229,9 +319,11 @@ const renderer = createRenderer<{
   },
   setText(node, text) {
     node.data = text;
-    if (node.sent) send(opcodes.text, node.id, text);
-    else if (node.parent?.sent === true && isMaterial(node)) {
-      materialize(node.parent, node);
+    if (node.state === State.Native) {
+      changedTexts.add(node);
+      schedule();
+    } else if (node.state === State.Local && node.parent != null) {
+      place(node.parent, node);
     }
   },
 
@@ -240,20 +332,12 @@ const renderer = createRenderer<{
     return value == null ? null : String(value);
   },
   setAttribute(element, name, value: unknown) {
-    const previous = element.attributes.get(name);
     element.attributes.set(name, value);
-    if (!element.sent) return;
-    if (typeof value !== "function") {
-      const ref = nameRef(name);
-      send(opcodes.attr, element.id, ref, value);
-    } else if (previous !== undefined && typeof previous !== "function") {
-      send(opcodes.unattr, element.id, nameRef(name));
-    }
+    changeAttribute(element, name);
   },
   removeAttribute(element, name) {
     element.attributes.delete(name);
-    if (!element.sent) return;
-    send(opcodes.unattr, element.id, nameRef(name));
+    changeAttribute(element, name);
   },
   hasAttribute(element, name) {
     return element.attributes.has(name);
@@ -286,9 +370,7 @@ const renderer = createRenderer<{
   },
   remove(node) {
     detach(node);
-    if (!node.sent) return;
-    send(opcodes.remove, node.id);
-    unmark(node);
+    discard(node);
   },
 
   addEventListener(element, type, handler: Handler) {
@@ -312,7 +394,7 @@ globalThis.__svelteDispatch = (id, type, payload) => {
 
 export function mountApp(component: Component): () => void {
   const target = renderer.createFragment();
-  target.sent = true;
+  target.state = State.Native;
   send(opcodes.root, target.id, protocol);
   const instance = mount(component, { target, renderer });
   return () => void unmount(instance);

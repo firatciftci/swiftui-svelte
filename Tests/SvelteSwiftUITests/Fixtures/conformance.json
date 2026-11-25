@@ -17,7 +17,7 @@
     {
       "label": "Counter: type a name",
       "commits": [
-        "[1,4,0,18,2,0,1,-20,\"Hello, Ada \\\"Lovelace\\\" ✨!\",4,14,6,\"Ada \\\"Lovelace\\\" ✨\"]"
+        "[4,14,6,\"Ada \\\"Lovelace\\\" ✨\",1,4,0,18,2,0,1,-20,\"Hello, Ada \\\"Lovelace\\\" ✨!\"]"
       ],
       "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 2\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"Ada \\\"Lovelace\\\" ✨\">\n    <txt>\n      #text \"Hello, Ada \\\"Lovelace\\\" ✨!\""
     },
@@ -52,14 +52,14 @@
     {
       "label": "Items: splice, push, and unshift",
       "commits": [
-        "[1,24,37,45,2,0,1,-47,\"0\",1,24,0,49,2,0,1,-51,\"4\",1,24,0,53,2,0,1,-55,\"5\",3,33]"
+        "[3,33,1,24,37,45,2,0,1,-47,\"0\",1,24,0,49,2,0,1,-51,\"4\",1,24,0,53,2,0,1,-55,\"5\"]"
       ],
       "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <divider>"
     },
     {
       "label": "Items: swap branches",
       "commits": [
-        "[7,\"spacer\",1,21,0,57,10,0,0,3,41]"
+        "[3,41,7,\"spacer\",1,21,0,57,10,0,0]"
       ],
       "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"0\"\n    <txt>\n      #text \"3\"\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"4\"\n    <txt>\n      #text \"5\"\n  <spacer>"
     },
