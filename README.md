@@ -170,47 +170,50 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                                        |
-| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                               |
-| `screen`                            | A screen in the stack               | `title`                                                                                      |
-| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                    |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                       |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                                  |
-| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)       |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                             |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                        |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                   |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                       |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                   |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                    |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, `whitespace`, and more |
-| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                        |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`    |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                   |
-| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                                |
-| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                        |
-| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                               |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit`  |
-| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                            |
-| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                    |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                        |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `multiple`, `onchange(value)`; `value`, `symbol` (on `choice`)  |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                           |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                             |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                             |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                             |
-| `multidatepicker`                   | `MultiDatePicker`                   | `value`, `min`, `max`, `onchange(days)`                                                      |
-| `colorpicker`                       | `ColorPicker`                       | `value`, `supportsopacity`, `onchange(hex)`                                                  |
-| `gauge`                             | `Gauge`                             | `value`, `min`, `max`, `current`, `minlabel`, `maxlabel`, `variant`                          |
-| `labeledcontent`                    | `LabeledContent`                    | `title`, `value`                                                                             |
-| `contentunavailableview`            | `ContentUnavailableView`            | `title`, `symbol`, `description`, `variant`, `query`                                         |
-| `menuview`                          | `Menu`                              | `title`, `symbol`, `variant`, `order`, `onprimaryaction`                                     |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                    |
-| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                        |
-| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                         |
-| `toolbar`                           | `.toolbar`                          | `placement`                                                                                  |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                       |
+| Element                             | SwiftUI                             | Attributes and events                                                                           |
+| ----------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                                  |
+| `screen`                            | A screen in the stack               | `title`                                                                                         |
+| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                       |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                          |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                                     |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)          |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                                |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                           |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                      |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                          |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                      |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                       |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, `whitespace`, and more    |
+| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                           |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`       |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                      |
+| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                                   |
+| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                           |
+| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                                  |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit`     |
+| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                               |
+| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                       |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                           |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `multiple`, `onchange(value)`; `value`, `symbol` (on `choice`)     |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                              |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                                |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                                |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                                |
+| `multidatepicker`                   | `MultiDatePicker`                   | `value`, `min`, `max`, `onchange(days)`                                                         |
+| `colorpicker`                       | `ColorPicker`                       | `value`, `supportsopacity`, `onchange(hex)`                                                     |
+| `gauge`                             | `Gauge`                             | `value`, `min`, `max`, `current`, `minlabel`, `maxlabel`, `variant`                             |
+| `labeledcontent`                    | `LabeledContent`                    | `title`, `value`                                                                                |
+| `contentunavailableview`            | `ContentUnavailableView`            | `title`, `symbol`, `description`, `variant`, `query`                                            |
+| `menuview`                          | `Menu`                              | `title`, `symbol`, `variant`, `order`, `onprimaryaction`                                        |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                       |
+| `sheet`                             | `.sheet`                            | `detents`, `dragindicator`, `dismissible`, `backgroundinteraction`, `cornerradius`, `ondismiss` |
+| `fullscreencover`                   | `.fullScreenCover`                  | `dismissible`, `ondismiss`                                                                      |
+| `popover`                           | `.popover`                          | `adaptation`, `arrowedge`, `detents`, `ondismiss`                                               |
+| `inspector`                         | `.inspector`                        | `columnwidth`, `detents`, `ondismiss`                                                           |
+| `alert`, `confirmationdialog`       | `.alert`, `.confirmationDialog`     | `title`, `ondismiss`; `titlevisibility` (on `confirmationdialog`)                               |
+| `toolbar`                           | `.toolbar`                          | `placement`                                                                                     |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                          |
 
 Every element also accepts these modifiers:
 
@@ -356,26 +359,30 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 <Sheet bind:presented={editing}><txt>Editing {name}</txt></Sheet>
 ```
 
-| Component         | Binds       | Element                     |
-| ----------------- | ----------- | --------------------------- |
-| `TextField`       | `value`     | `textfield`                 |
-| `NumberField`     | `value`     | `textfield` with a `format` |
-| `SecureField`     | `value`     | `securefield`               |
-| `TextEditor`      | `value`     | `texteditor`                |
-| `Toggle`          | `checked`   | `toggle`                    |
-| `Picker`          | `value`     | `picker`                    |
-| `MultiPicker`     | `value`     | `picker` with `multiple`    |
-| `MultiDatePicker` | `value`     | `multidatepicker`           |
-| `ColorPicker`     | `value`     | `colorpicker`               |
-| `Slider`          | `value`     | `slider`                    |
-| `Stepper`         | `value`     | `stepper`                   |
-| `DatePicker`      | `value`     | `datepicker`                |
-| `DisclosureGroup` | `expanded`  | `disclosuregroup`           |
-| `TabView`         | `selection` | `tabview`                   |
-| `Sheet`           | `presented` | `sheet`                     |
-| `Alert`           | `presented` | `alert`                     |
+| Component            | Binds       | Element                     |
+| -------------------- | ----------- | --------------------------- |
+| `TextField`          | `value`     | `textfield`                 |
+| `NumberField`        | `value`     | `textfield` with a `format` |
+| `SecureField`        | `value`     | `securefield`               |
+| `TextEditor`         | `value`     | `texteditor`                |
+| `Toggle`             | `checked`   | `toggle`                    |
+| `Picker`             | `value`     | `picker`                    |
+| `MultiPicker`        | `value`     | `picker` with `multiple`    |
+| `MultiDatePicker`    | `value`     | `multidatepicker`           |
+| `ColorPicker`        | `value`     | `colorpicker`               |
+| `Slider`             | `value`     | `slider`                    |
+| `Stepper`            | `value`     | `stepper`                   |
+| `DatePicker`         | `value`     | `datepicker`                |
+| `DisclosureGroup`    | `expanded`  | `disclosuregroup`           |
+| `TabView`            | `selection` | `tabview`                   |
+| `Sheet`              | `presented` | `sheet`                     |
+| `FullScreenCover`    | `presented` | `fullscreencover`           |
+| `Popover`            | `presented` | `popover`                   |
+| `Inspector`          | `presented` | `inspector`                 |
+| `ConfirmationDialog` | `presented` | `confirmationdialog`        |
+| `Alert`              | `presented` | `alert`                     |
 
-Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. `Sheet` and `Alert` are presented while `presented` is true, and set it to false when the user dismisses them.
+Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. The presentation components, from `Sheet` to `Alert`, show their content while `presented` is true, and set it to false when the user dismisses them.
 
 ### Element refs and focus
 
@@ -491,11 +498,14 @@ Where SwiftUI takes a view builder, swiftui-svelte takes a child element with th
 
 The slot elements aren't laid out with the other children. A `header` or `footer` element replaces the attribute of the same name, and `background` and `overlay` draw behind or in front of the element at its size.
 
-### Sheets, alerts, toolbars, and swipe actions
+### Presentations, toolbars, and swipe actions
 
-These four elements aren't drawn where they appear. Instead, they attach to the element around them, the way their SwiftUI modifiers do:
+These elements aren't drawn where they appear. Instead, they attach to the element around them, the way their SwiftUI modifiers do:
 
-- A `sheet` or an `alert` inside a `screen` is presented for as long as it's rendered, so you show and hide it with `{#if}`, or with the `Sheet` and `Alert` components and `bind:presented`. When the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions.
+- A `sheet`, `fullscreencover`, `alert`, or `inspector` is presented for as long as it's rendered, so you show and hide it with `{#if}`, or with the `Sheet`, `FullScreenCover`, `Alert`, and `Inspector` components and `bind:presented`. It can go anywhere in your markup, even inside a list row or a component: swiftui-svelte presents it from the nearest `screen`, `tab`, or presentation around it, or from the root of the app. When the user dismisses it, `ondismiss` fires so you can update your state. An `alert` uses its `txt` children as the message and its `btn` children as the actions.
+- A `popover` or a `confirmationdialog` points at the element it's in, so put it inside the `btn` that opens it. The `Popover` and `ConfirmationDialog` components support `bind:presented`. A `confirmationdialog` works like an `alert`, and `titlevisibility="visible"` shows its `title`. On iPhone, a popover opens as a sheet unless you set `adaptation="popover"`. A popover is as wide as its content, so give long text a `width`.
+- Sheets, popovers, and inspectors take `detents`, the heights the user can drag them to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. `dragindicator="visible"` shows the handle, `dismissible={false}` keeps the user from swiping it away, `backgroundinteraction` lets the user keep using the screen behind it (`true`, or a detent such as `0.25` to allow it only up to that height), and `cornerradius` rounds its corners. A `fullscreencover` covers the whole screen and never closes with a swipe.
+- An `inspector` opens as a column beside the content on iPad and as a sheet on iPhone. Put it inside a `screen`, and set `columnwidth` to a width or to `{ min, ideal, max }`.
 - A `toolbar` inside a `screen` puts its children in the navigation bar, or in the bottom bar with `placement="bottom"`.
 - A `swipeactions` inside a list row adds its buttons as the row's swipe actions.
 

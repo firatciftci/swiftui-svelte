@@ -25,6 +25,15 @@ enum Styles {
         return font(attributes["font"]?.string)
     }
 
+    static func padding(_ value: JSONValue?) -> CGFloat {
+        switch value {
+        case let .number(length): max(length, 0)
+        case let .string(text): Double(text).map { max($0, 0) } ?? (value?.isTrue == true ? 16 : 0)
+        case .bool(true): 16
+        default: 0
+        }
+    }
+
     static func textStyle(_ name: String?) -> Font.TextStyle? {
         switch name {
         case "largeTitle": .largeTitle

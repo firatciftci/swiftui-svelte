@@ -133,9 +133,9 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [ ] `navsplitview` with two and three columns and column visibility
 - [ ] `tabview` selection, badges, `page` style, tab sections, and the sidebar-adaptable style
 - [ ] `screen` title display mode, toolbar visibility, a hidden back button, toolbar background, and subtitle
-- [ ] `fullscreencover`, `popover`, and `inspector`
-- [ ] `confirmationdialog`
-- [ ] `sheet` detents (fractions and heights), drag indicator, locked interactive dismissal, and background interaction
+- [x] `fullscreencover`, `popover`, and `inspector`
+- [x] `confirmationdialog`
+- [x] `sheet` detents (fractions and heights), drag indicator, locked interactive dismissal, and background interaction
 - [ ] `toolbar` items in every placement, menus in toolbars, and `toolbaritemgroup` spacing
 - [ ] `searchable`, with tokens, suggestions, scopes, and `onsubmit`
 - [ ] `refreshable`, with an async handler that SwiftUI awaits

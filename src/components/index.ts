@@ -1,11 +1,15 @@
 export { default as Alert } from "./Alert.svelte";
 export { default as ColorPicker } from "./ColorPicker.svelte";
+export { default as ConfirmationDialog } from "./ConfirmationDialog.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
 export { default as DisclosureGroup } from "./DisclosureGroup.svelte";
+export { default as FullScreenCover } from "./FullScreenCover.svelte";
+export { default as Inspector } from "./Inspector.svelte";
 export { default as MultiDatePicker } from "./MultiDatePicker.svelte";
 export { default as MultiPicker } from "./MultiPicker.svelte";
 export { default as NumberField } from "./NumberField.svelte";
 export { default as Picker } from "./Picker.svelte";
+export { default as Popover } from "./Popover.svelte";
 export { default as SecureField } from "./SecureField.svelte";
 export { default as Sheet } from "./Sheet.svelte";
 export { default as Slider } from "./Slider.svelte";

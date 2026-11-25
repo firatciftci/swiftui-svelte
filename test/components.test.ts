@@ -110,19 +110,33 @@ describe("bindable components", () => {
     expect(state().submitted).toBe(1);
   });
 
-  it("present and dismiss sheets and alerts through bound flags", async () => {
-    expect(find("sheet")).toBeUndefined();
-    expect(find("alert")).toBeUndefined();
+  it("present and dismiss every presentation through bound flags", async () => {
+    const names = [
+      "sheet",
+      "alert",
+      "fullscreencover",
+      "popover",
+      "inspector",
+      "confirmationdialog",
+    ];
+    for (const name of names) expect(find(name)).toBeUndefined();
     await update(() => dispatch(byTestId("open"), "click"));
-    expect(find("sheet")).toBeDefined();
+    for (const name of names) expect(find(name)).toBeDefined();
     expect(find("alert")?.attributes.get("title")).toBe("Saved");
-    await update(() => dispatch(find("sheet"), "dismiss"));
-    await update(() => dispatch(find("alert"), "dismiss"));
-    expect(find("sheet")).toBeUndefined();
-    expect(find("alert")).toBeUndefined();
+    expect(find("popover")?.attributes.get("detents")).toEqual([0.3, 200]);
+    expect(find("inspector")?.attributes.get("columnwidth")).toEqual({
+      ideal: 300,
+    });
+    for (const name of names)
+      await update(() => dispatch(find(name), "dismiss"));
+    for (const name of names) expect(find(name)).toBeUndefined();
     expect(state()).toMatchObject({
       isSheetPresented: false,
       isAlertPresented: false,
+      isCoverPresented: false,
+      isPopoverPresented: false,
+      isInspectorPresented: false,
+      isDialogPresented: false,
     });
   });
 });

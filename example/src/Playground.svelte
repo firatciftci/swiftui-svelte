@@ -3,10 +3,14 @@
   import { onBackground } from "swiftui-svelte/app";
   import {
     ColorPicker,
+    ConfirmationDialog,
     DisclosureGroup,
+    FullScreenCover,
+    Inspector,
     MultiDatePicker,
     MultiPicker,
     NumberField,
+    Popover,
     SecureField,
     Sheet,
     TextEditor,
@@ -46,6 +50,13 @@
   let isPinned = $state(false);
   let sortOrder = $state<string | number>("name");
   let lastAction = $state<string | null>(null);
+  let showsPresentations = $state(false);
+  let showsCover = $state(false);
+  let showsPopover = $state(false);
+  let showsInspector = $state(false);
+  let confirmsDeletion = $state(false);
+  let deleted = $state(false);
+  let showsShortSheet = $state(false);
 
   const swatches = [
     "red",
@@ -515,8 +526,74 @@
           <btn variant="bordered">Browse items</btn>
         </contentunavailableview>
       </DisclosureGroup>
+
+      <DisclosureGroup title="Presentations" bind:expanded={showsPresentations}>
+        <btn onclick={() => (showsCover = true)}>Show a full-screen cover</btn>
+        <btn onclick={() => (showsPopover = true)}>
+          Show a popover
+          <Popover bind:presented={showsPopover} adaptation="popover">
+            <txt padding width={260}>
+              Popovers point at the button that opened them.
+            </txt>
+          </Popover>
+        </btn>
+        <btn onclick={() => (showsInspector = true)}>Show the inspector</btn>
+        <btn role="destructive" onclick={() => (confirmsDeletion = true)}>
+          Delete all photos
+          <ConfirmationDialog
+            bind:presented={confirmsDeletion}
+            title="Delete all photos?"
+            titlevisibility="visible"
+          >
+            <txt>This can't be undone.</txt>
+            <btn role="destructive" onclick={() => (deleted = true)}>Delete</btn
+            >
+            <btn role="cancel">Cancel</btn>
+          </ConfirmationDialog>
+        </btn>
+        {#if deleted}
+          <txt font="caption" color="secondary">Photos deleted</txt>
+        {/if}
+        <btn onclick={() => (showsShortSheet = true)}>Show a short sheet</btn>
+
+        <FullScreenCover bind:presented={showsCover}>
+          <vstack spacing={16} padding>
+            <sfsymbol name="rectangle.inset.filled" font="largeTitle" />
+            <txt font="title2" weight="semibold">A full-screen cover</txt>
+            <txt color="secondary" align="center">
+              It covers the whole screen and doesn't close with a swipe.
+            </txt>
+            <btn variant="prominent" onclick={() => (showsCover = false)}>
+              Close
+            </btn>
+          </vstack>
+        </FullScreenCover>
+        <Sheet
+          bind:presented={showsShortSheet}
+          detents={[0.25, "medium"]}
+          dragindicator="visible"
+          backgroundinteraction={0.25}
+        >
+          <txt padding color="secondary">
+            Drag the handle to resize this sheet. You can still use the list
+            behind it.
+          </txt>
+        </Sheet>
+      </DisclosureGroup>
     </list>
 
+    <Inspector
+      bind:presented={showsInspector}
+      detents={["medium", "large"]}
+      dragindicator="visible"
+    >
+      <vstack spacing={12} padding>
+        <txt font="headline">Inspector</txt>
+        <txt color="secondary">
+          On iPad, this opens as a column beside the content.
+        </txt>
+      </vstack>
+    </Inspector>
     <Sheet detent="medium" bind:presented={showSheet}>
       <vstack spacing={16} padding>
         <sfsymbol name="sparkles" font="largeTitle" color="accent" />

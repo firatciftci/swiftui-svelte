@@ -323,6 +323,13 @@ final class SvelteHostUITests: XCTestCase {
         attachScreenshot("inputs")
     }
 
+    private func dismissSheet(from element: XCUIElement? = nil) {
+        let start =
+            element?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
+            ?? app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
+        start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
+    }
+
     private func scroll(to element: XCUIElement, attempts: Int = 8) {
         for _ in 0..<attempts where !element.isHittable { app.swipeUp() }
     }
@@ -384,5 +391,57 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["delivery-days"].label, "1 day picked")
         XCTAssertTrue(app.staticTexts["No favorites"].exists)
         attachScreenshot("pickers and menus")
+    }
+
+    func testShowsEveryPresentation() {
+        tab("Playground")
+        let section = app.buttons["Presentations"]
+        scroll(to: section)
+        section.tap()
+        let coverButton = app.buttons["Show a full-screen cover"]
+        scroll(to: app.buttons["Show a short sheet"], attempts: 3)
+
+        coverButton.tap()
+        let coverTitle = app.staticTexts["A full-screen cover"]
+        waitFor(coverTitle)
+        coverTitle.swipeDown()
+        XCTAssertTrue(coverTitle.exists, "a swipe closed the full-screen cover")
+        attachScreenshot("full-screen cover")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(coverTitle.waitForNonExistence(timeout: 5))
+
+        app.buttons["Show a popover"].tap()
+        let popoverText = app.staticTexts["Popovers point at the button that opened them."]
+        waitFor(popoverText)
+        attachScreenshot("popover")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        XCTAssertTrue(popoverText.waitForNonExistence(timeout: 5))
+        app.buttons["Show a popover"].tap()
+        waitFor(popoverText)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        XCTAssertTrue(popoverText.waitForNonExistence(timeout: 5))
+
+        app.buttons["Show the inspector"].tap()
+        let inspectorText = app.staticTexts["On iPad, this opens as a column beside the content."]
+        waitFor(inspectorText)
+        attachScreenshot("inspector")
+        dismissSheet()
+        XCTAssertTrue(inspectorText.waitForNonExistence(timeout: 5))
+
+        app.buttons["Delete all photos"].tap()
+        let delete = app.buttons["Delete"]
+        waitFor(delete)
+        attachScreenshot("confirmation dialog")
+        delete.tap()
+        waitFor(app.staticTexts["Photos deleted"])
+
+        app.buttons["Show a short sheet"].tap()
+        let sheetText = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Drag the handle'")).firstMatch
+        waitFor(sheetText)
+        XCTAssertTrue(sheetText.label.hasSuffix("You can still use the list behind it."), sheetText.label)
+        attachScreenshot("short sheet")
+        XCTAssertTrue(app.buttons["Show a full-screen cover"].isHittable, "the list behind the short sheet isn't usable")
+        dismissSheet(from: sheetText)
+        XCTAssertTrue(sheetText.waitForNonExistence(timeout: 5))
     }
 }

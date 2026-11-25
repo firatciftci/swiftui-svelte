@@ -12,7 +12,20 @@ final class Node: Identifiable {
     let name: String
     var text: String
     var attributes: [String: JSONValue] = [:]
-    var children: Array<Node> = []
+    var children: Array<Node> = [] {
+        didSet {
+            if !hostsPresentations, children.contains(where: { $0.kind == .element && Presenting.anchored.contains($0.name) }) {
+                hostsPresentations = true
+            }
+        }
+    }
+    var presented: Array<Node> = [] {
+        didSet {
+            if !hostsInspector, presented.contains(where: { $0.name == "inspector" }) { hostsInspector = true }
+        }
+    }
+    var hostsPresentations: Bool
+    var hostsInspector: Bool
     var focusRequest = FocusRequest()
     var isMeasured = false
     @ObservationIgnored var frame: CGRect?
@@ -27,9 +40,11 @@ final class Node: Identifiable {
         self.kind = kind
         self.name = name
         self.text = text
+        hostsPresentations = kind == .fragment || Presenting.hosts.contains(name)
+        hostsInspector = name == "screen"
     }
 
-    private static let attachments: Set<String> = ["alert", "background", "overlay", "sheet", "swipeactions", "toolbar"]
+    private static let attachments: Set<String> = Presenting.names.union(["background", "overlay", "swipeactions", "toolbar"])
     private static let slots: [String: Set<String>] = [
         "asyncimage": ["placeholder", "failure"], "controlgroup": ["label"], "labelview": ["icon"], "disclosuregroup": ["label"],
         "groupbox": ["label"], "picker": ["label"], "labeledcontent": ["label"], "menuview": ["label"],
@@ -69,6 +84,9 @@ final class NodeStore {
     @ObservationIgnored private var names: Array<String> = []
     @ObservationIgnored private var dirty: Set<Int> = []
     @ObservationIgnored private var transitions: [Int: MotionCurve] = [:]
+    @ObservationIgnored private var presentationIDs: Set<Int> = []
+    @ObservationIgnored private var hostIDs: Set<Int> = []
+    @ObservationIgnored private var needsHosting = false
 
     var nodeCount: Int { nodes.count }
 
@@ -110,6 +128,7 @@ final class NodeStore {
             print("[bridge] \(failure)")
             error = failure.description
         }
+        if needsHosting { assignHosts() }
         for id in dirty {
             guard let parent = nodes[id] else { continue }
             let children = children(of: parent)
@@ -173,6 +192,7 @@ final class NodeStore {
             }
             detach(node)
             forget(node)
+            if !hostIDs.isEmpty { needsHosting = true }
             if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
         case 4:
             let id = try reader.int()
@@ -203,6 +223,7 @@ final class NodeStore {
         }
         let node = Node(id: id, kind: .element, name: try name(try reader.int()), text: "")
         nodes[id] = node
+        if Presenting.hoisted.contains(node.name) { presentationIDs.insert(id) }
         var attributes: [String: JSONValue] = [:]
         for _ in 0..<max(0, try reader.int()) {
             let name = try name(try reader.int())
@@ -228,6 +249,7 @@ final class NodeStore {
 
     private func forget(_ node: Node) {
         nodes[node.id] = nil
+        presentationIDs.remove(node.id)
         var childID = node.firstID
         while let id = childID, let child = nodes[id] {
             childID = child.nextID
@@ -263,5 +285,33 @@ final class NodeStore {
         if let next { next.previousID = node.id } else { parent.lastID = node.id }
         node.parentID = parent.id
         dirty.insert(parent.id)
+        if !presentationIDs.isEmpty || !hostIDs.isEmpty { needsHosting = true }
+    }
+
+    private func host(of node: Node) -> Node? {
+        var current = node
+        while let parentID = current.parentID {
+            guard let parent = nodes[parentID] else { return nil }
+            if parent.kind == .fragment || Presenting.hosts.contains(parent.name) { return parent }
+            current = parent
+        }
+        return nil
+    }
+
+    private func assignHosts() {
+        needsHosting = false
+        var assigned: [Int: Array<Node>] = [:]
+        for id in presentationIDs.sorted() {
+            guard let node = nodes[id], let host = host(of: node) else { continue }
+            assigned[host.id, default: []].append(node)
+        }
+        for id in hostIDs.subtracting(assigned.keys) {
+            if let host = nodes[id], !host.presented.isEmpty { host.presented = [] }
+        }
+        for (id, presented) in assigned {
+            guard let host = nodes[id], host.presented.map(\.id) != presented.map(\.id) else { continue }
+            host.presented = presented
+        }
+        hostIDs = Set(assigned.keys)
     }
 }

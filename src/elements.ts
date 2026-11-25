@@ -269,6 +269,20 @@ type TextValue = {
   debounce?: number;
   oninput?: (value: string) => void;
 };
+type Detent = "medium" | "large" | number;
+type PresentationOptions = {
+  detents?: Array<Detent>;
+  dragindicator?: "automatic" | "visible" | "hidden";
+  dismissible?: boolean;
+  backgroundinteraction?:
+    | boolean
+    | "automatic"
+    | "enabled"
+    | "disabled"
+    | Detent;
+  cornerradius?: number;
+  ondismiss?: () => void;
+};
 type FieldVariant = "automatic" | "plain" | "roundedBorder";
 export type NumberFormat =
   | "number"
@@ -307,8 +321,31 @@ declare module "svelte/elements" {
   interface SvelteHTMLElements {
     navstack: Modifiers & { onpop?: (depth: number) => void };
     screen: Modifiers & { title?: string };
-    sheet: Modifiers & { detent?: "medium" | "large"; ondismiss?: () => void };
+    sheet: Modifiers & PresentationOptions & { detent?: "medium" | "large" };
+    fullscreencover: Modifiers & {
+      dismissible?: boolean;
+      ondismiss?: () => void;
+    };
+    popover: Modifiers &
+      PresentationOptions & {
+        arrowedge?: Edge;
+        adaptation?:
+          | "automatic"
+          | "none"
+          | "popover"
+          | "sheet"
+          | "fullScreenCover";
+      };
+    inspector: Modifiers &
+      PresentationOptions & {
+        columnwidth?: number | { min?: number; ideal?: number; max?: number };
+      };
     alert: { title: string; ondismiss?: () => void };
+    confirmationdialog: {
+      title: string;
+      titlevisibility?: "automatic" | "visible" | "hidden";
+      ondismiss?: () => void;
+    };
     toolbar: { placement?: "leading" | "trailing" | "bottom" };
     tabview: Modifiers & {
       selection?: string | number;

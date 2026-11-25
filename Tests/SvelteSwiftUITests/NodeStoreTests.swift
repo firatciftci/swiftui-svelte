@@ -281,3 +281,33 @@ struct NodeStoreRandomTests {
         #expect(store.error == nil)
     }
 }
+
+extension NodeStoreTests {
+    @Test func presentsFromTheNearestHost() {
+        let store = self.store([
+            7, "screen", 7, "vstack", 7, "alert",
+            1, 2, 0, 10, 5, 0, 1, 11, 6, 0, 1, 12, 3, 0, 0,
+            1, 2, 0, 13, 3, 0, 1, 14, 7, 0, 0,
+        ])
+        #expect(store.node(10)?.presented.map(\.id) == [12])
+        #expect(store.node(13)?.presented.map(\.id) == [14])
+        #expect(store.root?.presented.map(\.id) == [13])
+        #expect(store.node(11)?.presented.isEmpty == true)
+        #expect(store.node(11)?.renderedChildren.isEmpty == true)
+
+        store.apply(batch([3, 12]))
+        #expect(store.node(10)?.presented.isEmpty == true)
+        store.apply(batch([2, 11, 0, 13]))
+        #expect(store.node(10)?.presented.map(\.id) == [13])
+        #expect(store.root?.presented.isEmpty == true)
+        store.apply(batch([2, 1, 0, 13]))
+        #expect(store.node(10)?.presented.isEmpty == true)
+        #expect(store.root?.presented.map(\.id) == [13])
+    }
+
+    @Test func waitsForADetachedSubtreeToJoinTheTree() {
+        let store = self.store([7, "screen", 1, 999, 0, 20, 3, 0, 0])
+        #expect(store.node(20) == nil)
+        #expect(store.root?.presented.isEmpty == true)
+    }
+}

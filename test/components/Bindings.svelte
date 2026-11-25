@@ -2,12 +2,16 @@
   import {
     Alert,
     ColorPicker,
+    ConfirmationDialog,
     DatePicker,
     DisclosureGroup,
+    FullScreenCover,
+    Inspector,
     MultiDatePicker,
     MultiPicker,
     NumberField,
     Picker,
+    Popover,
     SecureField,
     Sheet,
     Slider,
@@ -37,6 +41,10 @@
   let toppings = $state<Array<string | number>>(["cheese"]);
   let days = $state<Array<string>>([]);
   let color = $state("#FF0000");
+  let isCoverPresented = $state(false);
+  let isPopoverPresented = $state(false);
+  let isInspectorPresented = $state(false);
+  let isDialogPresented = $state(false);
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -71,6 +79,10 @@
   onclick={() => {
     isSheetPresented = true;
     isAlertPresented = true;
+    isCoverPresented = true;
+    isPopoverPresented = true;
+    isInspectorPresented = true;
+    isDialogPresented = true;
   }}>Open</btn
 >
 <DisclosureGroup testid="more" title="More" bind:expanded={isExpanded}>
@@ -78,6 +90,22 @@
 </DisclosureGroup>
 <Sheet bind:presented={isSheetPresented}><txt>In a sheet</txt></Sheet>
 <Alert bind:presented={isAlertPresented} title="Saved"><btn>OK</btn></Alert>
+<FullScreenCover bind:presented={isCoverPresented}
+  ><txt>Cover</txt></FullScreenCover
+>
+<Popover
+  bind:presented={isPopoverPresented}
+  adaptation="popover"
+  detents={[0.3, 200]}
+>
+  <txt>Popover</txt>
+</Popover>
+<Inspector bind:presented={isInspectorPresented} columnwidth={{ ideal: 300 }}>
+  <txt>Inspector</txt>
+</Inspector>
+<ConfirmationDialog bind:presented={isDialogPresented} title="Delete?">
+  <btn role="destructive">Delete</btn>
+</ConfirmationDialog>
 <txt testid="state"
   >{JSON.stringify({
     name,
@@ -90,6 +118,10 @@
     tab,
     isSheetPresented,
     isAlertPresented,
+    isCoverPresented,
+    isPopoverPresented,
+    isInspectorPresented,
+    isDialogPresented,
     submitted,
     changes,
     isExpanded,

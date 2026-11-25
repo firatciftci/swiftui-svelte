@@ -11,7 +11,7 @@ struct NodeView: View {
             element.modifier(NodeModifiers(node: node))
                 .layoutPriority(node.name == "spacer" ? -1 : 0)
         case .fragment:
-            children
+            VStack(spacing: 0) { children }.modifier(Presentations(node: node))
         }
     }
 
@@ -25,7 +25,7 @@ struct NodeView: View {
             NavStack(node: node)
         case "screen":
             Screen(node: node)
-        case "sheet", "swipeactions", "tab", "toolbar":
+        case "sheet", "fullscreencover", "popover", "inspector", "swipeactions", "tab", "toolbar":
             Group { children }
         case "tabview":
             Tabs(node: node)
@@ -196,6 +196,18 @@ private struct NavStack: View {
     }
 }
 
+private struct PresentationHost: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
+        if node.hostsPresentations {
+            content.modifier(Presentations(node: node))
+        } else {
+            content
+        }
+    }
+}
+
 private struct NodeModifiers: ViewModifier {
     let node: Node
 
@@ -207,7 +219,7 @@ private struct NodeModifiers: ViewModifier {
         let styled =
             content
             .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
-            .padding(padding(attributes["padding"]))
+            .padding(Styles.padding(attributes["padding"]))
             .font(Styles.font(attributes))
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .fontWeight(Styles.weight(attributes["weight"]?.string))
@@ -227,6 +239,7 @@ private struct NodeModifiers: ViewModifier {
             }
             .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
         styled
+            .modifier(PresentationHost(node: node))
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
             .ifLet(transition) { $0.transition($1) }
             .ifLet(node.attachment("swipeactions")) { view, actions in
@@ -241,22 +254,12 @@ private struct NodeModifiers: ViewModifier {
         let height = attributes["height"]?.number.map { CGFloat($0) }
         return width == nil && height == nil ? nil : (width, height)
     }
-
-    private func padding(_ value: JSONValue?) -> CGFloat {
-        switch value {
-        case let .number(length): length
-        case .bool(true): 16
-        default: 0
-        }
-    }
 }
 
 private struct Screen: View {
     let node: Node
-    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
-        let alert = node.attachment("alert")
         Group {
             Slot(node: node)
         }
@@ -273,37 +276,6 @@ private struct Screen: View {
                     }
                 }
             }
-        }
-        .sheet(
-            item: Binding {
-                node.attachment("sheet")
-            } set: { sheet in
-                if sheet == nil, let current = node.attachment("sheet") {
-                    runtime.dispatch(current.id, "dismiss")
-                }
-            }
-        ) { sheet in
-            NodeView(node: sheet)
-                .presentationDetents(
-                    sheet.attributes["detent"]?.string == "medium" ? [.medium, .large] : [.large])
-        }
-        .alert(
-            alert?.attributes["title"]?.string ?? "",
-            isPresented: Binding {
-                node.attachment("alert") != nil
-            } set: { presented in
-                if !presented, let current = node.attachment("alert") {
-                    runtime.dispatch(current.id, "dismiss")
-                }
-            },
-            presenting: alert
-        ) { alert in
-            ForEach(alert.renderedChildren.filter { $0.name == "btn" }) { ActionButton(node: $0) }
-        } message: { alert in
-            Text(
-                alert.renderedChildren.filter { $0.name == "txt" }
-                    .map { $0.children.filter { $0.kind == .text }.map(\.text).joined() }
-                    .joined(separator: "\n"))
         }
     }
 

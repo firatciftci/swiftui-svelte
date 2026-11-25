@@ -55,4 +55,15 @@ struct LayoutTests {
             #expect(group.attachment("label") === label)
         }
     }
+
+    @Test func readsPadding() {
+        #expect(Styles.padding(.string("")) == 16)
+        #expect(Styles.padding(.bool(true)) == 16)
+        #expect(Styles.padding(.number(8)) == 8)
+        #expect(Styles.padding(.string("12")) == 12)
+        #expect(Styles.padding(.string("false")) == 0)
+        #expect(Styles.padding(.bool(false)) == 0)
+        #expect(Styles.padding(.number(-4)) == 0)
+        #expect(Styles.padding(nil) == 0)
+    }
 }
