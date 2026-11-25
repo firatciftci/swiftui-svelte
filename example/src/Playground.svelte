@@ -171,6 +171,53 @@
             <txt design="monospaced">lazyhstack</txt>
           </gridrow>
         </grid>
+        <hstack spacing={8} testid="shapes">
+          <roundedrectangle
+            cornerradius={10}
+            fill={{
+              linear: ["#ff3e00", "orange"],
+              start: "topLeading",
+              end: "bottomTrailing",
+            }}
+            width={40}
+            height={40}
+          />
+          <circleshape
+            fill="mint"
+            stroke="teal"
+            linewidth={3}
+            dash={[5, 3]}
+            width={40}
+            height={40}
+          />
+          <capsule
+            fill="regularMaterial"
+            stroke="separator"
+            width={40}
+            height={24}
+          />
+          <unevenroundedrectangle
+            topleading={20}
+            bottomtrailing={20}
+            fill="hsl(260 80% 60%)"
+            width={40}
+            height={40}
+          />
+          <pathshape
+            d="M12 21C5 16 2 12.5 2 8.5 2 5.4 4.4 3 7.5 3c1.8 0 3.5.9 4.5 2.3C13 3.9 14.7 3 16.5 3 19.6 3 22 5.4 22 8.5 22 12.5 19 16 12 21z"
+            viewbox="0 0 24 24"
+            fill="rgb(255 45 85)"
+            width={40}
+            height={40}
+          />
+          <pathshape
+            d="M12 12V2a10 10 0 1 1-10 10z"
+            viewbox="0 0 24 24"
+            fill={{ angular: ["blue", "purple", "blue"] }}
+            width={40}
+            height={40}
+          />
+        </hstack>
         <scrollview
           axes="horizontal"
           snap="view"

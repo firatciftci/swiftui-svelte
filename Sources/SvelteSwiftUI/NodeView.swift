@@ -37,6 +37,8 @@ struct NodeView: View {
         case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "group", "groupbox",
             "controlgroup", "disclosuregroup":
             Container(node: node)
+        case "rectangle", "roundedrectangle", "unevenroundedrectangle", "circleshape", "ellipseshape", "capsule", "pathshape":
+            ShapeElement(node: node)
         case "zstack":
             ZStack(alignment: Styles.alignment(alignment)) { children }
         case "scrollview":
@@ -212,9 +214,9 @@ private struct NodeModifiers: ViewModifier {
             .font(Styles.font(attributes))
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .fontWeight(Styles.weight(attributes["weight"]?.string))
-            .ifLet(Styles.color(attributes["color"]?.string)) { $0.foregroundStyle($1) }
-            .ifLet(Styles.color(attributes["tint"]?.string)) { $0.tint($1) }
-            .background(Styles.color(attributes["background"]?.string) ?? .clear)
+            .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }
+            .ifLet(Palette.color(attributes["tint"]?.string)) { $0.tint($1) }
+            .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
@@ -340,7 +342,7 @@ private struct ActionButton: View {
                 }
             }
         }
-        .tint(Styles.color(node.attributes["tint"]?.string))
+        .tint(Palette.color(node.attributes["tint"]?.string))
     }
 }
 

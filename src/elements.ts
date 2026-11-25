@@ -22,7 +22,7 @@ type Weight =
   | "bold"
   | "heavy"
   | "black";
-type Color =
+type NamedColor =
   | "primary"
   | "secondary"
   | "accent"
@@ -40,7 +40,88 @@ type Color =
   | "brown"
   | "gray"
   | "white"
-  | "black";
+  | "black"
+  | "clear";
+type SystemColor =
+  | "systemBackground"
+  | "secondarySystemBackground"
+  | "tertiarySystemBackground"
+  | "systemGroupedBackground"
+  | "secondarySystemGroupedBackground"
+  | "tertiarySystemGroupedBackground"
+  | "label"
+  | "secondaryLabel"
+  | "tertiaryLabel"
+  | "quaternaryLabel"
+  | "placeholderText"
+  | "separator"
+  | "opaqueSeparator"
+  | "link"
+  | "systemFill"
+  | "secondarySystemFill"
+  | "tertiarySystemFill"
+  | "quaternarySystemFill"
+  | "systemGray"
+  | "systemGray2"
+  | "systemGray3"
+  | "systemGray4"
+  | "systemGray5"
+  | "systemGray6";
+export type Color =
+  | NamedColor
+  | SystemColor
+  | `#${string}`
+  | `rgb(${string})`
+  | `rgba(${string})`
+  | `hsl(${string})`
+  | `hsla(${string})`;
+type UnitPointName =
+  | "center"
+  | "top"
+  | "bottom"
+  | "leading"
+  | "trailing"
+  | "topLeading"
+  | "topTrailing"
+  | "bottomLeading"
+  | "bottomTrailing";
+type GradientStop = Color | { color: Color; location: number };
+export type ShapeStyle =
+  | Color
+  | `${NamedColor}.gradient`
+  | "tertiary"
+  | "quaternary"
+  | "quinary"
+  | "ultraThinMaterial"
+  | "thinMaterial"
+  | "regularMaterial"
+  | "thickMaterial"
+  | "ultraThickMaterial"
+  | "bar"
+  | { linear: Array<GradientStop>; start?: UnitPointName; end?: UnitPointName }
+  | {
+      radial: Array<GradientStop>;
+      center?: UnitPointName;
+      startRadius?: number;
+      endRadius?: number;
+    }
+  | {
+      angular: Array<GradientStop>;
+      center?: UnitPointName;
+      startAngle?: number;
+      endAngle?: number;
+    };
+type ShapeAttributes = Modifiers & {
+  fill?: ShapeStyle;
+  stroke?: ShapeStyle;
+  linewidth?: number;
+  linecap?: "butt" | "round" | "square";
+  linejoin?: "miter" | "round" | "bevel";
+  dash?: Array<number>;
+  dashphase?: number;
+  fillrule?: "nonzero" | "evenodd";
+};
+type Corners = { corners?: "continuous" | "circular" };
 type Edge = "top" | "bottom" | "leading" | "trailing";
 type TransitionName =
   | "opacity"
@@ -122,7 +203,7 @@ export type ScrollGeometry = {
 type ScrollOptions = {
   indicators?: boolean | "automatic" | "visible" | "hidden" | "never";
   bounce?: "automatic" | "always" | "basedOnSize";
-  anchor?: Exclude<LayerAlignment, `${string}Baseline`>;
+  anchor?: UnitPointName;
   onscroll?: (scroll: ScrollGeometry) => void;
 };
 type Modifiers = {
@@ -131,9 +212,9 @@ type Modifiers = {
   size?: number;
   design?: "default" | "rounded" | "serif" | "monospaced";
   weight?: Weight;
-  color?: Color;
+  color?: ShapeStyle;
   tint?: Color;
-  background?: Color;
+  background?: ShapeStyle;
   radius?: number;
   opacity?: number;
   width?: number;
@@ -146,7 +227,7 @@ type Modifiers = {
   testid?: string;
   colspan?: number;
   columnalignment?: HorizontalAlignment;
-  cellanchor?: Exclude<LayerAlignment, `${string}Baseline`>;
+  cellanchor?: UnitPointName;
   onresize?: (size: Size) => void;
   lang?: string;
   dir?: "ltr" | "rtl";
@@ -172,6 +253,19 @@ declare module "svelte/elements" {
     vstack: Modifiers & { spacing?: number; alignment?: HorizontalAlignment };
     hstack: Modifiers & { spacing?: number; alignment?: VerticalAlignment };
     zstack: Modifiers & { alignment?: LayerAlignment };
+    rectangle: ShapeAttributes;
+    roundedrectangle: ShapeAttributes & Corners & { cornerradius?: number };
+    unevenroundedrectangle: ShapeAttributes &
+      Corners & {
+        topleading?: number;
+        toptrailing?: number;
+        bottomleading?: number;
+        bottomtrailing?: number;
+      };
+    circleshape: ShapeAttributes;
+    ellipseshape: ShapeAttributes;
+    capsule: ShapeAttributes & Corners;
+    pathshape: ShapeAttributes & { d: string; viewbox?: string };
     lazyvstack: Modifiers & {
       spacing?: number;
       alignment?: HorizontalAlignment;

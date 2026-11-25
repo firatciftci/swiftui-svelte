@@ -109,8 +109,8 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [ ] `image` from the asset catalog and from bundle files, with resizing, rendering mode, and symbol variants and effects
 - [ ] `asyncimage` phases: placeholder and failure snippets
 - [ ] `link` and `sharelink`
-- [ ] Shapes: `rectangle`, `roundedrectangle`, `circle`, `capsule`, `ellipse`, `unevenroundedrectangle`, and `path` from an SVG path string, with fill and stroke
-- [ ] Colors: hex, RGB, opacity, semantic system colors, linear, radial, and angular gradients, and materials
+- [x] Shapes: `rectangle`, `roundedrectangle`, `circle`, `capsule`, `ellipse`, `unevenroundedrectangle`, and `path` from an SVG path string, with fill and stroke
+- [x] Colors: hex, RGB, opacity, semantic system colors, linear, radial, and angular gradients, and materials
 
 ### Controls
 

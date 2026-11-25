@@ -38,8 +38,8 @@ struct Span {
             span.hasFont = true
         }
         span.weight = Styles.weight(attributes["weight"]?.string) ?? weight
-        span.color = Styles.color(attributes["color"]?.string) ?? color
-        span.background = Styles.color(attributes["background"]?.string) ?? background
+        span.color = Palette.color(attributes["color"]?.string) ?? color
+        span.background = Palette.color(attributes["background"]?.string) ?? background
         span.kerning = attributes["kerning"]?.number ?? kerning
         span.tracking = attributes["tracking"]?.number ?? tracking
         span.apply(decorations: attributes)

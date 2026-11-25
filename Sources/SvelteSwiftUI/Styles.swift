@@ -67,30 +67,6 @@ enum Styles {
         }
     }
 
-    static func color(_ name: String?) -> Color? {
-        switch name {
-        case "primary": .primary
-        case "secondary": .secondary
-        case "accent": .accentColor
-        case "red": .red
-        case "orange": .orange
-        case "yellow": .yellow
-        case "green": .green
-        case "mint": .mint
-        case "teal": .teal
-        case "cyan": .cyan
-        case "blue": .blue
-        case "indigo": .indigo
-        case "purple": .purple
-        case "pink": .pink
-        case "brown": .brown
-        case "gray": .gray
-        case "white": .white
-        case "black": .black
-        default: nil
-        }
-    }
-
     static func layoutDirection(_ name: String?) -> LayoutDirection? {
         switch name {
         case "ltr": .leftToRight

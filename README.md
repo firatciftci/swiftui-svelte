@@ -209,7 +209,7 @@ Every element also accepts these modifiers:
 | `padding`                          | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute |
 | `width`, `height`                  | Sets a fixed size                                                                                     |
 | `font`, `size`, `design`, `weight` | Sets the text style or a fixed size, the design, and the weight                                       |
-| `color`, `tint`, `background`      | Colors the content, the controls, or the background                                                   |
+| `color`, `tint`, `background`      | Colors the content, the controls, or the background. See [Colors and shapes](#colors-and-shapes)      |
 | `radius`, `opacity`                | Rounds the corners and sets the opacity                                                               |
 | `animated`, `animation`            | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
 | `lang`, `dir`                      | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
@@ -239,7 +239,7 @@ A few details:
 - **Progress.** A `progressview` shows a bar filled to `value` out of `total`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
 - **Attribute values.** Attributes reach Swift as JSON, so `null`, booleans, numbers, strings, arrays, and objects keep their types, and functions are never sent. A `Date` becomes an ISO 8601 string, a `BigInt` becomes a number, a `Map` becomes an object, and a `Set` becomes an array. `NaN`, `Infinity`, and `undefined` inside arrays become `null`, and `undefined` properties are dropped. An attribute set to `null` or `undefined` is removed. Where an element expects a number, a numeric string like `spacing="8"` works too. Where it expects a string, a number or boolean is converted. Where it expects a boolean (like `checked` or `animated`), the values `false`, `0`, `null`, and `"false"` are false, and anything else, including the empty string of a bare attribute, is true.
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
-- **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, and `progressview` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, and `progress` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
+- **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
 
 ### Rich text
 
@@ -264,6 +264,52 @@ For text from Markdown, set `markdown` to the source, or set it with no value to
 ```
 
 Only inline Markdown works: bold, italic, strikethrough, code, and links. Headings, lists, and other blocks show up as plain text, and line breaks are kept. With `markdown`, nested `txt` elements are ignored.
+
+### Colors and shapes
+
+`color`, `background`, `fill`, and `stroke` take any of these:
+
+| Value                                           | Examples                                                                                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A SwiftUI color                                 | `blue`, `pink`, `clear`, `accent`                                                                                                     |
+| A UIKit system color, which adapts to dark mode | `systemBackground`, `secondaryLabel`, `separator`, `systemGray4`                                                                      |
+| A CSS color                                     | `#ff3e00`, `#f008`, `rgb(255 62 0 / 50%)`, `hsl(14 100% 50%)`                                                                         |
+| A hierarchical style                            | `primary`, `secondary`, `tertiary`, `quaternary`, `quinary`                                                                           |
+| A material                                      | `ultraThinMaterial`, `thinMaterial`, `regularMaterial`, `thickMaterial`, `ultraThickMaterial`, `bar`                                  |
+| A color's gradient                              | `blue.gradient`                                                                                                                       |
+| A gradient object                               | `{ linear: ["red", "orange"], start: "topLeading", end: "bottomTrailing" }`, `{ radial: [...], endRadius: 80 }`, `{ angular: [...] }` |
+
+Gradient colors can be plain colors, spaced evenly, or `{ color, location }` stops. `tint` and the colors of nested `txt` spans take colors only.
+
+The shape elements draw SwiftUI shapes, filled with the foreground style unless you set `fill`, `stroke`, or both:
+
+```svelte
+<roundedrectangle
+  cornerradius={12}
+  fill="regularMaterial"
+  stroke="separator"
+  width={120}
+  height={44}
+/>
+<circleshape stroke="teal" linewidth={3} dash={[5, 3]} width={40} height={40} />
+<pathshape
+  d="M12 12V2a10 10 0 1 1-10 10z"
+  viewbox="0 0 24 24"
+  fill="orange"
+  width={40}
+  height={40}
+/>
+```
+
+| Element                                  | SwiftUI                        | Attributes                                                                |
+| ---------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
+| `rectangle`                              | `Rectangle`                    |                                                                           |
+| `roundedrectangle`                       | `RoundedRectangle`             | `cornerradius`, `corners`                                                 |
+| `unevenroundedrectangle`                 | `UnevenRoundedRectangle`       | `topleading`, `toptrailing`, `bottomleading`, `bottomtrailing`, `corners` |
+| `circleshape`, `ellipseshape`, `capsule` | `Circle`, `Ellipse`, `Capsule` | `corners` (on `capsule`)                                                  |
+| `pathshape`                              | A `Path` from SVG path data    | `d`, `viewbox`                                                            |
+
+All of them also take `linewidth`, `linecap`, `linejoin`, `dash`, `dashphase`, and `fillrule` (`nonzero` or `evenodd`). `corners` is `continuous`, the default, or `circular`. A `pathshape` reads every SVG path command, including arcs. With a `viewbox`, it scales the path to fit its frame the way an SVG icon does; without one, it draws the path at its own coordinates.
 
 ### Bindable components
 
