@@ -71,8 +71,17 @@ struct Rows: View {
     @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
+        if RowView.wraps(node.renderedChildren) {
+            editable(ForEach(node.renderedChildren) { RowView(node: $0) })
+        } else {
+            editable(ForEach(node.renderedChildren) { NodeView(node: $0) })
+        }
+    }
+
+    private func editable(_ rows: some DynamicViewContent) -> some View {
         let id = node.id
-        ForEach(node.renderedChildren) { NodeView(node: $0) }
+        return
+            rows
             .onDelete(
                 perform: node.listens(to: "delete")
                     ? { offsets in runtime.dispatch(id, "delete", Array(offsets)) } : nil

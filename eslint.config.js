@@ -110,6 +110,10 @@ export default antfu({
     rules: { "ts/explicit-function-return-type": "off" },
   },
   { files: ["example/src/Bench.svelte"], rules: { "no-console": "off" } },
+  {
+    files: ["scripts/docs.ts", "test/catalog.test.ts"],
+    rules: { "no-restricted-imports": "off" },
+  },
   ...swiftuiSvelte.map((config) => ({ ...config, files: ["example/src/**"] })),
   {
     files: ["src/host.ts", "src/renderer.ts"],

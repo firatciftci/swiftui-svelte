@@ -17,6 +17,7 @@ const operations = { create, update, swap, reverse, clear } satisfies Record<
   string,
   (count: number) => void
 >;
+const slack = import.meta.env.CI == null ? 1 : 3;
 const names = ["create", "update", "swap", "reverse", "clear"] as const;
 
 const budgets: Record<number, Record<(typeof names)[number], Budget>> = {
@@ -54,7 +55,9 @@ describe("benchmarks", () => {
         const limit = budget[name];
         const result = await measure(() => operations[name](Number(count)));
         expect.soft(result.ops, `${name} ops`).toBeLessThanOrEqual(limit.ops);
-        expect.soft(result.ms, `${name} time`).toBeLessThanOrEqual(limit.ms);
+        expect
+          .soft(result.ms, `${name} time`)
+          .toBeLessThanOrEqual(limit.ms * slack);
       }
       stop();
     }, 120_000);

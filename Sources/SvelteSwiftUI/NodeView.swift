@@ -3,20 +3,95 @@ import SwiftUI
 struct NodeView: View {
     let node: Node
 
+    static let multiple: Set<String> = [
+        "sheet", "fullscreencover", "popover", "inspector", "swipeactions", "tab", "toolbar", "sectionview", "group",
+    ]
+
+    var body: some View {
+        NodeContent(node: node, element: ElementView(node: node), isRow: false)
+    }
+}
+
+struct RowView: View {
+    let node: Node
+
+    static func wraps(_ children: Array<Node>) -> Bool {
+        children.allSatisfy { $0.kind != .element || !(NodeView.multiple.contains($0.name) || $0.name == "disclosuregroup") }
+    }
+
+    var body: some View {
+        ZStack { NodeContent(node: node, element: SingleElement(node: node), isRow: true) }
+            .modifier(RowTraits(node: node))
+    }
+}
+
+private struct NodeContent<Element: View>: View {
+    let node: Node
+    let element: Element
+    let isRow: Bool
+
     var body: some View {
         switch node.kind {
         case .text:
             Text(Whitespace.normal.collapsed(node.text))
         case .element:
-            element.modifier(NodeModifiers(node: node))
+            element.modifier(NodeModifiers(node: node, isRow: isRow))
                 .layoutPriority(node.name == "spacer" ? -1 : 0)
         case .fragment:
-            VStack(spacing: 0) { children }.modifier(Presentations(node: node))
+            VStack(spacing: 0) { ForEach(node.renderedChildren) { NodeView(node: $0) } }
+                .modifier(Presentations(node: node))
         }
+    }
+}
+
+private struct ElementView: View {
+    let node: Node
+
+    var body: some View {
+        if NodeView.multiple.contains(node.name) {
+            MultipleElement(node: node)
+        } else {
+            SingleElement(node: node)
+        }
+    }
+}
+
+private struct MultipleElement: View {
+    let node: Node
+
+    var body: some View {
+        if node.name == "sectionview" {
+            Section {
+                Rows(node: node)
+            } header: {
+                if let header = node.attachment("header") {
+                    Slot(node: header)
+                } else if let header = node.attributes["header"]?.string {
+                    Text(header)
+                }
+            } footer: {
+                if let footer = node.attachment("footer") {
+                    Slot(node: footer)
+                } else if let footer = node.attributes["footer"]?.string {
+                    Text(footer)
+                }
+            }
+            .modifier(SectionIndexLabel(label: node.attributes["indexlabel"]?.string))
+        } else {
+            Group { ForEach(node.renderedChildren) { NodeView(node: $0) } }
+        }
+    }
+}
+
+private struct SingleElement: View {
+    let node: Node
+
+    var body: some View {
+        element
     }
 
     private var children: some View {
-        ForEach(node.renderedChildren) { Self(node: $0) }
+        ForEach(node.renderedChildren) { NodeView(node: $0) }
     }
 
     @ViewBuilder private var element: some View {
@@ -25,8 +100,6 @@ struct NodeView: View {
             NavStack(node: node)
         case "screen":
             Screen(node: node)
-        case "sheet", "fullscreencover", "popover", "inspector", "swipeactions", "tab", "toolbar":
-            Group { children }
         case "tabview":
             Tabs(node: node)
         case "navsplitview":
@@ -35,7 +108,7 @@ struct NodeView: View {
             VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { children }
         case "hstack":
             HStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing) { children }
-        case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "group", "groupbox",
+        case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "groupbox",
             "controlgroup", "disclosuregroup":
             Container(node: node)
         case "rectangle", "roundedrectangle", "unevenroundedrectangle", "circleshape", "ellipseshape", "capsule", "pathshape":
@@ -58,23 +131,6 @@ struct NodeView: View {
             GlassContainer(node: node)
         case "formview":
             Form { children }
-        case "sectionview":
-            Section {
-                Rows(node: node)
-            } header: {
-                if let header = node.attachment("header") {
-                    Slot(node: header)
-                } else if let header = node.attributes["header"]?.string {
-                    Text(header)
-                }
-            } footer: {
-                if let footer = node.attachment("footer") {
-                    Slot(node: footer)
-                } else if let footer = node.attributes["footer"]?.string {
-                    Text(footer)
-                }
-            }
-            .modifier(SectionIndexLabel(label: node.attributes["indexlabel"]?.string))
         case "spacer":
             Spacer(minLength: node.attributes["minlength"]?.number.map { CGFloat($0) })
         case "divider":
@@ -185,12 +241,12 @@ private struct PresentationHost: ViewModifier {
 
 private struct NodeModifiers: ViewModifier {
     let node: Node
+    let isRow: Bool
 
     func body(content: Content) -> some View {
         let attributes = node.attributes
         let animation = (MotionCurve(attributes["animation"]) ?? MotionCurve()).animation
         let childIDs = attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil
-        let transition = MotionTransition.transition(for: attributes)
         let styled =
             content
             .modifier(SafeAreaInsets(node: node))
@@ -213,8 +269,24 @@ private struct NodeModifiers: ViewModifier {
         styled
             .modifier(PresentationHost(node: node))
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
-            .ifLet(transition) { $0.transition($1) }
             .modifier(Attachments(node: node))
+            .ifLet(isRow ? nil : node) { $0.modifier(RowTraits(node: $1)) }
+    }
+}
+
+private struct RowTraits: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
+        let attributes = node.attributes
+        content
+            .ifLet(MotionTransition.transition(for: attributes)) { $0.transition($1) }
+            .ifLet(attributes["zindex"]?.number) { $0.zIndex($1) }
+            .ifLet(node.attachment("swipeactions")) { view, actions in
+                view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
+                    ForEach(actions.renderedChildren) { ActionButton(node: $0) }
+                }
+            }
             .modifier(RowOptions(attributes: attributes))
     }
 }
@@ -263,11 +335,6 @@ private struct Attachments: ViewModifier {
         content
             .ifLet(node.attachment("searchable")) { $0.modifier(Searching(node: $1)) }
             .ifLet(node.attachment("contextmenu")) { $0.modifier(ContextMenu(node: $1)) }
-            .ifLet(node.attachment("swipeactions")) { view, actions in
-                view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
-                    ForEach(actions.renderedChildren) { ActionButton(node: $0) }
-                }
-            }
     }
 }
 

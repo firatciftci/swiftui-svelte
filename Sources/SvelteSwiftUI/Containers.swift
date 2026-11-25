@@ -59,23 +59,23 @@ struct Container: View {
         let pinned = Layout.pinnedViews(attributes["pinned"])
         switch node.name {
         case "lazyvstack":
-            LazyVStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { children }
+            LazyVStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { rows }
         case "lazyhstack":
-            LazyHStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { children }
+            LazyHStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { rows }
         case "lazyvgrid":
             LazyVGrid(
                 columns: Layout.gridItems(attributes["columns"]),
                 alignment: Styles.horizontalAlignment(alignment),
                 spacing: spacing,
                 pinnedViews: pinned
-            ) { children }
+            ) { rows }
         case "lazyhgrid":
             LazyHGrid(
                 rows: Layout.gridItems(attributes["rows"]),
                 alignment: Styles.verticalAlignment(alignment),
                 spacing: spacing,
                 pinnedViews: pinned
-            ) { children }
+            ) { rows }
         case "grid":
             Grid(
                 alignment: Styles.alignment(alignment),
@@ -98,15 +98,21 @@ struct Container: View {
             } label: {
                 Title(node: node)
             }
-        case "disclosuregroup":
-            DisclosureControl(node: node)
         default:
-            Group { children }
+            DisclosureControl(node: node)
         }
     }
 
     private var children: some View {
         ForEach(node.renderedChildren) { NodeView(node: $0) }
+    }
+
+    @ViewBuilder private var rows: some View {
+        if RowView.wraps(node.renderedChildren) {
+            ForEach(node.renderedChildren) { RowView(node: $0) }
+        } else {
+            children
+        }
     }
 }
 

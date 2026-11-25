@@ -8,6 +8,7 @@ let package = Package(
     targets: [
         .target(
             name: "SvelteSwiftUI",
+            resources: [.copy("PrivacyInfo.xcprivacy")],
             swiftSettings: [.defaultIsolation(MainActor.self)]
         ),
         .testTarget(

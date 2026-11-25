@@ -15,5 +15,6 @@ declare module "swiftui-svelte/native" {
       isAvailable: () => Promise<boolean>;
       takePhoto: () => Promise<string | null>;
     };
+    diagnostics: { memory: () => Promise<number> };
   }
 }

@@ -56,6 +56,7 @@ SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --terminate-running-process bo
 | `pnpm test`        | Runs the JavaScript tests with Vitest, including the budget for bundle size                                       |
 | `pnpm test:swift`  | Runs the Swift package's tests                                                                                    |
 | `pnpm elements`    | Regenerates `src/known.ts`, the element and attribute names that development builds check, from `src/elements.ts` |
+| `pnpm docs`        | Regenerates `docs/reference.md` from the TSDoc in `src/elements.ts` and the examples in `example/src/catalog`     |
 
 ## Project layout
 
@@ -65,6 +66,7 @@ SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --terminate-running-process bo
 | `Sources/SvelteSwiftUI` | The Swift package: `SvelteView`, the JavaScriptCore runtime, and the SwiftUI interpreter         |
 | `example/src`           | The example app and the benchmark, written in Svelte                                             |
 | `example/ios`           | The iOS host app for the example, generated with XcodeGen                                        |
+| `docs`                  | The guides, and the element reference that `pnpm docs` generates                                 |
 
 ## Adding an element
 
@@ -72,7 +74,7 @@ An element touches both sides of the bridge:
 
 1. Add its attributes and events to `src/elements.ts`, so that `svelte-check` includes them. Then run `pnpm elements`, so development builds don't warn about them.
 2. Render it in `Sources/SvelteSwiftUI/NodeView.swift`. Read attributes from `node.attributes`, and send events back to Svelte with `runtime.dispatch`.
-3. Use it in the example app, and add it to the elements table in the README.
+3. Add an example to `example/src/catalog/elements`, named after the element, and list the element in `example/src/catalog/sections.ts`. The example app shows it in the Catalog tab, `test/catalog.test.ts` renders it, and `pnpm docs` generates the element reference from it. The generator fails if an element or modifier has no example. A new modifier goes in a group in `sections.ts`, and that group's example has to use it.
 
 ## Pull requests
 
@@ -80,6 +82,7 @@ An element touches both sides of the bridge:
 - Run `pnpm check`, `pnpm lint`, and `pnpm format` before you push. CI runs these, builds the npm package and the example's bundle, builds the Swift package and the example app with Xcode, and runs SwiftLint's analyzer on the build.
 - `test/vite.test.ts` builds a one-line app in production mode and fails when the bundle grows past its budget of 180 KB minified or 55 KB gzipped. If a change needs the extra bytes, raise the budget in the same pull request and say why in its description.
 - `test/bench.test.ts` creates, updates, swaps, reverses, and clears 1,000 and 10,000 rows. It fails when an operation sends more ops across the bridge than its budget, or takes several times longer than it does on a laptop. Op counts don't depend on the machine, so a higher count means the renderer is doing more work. `Tests/SvelteSwiftUITests/BenchmarkTests.swift` does the same for the Swift side, applying those batches to the node store. Raise a budget only when a change needs it, and say why in the pull request.
+- `test/docs.test.ts` compiles every Svelte snippet in the README and the guides. Run `pnpm docs` after you change `src/elements.ts` or a catalog example; CI fails when `docs/reference.md` is out of date.
 - Try the change in the example app on a simulator. If it changes how something looks, add a screenshot to the pull request.
 - Write the pull request title as a [Conventional Commit](https://www.conventionalcommits.org), such as `feat: add a picker element`. Pull requests are squash-merged, and the title becomes the commit message and the changelog entry.
 

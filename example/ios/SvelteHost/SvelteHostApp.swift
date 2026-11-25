@@ -9,7 +9,7 @@ struct SvelteHostApp: App {
         }
     }
 
-    private static let modules = [CameraModule.module]
+    private static let modules = [CameraModule.module, DiagnosticsModule.module]
     private static let components = [NativeComponent("mapview") { MapElement(element: $0) }]
 
     private static var source: URL {

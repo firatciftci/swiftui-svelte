@@ -90,6 +90,5 @@ struct Transforms: ViewModifier {
                 $0.scaleEffect($1, anchor: UnitPoint(anchor: attributes["scaleanchor"]?.string) ?? .center)
             }
             .ifLet(Geometry.point(attributes["position"])) { $0.position(x: $1.x, y: $1.y) }
-            .ifLet(attributes["zindex"]?.number) { $0.zIndex($1) }
     }
 }

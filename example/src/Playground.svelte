@@ -20,6 +20,7 @@
   } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
   import { files, nativeModule } from "swiftui-svelte/native";
+  import LongList from "./LongList.svelte";
   import Mail from "./Mail.svelte";
   import Produce from "./Produce.svelte";
 
@@ -46,6 +47,7 @@
   let isPinched = false;
   let haptics = $state(0);
   let showsNative = $state(false);
+  let longList: "list" | "lazyvstack" | null = $state(null);
   let place = $state({
     latitude: 41.7886,
     longitude: -87.5987,
@@ -185,6 +187,7 @@
   onpop={() => {
     showsToolbars = false;
     showsSearch = false;
+    longList = null;
   }}
 >
   <screen title="Playground">
@@ -772,6 +775,11 @@
         </btn>
         <btn onclick={() => (showsMail = true)}>Open a split view</btn>
         <btn onclick={() => (showsSearch = true)}>Open a search screen</btn>
+        <btn onclick={() => (longList = "list")}>Open 10,000 rows in a list</btn
+        >
+        <btn onclick={() => (longList = "lazyvstack")}>
+          Open 10,000 rows in a lazy stack
+        </btn>
         <FullScreenCover bind:presented={showsMail}>
           <Mail onclose={() => (showsMail = false)} />
         </FullScreenCover>
@@ -1104,5 +1112,9 @@
 
   {#if showsSearch}
     <Produce />
+  {/if}
+
+  {#if longList != null}
+    <LongList kind={longList} />
   {/if}
 </navstack>

@@ -173,7 +173,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] Upstream fix for reversing keyed `{#each}` (sveltejs/svelte#19440)
 - [x] Benchmarks in CI (create, update, swap, reverse, and clear 1,000 and 10,000 rows) with budgets that fail the build on a regression
 - [x] Fine-grained observation: an attribute change invalidates only the node's own view, not its parent's
-- [ ] Lazy containers keep memory flat while scrolling 10,000 rows
+- [x] Lazy containers keep memory flat while scrolling 10,000 rows
 - [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device _(maintainer)_
 - [x] A bundle size budget for the renderer and the host polyfills
 - [x] Whitespace-only text nodes stay on the JS side instead of crossing the bridge, because SwiftUI never renders them
@@ -190,13 +190,14 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 
 ## M8. Documentation
 
-- [ ] A docs site or `docs/` folder: getting started, every element and modifier with examples, and guides (navigation, forms, loading data, native modules, performance, debugging, and App Store release)
+- [x] A docs site or `docs/` folder: getting started, every element and modifier with examples, and guides (navigation, forms, loading data, native modules, performance, debugging, and App Store release)
 - [x] TSDoc on every element and attribute in `elements.ts`, so editors show docs on hover
-- [ ] The example app becomes a catalog of every element, with the to-do app as a real-world sample
+- [x] The example app becomes a catalog of every element, with the to-do app as a real-world sample
 - [ ] Refreshed screenshots
 
 ## M9. Release
 
 - [x] A supported Svelte range, decided and tested in CI (the custom renderer API is experimental upstream)
 - [x] A semver and deprecation policy in CONTRIBUTING.md
+- [x] A privacy manifest in the Swift package, declaring the `UserDefaults` and file timestamp APIs it uses
 - [ ] 0.x releases along the way, then 1.0.0 through the release workflow _(maintainer)_

@@ -70,6 +70,9 @@ jobs:
       - name: Check that the known element names are up to date
         run: pnpm run elements && git diff --exit-code -- src/known.ts
 
+      - name: Check that the element reference is up to date
+        run: pnpm run docs && git diff --exit-code -- docs/reference.md
+
       - name: Check that the template's Xcode project is up to date
         run: pnpm run template && git diff --exit-code -- template
 

@@ -2,6 +2,7 @@
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_todos": "To-dos",
   "tab_section_examples": "Examples",
+  "tab_catalog": "Catalog",
   "tab_playground": "Playground",
   "tab_settings": "Settings",
   "settings_title": "Settings",
@@ -49,5 +50,7 @@
   "width": "Width",
   "safe_area": "Safe area",
   "safe_area_value": "{top} pt top, {bottom} pt bottom",
-  "form_size": "Form size"
+  "form_size": "Form size",
+  "catalog_modifiers": "Modifiers",
+  "catalog_close": "Close"
 }
