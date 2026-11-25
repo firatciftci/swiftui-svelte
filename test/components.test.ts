@@ -53,6 +53,13 @@ describe("bindable components", () => {
     await update(() => edit(byTestId("password"), "input", "value", "hunter2"));
     await update(() => edit(byTestId("notes"), "input", "value", "Line\nTwo"));
     await update(() => edit(byTestId("price"), "input", "value", 12.25));
+    await update(() =>
+      edit(byTestId("toppings"), "change", "value", ["cheese", "olives"]),
+    );
+    await update(() =>
+      edit(byTestId("days"), "change", "value", ["2026-11-25", "2026-12-01"]),
+    );
+    await update(() => edit(byTestId("color"), "change", "value", "#00FF0080"));
     expect(state()).toMatchObject({
       name: "Ada",
       isOn: true,
@@ -66,6 +73,9 @@ describe("bindable components", () => {
       password: "hunter2",
       notes: "Line\nTwo",
       price: 12.25,
+      toppings: ["cheese", "olives"],
+      days: ["2026-11-25", "2026-12-01"],
+      color: "#00FF0080",
     });
     await update(() => edit(byTestId("price"), "input", "value", null));
     expect(state().price).toBeNull();
@@ -77,6 +87,10 @@ describe("bindable components", () => {
     expect(byTestId("volume")?.attributes.get("value")).toBe(0.5);
     expect(byTestId("tabs")?.attributes.get("selection")).toBe("home");
     expect(byTestId("price")?.attributes.get("value")).toBe(4.5);
+    expect(byTestId("toppings")?.attributes.get("value")).toEqual(["cheese"]);
+    expect(byTestId("toppings")?.attributes.get("multiple")).toBe(true);
+    expect(byTestId("days")?.attributes.get("value")).toEqual([]);
+    expect(byTestId("color")?.attributes.get("value")).toBe("#FF0000");
     expect(byTestId("price")?.attributes.get("format")).toEqual({
       currency: "USD",
     });

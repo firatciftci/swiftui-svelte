@@ -7,7 +7,10 @@
     onchange,
     children,
     ...rest
-  }: SvelteHTMLElements["picker"] & { children?: Snippet } = $props();
+  }: SvelteHTMLElements["picker"] & {
+    multiple?: false;
+    children?: Snippet;
+  } = $props();
 </script>
 
 <picker

@@ -40,10 +40,13 @@ final class SvelteHostUITests: XCTestCase {
         let field = app.textFields["new-todo"]
         waitFor(field)
         field.tap()
+        let cleared = NSPredicate(format: "value == 'New to-do'")
         for index in 1...10 {
             field.typeText("Errand \(index)\n")
-            waitFor(app.switches["Errand \(index)"])
+            let submitted = XCTNSPredicateExpectation(predicate: cleared, object: field)
+            XCTAssertEqual(XCTWaiter.wait(for: [submitted], timeout: 5), .completed, "Errand \(index) wasn't added")
         }
+        waitFor(app.switches["Errand 1"])
         XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true)
 
         field.typeText("Errand 11")
@@ -318,5 +321,68 @@ final class SvelteHostUITests: XCTestCase {
         journal.typeText("Hello")
         XCTAssertTrue(app.staticTexts["5 characters"].waitForExistence(timeout: 3))
         attachScreenshot("inputs")
+    }
+
+    private func scroll(to element: XCUIElement, attempts: Int = 8) {
+        for _ in 0..<attempts where !element.isHittable { app.swipeUp() }
+    }
+
+    func testPicksAndOpensMenus() {
+        tab("Playground")
+        let section = app.buttons["Pickers and menus"]
+        scroll(to: section)
+        section.tap()
+        let toppings = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Toppings'")).firstMatch
+        scroll(to: toppings, attempts: 3)
+        toppings.tap()
+        let olives = app.buttons["Olives"]
+        waitFor(olives)
+        XCTAssertTrue(app.buttons["Cheese"].isSelected)
+        XCTAssertFalse(olives.isSelected)
+        olives.tap()
+        XCTAssertTrue(olives.isSelected)
+        attachScreenshot("multiple selection")
+        app.navigationBars.buttons.firstMatch.tap()
+        waitFor(app.staticTexts["Cheese and Olives"])
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Sides'")).firstMatch.tap()
+        waitFor(app.buttons["Salad"])
+        app.buttons["Salad"].tap()
+        app.buttons["Soup"].tap()
+        attachScreenshot("menu selection")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
+        waitFor(app.staticTexts["Salad and Soup"])
+
+        let actions = app.buttons["actions-menu"]
+        scroll(to: actions, attempts: 3)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '1.0.0'")).firstMatch.exists)
+        actions.tap()
+        waitFor(app.buttons["Copy"])
+        attachScreenshot("menu")
+        app.buttons["Copy"].tap()
+        waitFor(app.staticTexts["Last action: Copy"])
+        actions.tap()
+        app.buttons["Share"].tap()
+        waitFor(app.buttons["Mail"])
+        app.buttons["Mail"].tap()
+        waitFor(app.staticTexts["Last action: Mail"])
+
+        let add = app.buttons["Add"]
+        add.tap()
+        waitFor(app.staticTexts["Last action: Add"])
+        add.press(forDuration: 1)
+        waitFor(app.buttons["Photo"])
+        app.buttons["Photo"].tap()
+        waitFor(app.staticTexts["Last action: Photo"])
+
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS ' 15'")).firstMatch
+        scroll(to: day, attempts: 4)
+        day.tap()
+        XCTAssertTrue(day.isSelected)
+        let browse = app.buttons["Browse items"]
+        scroll(to: browse, attempts: 4)
+        XCTAssertEqual(app.staticTexts["delivery-days"].label, "1 day picked")
+        XCTAssertTrue(app.staticTexts["No favorites"].exists)
+        attachScreenshot("pickers and menus")
     }
 }

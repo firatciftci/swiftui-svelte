@@ -13,15 +13,7 @@ struct PickerControl: View {
             }
         ) {
             ForEach(node.renderedChildren.filter { $0.name == "choice" }) { choice in
-                let title = choice.children.filter { $0.kind == .text }.map(\.text).joined()
-                Group {
-                    if let symbol = choice.attributes["symbol"]?.string {
-                        Label(title, systemImage: symbol)
-                    } else {
-                        Text(title)
-                    }
-                }
-                .tag(choice.attributes["value"] ?? .null)
+                Choices.label(choice).tag(choice.attributes["value"] ?? .null)
             }
         } label: {
             if let label = node.attachment("label") {
@@ -141,6 +133,217 @@ struct ProgressControl: View {
             ProgressView()
         } else {
             ProgressView { Slot(node: node) }
+        }
+    }
+}
+
+enum Choices {
+    static func title(_ choice: Node) -> String {
+        Whitespace.normal.collapsed(choice.children.filter { $0.kind == .text }.map(\.text).joined())
+    }
+
+    static func label(_ choice: Node) -> some View {
+        Group {
+            if let symbol = choice.attributes["symbol"]?.string {
+                Label(title(choice), systemImage: symbol)
+            } else {
+                Text(title(choice))
+            }
+        }
+    }
+
+    static func toggled(_ value: JSONValue, in selection: Array<JSONValue>, order choices: Array<Node>) -> Array<JSONValue> {
+        let isSelected = selection.contains(value)
+        let known = choices.compactMap { $0.attributes["value"] }
+        let kept = known.filter { $0 == value ? !isSelected : selection.contains($0) }
+        let unknown = selection.filter { !known.contains($0) }
+        return kept + unknown
+    }
+}
+
+struct MultiPickerControl: View {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    var body: some View {
+        let choices = node.renderedChildren.filter { $0.name == "choice" }
+        switch node.attributes["variant"]?.string {
+        case "menu":
+            Menu {
+                ForEach(choices) { choice in
+                    Toggle(isOn: isOn(choice, choices: choices)) { Choices.label(choice) }
+                }
+            } label: {
+                LabeledContent {
+                    Text(summary(choices))
+                } label: {
+                    label
+                }
+            }
+            #if !os(macOS)
+                .menuActionDismissBehavior(.disabled)
+            #endif
+        case "navigation":
+            NavigationLink {
+                List { rows(choices) }
+                    .navigationTitle(node.attributes["label"]?.string ?? "")
+            } label: {
+                LabeledContent {
+                    Text(summary(choices))
+                } label: {
+                    label
+                }
+            }
+        default:
+            if node.attachment("label") != nil || node.attributes["label"] != nil {
+                Section {
+                    rows(choices)
+                } header: {
+                    label
+                }
+            } else {
+                rows(choices)
+            }
+        }
+    }
+
+    private var selection: Array<JSONValue> {
+        if case let .array(values) = node.attributes["value"] { values } else { [] }
+    }
+
+    @ViewBuilder private var label: some View {
+        if let label = node.attachment("label") {
+            Slot(node: label)
+        } else {
+            Text(node.attributes["label"]?.string ?? "")
+        }
+    }
+
+    private func summary(_ choices: Array<Node>) -> String {
+        let selection = selection
+        return choices.filter { selection.contains($0.attributes["value"] ?? .null) }.map(Choices.title).formatted(.list(type: .and))
+    }
+
+    private func rows(_ choices: Array<Node>) -> some View {
+        ForEach(choices) { choice in
+            let isSelected = selection.contains(choice.attributes["value"] ?? .null)
+            Button {
+                toggle(choice, choices: choices)
+            } label: {
+                HStack {
+                    Choices.label(choice).foregroundStyle(Color.primary)
+                    Spacer()
+                    Image(systemName: "checkmark")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.tint)
+                        .opacity(isSelected ? 1 : 0)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(.rect)
+            }
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+        }
+    }
+
+    private func isOn(_ choice: Node, choices: Array<Node>) -> Binding<Bool> {
+        Binding {
+            selection.contains(choice.attributes["value"] ?? .null)
+        } set: { _ in
+            toggle(choice, choices: choices)
+        }
+    }
+
+    private func toggle(_ choice: Node, choices: Array<Node>) {
+        let values = Choices.toggled(choice.attributes["value"] ?? .null, in: selection, order: choices)
+        runtime.edit(node, "value", to: .array(values), event: "change", payload: values.map(\.object))
+    }
+}
+
+enum Days {
+    private static let gregorian: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar
+    }()
+
+    static func date(_ day: String) -> Date? {
+        let parts = day.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3, day.count == 10 else { return nil }
+        let expected = DateComponents(year: parts[0], month: parts[1], day: parts[2])
+        guard let date = gregorian.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12)),
+            gregorian.dateComponents([.year, .month, .day], from: date) == expected
+        else { return nil }
+        return date
+    }
+
+    static func components(_ day: String, in calendar: Calendar) -> DateComponents? {
+        date(day).map { calendar.dateComponents([.calendar, .era, .year, .month, .day], from: $0) }
+    }
+
+    static func day(_ components: DateComponents, in calendar: Calendar) -> String? {
+        guard let date = (components.calendar ?? calendar).date(from: components) else { return nil }
+        let parts = gregorian.dateComponents([.year, .month, .day], from: date)
+        guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+        return String(format: "%04d-%02d-%02d", year, month, day)
+    }
+
+    static func bound(_ value: JSONValue?) -> Date? {
+        guard let string = value?.string else { return nil }
+        return date(string) ?? value?.date
+    }
+}
+
+struct MultiDatePickerControl: View {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+    @Environment(\.calendar) private var calendar
+
+    var body: some View {
+        let selection = Binding<Set<DateComponents>> {
+            guard case let .array(values) = node.attributes["value"] else { return [] }
+            return Set(values.compactMap { $0.string.flatMap { Days.components($0, in: calendar) } })
+        } set: { components in
+            let days = components.compactMap { Days.day($0, in: calendar) }.sorted()
+            runtime.edit(node, "value", to: .array(days.map(JSONValue.string)), event: "change", payload: days)
+        }
+        #if os(macOS)
+            Text("<multidatepicker> isn't available on macOS").foregroundStyle(.red)
+        #else
+            let lower = Days.bound(node.attributes["min"]).map { calendar.startOfDay(for: $0) }
+            let upper = Days.bound(node.attributes["max"]).flatMap {
+                calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: $0))
+            }
+            switch (lower, upper) {
+            case let (lower?, upper?):
+                MultiDatePicker(selection: selection, in: lower..<max(lower, upper)) { Slot(node: node) }
+            case let (lower?, nil):
+                MultiDatePicker(selection: selection, in: lower...) { Slot(node: node) }
+            case let (nil, upper?):
+                MultiDatePicker(selection: selection, in: ..<upper) { Slot(node: node) }
+            case (nil, nil):
+                MultiDatePicker(selection: selection) { Slot(node: node) }
+            }
+        #endif
+    }
+}
+
+struct ColorPickerControl: View {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+    @Environment(\.self) private var environment
+
+    var body: some View {
+        ColorPicker(
+            selection: Binding {
+                Palette.color(node.attributes["value"]?.string) ?? .black
+            } set: { color in
+                let hex = Palette.hex(color.resolve(in: environment))
+                guard hex != node.attributes["value"]?.string else { return }
+                runtime.edit(node, "value", to: .string(hex), event: "change", payload: hex)
+            },
+            supportsOpacity: node.attributes["supportsopacity"]?.isTrue ?? true
+        ) {
+            Slot(node: node)
         }
     }
 }

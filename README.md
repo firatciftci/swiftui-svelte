@@ -170,41 +170,47 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                                       |
-| ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------- |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                              |
-| `screen`                            | A screen in the stack               | `title`                                                                                     |
-| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                   |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                      |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                                 |
-| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)      |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                            |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                       |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                  |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                      |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                  |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                   |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more              |
-| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                       |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`   |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                  |
-| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                               |
-| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                       |
-| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                              |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit` |
-| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                           |
-| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                   |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                       |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)             |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                          |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                            |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                            |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                            |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                   |
-| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                       |
-| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                        |
-| `toolbar`                           | `.toolbar`                          | `placement`                                                                                 |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                      |
+| Element                             | SwiftUI                             | Attributes and events                                                                        |
+| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                               |
+| `screen`                            | A screen in the stack               | `title`                                                                                      |
+| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                    |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                       |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                                  |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)       |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                             |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                        |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                   |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                       |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                   |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                    |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, `whitespace`, and more |
+| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                        |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`    |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                   |
+| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                                |
+| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                        |
+| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                               |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit`  |
+| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                            |
+| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                    |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                        |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `multiple`, `onchange(value)`; `value`, `symbol` (on `choice`)  |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                           |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                             |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                             |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                             |
+| `multidatepicker`                   | `MultiDatePicker`                   | `value`, `min`, `max`, `onchange(days)`                                                      |
+| `colorpicker`                       | `ColorPicker`                       | `value`, `supportsopacity`, `onchange(hex)`                                                  |
+| `gauge`                             | `Gauge`                             | `value`, `min`, `max`, `current`, `minlabel`, `maxlabel`, `variant`                          |
+| `labeledcontent`                    | `LabeledContent`                    | `title`, `value`                                                                             |
+| `contentunavailableview`            | `ContentUnavailableView`            | `title`, `symbol`, `description`, `variant`, `query`                                         |
+| `menuview`                          | `Menu`                              | `title`, `symbol`, `variant`, `order`, `onprimaryaction`                                     |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                    |
+| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                        |
+| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                         |
+| `toolbar`                           | `.toolbar`                          | `placement`                                                                                  |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                       |
 
 Every element also accepts these modifiers:
 
@@ -226,6 +232,7 @@ A few details:
 - **Toggles.** `variant="switch"` always draws a switch, and `variant="button"` draws a button that stays highlighted while it's on.
 - **Stacks.** `alignment` takes any of SwiftUI's alignment guides. On a `vstack` that's `leading`, `center`, `trailing`, `listRowSeparatorLeading`, or `listRowSeparatorTrailing`. On an `hstack` it's `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`, which lines up text of different sizes. A `zstack` takes a corner or edge such as `topLeading`, or a baseline alignment such as `leadingFirstTextBaseline`. A `spacer` with `minlength` never shrinks below that many points.
 - **Text.** `lines` caps the number of lines, and `truncation` picks where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`. `minscale` lets the text shrink to that fraction of its size before it truncates. `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`. `linespacing` adds points of space between lines, `kerning` and `tracking` adjust the space between letters, and `selectable` lets the user select and copy the text.
+- **Whitespace.** On the web, the browser collapses the line breaks and indentation inside text, and Svelte leaves that work to it, so `txt` does the same: every run of spaces, tabs, and line breaks becomes one space, and spaces at the start and end are dropped. This way, text that a formatter wraps across lines still reads as one line. Set `whitespace="pre-line"` to keep line breaks, which you'll want for text that users type, or `whitespace="pre"` to keep every space.
 - **Fonts.** `font` picks a text style that follows Dynamic Type, such as `headline` or `caption`. `size` sets a fixed size in points instead, like `.system(size:)`, so it doesn't follow Dynamic Type. `design` is `rounded`, `serif`, or `monospaced`, and `weight` goes from `ultraLight` to `black`. These work on any element and apply to all the text inside it.
 - **Lazy stacks and grids.** `lazyvstack`, `lazyhstack`, `lazyvgrid`, and `lazyhgrid` create their children only as they scroll into view, so put them in a `scrollview`. Set `pinned` to `headers`, `footers`, or `both` to keep the header and footer of each `sectionview` on screen while its rows scroll by. A grid's `columns` (or `rows` for `lazyhgrid`) is a number of equal flexible columns, or an array of items: a number for a fixed width, `{ min, max }` for a flexible column, or `{ adaptive: 80 }` to fit as many columns of at least 80 points as there's room for. Any item can also take `spacing` and `alignment`.
 - **Grids.** A `grid` lays out `gridrow` children as a table whose columns line up across rows. `spacing` sets both gaps, and `hspacing` and `vspacing` set them separately. Inside a grid, any element takes `colspan` to span several columns, `columnalignment` to align its whole column, and `cellanchor` to place itself in its cell. An element that isn't in a `gridrow`, like a `divider`, spans the whole width.
@@ -244,13 +251,19 @@ A few details:
 - **Labels and links.** A `labelview` shows a `title` with an SF Symbol from `symbol`, an asset image from `image`, or the children of an `icon` element, and `variant` can show only the title or only the icon. A `linkview` opens `href` in the browser. A `sharelink` opens the share sheet for `item`, a URL or text, with an optional `subject` and `message`. Both use their children as the label, or `title` if you set it.
 - **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
 - **Tabs.** Give each `tab` a `value`, and set `selection` on the `tabview` to pick the tab that's showing. `onchange` receives the `value` of the tab the user switches to. A tab without a `value` uses its position, starting at 0.
-- **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`.
+- **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`. Add `multiple` to let the user pick several options: `value` is then an array, and `onchange` receives the new array, in the order of the choices. A multiple picker shows its options as rows with checkmarks, or with `variant="menu"` or `variant="navigation"` (as a menu or a screen of rows). The picked titles appear next to the label. Use the `MultiPicker` component for `bind:value`.
+- **Multiple dates.** A `multidatepicker` shows a calendar where the user taps days on and off. Its `value` is an array of days as `YYYY-MM-DD` strings, which don't depend on the time zone, and `min` and `max` limit the days the user can pick.
+- **Color pickers.** A `colorpicker` takes any color for `value` and sends the color the user picks to `onchange` as a hex string such as `#FF9500`, or `#FF950080` when it's partly transparent. Set `supportsopacity={false}` to hide the opacity slider.
+- **Gauges.** A `gauge` shows `value` between `min` and `max`, which default to 0 and 1. Its children are its label; `current`, `minlabel`, and `maxlabel` add short text for the value and the ends. `variant` is `circular`, `circularCapacity`, `linear`, or `linearCapacity`.
+- **Labeled content.** A `labeledcontent` shows a `title` (or a `label` child) with a `value` on the trailing side, like a row in Settings. Without `value`, its children are the content.
+- **Empty states.** A `contentunavailableview` fills the space with a `symbol`, a `title`, and a `description`, and its children become action buttons below them. With `variant="search"`, it shows the system's "No Results" message, mentioning `query` when you set it.
+- **Menus.** A `menuview` opens a menu of its children when tapped. Its label is a `title` with an optional `symbol`, or a `label` child. Inside, use `btn`, `toggle`, `picker`, `divider`, `sectionview` (to group items, with an optional `header`), and nested `menuview` elements for submenus. A `picker` in a menu shows its options in place, and `variant="menu"` turns it into a submenu. With an `onprimaryaction` handler, a tap runs that handler and a long press opens the menu.
 - **Sliders and steppers.** A `slider` goes from `min` to `max`, which default to 0 and 1, and snaps to multiples of `step` when you set it. `oninput` fires while the user drags, and `onchange` fires when they let go. A `stepper` changes `value` by `step`, 1 by default, and stays between `min` and `max` if you set them.
 - **Dates.** A `datepicker` takes a `Date` or an ISO 8601 string for `value`, `min`, and `max`, and `onchange` receives a `Date`. `components` is `date`, `time`, or `datetime`, the default. `variant` is `automatic`, `compact`, `graphical`, or `wheel`.
 - **Progress.** A `progressview` shows a bar filled to `value` out of `total`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
 - **Attribute values.** Attributes reach Swift as JSON, so `null`, booleans, numbers, strings, arrays, and objects keep their types, and functions are never sent. A `Date` becomes an ISO 8601 string, a `BigInt` becomes a number, a `Map` becomes an object, and a `Set` becomes an array. `NaN`, `Infinity`, and `undefined` inside arrays become `null`, and `undefined` properties are dropped. An attribute set to `null` or `undefined` is removed. Where an element expects a number, a numeric string like `spacing="8"` works too. Where it expects a string, a number or boolean is converted. Where it expects a boolean (like `checked` or `animated`), the values `false`, `0`, `null`, and `"false"` are false, and anything else, including the empty string of a bare attribute, is true.
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
-- **Names.** `txt`, `btn`, `sfsymbol`, `imageview`, `labelview`, `linkview`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `label`, `link`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
+- **Names.** `txt`, `btn`, `sfsymbol`, `imageview`, `labelview`, `linkview`, `menuview`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `label`, `link`, `menu`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
 
 ### Rich text
 
@@ -351,6 +364,9 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 | `TextEditor`      | `value`     | `texteditor`                |
 | `Toggle`          | `checked`   | `toggle`                    |
 | `Picker`          | `value`     | `picker`                    |
+| `MultiPicker`     | `value`     | `picker` with `multiple`    |
+| `MultiDatePicker` | `value`     | `multidatepicker`           |
+| `ColorPicker`     | `value`     | `colorpicker`               |
 | `Slider`          | `value`     | `slider`                    |
 | `Stepper`         | `value`     | `stepper`                   |
 | `DatePicker`      | `value`     | `datepicker`                |

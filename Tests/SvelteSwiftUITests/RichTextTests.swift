@@ -112,4 +112,33 @@ struct RichTextTests {
         #expect(Styles.truncationMode("middle") == .middle)
         #expect(Styles.truncationMode("none") == nil)
     }
+
+    @Test func collapsesWhitespaceLikeTheWeb() {
+        let wrapped = txt([:], [text("1"), text("\n    "), text("day picked\n  ")])
+        #expect(String(Styles.attributedString(wrapped).characters) == "1 day picked")
+        let nested = txt([:], [text("  Hello  "), txt(["weight": .string("bold")], [text("  big \t world ")]), text(" !")])
+        #expect(String(Styles.attributedString(nested).characters) == "Hello big world !")
+    }
+
+    @Test func keepsLineBreaksWithPreLine() {
+        let node = txt(["whitespace": .string("pre-line")], [text("First   line  \n   second\tline")])
+        #expect(String(Styles.attributedString(node).characters) == "First line\nsecond line")
+    }
+
+    @Test func keepsEverythingWithPre() {
+        let node = txt(["whitespace": .string("pre")], [text("  a\n   b  ")])
+        #expect(String(Styles.attributedString(node).characters) == "  a\n   b  ")
+        let mixed = txt([:], [text("a\n  "), txt(["whitespace": .string("pre")], [text("  b")])])
+        #expect(String(Styles.attributedString(mixed).characters) == "a   b")
+    }
+
+    @Test func collapsesMarkdownSource() {
+        let node = txt(["markdown": .string("**Bold**\n    and *more*")], [])
+        #expect(String(Styles.attributedString(node).characters) == "Bold and more")
+    }
+
+    @Test func collapsesBareText() {
+        #expect(Whitespace.normal.collapsed("\n  Save\n  changes ") == "Save changes")
+        #expect(Whitespace.pre.collapsed(" a ") == " a ")
+    }
 }

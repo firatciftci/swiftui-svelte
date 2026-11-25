@@ -6,7 +6,7 @@ struct NodeView: View {
     var body: some View {
         switch node.kind {
         case .text:
-            Text(node.text)
+            Text(Whitespace.normal.collapsed(node.text))
         case .element:
             element.modifier(NodeModifiers(node: node))
                 .layoutPriority(node.name == "spacer" ? -1 : 0)
@@ -96,8 +96,22 @@ struct NodeView: View {
             TextInputControl(node: node)
         case "toggle":
             ToggleElement(node: node)
+        case "picker" where node.attributes["multiple"]?.isTrue == true:
+            MultiPickerControl(node: node)
         case "picker":
             PickerControl(node: node)
+        case "multidatepicker":
+            MultiDatePickerControl(node: node)
+        case "colorpicker":
+            ColorPickerControl(node: node)
+        case "gauge":
+            GaugeElement(node: node)
+        case "labeledcontent":
+            LabeledContentElement(node: node)
+        case "contentunavailableview":
+            UnavailableElement(node: node)
+        case "menuview":
+            MenuElement(node: node)
         case "slider":
             SliderControl(node: node)
         case "stepper":
@@ -310,7 +324,7 @@ private struct Screen: View {
     }
 }
 
-private struct ActionButton: View {
+struct ActionButton: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
 
@@ -318,13 +332,7 @@ private struct ActionButton: View {
         Button(role: Inputs.role(node.attributes["role"]?.string)) {
             runtime.dispatch(node.id, "click", waits: false)
         } label: {
-            ForEach(node.renderedChildren) { child in
-                switch child.name {
-                case "sfsymbol": Symbol(node: child)
-                case "txt": Styles.text(child)
-                default: Text(child.text)
-                }
-            }
+            PlainLabel(node: node)
         }
         .tint(Palette.color(node.attributes["tint"]?.string))
     }

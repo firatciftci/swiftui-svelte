@@ -2,7 +2,10 @@
   import { withAnimation } from "swiftui-svelte";
   import { onBackground } from "swiftui-svelte/app";
   import {
+    ColorPicker,
     DisclosureGroup,
+    MultiDatePicker,
+    MultiPicker,
     NumberField,
     SecureField,
     Sheet,
@@ -35,6 +38,14 @@
   let price = $state<number | null>(null);
   let notes = $state("");
   let journal = $state("");
+  let showsPickers = $state(false);
+  let toppings = $state<Array<string | number>>(["cheese"]);
+  let sides = $state<Array<string | number>>([]);
+  let deliveryDays = $state<Array<string>>([]);
+  let highlight = $state<`#${string}`>("#FF9500");
+  let isPinned = $state(false);
+  let sortOrder = $state<string | number>("name");
+  let lastAction = $state<string | null>(null);
 
   const swatches = [
     "red",
@@ -406,6 +417,103 @@
         <txt testid="journal-count" font="caption" color="secondary">
           {journal.length} characters
         </txt>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Pickers and menus" bind:expanded={showsPickers}>
+        <MultiPicker
+          label="Toppings"
+          variant="navigation"
+          bind:value={toppings}
+        >
+          <choice value="cheese">Cheese</choice>
+          <choice value="olives">Olives</choice>
+          <choice value="peppers">Peppers</choice>
+          <choice value="mushrooms">Mushrooms</choice>
+        </MultiPicker>
+        <MultiPicker label="Sides" variant="menu" bind:value={sides}>
+          <choice value="fries">Fries</choice>
+          <choice value="salad">Salad</choice>
+          <choice value="soup">Soup</choice>
+        </MultiPicker>
+        <ColorPicker bind:value={highlight} supportsopacity={false}>
+          <labelview title="Highlight color" symbol="paintpalette" />
+        </ColorPicker>
+        <hstack spacing={8}>
+          <circleshape fill={highlight} width={20} height={20} />
+          <txt testid="highlight" font="caption" color="secondary"
+            >{highlight}</txt
+          >
+        </hstack>
+        <gauge value={0.6} current="60%">
+          <txt>Storage</txt>
+        </gauge>
+        <hstack spacing={16}>
+          <gauge value={0.6} current="60%" variant="circular">
+            <txt>Storage</txt>
+          </gauge>
+          <gauge value={0.25} variant="circularCapacity" tint="green">
+            <txt>Storage</txt>
+          </gauge>
+        </hstack>
+        <labeledcontent title="Version" value="1.0.0" />
+        <hstack spacing={16}>
+          <menuview
+            title="Actions"
+            symbol="ellipsis.circle"
+            testid="actions-menu"
+          >
+            <btn onclick={() => (lastAction = "Copy")}>
+              <sfsymbol name="doc.on.doc" /><txt>Copy</txt>
+            </btn>
+            <btn onclick={() => (lastAction = "Duplicate")}>Duplicate</btn>
+            <toggle checked={isPinned} onchange={(next) => (isPinned = next)}>
+              Pin
+            </toggle>
+            <picker
+              label="Sort by"
+              value={sortOrder}
+              onchange={(next) => (sortOrder = next)}
+            >
+              <choice value="name">Name</choice>
+              <choice value="date">Date</choice>
+            </picker>
+            <menuview title="Share" symbol="square.and.arrow.up">
+              <btn onclick={() => (lastAction = "Message")}>Message</btn>
+              <btn onclick={() => (lastAction = "Mail")}>Mail</btn>
+            </menuview>
+            <divider />
+            <sectionview>
+              <btn role="destructive" onclick={() => (lastAction = "Delete")}>
+                Delete
+              </btn>
+            </sectionview>
+          </menuview>
+          <menuview
+            title="Add"
+            symbol="plus"
+            onprimaryaction={() => (lastAction = "Add")}
+          >
+            <btn onclick={() => (lastAction = "Photo")}>Photo</btn>
+            <btn onclick={() => (lastAction = "File")}>File</btn>
+          </menuview>
+        </hstack>
+        <txt testid="last-action" font="caption" color="secondary">
+          {lastAction == null ? "No action yet" : `Last action: ${lastAction}`}
+        </txt>
+        <MultiDatePicker bind:value={deliveryDays}>
+          <txt>Delivery days</txt>
+        </MultiDatePicker>
+        <txt testid="delivery-days" font="caption" color="secondary">
+          {deliveryDays.length}
+          {deliveryDays.length === 1 ? "day" : "days"} picked
+        </txt>
+        <contentunavailableview
+          title="No favorites"
+          symbol="star"
+          description="Tap the star on any item to keep it here."
+        >
+          <btn variant="bordered">Browse items</btn>
+        </contentunavailableview>
       </DisclosureGroup>
     </list>
 

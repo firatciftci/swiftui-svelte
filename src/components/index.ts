@@ -1,6 +1,9 @@
 export { default as Alert } from "./Alert.svelte";
+export { default as ColorPicker } from "./ColorPicker.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
 export { default as DisclosureGroup } from "./DisclosureGroup.svelte";
+export { default as MultiDatePicker } from "./MultiDatePicker.svelte";
+export { default as MultiPicker } from "./MultiPicker.svelte";
 export { default as NumberField } from "./NumberField.svelte";
 export { default as Picker } from "./Picker.svelte";
 export { default as SecureField } from "./SecureField.svelte";

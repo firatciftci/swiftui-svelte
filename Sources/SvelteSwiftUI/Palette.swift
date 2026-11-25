@@ -30,6 +30,12 @@ enum Palette {
         }
     }
 
+    static func hex(_ color: Color.Resolved) -> String {
+        let channels = [color.red, color.green, color.blue, color.opacity].map { Int((min(max($0, 0), 1) * 255).rounded()) }
+        let digits = (channels[3] == 255 ? channels.prefix(3) : channels[...]).map { String(format: "%02X", $0) }
+        return "#" + digits.joined()
+    }
+
     private static func named(_ name: String) -> Color? {
         switch name {
         case "primary": .primary

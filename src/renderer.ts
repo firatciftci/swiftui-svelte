@@ -391,7 +391,7 @@ function linked(): Linked {
   return { parent: null, prev: null, next: null, state: State.Local };
 }
 
-const observedEvents = new Set(["resize", "scroll"]);
+const observedEvents = new Set(["primaryaction", "resize", "scroll"]);
 
 function updateListens(element: ElementNode): void {
   const types: Array<string> = [];

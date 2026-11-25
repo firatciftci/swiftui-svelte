@@ -1,8 +1,11 @@
 <script lang="ts">
   import {
     Alert,
+    ColorPicker,
     DatePicker,
     DisclosureGroup,
+    MultiDatePicker,
+    MultiPicker,
     NumberField,
     Picker,
     SecureField,
@@ -31,6 +34,9 @@
   let password = $state("");
   let notes = $state("");
   let price = $state<number | null>(4.5);
+  let toppings = $state<Array<string | number>>(["cheese"]);
+  let days = $state<Array<string>>([]);
+  let color = $state("#FF0000");
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -41,6 +47,12 @@
 <SecureField testid="password" bind:value={password} contenttype="password" />
 <TextEditor testid="notes" bind:value={notes} />
 <NumberField testid="price" bind:value={price} format={{ currency: "USD" }} />
+<MultiPicker testid="toppings" label="Toppings" bind:value={toppings}>
+  <choice value="cheese">Cheese</choice>
+  <choice value="olives">Olives</choice>
+</MultiPicker>
+<MultiDatePicker testid="days" bind:value={days}>Days</MultiDatePicker>
+<ColorPicker testid="color" bind:value={color}>Color</ColorPicker>
 <Toggle testid="on" bind:checked={isOn} onchange={() => changes++}>Wi-Fi</Toggle
 >
 <Picker testid="flavor" bind:value={flavor}>
@@ -84,5 +96,8 @@
     password,
     notes,
     price,
+    toppings,
+    days,
+    color,
   })}</txt
 >

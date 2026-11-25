@@ -105,6 +105,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 
 - [x] `txt` with `lines` and `align`, `sfsymbol`, and `asyncimage`
 - [x] `txt` styles: size, design (`rounded`, `serif`, and `monospaced`), italic, underline, strikethrough, kerning, line spacing, truncation mode, minimum scale factor, and `selectable`
+- [x] `txt` collapses whitespace the way browsers do, and `whitespace` keeps line breaks (`pre-line`) or every space (`pre`)
 - [x] `label` (a title plus a symbol)
 - [x] `image` from the asset catalog and from bundle files, with resizing, rendering mode, and symbol variants and effects
 - [x] `asyncimage` phases: placeholder and failure snippets
@@ -119,12 +120,12 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] `textfield` options: keyboard type, content type, autocapitalization, autocorrection, submit label, `axis` for multiline input, and number formats
 - [x] `securefield` and `texteditor`
 - [x] `toggle` styles (`switch` and `button`)
-- [ ] `picker` with multiple selection in lists
-- [ ] `multidatepicker` and `colorpicker`
-- [ ] `gauge`
-- [ ] `menu`, with nested sections, buttons, toggles, and pickers, and a primary action
-- [ ] `contentunavailableview`
-- [ ] `labeledcontent`
+- [x] `picker` with multiple selection in lists
+- [x] `multidatepicker` and `colorpicker`
+- [x] `gauge`
+- [x] `menu`, with nested sections, buttons, toggles, and pickers, and a primary action
+- [x] `contentunavailableview`
+- [x] `labeledcontent`
 
 ### Navigation and presentation
 

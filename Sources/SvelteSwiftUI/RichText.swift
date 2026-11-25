@@ -113,10 +113,19 @@ extension Styles {
 
     static func attributedString(_ node: Node) -> AttributedString {
         let span = Span(root: node.attributes)
-        guard let source = markdown(node) else { return runs(node, span) }
+        let whitespace = Whitespace(node.attributes["whitespace"]?.string)
+        guard let source = markdown(node) else {
+            var isAfterSpace = true
+            var result = runs(node, span, whitespace: whitespace, isAfterSpace: &isAfterSpace)
+            if whitespace != .pre, let last = result.characters.indices.last, result.characters[last] == " " {
+                result.characters.remove(at: last)
+            }
+            return result
+        }
         var parsed =
-            (try? AttributedString(markdown: source, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-            ?? AttributedString(source)
+            (try? AttributedString(
+                markdown: whitespace.collapsed(source), options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+            ?? AttributedString(whitespace.collapsed(source))
         parsed.mergeAttributes(span.container, mergePolicy: .keepCurrent)
         return parsed
     }
@@ -129,16 +138,56 @@ extension Styles {
         }
     }
 
-    private static func runs(_ node: Node, _ span: Span) -> AttributedString {
+    private static func runs(_ node: Node, _ span: Span, whitespace: Whitespace, isAfterSpace: inout Bool) -> AttributedString {
         var result = AttributedString()
         for child in node.children {
             switch child.kind {
             case .text:
-                result.append(AttributedString(child.text, attributes: span.container))
+                result.append(AttributedString(whitespace.collapse(child.text, isAfterSpace: &isAfterSpace), attributes: span.container))
             case .element where child.name == "txt":
-                result.append(runs(child, span.merged(child.attributes)))
+                let nested = child.attributes["whitespace"].map { Whitespace($0.string) } ?? whitespace
+                result.append(runs(child, span.merged(child.attributes), whitespace: nested, isAfterSpace: &isAfterSpace))
             case .element, .fragment:
                 continue
+            }
+        }
+        return result
+    }
+}
+
+enum Whitespace {
+    case normal
+    case preLine
+    case pre
+
+    init(_ name: String?) {
+        switch name {
+        case "pre": self = .pre
+        case "pre-line": self = .preLine
+        default: self = .normal
+        }
+    }
+
+    func collapsed(_ text: String) -> String {
+        var isAfterSpace = true
+        let collapsed = collapse(text, isAfterSpace: &isAfterSpace)
+        return self == .pre || !collapsed.hasSuffix(" ") ? collapsed : String(collapsed.dropLast())
+    }
+
+    func collapse(_ text: String, isAfterSpace: inout Bool) -> String {
+        guard self != .pre else { return text }
+        var result = ""
+        for character in text {
+            if self == .preLine, character.isNewline {
+                if result.last == " " { result.removeLast() }
+                result.append("\n")
+                isAfterSpace = true
+            } else if character.isWhitespace {
+                if !isAfterSpace { result.append(" ") }
+                isAfterSpace = true
+            } else {
+                result.append(character)
+                isAfterSpace = false
             }
         }
         return result

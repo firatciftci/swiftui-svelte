@@ -239,6 +239,16 @@ describe("observed events", () => {
     await update(() => dispatch(byTestId("toggle-scroll"), "click"));
     expect(byTestId("scroller")?.attributes.has("listens")).toBe(false);
   });
+
+  it("tells the host which menus have a primary action", async () => {
+    await render(Scrolling);
+    expect(byTestId("menu")?.attributes.get("listens")).toEqual([
+      "primaryaction",
+    ]);
+    expect(byTestId("plain-menu")?.attributes.has("listens")).toBe(false);
+    await update(() => dispatch(byTestId("menu"), "primaryaction"));
+    expect(findAll("txt")[2]?.children[0]?.text).toBe("Primary 1");
+  });
 });
 
 describe("blocks", () => {

@@ -390,6 +390,7 @@ declare module "svelte/elements" {
       strikethrough?: boolean;
       href?: string;
       markdown?: boolean | string;
+      whitespace?: "normal" | "pre-line" | "pre";
       kerning?: number;
       tracking?: number;
       linespacing?: number;
@@ -490,18 +491,29 @@ declare module "svelte/elements" {
     sectionview: Modifiers & { header?: string; footer?: string };
     background: { alignment?: LayerAlignment };
     overlay: { alignment?: LayerAlignment };
-    picker: Modifiers & {
-      label?: string;
-      value?: string | number;
-      variant?:
-        | "automatic"
-        | "menu"
-        | "segmented"
-        | "wheel"
-        | "inline"
-        | "navigation";
-      onchange?: (value: string | number) => void;
-    };
+    picker: Modifiers &
+      (
+        | {
+            multiple?: false;
+            label?: string;
+            value?: string | number;
+            variant?:
+              | "automatic"
+              | "menu"
+              | "segmented"
+              | "wheel"
+              | "inline"
+              | "navigation";
+            onchange?: (value: string | number) => void;
+          }
+        | {
+            multiple: true;
+            label?: string;
+            value?: Array<string | number>;
+            variant?: "inline" | "menu" | "navigation";
+            onchange?: (value: Array<string | number>) => void;
+          }
+      );
     choice: { value: string | number; symbol?: string };
     slider: Modifiers & {
       value?: number;
@@ -527,6 +539,46 @@ declare module "svelte/elements" {
       onchange?: (value: Date) => void;
     };
     progressview: Modifiers & { value?: number; total?: number };
+    multidatepicker: Modifiers & {
+      value?: Array<string>;
+      min?: Date | string;
+      max?: Date | string;
+      onchange?: (value: Array<string>) => void;
+    };
+    colorpicker: Modifiers & {
+      value?: string;
+      supportsopacity?: boolean;
+      onchange?: (value: `#${string}`) => void;
+    };
+    gauge: Modifiers & {
+      value?: number;
+      min?: number;
+      max?: number;
+      current?: string;
+      minlabel?: string;
+      maxlabel?: string;
+      variant?:
+        | "automatic"
+        | "circular"
+        | "circularCapacity"
+        | "linear"
+        | "linearCapacity";
+    };
+    labeledcontent: Modifiers & { title?: string; value?: string | number };
+    contentunavailableview: Modifiers & {
+      title?: string;
+      symbol?: string;
+      description?: string;
+      variant?: "automatic" | "search";
+      query?: string;
+    };
+    menuview: Modifiers & {
+      title?: string;
+      symbol?: string;
+      variant?: "automatic" | "button" | "borderlessButton";
+      order?: "automatic" | "fixed" | "priority";
+      onprimaryaction?: () => void;
+    };
   }
 }
 

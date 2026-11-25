@@ -5,6 +5,7 @@
   let watchesSize = $state(false);
   let offset = $state(0);
   let width = $state(0);
+  let primaryActions = $state(0);
 
   function scrolled(scroll: ScrollGeometry) {
     offset = scroll.y;
@@ -32,3 +33,12 @@
 >
 <btn testid="toggle-size" onclick={() => (watchesSize = !watchesSize)}>Size</btn
 >
+<menuview
+  testid="menu"
+  title="Actions"
+  onprimaryaction={() => primaryActions++}
+>
+  <btn>Copy</btn>
+</menuview>
+<menuview testid="plain-menu" title="More"><btn>Paste</btn></menuview>
+<txt>Primary {primaryActions}</txt>
