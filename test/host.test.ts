@@ -4,8 +4,8 @@ import { frame, native } from "./bridge.ts";
 
 it("runs animation frame callbacks once, with the frame time", () => {
   const times: Array<number> = [];
-  requestAnimationFrame((time) => times.push(time));
-  requestAnimationFrame((time) => times.push(time + 1));
+  requestAnimationFrame((time) => void times.push(time));
+  requestAnimationFrame((time) => void times.push(time + 1));
   frame(100);
   frame(116);
   expect(times).toEqual([100, 101]);
