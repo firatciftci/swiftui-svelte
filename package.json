@@ -40,6 +40,10 @@
       "svelte": "./dist/components/index.js",
       "default": "./dist/components/index.js"
     },
+    "./env": {
+      "types": "./dist/env.d.ts",
+      "default": "./dist/env.js"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"

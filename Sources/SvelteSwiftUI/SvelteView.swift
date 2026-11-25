@@ -3,10 +3,21 @@ import SwiftUI
 public struct SvelteView: View {
     @State private var runtime: SvelteRuntime
     @State private var handle: MountHandle?
+    @State private var safeAreaInsets = EdgeInsets()
+    @State private var keyboardHeight = 0.0
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
+    @Environment(\.layoutDirection) private var layoutDirection
+    @Environment(\.scenePhase) private var scenePhase
+    #if os(iOS) || os(visionOS)
+        @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+        @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
     private let component: String
     private let props: String
     private let actions: [String: @MainActor (Any) -> Void]
@@ -61,9 +72,22 @@ public struct SvelteView: View {
                 }
             #endif
         }
+        .background {
+            Color.clear
+                .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { safeAreaInsets = $0 }
+                .ignoresSafeArea(.keyboard)
+        }
+        #if os(iOS)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) {
+                keyboardHeight = Self.keyboardHeight($0)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardHeight = 0
+            }
+        #endif
         .environment(runtime)
         .onAppear {
-            runtime.updateEnvironment(environment)
+            runtime.updateEnvironment(environment.dictionary)
             if handle == nil {
                 handle = MountHandle(runtime: runtime, id: runtime.mount(component, props: props, actions: actions))
             }
@@ -71,19 +95,39 @@ public struct SvelteView: View {
         .onChange(of: props) { _, props in
             if let handle { runtime.update(handle.id, props: props, actions: actions) }
         }
-        .onChange(of: [colorScheme == .dark, contrast == .increased, reduceMotion, reduceTransparency]) {
-            runtime.updateEnvironment(environment)
+        .onChange(of: environment) { _, environment in
+            runtime.updateEnvironment(environment.dictionary)
         }
     }
 
-    private var environment: [String: Any] {
-        [
-            "colorScheme": colorScheme == .dark ? "dark" : "light",
-            "increaseContrast": contrast == .increased,
-            "reduceMotion": reduceMotion,
-            "reduceTransparency": reduceTransparency,
-        ]
+    private var environment: EnvironmentSnapshot {
+        var snapshot = EnvironmentSnapshot(
+            colorScheme: colorScheme,
+            increaseContrast: contrast == .increased,
+            reduceMotion: reduceMotion,
+            reduceTransparency: reduceTransparency,
+            dynamicTypeSize: dynamicTypeSize,
+            locale: locale,
+            timeZone: timeZone,
+            layoutDirection: layoutDirection,
+            scenePhase: scenePhase,
+            safeAreaInsets: safeAreaInsets,
+            keyboardHeight: keyboardHeight
+        )
+        #if os(iOS) || os(visionOS)
+            snapshot.horizontalSizeClass = EnvironmentSnapshot.name(of: horizontalSizeClass)
+            snapshot.verticalSizeClass = EnvironmentSnapshot.name(of: verticalSizeClass)
+        #endif
+        return snapshot
     }
+
+    #if os(iOS)
+        private static func keyboardHeight(_ notification: Notification) -> Double {
+            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return 0 }
+            let screenHeight = (notification.object as? UIScreen)?.bounds.height ?? frame.maxY
+            return max(0, screenHeight - frame.minY)
+        }
+    #endif
 
     static func json(_ props: [String: Any]) -> String {
         let value = props.mapValues(jsonCompatible)

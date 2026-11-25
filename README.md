@@ -363,6 +363,41 @@ Svelte owns the navigation stack. The first `screen` in a `navstack` is the root
 
 Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the example app, the to-do list and its detail screens share state through [`todos.svelte.ts`](example/src/todos.svelte.ts).
 
+## Device environment
+
+`swiftui-svelte/env` exports `env`, a read-only object with the values SwiftUI keeps in its environment. Reading a value in markup, `$derived`, or `$effect` subscribes to it, so the component updates when the user changes a setting, rotates the device, or opens the keyboard:
+
+```svelte
+<script lang="ts">
+  import { env } from "swiftui-svelte/env";
+
+  const isLarge = $derived(env.dynamicTypeSize.startsWith("accessibility"));
+</script>
+
+{#if isLarge}
+  <vstack alignment="leading"><!-- … --></vstack>
+{:else}
+  <hstack><!-- … --></hstack>
+{/if}
+```
+
+| Property                                                 | Value                                                                                                                         |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `colorScheme`                                            | `"light"` or `"dark"`                                                                                                         |
+| `dynamicTypeSize`                                        | SwiftUI's `DynamicTypeSize` case name, from `"xSmall"` through `"xxxLarge"` and `"accessibility1"` through `"accessibility5"` |
+| `locale`                                                 | The BCP 47 identifier of SwiftUI's locale, such as `"en-US"`                                                                  |
+| `languages`                                              | The user's preferred languages, in order                                                                                      |
+| `timeZone`                                               | The time zone identifier, such as `"America/Chicago"`                                                                         |
+| `layoutDirection`                                        | `"leftToRight"` or `"rightToLeft"`                                                                                            |
+| `horizontalSizeClass`, `verticalSizeClass`               | `"compact"` or `"regular"`, or `null` on macOS, which has no size classes                                                     |
+| `scenePhase`                                             | `"active"`, `"inactive"`, or `"background"`                                                                                   |
+| `safeAreaInsets`                                         | `{ top, leading, bottom, trailing }` in points, not counting the keyboard                                                     |
+| `keyboardHeight`                                         | The height of the on-screen keyboard in points, or `0` when it's hidden                                                       |
+| `reduceMotion`, `reduceTransparency`, `increaseContrast` | The accessibility settings, as booleans                                                                                       |
+| `onLine`                                                 | Whether the device has a network connection                                                                                   |
+
+Each property is tracked separately, so an effect that reads `colorScheme` doesn't run again when the keyboard opens. Outside components, `env` returns the current value without subscribing. `SvelteView` reads these values from its own SwiftUI environment, so `.environment(\.locale, …)` and similar overrides on the view reach JavaScript too.
+
 ## Web APIs
 
 The host provides the web APIs that most npm packages expect, so code like this runs as it would in a browser:

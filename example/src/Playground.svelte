@@ -1,6 +1,7 @@
 <script lang="ts">
   import { withAnimation } from "swiftui-svelte";
   import { Sheet, TextField } from "swiftui-svelte/components";
+  import { env } from "swiftui-svelte/env";
 
   let count = $state(0);
   let seconds = $state(0);
@@ -66,6 +67,11 @@
         />
         {#if name.trim() !== ""}
           <txt color="accent">Hello, {name.trim()}!</txt>
+        {/if}
+        {#if env.keyboardHeight > 0}
+          <txt font="caption" color="secondary">
+            Keyboard: {Math.round(env.keyboardHeight)} pt
+          </txt>
         {/if}
       </vstack>
 

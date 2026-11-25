@@ -40,3 +40,5 @@ export function resetState(): void {
   state.padding = 8;
   state.values = values();
 }
+
+export const effects: Array<string> = [];

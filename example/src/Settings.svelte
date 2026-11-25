@@ -6,6 +6,7 @@
     Stepper,
     Toggle,
   } from "swiftui-svelte/components";
+  import { env } from "swiftui-svelte/env";
   import { todos } from "./todos.svelte";
 
   const accents = ["blue", "orange", "green", "pink"] as const;
@@ -88,6 +89,29 @@
           <choice value="pulse" symbol="waveform">Pulse</choice>
         </Picker>
       </sectionview>
+
+      <sectionview
+        header="This device"
+        footer="These values update as you change the device's settings."
+      >
+        {@render row("Appearance", env.colorScheme)}
+        {@render row("Text size", env.dynamicTypeSize)}
+        {@render row("Locale", env.locale)}
+        {@render row("Layout direction", env.layoutDirection)}
+        {@render row("Width", env.horizontalSizeClass ?? "")}
+        {@render row(
+          "Safe area",
+          `${Math.round(env.safeAreaInsets.top)} pt top, ${Math.round(env.safeAreaInsets.bottom)} pt bottom`,
+        )}
+      </sectionview>
     </formview>
   </screen>
 </navstack>
+
+{#snippet row(label: string, value: string)}
+  <hstack>
+    <txt>{label}</txt>
+    <spacer />
+    <txt color="secondary">{value}</txt>
+  </hstack>
+{/snippet}

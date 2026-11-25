@@ -71,6 +71,7 @@ final class SvelteHostUITests: XCTestCase {
         name.tap()
         name.typeText("Ada")
         waitFor(app.staticTexts["Hello, Ada!"])
+        waitFor(app.staticTexts.matching(NSPredicate(format: "label MATCHES 'Keyboard: [1-9][0-9]* pt'")).firstMatch)
         name.typeText(" Lovelace, Countess")
         waitFor(app.staticTexts["Hello, Ada Lovelace!"])
         XCTAssertEqual(name.value as? String, "Ada Lovelace")
@@ -122,6 +123,15 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Glass"].tap()
         waitFor(app.buttons["Tone"])
         XCTAssertEqual(app.buttons["Tone"].value as? String, "Glass")
+
+        app.swipeUp()
+        waitFor(app.staticTexts["This device"])
+        XCTAssertTrue(app.staticTexts["large"].exists)
+        XCTAssertTrue(app.staticTexts["light"].exists)
+        XCTAssertTrue(app.staticTexts["leftToRight"].exists)
+        XCTAssertTrue(app.staticTexts["compact"].exists)
+        XCTAssertTrue(
+            app.staticTexts.matching(NSPredicate(format: "label MATCHES '[1-9][0-9]* pt top, [1-9][0-9]* pt bottom'")).firstMatch.exists)
 
         tab("To-dos")
         waitFor(app.switches["Render Svelte with SwiftUI"])

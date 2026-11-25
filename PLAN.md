@@ -76,7 +76,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Bindable components in `swiftui-svelte/components` (`TextField`, `Toggle`, `Picker`, `Slider`, `Stepper`, `DatePicker`, `TabView`, `Sheet`, and others), so `bind:value`, `bind:checked`, `bind:selection`, and `bind:presented` work
 - [x] Transitions: `transition`, `in`, and `out` attributes map to SwiftUI transitions (`opacity`, `scale`, `slide`, `move`, `push`, and combinations), with `animation` options (`spring`, `easeInOut`, duration, and bounce)
 - [x] Per-update animation: a `withAnimation(fn, options)` helper that animates the next commit
-- [ ] A reactive environment module, `swiftui-svelte/env`, with the color scheme, Dynamic Type size, locale, layout direction, size class, scene phase, safe area insets, reduce motion, and keyboard height
+- [x] A reactive environment module, `swiftui-svelte/env`, with the color scheme, Dynamic Type size, locale, layout direction, size class, scene phase, safe area insets, reduce motion, and keyboard height
 - [ ] App lifecycle events: active, inactive, background, memory warning, and open URL
 - [ ] Focus management: a `focused` attribute, plus `focus()` and `blur()` methods through a ref helper
 - [ ] Element refs: `bind:this` returns a handle with `scrollTo`, `focus`, and measurement methods

@@ -1,11 +1,39 @@
 import { EventShim, EventTargetShim } from "./events.ts";
 
+type SizeClass = "compact" | "regular";
+
 export type HostEnvironment = {
   colorScheme: "light" | "dark";
   reduceMotion: boolean;
   reduceTransparency: boolean;
   increaseContrast: boolean;
+  dynamicTypeSize:
+    | "xSmall"
+    | "small"
+    | "medium"
+    | "large"
+    | "xLarge"
+    | "xxLarge"
+    | "xxxLarge"
+    | "accessibility1"
+    | "accessibility2"
+    | "accessibility3"
+    | "accessibility4"
+    | "accessibility5";
+  locale: string;
   languages: Array<string>;
+  timeZone: string;
+  layoutDirection: "leftToRight" | "rightToLeft";
+  horizontalSizeClass: SizeClass | null;
+  verticalSizeClass: SizeClass | null;
+  scenePhase: "active" | "inactive" | "background";
+  safeAreaInsets: Readonly<{
+    top: number;
+    leading: number;
+    bottom: number;
+    trailing: number;
+  }>;
+  keyboardHeight: number;
   onLine: boolean;
   userAgent: string;
 };
@@ -15,7 +43,16 @@ export const environment: HostEnvironment = {
   reduceMotion: false,
   reduceTransparency: false,
   increaseContrast: false,
+  dynamicTypeSize: "large",
+  locale: "en-US",
   languages: ["en-US"],
+  timeZone: "UTC",
+  layoutDirection: "leftToRight",
+  horizontalSizeClass: null,
+  verticalSizeClass: null,
+  scenePhase: "active",
+  safeAreaInsets: { top: 0, leading: 0, bottom: 0, trailing: 0 },
+  keyboardHeight: 0,
   onLine: true,
   userAgent: "swiftui-svelte",
 };

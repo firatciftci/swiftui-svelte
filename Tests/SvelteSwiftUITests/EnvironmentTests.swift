@@ -1,0 +1,49 @@
+import SwiftUI
+import Testing
+
+@testable import SvelteSwiftUI
+
+struct EnvironmentTests {
+    @Test func describesTheSwiftUIEnvironmentForJavaScript() throws {
+        let snapshot = EnvironmentSnapshot(
+            colorScheme: .dark,
+            increaseContrast: true,
+            dynamicTypeSize: .accessibility3,
+            locale: Locale(identifier: "ar_EG"),
+            timeZone: try #require(TimeZone(identifier: "Africa/Cairo")),
+            layoutDirection: .rightToLeft,
+            horizontalSizeClass: "regular",
+            scenePhase: .background,
+            safeAreaInsets: EdgeInsets(top: 59, leading: 0, bottom: 34.333_333, trailing: 0),
+            keyboardHeight: 335.999_9
+        )
+        let dictionary = snapshot.dictionary
+        #expect(dictionary["colorScheme"] as? String == "dark")
+        #expect(dictionary["increaseContrast"] as? Bool == true)
+        #expect(dictionary["reduceMotion"] as? Bool == false)
+        #expect(dictionary["dynamicTypeSize"] as? String == "accessibility3")
+        #expect(dictionary["locale"] as? String == "ar-EG")
+        #expect(dictionary["timeZone"] as? String == "Africa/Cairo")
+        #expect(dictionary["layoutDirection"] as? String == "rightToLeft")
+        #expect(dictionary["horizontalSizeClass"] as? String == "regular")
+        #expect(dictionary["verticalSizeClass"] is NSNull)
+        #expect(dictionary["scenePhase"] as? String == "background")
+        #expect(dictionary["keyboardHeight"] as? Double == 336)
+        let insets = try #require(dictionary["safeAreaInsets"] as? [String: Double])
+        #expect(insets == ["top": 59, "leading": 0, "bottom": 34.33, "trailing": 0])
+        #expect(JSONSerialization.isValidJSONObject(dictionary))
+    }
+
+    @Test func namesEveryDynamicTypeSizeLikeSwiftUI() {
+        for size in DynamicTypeSize.allCases {
+            #expect(EnvironmentSnapshot.name(of: size) == String(describing: size))
+        }
+    }
+
+    @Test func comparesSnapshotsByValue() {
+        var snapshot = EnvironmentSnapshot()
+        #expect(snapshot == EnvironmentSnapshot())
+        snapshot.keyboardHeight = 300
+        #expect(snapshot != EnvironmentSnapshot())
+    }
+}
