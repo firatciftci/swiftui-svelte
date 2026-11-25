@@ -19,6 +19,7 @@
     Toggle,
   } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
+  import Mail from "./Mail.svelte";
 
   let count = $state(0);
   let seconds = $state(0);
@@ -60,6 +61,7 @@
   let showsShortSheet = $state(false);
   let showsNavigation = $state(false);
   let showsToolbars = $state(false);
+  let showsMail = $state(false);
   let page = $state(1);
   let barAction = $state<string | null>(null);
   let hidesNavBar = $state(false);
@@ -601,6 +603,10 @@
         <btn onclick={() => (showsToolbars = true)}>
           Open a screen with toolbars
         </btn>
+        <btn onclick={() => (showsMail = true)}>Open a split view</btn>
+        <FullScreenCover bind:presented={showsMail}>
+          <Mail onclose={() => (showsMail = false)} />
+        </FullScreenCover>
         <txt font="caption" color="secondary">Swipe between pages</txt>
         <TabView
           bind:selection={slide}

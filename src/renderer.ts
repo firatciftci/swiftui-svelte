@@ -522,9 +522,13 @@ const renderer = createRenderer<{
   },
 });
 
-const controlledAttributes = new Map([
-  ["toggle", "checked"],
-  ["tabview", "selection"],
+const controlledAttributes = new Map<string, Record<string, string>>([
+  ["toggle", { change: "checked" }],
+  ["tabview", { change: "selection" }],
+  [
+    "navsplitview",
+    { visibilitychange: "visibility", compactcolumnchange: "compactcolumn" },
+  ],
 ]);
 
 globalThis.__svelteDispatch = (id, type, payload) => {
@@ -532,8 +536,10 @@ globalThis.__svelteDispatch = (id, type, payload) => {
   const handlers = element?.listeners.get(type);
   if (element == null || handlers == null || handlers.size === 0) return;
   for (const handler of handlers) handler(payload);
-  if (type !== "input" && type !== "change") return;
-  const name = controlledAttributes.get(element.name) ?? "value";
+  const name =
+    controlledAttributes.get(element.name)?.[type] ??
+    (type === "input" || type === "change" ? "value" : undefined);
+  if (name == null) return;
   if (name === "checked" || element.attributes.has(name)) {
     changeAttribute(element, name);
   }

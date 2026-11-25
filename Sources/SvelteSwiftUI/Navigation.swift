@@ -246,3 +246,119 @@ private struct TabBarMinimizing: ViewModifier {
         }
     #endif
 }
+
+struct SplitView: View {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    var body: some View {
+        let columns = node.renderedChildren.filter { $0.kind == .element }
+        let visibility = Binding {
+            Self.visibility(node.attributes["visibility"]?.string)
+        } set: { value in
+            let name = Self.name(of: value)
+            runtime.edit(node, "visibility", to: .string(name), event: "visibilitychange", payload: name)
+        }
+        let compact = Binding {
+            Self.column(node.attributes["compactcolumn"]?.string, count: columns.count)
+        } set: { value in
+            let name = Self.name(of: value)
+            runtime.edit(node, "compactcolumn", to: .string(name), event: "compactcolumnchange", payload: name)
+        }
+        Group {
+            if columns.count >= 3 {
+                NavigationSplitView(columnVisibility: visibility, preferredCompactColumn: compact) {
+                    column(columns[0])
+                } content: {
+                    column(columns[1])
+                } detail: {
+                    column(columns[2])
+                }
+            } else {
+                NavigationSplitView(columnVisibility: visibility, preferredCompactColumn: compact) {
+                    column(columns.first)
+                } detail: {
+                    column(columns.count > 1 ? columns[1] : nil)
+                }
+            }
+        }
+        .modifier(SplitStyle(variant: node.attributes["variant"]?.string))
+    }
+
+    @ViewBuilder private func column(_ node: Node?) -> some View {
+        if let node {
+            NodeView(node: node).modifier(ColumnWidth(value: node.attributes["columnwidth"], isInspector: false))
+        }
+    }
+
+    static func visibility(_ name: String?) -> NavigationSplitViewVisibility {
+        switch name {
+        case "all": .all
+        case "doubleColumn": .doubleColumn
+        case "detailOnly": .detailOnly
+        default: .automatic
+        }
+    }
+
+    static func name(of visibility: NavigationSplitViewVisibility) -> String {
+        let isAutomatic = Mirror(reflecting: visibility).children.contains { $0.label == "isAutomatic" && $0.value as? Bool == true }
+        if isAutomatic { return "automatic" }
+        return switch visibility {
+        case .all: "all"
+        case .doubleColumn: "doubleColumn"
+        case .detailOnly: "detailOnly"
+        default: "automatic"
+        }
+    }
+
+    static func column(_ name: String?, count: Int) -> NavigationSplitViewColumn {
+        switch name {
+        case "detail": .detail
+        case "content" where count >= 3: .content
+        default: .sidebar
+        }
+    }
+
+    static func name(of column: NavigationSplitViewColumn) -> String {
+        switch column {
+        case .detail: "detail"
+        case .content: "content"
+        default: "sidebar"
+        }
+    }
+}
+
+private struct SplitStyle: ViewModifier {
+    let variant: String?
+
+    func body(content: Content) -> some View {
+        switch variant {
+        case "balanced": content.navigationSplitViewStyle(.balanced)
+        case "prominentDetail": content.navigationSplitViewStyle(.prominentDetail)
+        default: content
+        }
+    }
+}
+
+struct ColumnWidth: ViewModifier {
+    let value: JSONValue?
+    let isInspector: Bool
+
+    func body(content: Content) -> some View {
+        switch value {
+        case let .number(width):
+            if isInspector { content.inspectorColumnWidth(width) } else { content.navigationSplitViewColumnWidth(width) }
+        case let .object(widths):
+            let minimum: CGFloat? = widths["min"]?.number.map { CGFloat($0) }
+            let maximum: CGFloat? = widths["max"]?.number.map { CGFloat($0) }
+            let ideal = CGFloat(widths["ideal"]?.number ?? 320)
+            if isInspector {
+                content.inspectorColumnWidth(min: minimum, ideal: ideal, max: maximum)
+            } else {
+                content.navigationSplitViewColumnWidth(min: minimum, ideal: ideal, max: maximum)
+            }
+        default:
+            content
+        }
+    }
+}

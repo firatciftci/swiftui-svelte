@@ -10,7 +10,13 @@ final class SvelteHostUITests: XCTestCase {
     }
 
     private func tab(_ title: String) {
-        app.tabBars.buttons[title].tap()
+        guard UIDevice.current.userInterfaceIdiom == .pad else {
+            app.tabBars.buttons[title].tap()
+            return
+        }
+        let cell = app.cells.containing(.staticText, identifier: title).firstMatch
+        if !cell.exists || !cell.isHittable { app.buttons["ToggleSideBar"].firstMatch.tap() }
+        cell.tap()
     }
 
     private func waitFor(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
@@ -521,6 +527,59 @@ extension SvelteHostUITests {
         playground.tap()
         waitFor(app.navigationBars["Playground"])
         XCTAssertTrue(tabBar.buttons["Examples"].firstMatch.isSelected)
+    }
+
+    func testBrowsesASplitView() {
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        tab("Playground")
+        let section = app.buttons["Navigation"]
+        scroll(to: section)
+        section.tap()
+        let open = app.buttons["Open a split view"]
+        scroll(to: open, attempts: 3)
+        open.tap()
+
+        let showSidebar = app.buttons["Show Sidebar"]
+        if isPad {
+            waitFor(app.staticTexts["No mailbox selected"])
+            XCTAssertEqual(app.staticTexts["split-state"].label, "doubleColumn sidebar")
+            attachScreenshot("split view")
+            showSidebar.tap()
+        }
+        waitFor(app.navigationBars["Mailboxes"])
+        attachScreenshot("split view sidebar")
+        app.buttons["Inbox"].tap()
+        waitFor(app.navigationBars["Inbox"])
+        if isPad {
+            app.staticTexts["No message selected"].tap()
+            XCTAssertTrue(app.navigationBars["Mailboxes"].waitForNonExistence(timeout: 5))
+        }
+        app.buttons["Lunch on Friday?"].tap()
+        let body = app.staticTexts["message-body"]
+        waitFor(body)
+        XCTAssertEqual(body.label, "There's a new place by the park. Want to try it at noon?")
+        attachScreenshot("split view message")
+
+        if isPad {
+            XCTAssertTrue(app.navigationBars["Inbox"].exists, "the message hid its mailbox")
+            if !app.buttons["Archive"].isHittable { showSidebar.tap() }
+        } else {
+            app.navigationBars["Lunch on Friday?"].buttons["BackButton"].tap()
+            waitFor(app.buttons["Your order has shipped"])
+            app.navigationBars["Inbox"].buttons["BackButton"].tap()
+            waitFor(app.buttons["Archive"])
+        }
+        app.buttons["Archive"].tap()
+        waitFor(app.buttons["Trip photos"])
+        if isPad {
+            if !app.buttons["Done"].isHittable { showSidebar.tap() }
+        } else {
+            app.navigationBars["Archive"].buttons["BackButton"].tap()
+            waitFor(app.navigationBars["Mailboxes"])
+        }
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["Mailboxes"].waitForNonExistence(timeout: 5))
+        waitFor(open)
     }
 }
 

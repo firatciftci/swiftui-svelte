@@ -7,6 +7,7 @@ export { default as FullScreenCover } from "./FullScreenCover.svelte";
 export { default as Inspector } from "./Inspector.svelte";
 export { default as MultiDatePicker } from "./MultiDatePicker.svelte";
 export { default as MultiPicker } from "./MultiPicker.svelte";
+export { default as NavSplitView } from "./NavSplitView.svelte";
 export { default as NumberField } from "./NumberField.svelte";
 export { default as Picker } from "./Picker.svelte";
 export { default as Popover } from "./Popover.svelte";

@@ -9,6 +9,7 @@
     Inspector,
     MultiDatePicker,
     MultiPicker,
+    NavSplitView,
     NumberField,
     Picker,
     Popover,
@@ -45,6 +46,10 @@
   let isPopoverPresented = $state(false);
   let isInspectorPresented = $state(false);
   let isDialogPresented = $state(false);
+  let visibility = $state<"all" | "doubleColumn" | "detailOnly" | "automatic">(
+    "all",
+  );
+  let column = $state<"sidebar" | "content" | "detail">("sidebar");
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -70,6 +75,11 @@
 <Slider testid="volume" bind:value={volume} />
 <Stepper testid="count" bind:value={count} min={0} max={3}>Count</Stepper>
 <DatePicker testid="date" bind:value={date} />
+<NavSplitView testid="split" bind:visibility bind:compactcolumn={column}>
+  <screen title="Sidebar" />
+  <screen title="Content" />
+  <screen title="Detail" />
+</NavSplitView>
 <TabView testid="tabs" bind:selection={tab}>
   <tab title="Home" value="home"><txt>Home</txt></tab>
   <tab title="Settings" value="settings"><txt>Settings</txt></tab>
@@ -131,5 +141,7 @@
     toppings,
     days,
     color,
+    visibility,
+    column,
   })}</txt
 >

@@ -16,3 +16,13 @@
   <tab title="First" value="first" />
   <tab title="Second" value="second" />
 </tabview>
+<navsplitview
+  testid="split"
+  visibility="all"
+  onvisibilitychange={() => {}}
+  compactcolumn="sidebar"
+  oncompactcolumnchange={() => {}}
+>
+  <screen title="Sidebar" />
+  <screen title="Detail" />
+</navsplitview>

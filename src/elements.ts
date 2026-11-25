@@ -285,6 +285,9 @@ type ToolbarPlacement =
   | "destructiveAction"
   | "automatic";
 type Detent = "medium" | "large" | number;
+type ColumnWidth = number | { min?: number; ideal?: number; max?: number };
+type SplitVisibility = "automatic" | "all" | "doubleColumn" | "detailOnly";
+type SplitColumn = "sidebar" | "content" | "detail";
 type PresentationOptions = {
   detents?: Array<Detent>;
   dragindicator?: "automatic" | "visible" | "hidden";
@@ -334,8 +337,19 @@ type Modifiers = {
 
 declare module "svelte/elements" {
   interface SvelteHTMLElements {
-    navstack: Modifiers & { onpop?: (depth: number) => void };
+    navstack: Modifiers & {
+      onpop?: (depth: number) => void;
+      columnwidth?: ColumnWidth;
+    };
+    navsplitview: Modifiers & {
+      visibility?: SplitVisibility;
+      onvisibilitychange?: (visibility: SplitVisibility) => void;
+      compactcolumn?: SplitColumn;
+      oncompactcolumnchange?: (column: SplitColumn) => void;
+      variant?: "automatic" | "balanced" | "prominentDetail";
+    };
     screen: Modifiers & {
+      columnwidth?: ColumnWidth;
       title?: string;
       subtitle?: string;
       titledisplaymode?: "automatic" | "inline" | "large";
@@ -359,10 +373,7 @@ declare module "svelte/elements" {
           | "sheet"
           | "fullScreenCover";
       };
-    inspector: Modifiers &
-      PresentationOptions & {
-        columnwidth?: number | { min?: number; ideal?: number; max?: number };
-      };
+    inspector: Modifiers & PresentationOptions & { columnwidth?: ColumnWidth };
     alert: { title: string; ondismiss?: () => void };
     confirmationdialog: {
       title: string;

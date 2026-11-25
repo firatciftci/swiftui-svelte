@@ -432,6 +432,18 @@ describe("controlled inputs", () => {
     expect(byTestId("pinned")?.attributes.get("selection")).toBe("first");
   });
 
+  it("keeps the split view's columns when the handler rejects a change", async () => {
+    await render(Controlled);
+    await update(() =>
+      edit(byTestId("split"), "visibilitychange", "visibility", "detailOnly"),
+    );
+    await update(() =>
+      edit(byTestId("split"), "compactcolumnchange", "compactcolumn", "detail"),
+    );
+    expect(byTestId("split")?.attributes.get("visibility")).toBe("all");
+    expect(byTestId("split")?.attributes.get("compactcolumn")).toBe("sidebar");
+  });
+
   it("keeps a toggle on when the handler accepts it", async () => {
     await render(Controlled);
     await update(() => edit(byTestId("free"), "change", "checked", true));

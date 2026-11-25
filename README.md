@@ -173,6 +173,7 @@ The elements and their attributes are typed in [`src/elements.ts`](src/elements.
 | Element                             | SwiftUI                             | Attributes and events                                                                                                                                        |
 | ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                                                                                               |
+| `navsplitview`                      | `NavigationSplitView`               | `visibility`, `onvisibilitychange(visibility)`, `compactcolumn`, `oncompactcolumnchange(column)`, `variant`                                                  |
 | `screen`                            | A screen in the stack               | `title`, `subtitle`, `titledisplaymode`, `backbuttonhidden`, `navbarvisibility`, `tabbarvisibility`, `navbarbackground`                                      |
 | `tabview`, `tabsection`, `tab`      | `TabView`, `TabSection`, `Tab`      | `selection`, `onchange(selection)`, `variant`, `indexdisplay`, `minimize`; `title` (on `tabsection`); `title`, `symbol`, `value`, `badge`, `role` (on `tab`) |
 | `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                                                                                       |
@@ -254,6 +255,7 @@ A few details:
 - **Labels and links.** A `labelview` shows a `title` with an SF Symbol from `symbol`, an asset image from `image`, or the children of an `icon` element, and `variant` can show only the title or only the icon. A `linkview` opens `href` in the browser. A `sharelink` opens the share sheet for `item`, a URL or text, with an optional `subject` and `message`. Both use their children as the label, or `title` if you set it.
 - **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
 - **Tabs.** Give each `tab` a `value`, and set `selection` on the `tabview` to pick the tab that's showing. `onchange` receives the `value` of the tab the user switches to. A tab without a `value` uses its position, starting at 0. `badge` shows a number or a short label on the tab, and `0` or `""` hides it. `role="search"` makes the tab the search tab, which iOS 26 sets apart at the end of the tab bar. Group tabs in a `tabsection` with a `title`: on iPad with `variant="sidebarAdaptable"`, the user can open the tab bar as a sidebar, and each section is a group in it. `variant="page"` turns the tabs into pages the user swipes between, with dots below them that `indexdisplay` shows (`always`) or hides (`never`). On iOS 26, `minimize="onScrollDown"` shrinks the tab bar while the user scrolls.
+- **Split views.** A `navsplitview` shows its first child as the sidebar and its last child as the detail column. With three children, the middle one is the content column. Each column is usually a `screen`, or a `navstack` when it pushes screens of its own, and `columnwidth` on a column sets its width to a number or to `{ min, ideal, max }`. `visibility` is `all`, `doubleColumn`, `detailOnly`, or `automatic`, and `variant` is `automatic`, `balanced`, or `prominentDetail`. SwiftUI changes the visibility too, for example to `doubleColumn` when three columns don't fit, and `onvisibilitychange` reports the new value. On iPhone, the columns collapse into a stack: `compactcolumn` (`sidebar`, `content`, or `detail`) picks the column that's showing, so set it to `detail` when the user picks an item. When the user goes back, `oncompactcolumnchange` receives the column they went back to. Use the `NavSplitView` component to bind both values.
 - **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`. Add `multiple` to let the user pick several options: `value` is then an array, and `onchange` receives the new array, in the order of the choices. A multiple picker shows its options as rows with checkmarks, or with `variant="menu"` or `variant="navigation"` (as a menu or a screen of rows). The picked titles appear next to the label. Use the `MultiPicker` component for `bind:value`.
 - **Multiple dates.** A `multidatepicker` shows a calendar where the user taps days on and off. Its `value` is an array of days as `YYYY-MM-DD` strings, which don't depend on the time zone, and `min` and `max` limit the days the user can pick.
 - **Color pickers.** A `colorpicker` takes any color for `value` and sends the color the user picks to `onchange` as a hex string such as `#FF9500`, or `#FF950080` when it's partly transparent. Set `supportsopacity={false}` to hide the opacity slider.
@@ -359,28 +361,29 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 <Sheet bind:presented={editing}><txt>Editing {name}</txt></Sheet>
 ```
 
-| Component            | Binds       | Element                     |
-| -------------------- | ----------- | --------------------------- |
-| `TextField`          | `value`     | `textfield`                 |
-| `NumberField`        | `value`     | `textfield` with a `format` |
-| `SecureField`        | `value`     | `securefield`               |
-| `TextEditor`         | `value`     | `texteditor`                |
-| `Toggle`             | `checked`   | `toggle`                    |
-| `Picker`             | `value`     | `picker`                    |
-| `MultiPicker`        | `value`     | `picker` with `multiple`    |
-| `MultiDatePicker`    | `value`     | `multidatepicker`           |
-| `ColorPicker`        | `value`     | `colorpicker`               |
-| `Slider`             | `value`     | `slider`                    |
-| `Stepper`            | `value`     | `stepper`                   |
-| `DatePicker`         | `value`     | `datepicker`                |
-| `DisclosureGroup`    | `expanded`  | `disclosuregroup`           |
-| `TabView`            | `selection` | `tabview`                   |
-| `Sheet`              | `presented` | `sheet`                     |
-| `FullScreenCover`    | `presented` | `fullscreencover`           |
-| `Popover`            | `presented` | `popover`                   |
-| `Inspector`          | `presented` | `inspector`                 |
-| `ConfirmationDialog` | `presented` | `confirmationdialog`        |
-| `Alert`              | `presented` | `alert`                     |
+| Component            | Binds                         | Element                     |
+| -------------------- | ----------------------------- | --------------------------- |
+| `TextField`          | `value`                       | `textfield`                 |
+| `NumberField`        | `value`                       | `textfield` with a `format` |
+| `SecureField`        | `value`                       | `securefield`               |
+| `TextEditor`         | `value`                       | `texteditor`                |
+| `Toggle`             | `checked`                     | `toggle`                    |
+| `Picker`             | `value`                       | `picker`                    |
+| `MultiPicker`        | `value`                       | `picker` with `multiple`    |
+| `MultiDatePicker`    | `value`                       | `multidatepicker`           |
+| `ColorPicker`        | `value`                       | `colorpicker`               |
+| `Slider`             | `value`                       | `slider`                    |
+| `Stepper`            | `value`                       | `stepper`                   |
+| `DatePicker`         | `value`                       | `datepicker`                |
+| `DisclosureGroup`    | `expanded`                    | `disclosuregroup`           |
+| `TabView`            | `selection`                   | `tabview`                   |
+| `NavSplitView`       | `visibility`, `compactcolumn` | `navsplitview`              |
+| `Sheet`              | `presented`                   | `sheet`                     |
+| `FullScreenCover`    | `presented`                   | `fullscreencover`           |
+| `Popover`            | `presented`                   | `popover`                   |
+| `Inspector`          | `presented`                   | `inspector`                 |
+| `ConfirmationDialog` | `presented`                   | `confirmationdialog`        |
+| `Alert`              | `presented`                   | `alert`                     |
 
 Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. The presentation components, from `Sheet` to `Alert`, show their content while `presented` is true, and set it to false when the user dismisses them.
 

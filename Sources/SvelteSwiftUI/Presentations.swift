@@ -150,7 +150,7 @@ private struct InspectorHost: ViewModifier {
                 if let inspector = node.presented.first(where: { $0.name == "inspector" }) {
                     NodeView(node: inspector)
                         .modifier(SheetOptions(node: inspector))
-                        .modifier(InspectorWidth(value: inspector.attributes["columnwidth"]))
+                        .modifier(ColumnWidth(value: inspector.attributes["columnwidth"], isInspector: true))
                 }
             }
         } else {
@@ -170,22 +170,5 @@ private struct SheetOptions: ViewModifier {
             .presentationBackgroundInteraction(Presenting.backgroundInteraction(attributes["backgroundinteraction"]))
             .interactiveDismissDisabled(attributes["dismissible"].map { !$0.isTrue } ?? false)
             .ifLet(attributes["cornerradius"]?.number) { $0.presentationCornerRadius($1) }
-    }
-}
-
-private struct InspectorWidth: ViewModifier {
-    let value: JSONValue?
-
-    func body(content: Content) -> some View {
-        switch value {
-        case let .number(width):
-            content.inspectorColumnWidth(width)
-        case let .object(widths):
-            let minimum: CGFloat? = widths["min"]?.number.map { CGFloat($0) }
-            let maximum: CGFloat? = widths["max"]?.number.map { CGFloat($0) }
-            content.inspectorColumnWidth(min: minimum, ideal: CGFloat(widths["ideal"]?.number ?? 320), max: maximum)
-        default:
-            content
-        }
     }
 }

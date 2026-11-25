@@ -130,7 +130,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 ### Navigation and presentation
 
 - [x] `navstack` with a Svelte-owned path, `screen`, `tabview`, `tab`, `sheet`, `alert`, `toolbar`, and `swipeactions`
-- [ ] `navsplitview` with two and three columns and column visibility
+- [x] `navsplitview` with two and three columns and column visibility
 - [x] `tabview` selection, badges, `page` style, tab sections, and the sidebar-adaptable style
 - [x] `screen` title display mode, toolbar visibility, a hidden back button, toolbar background, and subtitle
 - [x] `fullscreencover`, `popover`, and `inspector`

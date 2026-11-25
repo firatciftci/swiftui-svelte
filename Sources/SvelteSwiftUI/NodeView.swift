@@ -29,6 +29,8 @@ struct NodeView: View {
             Group { children }
         case "tabview":
             Tabs(node: node)
+        case "navsplitview":
+            SplitView(node: node)
         case "vstack":
             VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { children }
         case "hstack":

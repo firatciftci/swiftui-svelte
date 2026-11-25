@@ -71,4 +71,17 @@ struct NavigationTests {
         #expect(Tabs.badge(.null) == nil)
         #expect(Tabs.badge(nil) == nil)
     }
+
+    @Test func roundTripsSplitViewColumns() {
+        for name in ["all", "doubleColumn", "detailOnly", "automatic"] {
+            #expect(SplitView.name(of: SplitView.visibility(name)) == name)
+        }
+        #expect(SplitView.visibility("bogus") == .automatic)
+        #expect(SplitView.visibility(nil) == .automatic)
+        for name in ["sidebar", "content", "detail"] {
+            #expect(SplitView.name(of: SplitView.column(name, count: 3)) == name)
+        }
+        #expect(SplitView.column("content", count: 2) == .sidebar)
+        #expect(SplitView.column(nil, count: 3) == .sidebar)
+    }
 }

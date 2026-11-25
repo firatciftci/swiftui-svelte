@@ -60,6 +60,12 @@ describe("bindable components", () => {
       edit(byTestId("days"), "change", "value", ["2026-11-25", "2026-12-01"]),
     );
     await update(() => edit(byTestId("color"), "change", "value", "#00FF0080"));
+    await update(() =>
+      edit(byTestId("split"), "visibilitychange", "visibility", "detailOnly"),
+    );
+    await update(() =>
+      edit(byTestId("split"), "compactcolumnchange", "compactcolumn", "detail"),
+    );
     expect(state()).toMatchObject({
       name: "Ada",
       isOn: true,
@@ -76,6 +82,8 @@ describe("bindable components", () => {
       toppings: ["cheese", "olives"],
       days: ["2026-11-25", "2026-12-01"],
       color: "#00FF0080",
+      visibility: "detailOnly",
+      column: "detail",
     });
     await update(() => edit(byTestId("price"), "input", "value", null));
     expect(state().price).toBeNull();
@@ -91,6 +99,8 @@ describe("bindable components", () => {
     expect(byTestId("toppings")?.attributes.get("multiple")).toBe(true);
     expect(byTestId("days")?.attributes.get("value")).toEqual([]);
     expect(byTestId("color")?.attributes.get("value")).toBe("#FF0000");
+    expect(byTestId("split")?.attributes.get("visibility")).toBe("all");
+    expect(byTestId("split")?.attributes.get("compactcolumn")).toBe("sidebar");
     expect(byTestId("price")?.attributes.get("format")).toEqual({
       currency: "USD",
     });
