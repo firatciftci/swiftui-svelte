@@ -8,6 +8,32 @@ private struct ControlLabel: View {
     }
 }
 
+struct TextFieldControl: View {
+    let node: Node
+    @Environment(Runtime.self) private var runtime
+    @State private var text: String
+
+    init(node: Node) {
+        self.node = node
+        _text = State(initialValue: node.attributes["value"]?.string ?? "")
+    }
+
+    var body: some View {
+        let value = node.attributes["value"]?.string
+        TextField(node.attributes["placeholder"]?.string ?? "", text: $text)
+            .onSubmit { runtime.dispatch(node.id, "submit") }
+            .onChange(of: text) { _, typed in
+                guard typed != node.attributes["value"]?.string else { return }
+                node.attributes["value"] = .string(typed)
+                runtime.dispatch(node.id, "input", typed)
+                if let settled = node.attributes["value"]?.string, settled != typed { text = settled }
+            }
+            .onChange(of: value) { _, value in
+                if let value, value != text { text = value }
+            }
+    }
+}
+
 struct PickerControl: View {
     let node: Node
     @Environment(Runtime.self) private var runtime
@@ -18,8 +44,7 @@ struct PickerControl: View {
             selection: Binding {
                 node.attributes["value"] ?? .null
             } set: { value in
-                node.attributes["value"] = value
-                runtime.dispatch(node.id, "change", value.object)
+                runtime.edit(node, "value", to: value, event: "change", payload: value.object)
             }
         ) {
             ForEach(node.renderedChildren.filter { $0.name == "choice" }) { choice in
@@ -57,8 +82,7 @@ struct SliderControl: View {
         let value = Binding {
             node.attributes["value"]?.number ?? bounds.lowerBound
         } set: { value in
-            node.attributes["value"] = .number(value)
-            runtime.dispatch(node.id, "input", value)
+            runtime.edit(node, "value", to: .number(value), event: "input", payload: value)
         }
         if let step = node.attributes["step"]?.number {
             Slider(value: value, in: bounds, step: step, label: { ControlLabel(node: node) }, onEditingChanged: editingChanged)
@@ -84,8 +108,7 @@ struct StepperControl: View {
             value: Binding {
                 node.attributes["value"]?.number ?? 0
             } set: { value in
-                node.attributes["value"] = .number(value)
-                runtime.dispatch(node.id, "change", value)
+                runtime.edit(node, "value", to: .number(value), event: "change", payload: value)
             },
             in: lower...max(lower, node.attributes["max"]?.number ?? .infinity),
             step: node.attributes["step"]?.number ?? 1
@@ -105,8 +128,8 @@ struct DatePickerControl: View {
             selection: Binding {
                 node.attributes["value"]?.date ?? .now
             } set: { date in
-                node.attributes["value"] = .string(date.ISO8601Format(.init(includingFractionalSeconds: true)))
-                runtime.dispatch(node.id, "change", date)
+                let value = JSONValue.string(date.ISO8601Format(.init(includingFractionalSeconds: true)))
+                runtime.edit(node, "value", to: value, event: "change", payload: date)
             },
             in: lower...max(lower, node.attributes["max"]?.date ?? .distantFuture),
             displayedComponents: components

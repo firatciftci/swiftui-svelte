@@ -70,6 +70,9 @@ final class SvelteHostUITests: XCTestCase {
         name.tap()
         name.typeText("Ada")
         waitFor(app.staticTexts["Hello, Ada!"])
+        name.typeText(" Lovelace, Countess")
+        waitFor(app.staticTexts["Hello, Ada Lovelace!"])
+        XCTAssertEqual(name.value as? String, "Ada Lovelace")
 
         app.buttons["Show a sheet"].tap()
         waitFor(app.staticTexts["Hello from a sheet"])

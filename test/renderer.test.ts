@@ -2,8 +2,10 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mountApp, protocol } from "swiftui-svelte";
 import {
+  byTestId,
   commits,
   dispatch,
+  edit,
   find,
   findAll,
   native,
@@ -12,6 +14,7 @@ import {
   serialize,
   settle,
 } from "./bridge.ts";
+import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Items from "./components/Items.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
@@ -163,6 +166,48 @@ describe("blocks", () => {
     await update(() => (state.show = false));
     expect(find("divider")).toBeUndefined();
     expect(find("spacer")).toBeDefined();
+  });
+});
+
+describe("controlled inputs", () => {
+  it("corrects a value that the handler changes", async () => {
+    await render(Controlled);
+    await update(() => edit(byTestId("limited"), "input", "value", "abcdefg"));
+    expect(byTestId("limited")?.attributes.get("value")).toBe("abcde");
+  });
+
+  it("restores a value that the handler rejects", async () => {
+    await render(Controlled);
+    await update(() => edit(byTestId("limited"), "input", "value", "abcdefg"));
+    await update(() => edit(byTestId("limited"), "input", "value", "abcdefgh"));
+    expect(byTestId("limited")?.attributes.get("value")).toBe("abcde");
+  });
+
+  it("leaves a field without a value alone", async () => {
+    await render(Controlled);
+    await update(() => edit(byTestId("uncontrolled"), "input", "value", "x"));
+    expect(byTestId("uncontrolled")?.attributes.get("value")).toBe("x");
+  });
+
+  it("turns a toggle back off when the handler ignores it", async () => {
+    await render(Controlled);
+    await update(() => edit(byTestId("locked"), "change", "checked", true));
+    expect(byTestId("locked")?.attributes.has("checked")).toBe(false);
+  });
+
+  it("keeps a toggle on when the handler accepts it", async () => {
+    await render(Controlled);
+    await update(() => edit(byTestId("free"), "change", "checked", true));
+    expect(byTestId("free")?.attributes.get("checked")).not.toBeUndefined();
+  });
+
+  it("sends nothing extra when the handler accepts the value", async () => {
+    await render(Controlled);
+    reset();
+    await update(() => edit(byTestId("limited"), "input", "value", "abc"));
+    expect(ops).toEqual([
+      { op: "attr", id: byTestId("limited")?.id, name: "value", value: "abc" },
+    ]);
   });
 });
 

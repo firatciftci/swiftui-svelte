@@ -104,6 +104,21 @@ struct NodeStoreTests {
             ])
     }
 
+    @Test func leavesUnchangedValuesAlone() {
+        let store = store([4, 2, 1, 8])
+        let flag = Flag()
+        withObservationTracking {
+            _ = store.node(2)?.attributes
+            _ = store.node(3)?.text
+        } onChange: {
+            flag.isSet = true
+        }
+        store.apply(batch([4, 2, 1, 8, 6, 3, "a", 5, 2, 2]))
+        #expect(!flag.isSet)
+        store.apply(batch([4, 2, 1, 9]))
+        #expect(flag.isSet)
+    }
+
     @Test func updatesText() {
         #expect(texts(store([6, 3, "z"])) == ["z", "b", "c"])
     }
@@ -151,6 +166,10 @@ struct NodeStoreTests {
         #expect(node?.renderedChildren.map(\.id) == [3, 4, 5])
         #expect(node?.attachment("sheet")?.id == 7)
     }
+}
+
+nonisolated private final class Flag: @unchecked Sendable {
+    var isSet = false
 }
 
 private struct SplitMix: RandomNumberGenerator {

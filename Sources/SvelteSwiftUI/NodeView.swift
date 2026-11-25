@@ -91,23 +91,13 @@ struct NodeView: View {
             default: button.buttonStyle(.borderless)
             }
         case "textfield":
-            TextField(
-                node.attributes["placeholder"]?.string ?? "",
-                text: Binding {
-                    node.attributes["value"]?.string ?? ""
-                } set: { value in
-                    node.attributes["value"] = .string(value)
-                    runtime.dispatch(node.id, "input", value)
-                }
-            )
-            .onSubmit { runtime.dispatch(node.id, "submit") }
+            TextFieldControl(node: node)
         case "toggle":
             Toggle(
                 isOn: Binding {
                     node.attributes["checked"]?.isTrue ?? false
                 } set: { value in
-                    node.attributes["checked"] = .bool(value)
-                    runtime.dispatch(node.id, "change", value)
+                    runtime.edit(node, "checked", to: .bool(value), event: "change", payload: value)
                 }
             ) {
                 children

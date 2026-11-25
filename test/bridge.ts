@@ -321,6 +321,28 @@ export function dispatch(
   globalThis.__svelteDispatch(node.id, type, payload);
 }
 
+export function edit(
+  node: MirrorNode | undefined,
+  type: string,
+  name: string,
+  value: unknown,
+): void {
+  node?.attributes.set(name, value);
+  dispatch(node, type, value);
+}
+
+export function byTestId(id: string): MirrorNode | undefined {
+  const search = (node: MirrorNode): MirrorNode | undefined => {
+    if (node.attributes.get("testid") === id) return node;
+    for (const child of node.children) {
+      const found = search(child);
+      if (found != null) return found;
+    }
+    return undefined;
+  };
+  return native.root == null ? undefined : search(native.root);
+}
+
 export function installBridge(): void {
   Object.assign(globalThis, {
     __nativeCommit(json: string): void {

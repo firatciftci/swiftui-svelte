@@ -44,6 +44,24 @@ struct RuntimeTests {
         #expect(attributes?["toggle"] == .bool(true))
     }
 
+    @Test func showsAnEditThenTheValueThatJavaScriptSettlesOn() async throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteDispatch = (id) => attr(id, "value", "kept");
+                """)
+        let node = try #require(runtime.store.node(2))
+        runtime.edit(node, "value", to: .string("typed"), event: "input", payload: "typed")
+        #expect(node.attributes["value"] == .string("typed"))
+        try await eventually { node.attributes["value"] == .string("kept") }
+    }
+
+    @Test func keepsAnEditThatJavaScriptAccepts() throws {
+        let runtime = try runtime(mount)
+        let node = try #require(runtime.store.node(2))
+        runtime.edit(node, "input", to: .string("typed"), event: "input", payload: "typed")
+        #expect(node.attributes["input"] == .string("typed"))
+    }
+
     @Test func runsTimers() async throws {
         let runtime = try runtime(
             mount + """

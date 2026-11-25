@@ -57,7 +57,7 @@
         <textfield
           placeholder="Your name"
           value={name}
-          oninput={(value) => (name = value)}
+          oninput={(value) => (name = value.slice(0, 12))}
         />
         {#if name.trim() !== ""}
           <txt color="accent">Hello, {name.trim()}!</txt>

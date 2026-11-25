@@ -388,8 +388,14 @@ const renderer = createRenderer<{
 
 globalThis.__svelteDispatch = (id, type, payload) => {
   const element = elements.get(id)?.deref();
-  const handlers = element?.listeners.get(type) ?? [];
+  const handlers = element?.listeners.get(type);
+  if (element == null || handlers == null || handlers.size === 0) return;
   for (const handler of handlers) handler(payload);
+  if (type !== "input" && type !== "change") return;
+  const name = element.name === "toggle" ? "checked" : "value";
+  if (name === "checked" || element.attributes.has(name)) {
+    changeAttribute(element, name);
+  }
 };
 
 export function mountApp(component: Component): () => void {

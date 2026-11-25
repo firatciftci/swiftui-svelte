@@ -362,7 +362,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 
 ## Known gaps
 
-- **No `bind:`.** Svelte doesn't allow `bind:` on elements in custom renderer components, so inputs are controlled: pass `value` and update it in `oninput`.
+- **No `bind:`.** Svelte doesn't allow `bind:` on elements in custom renderer components, so inputs are controlled: pass `value` and update it in `oninput`. The control always ends up showing your state. If the handler trims the text, rejects a character, or ignores a toggle, the native control changes back to match, so you can use `oninput={(value) => (name = value.slice(0, 12))}` as a length limit. Update the state synchronously in the handler, because the control reverts to whatever the state holds once the handler returns. A `textfield` with no `value` keeps whatever the user types.
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **One thread.** JavaScript runs on the main thread, so large updates, like creating or reversing 1,000 rows, block a few frames.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.

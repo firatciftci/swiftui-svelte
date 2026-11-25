@@ -137,15 +137,15 @@ final class NodeStore {
             let id = try reader.int()
             let name = try name(try reader.int())
             let value = try reader.value()
-            nodes[id]?.attributes[name] = value
+            if let node = nodes[id], node.attributes[name] != value { node.attributes[name] = value }
         case 5:
             let id = try reader.int()
             let name = try name(try reader.int())
-            nodes[id]?.attributes[name] = nil
+            if let node = nodes[id], node.attributes[name] != nil { node.attributes[name] = nil }
         case 6:
             let id = try reader.int()
             let text = try reader.string()
-            nodes[id]?.text = text
+            if let node = nodes[id], node.text != text { node.text = text }
         case 7:
             names.append(try reader.string())
         case let opcode:

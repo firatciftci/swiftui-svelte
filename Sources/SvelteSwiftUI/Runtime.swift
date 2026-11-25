@@ -49,6 +49,17 @@ final class Runtime {
             .call(withArguments: [id, type, payload])
     }
 
+    func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
+        node.attributes[name] = value
+        dispatch(node.id, event, payload)
+        let settled = node.attributes[name]
+        guard settled != value else { return }
+        node.attributes[name] = value
+        Task { @MainActor in
+            if node.attributes[name] == value { node.attributes[name] = settled }
+        }
+    }
+
     private func reload() {
         for timer in timers.values { timer.cancel() }
         timers = [:]
