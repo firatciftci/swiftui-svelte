@@ -1,12 +1,12 @@
 import Foundation
 
-struct MappedLocation: Equatable {
+nonisolated struct MappedLocation: Equatable, Sendable {
     let file: String
     let line: Int
     let column: Int
 }
 
-struct SourceMap {
+nonisolated struct SourceMap: Sendable {
     private struct Segment {
         let column: Int
         let source: Int

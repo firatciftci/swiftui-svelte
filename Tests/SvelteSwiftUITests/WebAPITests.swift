@@ -1,5 +1,6 @@
 import Foundation
 import JavaScriptCore
+import Synchronization
 import Testing
 
 @testable import SvelteSwiftUI
@@ -10,8 +11,8 @@ struct WebAPITests {
         let error: String?
     }
 
-    private final class Report {
-        var json: String?
+    private func evaluate(_ runtime: SvelteRuntime, _ script: String) -> String? {
+        runtime.evaluate { $0.evaluateScript(script)?.toString() }.flatMap(\.self)
     }
 
     @Test func passesTheSharedWebSuiteInJavaScriptCore() async throws {
@@ -21,18 +22,20 @@ struct WebAPITests {
         let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
         let runtime = SvelteRuntime(source: url)
         runtime.start()
-        let context = try #require(runtime.context)
-        let report = Report()
-        let callback: @convention(block) (String) -> Void = { report.json = $0 }
-        context.globalObject.setValue(callback, forProperty: "__nativeReport")
+        let report = Mutex<String?>(nil)
+        let callback: @convention(block) @Sendable (String) -> Void = { json in report.withLock { $0 = json } }
         let endpoints = #"{"http":"http://127.0.0.1:\#(port)","ws":"ws://127.0.0.1:\#(port)"}"#
-        context.objectForKeyedSubscript("__runWebSuite")?.call(withArguments: [endpoints])
+        runtime.evaluate { context in
+            context.globalObject.setValue(callback, forProperty: "__nativeReport")
+            context.objectForKeyedSubscript("__runWebSuite")?.call(withArguments: [endpoints])
+        }
         let deadline = ContinuousClock.now + .seconds(90)
-        while report.json == nil, ContinuousClock.now < deadline {
+        while report.withLock({ $0 }) == nil, ContinuousClock.now < deadline {
             try await Task.sleep(for: .milliseconds(10))
         }
         #expect(runtime.error == nil)
-        let outcomes = try JSONDecoder().decode(Array<Outcome>.self, from: Data(try #require(report.json).utf8))
+        let json = try #require(report.withLock { $0 })
+        let outcomes = try JSONDecoder().decode(Array<Outcome>.self, from: Data(json.utf8))
         #expect(outcomes.count >= 45)
         let failures = outcomes.compactMap { outcome in outcome.error.map { "\(outcome.name): \($0)" } }
         #expect(failures.isEmpty, "\(failures.joined(separator: "\n"))")
@@ -42,17 +45,16 @@ struct WebAPITests {
         let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
         let runtime = SvelteRuntime(source: url)
         runtime.start()
-        let context = try #require(runtime.context)
         let query = "matchMedia('(prefers-color-scheme: dark)').matches"
         runtime.updateEnvironment(["colorScheme": "light", "reduceMotion": false])
-        #expect(context.evaluateScript(query)?.toBool() == false)
+        #expect(evaluate(runtime, query) == "false")
         runtime.updateEnvironment(["colorScheme": "dark", "reduceMotion": true])
-        #expect(context.evaluateScript(query)?.toBool() == true)
-        #expect(context.evaluateScript("matchMedia('(prefers-reduced-motion: reduce)').matches")?.toBool() == true)
-        #expect(context.evaluateScript("navigator.languages.length > 0")?.toBool() == true)
-        #expect(context.evaluateScript("navigator.userAgent")?.toString().hasPrefix("swiftui-svelte (") == true)
+        #expect(evaluate(runtime, query) == "true")
+        #expect(evaluate(runtime, "matchMedia('(prefers-reduced-motion: reduce)').matches") == "true")
+        #expect(evaluate(runtime, "navigator.languages.length > 0") == "true")
+        #expect(evaluate(runtime, "navigator.userAgent")?.hasPrefix("swiftui-svelte (") == true)
         runtime.restart()
-        #expect(runtime.context?.evaluateScript(query)?.toBool() == true)
+        #expect(evaluate(runtime, query) == "true")
     }
 
     @Test func persistsLocalStorageInUserDefaults() async throws {
@@ -63,9 +65,8 @@ struct WebAPITests {
         UserDefaults.standard.set(#"{"kept":"yes"}"#, forKey: key)
         let runtime = SvelteRuntime(source: url)
         runtime.start()
-        let context = try #require(runtime.context)
-        #expect(context.evaluateScript("localStorage.getItem('kept')")?.toString() == "yes")
-        context.evaluateScript("localStorage.setItem('count', 2); localStorage.removeItem('kept')")
+        #expect(evaluate(runtime, "localStorage.getItem('kept')") == "yes")
+        _ = evaluate(runtime, "localStorage.setItem('count', 2); localStorage.removeItem('kept')")
         try await Task.sleep(for: .milliseconds(20))
         #expect(UserDefaults.standard.string(forKey: key) == #"{"count":"2"}"#)
     }

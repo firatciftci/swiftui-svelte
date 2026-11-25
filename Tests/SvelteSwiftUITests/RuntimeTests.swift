@@ -104,6 +104,38 @@ struct RuntimeTests {
         #expect(runtime.store.node(2)?.attributes["canceled"] == nil)
     }
 
+    @Test func runsSlowHandlersWithoutBlockingTheMainThread() throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteDispatch = (id, type) => {
+                  const end = __nativeNow() + 300;
+                  while (__nativeNow() < end) {}
+                  attr(id, type, true);
+                };
+                """)
+        let start = ContinuousClock.now
+        runtime.dispatch(2, "click", waits: false)
+        #expect(ContinuousClock.now - start < .milliseconds(100))
+        #expect(runtime.store.node(2)?.attributes["click"] == nil)
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["click"] == .bool(true))
+    }
+
+    @Test func convertsDelaysLikeBrowsers() async throws {
+        let runtime = try runtime(
+            mount + """
+                let fired = 0;
+                for (const delay of [NaN, undefined, "soon", "10", -5, Infinity, 2 ** 32]) {
+                  setTimeout(() => attr(2, "fired", ++fired), delay);
+                }
+                setTimeout(() => attr(2, "late", true), 2 ** 31 - 1);
+                setTimeout((a, b) => attr(2, "sum", a + b), 0, 2, 3);
+                """)
+        try await eventually { runtime.store.node(2)?.attributes["fired"] == .number(7) }
+        #expect(runtime.store.node(2)?.attributes["sum"] == .number(5))
+        #expect(runtime.store.node(2)?.attributes["late"] == nil)
+    }
+
     @Test func reportsBridgeErrors() throws {
         let runtime = try runtime(mount + "__nativeCommit('[42]');")
         #expect(runtime.store.error?.contains("42") == true)

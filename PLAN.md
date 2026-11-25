@@ -44,7 +44,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] The failed snippet of `<svelte:boundary>` renders natively
 - [x] Source maps: Vite emits them, and the runtime maps stack traces with them
 - [ ] Safari Web Inspector works with debug builds in the simulator and on devices (verify `isInspectable` and document it)
-- [ ] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency
+- [x] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency
 - [ ] A startup time budget: measure cold start to first frame on a device, and speed up bundle evaluation _(maintainer)_
 - [x] Memory: no leaked nodes or listeners after mounting and unmounting 10,000 elements (tested)
 - [x] Several `SvelteView` instances in one app, each with its own context, plus an option to share one

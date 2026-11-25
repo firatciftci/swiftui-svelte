@@ -140,7 +140,11 @@ declare global {
   function __nativeGC(): void;
   function __nativeRequestFrame(): void;
   var __svelteFrame: (time: number) => void;
-  function __nativeStats(): { nodes: number; maxFrameGapMs: number };
+  function __nativeStats(): {
+    nodes: number;
+    maxFrameGapMs: number;
+    applyMs: number;
+  };
   function __nativeLog(
     level: "log" | "info" | "warn" | "error" | "debug",
     message: string,

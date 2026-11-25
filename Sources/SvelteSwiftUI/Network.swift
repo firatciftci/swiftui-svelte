@@ -1,7 +1,7 @@
 import Foundation
 import JavaScriptCore
 
-final class NetworkClient {
+nonisolated final class NetworkClient: @unchecked Sendable {
     private struct FetchRequest: Decodable {
         let url: String
         let method: String
@@ -28,6 +28,8 @@ final class NetworkClient {
         var expectsNoStatus = false
     }
 
+    private let queue: DispatchQueue
+    private let operations = OperationQueue()
     private let events = SessionEvents()
     private var session: URLSession?
     private var fetches: [Int: Fetch] = [:]
@@ -35,13 +37,16 @@ final class NetworkClient {
     private var sockets: [Int: Socket] = [:]
     private var socketIDs: [Int: Int] = [:]
 
-    init() {
+    init(queue: DispatchQueue) {
+        self.queue = queue
+        operations.underlyingQueue = queue
+        operations.maxConcurrentOperationCount = 1
         events.owner = self
     }
 
     private var currentSession: URLSession {
         if let session { return session }
-        let session = URLSession(configuration: .default, delegate: events, delegateQueue: .main)
+        let session = URLSession(configuration: .default, delegate: events, delegateQueue: operations)
         self.session = session
         return session
     }
@@ -121,10 +126,9 @@ final class NetworkClient {
             message = .string(text)
             count = text.utf8.count
         }
-        socket.task.send(message) { [weak self] _ in
-            Task { @MainActor in
-                _ = self?.sockets[id]?.handlers.invokeMethod("sent", withArguments: [count])
-            }
+        socket.task.send(message) { [weak self, queue] _ in
+            guard let self else { return }
+            queue.async { _ = self.sockets[id]?.handlers.invokeMethod("sent", withArguments: [count]) }
         }
     }
 
@@ -137,9 +141,10 @@ final class NetworkClient {
     }
 
     private func receive(_ id: Int) {
-        sockets[id]?.task.receive { [weak self] result in
-            Task { @MainActor in
-                guard let self, let socket = self.sockets[id], !socket.isClosed, case .success(let message) = result
+        sockets[id]?.task.receive { [weak self, queue] result in
+            guard let self else { return }
+            queue.async {
+                guard let socket = self.sockets[id], !socket.isClosed, case .success(let message) = result
                 else { return }
                 switch message {
                 case .string(let text):
@@ -242,45 +247,45 @@ final class NetworkClient {
 nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate, URLSessionWebSocketDelegate,
     @unchecked Sendable
 {
-    nonisolated(unsafe) weak var owner: NetworkClient?
+    weak var owner: NetworkClient?
 
     func urlSession(
         _: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
         completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void
     ) {
-        MainActor.assumeIsolated { owner?.didReceive(response, task: dataTask) }
+        owner?.didReceive(response, task: dataTask)
         completionHandler(.allow)
     }
 
     func urlSession(_: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        MainActor.assumeIsolated { owner?.didReceive(data, task: dataTask) }
+        owner?.didReceive(data, task: dataTask)
     }
 
     func urlSession(
         _: URLSession, task: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse,
         newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
     ) {
-        let next = MainActor.assumeIsolated { () -> URLRequest? in
-            guard let owner else { return request }
-            return owner.redirect(task: task, to: request)
+        guard let owner else {
+            completionHandler(request)
+            return
         }
-        completionHandler(next)
+        completionHandler(owner.redirect(task: task, to: request))
     }
 
     func urlSession(_: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
-        MainActor.assumeIsolated { owner?.didComplete(task: task, error: error) }
+        owner?.didComplete(task: task, error: error)
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?
     ) {
-        MainActor.assumeIsolated { owner?.didOpen(task: webSocketTask, protocol: `protocol`) }
+        owner?.didOpen(task: webSocketTask, protocol: `protocol`)
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?
     ) {
-        MainActor.assumeIsolated { owner?.didClose(task: webSocketTask, code: closeCode, reason: reason) }
+        owner?.didClose(task: webSocketTask, code: closeCode, reason: reason)
     }
 }

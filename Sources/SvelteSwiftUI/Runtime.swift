@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import JavaScriptCore
 import Network
@@ -20,17 +19,14 @@ public final class SvelteRuntime {
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
 
-    @ObservationIgnored private(set) var context: JSContext?
-    @ObservationIgnored private var timers: [Int: Task<Void, Never>] = [:]
-    @ObservationIgnored private var nextTimerID = 1
+    @ObservationIgnored private let engine: ScriptEngine
+    @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
-    @ObservationIgnored private var sourceMap: SourceMap?
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
     @ObservationIgnored private var loadedVersion: Date?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
-    @ObservationIgnored private let network = NetworkClient()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
     @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
@@ -39,6 +35,11 @@ public final class SvelteRuntime {
     public init(source: URL, reloadsOnChange: Bool = false) {
         self.source = source
         self.reloadsOnChange = reloadsOnChange
+        let drain = Unchecked(value: WeakBox<SvelteRuntime>())
+        engine = ScriptEngine {
+            DispatchQueue.main.async { MainActor.assumeIsolated { drain.value.object?.drain() } }
+        }
+        drain.value.object = self
     }
 
     private var bundleVersion: Date? {
@@ -46,8 +47,9 @@ public final class SvelteRuntime {
     }
 
     func start() {
-        guard context == nil else { return }
-        frames.onFrame = { [weak self] timestamp in self?.frame(timestamp) }
+        guard !isStarted else { return }
+        isStarted = true
+        frames.onFrame = { [weak self] timestamp, gap in self?.frame(timestamp, gap: gap) }
         frames.start()
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
@@ -71,7 +73,7 @@ public final class SvelteRuntime {
         let id = nextMountID
         nextMountID += 1
         mounts[id] = Mount(component: component, props: props, actions: actions)
-        if context == nil { start() } else { send(id) }
+        if isStarted { call("__svelteMount", arguments(for: id)) } else { start() }
         return id
     }
 
@@ -80,19 +82,65 @@ public final class SvelteRuntime {
         mounts[id]?.actions = actions
         guard mount.props != props else { return }
         mounts[id]?.props = props
-        context?.objectForKeyedSubscript("__svelteProps")?.call(withArguments: [id, props])
+        call("__svelteProps", [id, props])
     }
 
     func unmount(_ id: Int) {
         guard mounts.removeValue(forKey: id) != nil else { return }
-        context?.objectForKeyedSubscript("__svelteUnmount")?.call(withArguments: [id])
+        call("__svelteUnmount", [id], waits: false)
     }
 
-    private func send(_ id: Int) {
-        guard let mount = mounts[id] else { return }
+    private func arguments(for id: Int) -> Array<Any> {
+        guard let mount = mounts[id] else { return [] }
         let actions = mount.actions.keys.sorted().map { "\"\($0)\"" }.joined(separator: ",")
-        context?.objectForKeyedSubscript("__svelteMount")?
-            .call(withArguments: [id, mount.component, "{\"props\":\(mount.props),\"actions\":[\(actions)]}"])
+        return [id, mount.component, "{\"props\":\(mount.props),\"actions\":[\(actions)]}"]
+    }
+
+    func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull(), waits: Bool = true) {
+        call("__svelteDispatch", [id, type, payload], waits: waits)
+    }
+
+    private func call(_ function: String, _ arguments: Array<Any>, waits: Bool = true) {
+        let engine = engine
+        let arguments = Unchecked(value: arguments)
+        if waits {
+            engine.queue.sync { engine.call(function, arguments) }
+            drain()
+        } else {
+            engine.queue.async { engine.call(function, arguments) }
+        }
+    }
+
+    func settle() {
+        engine.queue.sync {}
+        drain()
+    }
+
+    func evaluate<Result>(_ body: (JSContext) -> Result) -> Result? {
+        let engine = engine
+        let result = engine.queue.sync { engine.evaluate(body) }
+        drain()
+        return result
+    }
+
+    private func drain() {
+        let messages = engine.takeMessages()
+        guard !messages.isEmpty else { return }
+        let start = CACurrentMediaTime()
+        for message in messages {
+            switch message {
+            case let .commit(json): store.apply(json)
+            case let .action(mount, name, json): perform(mount, name, json)
+            case let .error(error): report(error)
+            case .requestFrame: isFrameRequested = true
+            }
+        }
+        let nodes = store.nodeCount
+        let elapsed = (CACurrentMediaTime() - start) * 1000
+        engine.stats.withLock { stats in
+            stats.nodes = nodes
+            stats.applyTime += elapsed
+        }
     }
 
     private func perform(_ mount: Int, _ name: String, _ json: String) {
@@ -101,15 +149,11 @@ public final class SvelteRuntime {
         action(value.object)
     }
 
-    func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull()) {
-        context?.objectForKeyedSubscript("__svelteDispatch")?
-            .call(withArguments: [id, type, payload])
-    }
-
-    private func frame(_ timestamp: CFTimeInterval) {
+    private func frame(_ timestamp: CFTimeInterval, gap: Double) {
+        engine.stats.withLock { $0.maxFrameGap = max($0.maxFrameGap, gap) }
         guard isFrameRequested else { return }
         isFrameRequested = false
-        context?.objectForKeyedSubscript("__svelteFrame")?.call(withArguments: [timestamp * 1000])
+        call("__svelteFrame", [timestamp * 1000], waits: false)
     }
 
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
@@ -129,9 +173,13 @@ public final class SvelteRuntime {
             environment[key] = value
             changed[key] = value
         }
-        guard !changed.isEmpty, let data = try? JSONSerialization.data(withJSONObject: changed, options: .sortedKeys)
-        else { return }
-        context?.objectForKeyedSubscript("__svelteEnvironment")?.call(withArguments: [String(bytes: data, encoding: .utf8) ?? "{}"])
+        guard !changed.isEmpty, isStarted else { return }
+        call("__svelteEnvironment", [Self.json(changed)], waits: false)
+    }
+
+    private static func json(_ value: [String: Any]) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys) else { return "{}" }
+        return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 
     func report(_ error: ScriptError) {
@@ -149,164 +197,36 @@ public final class SvelteRuntime {
     }
 
     private func reload() {
-        for timer in timers.values { timer.cancel() }
-        timers = [:]
-        network.reset()
         isFrameRequested = false
         store = NodeStore()
         error = nil
         loadedVersion = bundleVersion
-
-        guard let script = try? String(contentsOf: source, encoding: .utf8),
-            let context = JSContext()
-        else {
+        let engine = engine
+        guard let script = try? String(contentsOf: source, encoding: .utf8) else {
+            engine.queue.sync { engine.stop() }
+            _ = engine.takeMessages()
             report(ScriptError(message: "Couldn't load \(source.path()).", frames: []))
             return
         }
-
-        #if DEBUG
-            context.isInspectable = true
-        #endif
-        sourceMap = (try? Data(contentsOf: source.appendingPathExtension("map"))).flatMap { try? SourceMap(json: $0) }
-        context.exceptionHandler = { [weak self] _, exception in
-            guard let self, let exception else { return }
-            report(ScriptError(exception: exception, source: source, map: sourceMap))
+        let map = (try? Data(contentsOf: source.appendingPathExtension("map"))).flatMap { try? SourceMap(json: $0) }
+        let mounts = self.mounts.keys.sorted().map { Unchecked(value: arguments(for: $0)) }
+        let environment = Self.json(environment)
+        let source = source
+        engine.queue.sync {
+            engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
-        install(into: context)
-        self.context = context
-        context.evaluateScript(script, withSourceURL: source)
-        for id in mounts.keys.sorted() { send(id) }
+        drain()
     }
+}
 
-    private func install(into context: JSContext) {
-        let commit: @convention(block) (String) -> Void = { [weak self] json in
-            self?.store.apply(json)
-        }
-        let log: @convention(block) (String, String) -> Void = { level, message in
-            print("[js:\(level)] \(message)")
-        }
-        let setTimeout: @convention(block) (JSValue, JSValue) -> Int = { [weak self] callback, delay in
-            self?.schedule(callback, after: delay, repeats: false) ?? 0
-        }
-        let setInterval: @convention(block) (JSValue, JSValue) -> Int = { [weak self] callback, delay in
-            self?.schedule(callback, after: delay, repeats: true) ?? 0
-        }
-        let clearTimer: @convention(block) (Int) -> Void = { [weak self] id in
-            self?.timers.removeValue(forKey: id)?.cancel()
-        }
-        let now: @convention(block) () -> Double = {
-            CACurrentMediaTime() * 1000
-        }
-        let action: @convention(block) (Int, String, String) -> Void = { [weak self] mount, name, json in
-            self?.perform(mount, name, json)
-        }
-        let requestFrame: @convention(block) () -> Void = { [weak self] in
-            self?.isFrameRequested = true
-        }
-        let collectGarbage: @convention(block) () -> Void = { [weak context] in
-            if let context { JSGarbageCollect(context.jsGlobalContextRef) }
-        }
-        let stats: @convention(block) () -> [String: Double] = { [weak self] in
-            guard let self else { return [:] }
-            return ["nodes": Double(store.nodeCount), "maxFrameGapMs": frames.takeMaxGap()]
-        }
-
-        context.globalObject.setValue(commit, forProperty: "__nativeCommit")
-        context.globalObject.setValue(log, forProperty: "__nativeLog")
-        context.globalObject.setValue(setTimeout, forProperty: "setTimeout")
-        context.globalObject.setValue(setInterval, forProperty: "setInterval")
-        context.globalObject.setValue(clearTimer, forProperty: "clearTimeout")
-        context.globalObject.setValue(clearTimer, forProperty: "clearInterval")
-        context.globalObject.setValue(now, forProperty: "__nativeNow")
-        context.globalObject.setValue(collectGarbage, forProperty: "__nativeGC")
-        context.globalObject.setValue(requestFrame, forProperty: "__nativeRequestFrame")
-        context.globalObject.setValue(action, forProperty: "__nativeAction")
-        context.globalObject.setValue(stats, forProperty: "__nativeStats")
-
-        let storageKey = "SvelteSwiftUI.localStorage"
-        let loadStorage: @convention(block) () -> String = {
-            UserDefaults.standard.string(forKey: storageKey) ?? "{}"
-        }
-        let saveStorage: @convention(block) (String) -> Void = { json in
-            UserDefaults.standard.set(json, forKey: storageKey)
-        }
-        context.globalObject.setValue(loadStorage, forProperty: "__nativeStorageLoad")
-        context.globalObject.setValue(saveStorage, forProperty: "__nativeStorageSave")
-        installHostAPIs(into: context)
-    }
-
-    private func installHostAPIs(into context: JSContext) {
-        typealias Fetch = @convention(block) (Int, String, JSValue, JSValue, JSValue, JSValue) -> Void
-        let fetch: Fetch = { [weak self] id, json, body, onResponse, onData, onEnd in
-            let callbacks = NetworkClient.FetchCallbacks(onResponse: onResponse, onData: onData, onEnd: onEnd)
-            self?.network.fetch(id: id, json: json, body: body, callbacks: callbacks)
-        }
-        let cancelFetch: @convention(block) (Int) -> Void = { [weak self] id in
-            self?.network.cancelFetch(id: id)
-        }
-        let openSocket: @convention(block) (Int, String, String, JSValue) -> Void = { [weak self] id, url, protocols, handlers in
-            self?.network.openSocket(id: id, url: url, protocols: protocols, handlers: handlers)
-        }
-        let sendSocket: @convention(block) (Int, JSValue) -> Void = { [weak self] id, data in
-            self?.network.send(id: id, data: data)
-        }
-        let closeSocket: @convention(block) (Int, Int, String) -> Void = { [weak self] id, code, reason in
-            self?.network.closeSocket(id: id, code: code, reason: reason)
-        }
-        let randomFill: @convention(block) (JSValue) -> Void = { bytes in
-            _ = bytes.withBytes { buffer in
-                guard let base = buffer.baseAddress else { return }
-                _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, base)
-            }
-        }
-        let digest: @convention(block) (String, JSValue) -> JSValue = { algorithm, value in
-            let context = JSContext.current() ?? value.context
-            let data = value.bytes ?? Data()
-            let output: Data =
-                switch algorithm {
-                case "SHA-1": Data(Insecure.SHA1.hash(data: data))
-                case "SHA-384": Data(SHA384.hash(data: data))
-                case "SHA-512": Data(SHA512.hash(data: data))
-                default: Data(SHA256.hash(data: data))
-                }
-            return context?.bytes(output) ?? JSValue()
-        }
-        let environment: @convention(block) () -> String = { [weak self] in
-            let values = self?.environment ?? HostEnvironment.current
-            guard let data = try? JSONSerialization.data(withJSONObject: values, options: .sortedKeys) else { return "{}" }
-            return String(bytes: data, encoding: .utf8) ?? "{}"
-        }
-        context.globalObject.setValue(fetch, forProperty: "__nativeFetch")
-        context.globalObject.setValue(cancelFetch, forProperty: "__nativeFetchCancel")
-        context.globalObject.setValue(openSocket, forProperty: "__nativeWebSocketOpen")
-        context.globalObject.setValue(sendSocket, forProperty: "__nativeWebSocketSend")
-        context.globalObject.setValue(closeSocket, forProperty: "__nativeWebSocketClose")
-        context.globalObject.setValue(randomFill, forProperty: "__nativeRandomFill")
-        context.globalObject.setValue(digest, forProperty: "__nativeDigest")
-        context.globalObject.setValue(environment, forProperty: "__nativeEnvironment")
-    }
-
-    private func schedule(_ callback: JSValue, after delay: JSValue, repeats: Bool) -> Int {
-        let id = nextTimerID
-        nextTimerID += 1
-        let interval = Duration.milliseconds(delay.isNumber ? max(delay.toDouble(), 0) : 0)
-        timers[id] = Task { [weak self] in
-            repeat {
-                try? await Task.sleep(for: interval)
-                if Task.isCancelled { return }
-                callback.call(withArguments: [])
-            } while repeats
-            self?.timers[id] = nil
-        }
-        return id
-    }
+nonisolated private final class WeakBox<Object: AnyObject> {
+    weak var object: Object?
 }
 
 private final class FrameMonitor: NSObject {
     private var link: CADisplayLink?
     private var lastTimestamp: CFTimeInterval = 0
-    private var maxGap: Double = 0
-    var onFrame: ((CFTimeInterval) -> Void)?
+    var onFrame: ((CFTimeInterval, Double) -> Void)?
 
     func start() {
         guard link == nil else { return }
@@ -319,21 +239,14 @@ private final class FrameMonitor: NSObject {
         self.link = link
     }
 
-    func takeMaxGap() -> Double {
-        defer { maxGap = 0 }
-        return maxGap
-    }
-
     @objc private func tick(_ link: CADisplayLink) {
-        if lastTimestamp > 0 {
-            maxGap = max(maxGap, (link.timestamp - lastTimestamp) * 1000)
-        }
+        let gap = lastTimestamp > 0 ? (link.timestamp - lastTimestamp) * 1000 : 0
         lastTimestamp = link.timestamp
-        onFrame?(link.timestamp)
+        onFrame?(link.timestamp, gap)
     }
 }
 
-struct ScriptError: Equatable, CustomStringConvertible {
+nonisolated struct ScriptError: Equatable, Sendable, CustomStringConvertible {
     struct Frame: Equatable {
         let function: String
         let location: String
@@ -348,7 +261,7 @@ struct ScriptError: Equatable, CustomStringConvertible {
     }
 }
 
-extension ScriptError {
+nonisolated extension ScriptError {
     init(exception: JSValue, source: URL, map: SourceMap?) {
         let stack = exception.objectForKeyedSubscript("stack")
         let lines = stack?.isString == true ? stack?.toString().split(separator: "\n").map(String.init) ?? [] : []

@@ -80,7 +80,7 @@ struct NodeView: View {
             Symbol(node: node)
         case "btn":
             let button = Button(role: buttonRole(node)) {
-                runtime.dispatch(node.id, "click")
+                runtime.dispatch(node.id, "click", waits: false)
             } label: {
                 children
             }
@@ -318,7 +318,7 @@ private struct ActionButton: View {
 
     var body: some View {
         Button(role: buttonRole(node)) {
-            runtime.dispatch(node.id, "click")
+            runtime.dispatch(node.id, "click", waits: false)
         } label: {
             ForEach(node.renderedChildren) { child in
                 switch child.name {

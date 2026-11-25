@@ -49,6 +49,7 @@ struct BundleTests {
         #expect(runtime.store.root(for: counter)?.children.first?.name == "vstack")
         #expect(dump(runtime.store.root(for: greeting)) == self.greeting("Lin: 0"))
         runtime.unmount(greeting)
+        runtime.settle()
         #expect(runtime.store.root(for: greeting) == nil)
         #expect(runtime.store.root(for: counter)?.children.first?.name == "vstack")
         #expect(runtime.store.nodeCount < 20)

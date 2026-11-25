@@ -1,7 +1,7 @@
 import Foundation
 import JavaScriptCore
 
-extension JSValue {
+nonisolated extension JSValue {
     func withBytes<Result>(_ body: (UnsafeMutableRawBufferPointer) -> Result) -> Result? {
         guard let reference = jsValueRef, let context = context?.jsGlobalContextRef,
             JSValueGetTypedArrayType(context, reference, nil) != kJSTypedArrayTypeNone,
@@ -18,7 +18,7 @@ extension JSValue {
     }
 }
 
-extension JSContext {
+nonisolated extension JSContext {
     func bytes(_ data: Data) -> JSValue {
         guard let object = JSObjectMakeTypedArray(jsGlobalContextRef, kJSTypedArrayTypeUint8Array, data.count, nil),
             let value = JSValue(jsValueRef: object, in: self)

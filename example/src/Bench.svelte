@@ -38,7 +38,7 @@
         `BENCH ${name.padEnd(12)}`,
         `svelte=${ms(svelte)}`,
         `serialize=${ms(stats.serializeMs - before.serializeMs)}`,
-        `native=${ms(stats.nativeMs - before.nativeMs)}`,
+        `swift=${ms(native.applyMs)}`,
         `ops=${stats.ops - before.ops}`,
         `kb=${((stats.bytes - before.bytes) / 1024).toFixed(0)}`,
         `maxFrame=${ms(native.maxFrameGapMs)}`,
