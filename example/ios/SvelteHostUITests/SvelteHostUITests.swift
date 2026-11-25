@@ -490,7 +490,7 @@ extension SvelteHostUITests {
         app.buttons["toolbar-menu"].tap()
         app.buttons["Rename"].tap()
         XCTAssertEqual(action.label, "Last action: Rename")
-        app.buttons["TopOverflowBarButtonItem"].tap()
+        app.buttons.matching(NSPredicate(format: "identifier ENDSWITH %@", "OverflowBarButtonItem")).firstMatch.tap()
         app.buttons["Pin"].tap()
         XCTAssertEqual(action.label, "Last action: Pin")
         attachScreenshot("toolbars")
