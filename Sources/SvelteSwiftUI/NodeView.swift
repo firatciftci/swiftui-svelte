@@ -50,6 +50,16 @@ struct NodeView: View {
             ScrollView { children }
         case "list":
             List { children }
+        case "formview":
+            Form { children }
+        case "sectionview":
+            Section {
+                children
+            } header: {
+                if let header = node.attributes["header"]?.string { Text(header) }
+            } footer: {
+                if let footer = node.attributes["footer"]?.string { Text(footer) }
+            }
         case "spacer":
             Spacer()
         case "divider":
@@ -108,6 +118,16 @@ struct NodeView: View {
             ) {
                 children
             }
+        case "picker":
+            PickerControl(node: node)
+        case "slider":
+            SliderControl(node: node)
+        case "stepper":
+            StepperControl(node: node)
+        case "datepicker":
+            DatePickerControl(node: node)
+        case "progressview":
+            ProgressControl(node: node)
         default:
             Text("Unknown element <\(node.name)>").foregroundStyle(.red)
         }

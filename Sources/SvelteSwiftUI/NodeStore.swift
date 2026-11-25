@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-enum JSONValue: Decodable, Equatable {
+enum JSONValue: Decodable, Hashable {
     case null
     case bool(Bool)
     case number(Double)

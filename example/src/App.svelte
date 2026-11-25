@@ -1,5 +1,6 @@
 <script lang="ts">
   import Playground from "./Playground.svelte";
+  import Settings from "./Settings.svelte";
   import TodoList from "./TodoList.svelte";
 </script>
 
@@ -9,5 +10,8 @@
   </tab>
   <tab title="Playground" symbol="sparkles">
     <Playground />
+  </tab>
+  <tab title="Settings" symbol="gearshape">
+    <Settings />
   </tab>
 </tabview>

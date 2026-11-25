@@ -90,6 +90,45 @@ declare module "svelte/elements" {
       checked?: boolean;
       onchange?: (checked: boolean) => void;
     };
+    formview: Modifiers;
+    sectionview: Modifiers & { header?: string; footer?: string };
+    picker: Modifiers & {
+      label?: string;
+      value?: string | number;
+      variant?:
+        | "automatic"
+        | "menu"
+        | "segmented"
+        | "wheel"
+        | "inline"
+        | "navigation";
+      onchange?: (value: string | number) => void;
+    };
+    choice: { value: string | number; symbol?: string };
+    slider: Modifiers & {
+      value?: number;
+      min?: number;
+      max?: number;
+      step?: number;
+      oninput?: (value: number) => void;
+      onchange?: (value: number) => void;
+    };
+    stepper: Modifiers & {
+      value?: number;
+      min?: number;
+      max?: number;
+      step?: number;
+      onchange?: (value: number) => void;
+    };
+    datepicker: Modifiers & {
+      value?: Date | string;
+      min?: Date | string;
+      max?: Date | string;
+      components?: "date" | "time" | "datetime";
+      variant?: "automatic" | "compact" | "graphical" | "wheel";
+      onchange?: (value: Date) => void;
+    };
+    progressview: Modifiers & { value?: number; total?: number };
   }
 }
 

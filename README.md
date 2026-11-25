@@ -79,7 +79,7 @@ That component is a real `NavigationStack` with a `List`, a `TextField`, a `Butt
 
 ## Features
 
-- **Native controls.** Lists, navigation stacks, tab views, sheets, alerts, toolbars, and swipe actions are the SwiftUI views themselves.
+- **Native controls.** Lists, forms, pickers, sliders, date pickers, navigation stacks, tab views, sheets, alerts, toolbars, and swipe actions are the SwiftUI views themselves.
 - **Plain Svelte 5.** Runes, components, `{#if}`, `{#each}`, and shared `.svelte.ts` state all work as they do on the web.
 - **Typed elements.** Every element and attribute is typed, so `svelte-check` catches a misspelled attribute or a wrong value before you build.
 - **Small updates.** Svelte sends only what changed, and SwiftUI re-renders only the views that changed.
@@ -168,24 +168,30 @@ To debug the JavaScript, open Safari's **Develop** menu and pick the "Svelte" co
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                        | SwiftUI                        | Attributes and events                                |
-| ------------------------------ | ------------------------------ | ---------------------------------------------------- |
-| `navstack`                     | `NavigationStack`              | `onpop(depth)`                                       |
-| `screen`                       | A screen in the stack          | `title`                                              |
-| `tabview`, `tab`               | `TabView`, a tab               | `title`, `symbol` (on `tab`)                         |
-| `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                               |
-| `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                      |
-| `txt`                          | `Text`                         | `lines`, `align`                                     |
-| `btn`                          | `Button`                       | `variant`, `role`, `onclick`                         |
-| `sfsymbol`                     | `Image(systemName:)`           | `name`, `label`                                      |
-| `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                         |
-| `textfield`                    | `TextField`                    | `value`, `placeholder`, `oninput(value)`, `onsubmit` |
-| `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                       |
-| `spacer`, `divider`            | `Spacer`, `Divider`            |                                                      |
-| `sheet`                        | `.sheet`                       | `detent`, `ondismiss`                                |
-| `alert`                        | `.alert`                       | `title`, `ondismiss`                                 |
-| `toolbar`                      | `.toolbar`                     | `placement`                                          |
-| `swipeactions`                 | `.swipeActions`                | `edge`                                               |
+| Element                        | SwiftUI                        | Attributes and events                                                           |
+| ------------------------------ | ------------------------------ | ------------------------------------------------------------------------------- |
+| `navstack`                     | `NavigationStack`              | `onpop(depth)`                                                                  |
+| `screen`                       | A screen in the stack          | `title`                                                                         |
+| `tabview`, `tab`               | `TabView`, a tab               | `title`, `symbol` (on `tab`)                                                    |
+| `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                                                          |
+| `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                                                 |
+| `txt`                          | `Text`                         | `lines`, `align`                                                                |
+| `btn`                          | `Button`                       | `variant`, `role`, `onclick`                                                    |
+| `sfsymbol`                     | `Image(systemName:)`           | `name`, `label`                                                                 |
+| `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                                                    |
+| `textfield`                    | `TextField`                    | `value`, `placeholder`, `oninput(value)`, `onsubmit`                            |
+| `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                                                  |
+| `formview`, `sectionview`      | `Form`, `Section`              | `header`, `footer` (on `sectionview`)                                           |
+| `picker`, `choice`             | `Picker` and its options       | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`) |
+| `slider`                       | `Slider`                       | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`              |
+| `stepper`                      | `Stepper`                      | `value`, `min`, `max`, `step`, `onchange(value)`                                |
+| `datepicker`                   | `DatePicker`                   | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                |
+| `progressview`                 | `ProgressView`                 | `value`, `total`                                                                |
+| `spacer`, `divider`            | `Spacer`, `Divider`            |                                                                                 |
+| `sheet`                        | `.sheet`                       | `detent`, `ondismiss`                                                           |
+| `alert`                        | `.alert`                       | `title`, `ondismiss`                                                            |
+| `toolbar`                      | `.toolbar`                     | `placement`                                                                     |
+| `swipeactions`                 | `.swipeActions`                | `edge`                                                                          |
 
 Every element also accepts these modifiers:
 
@@ -204,7 +210,12 @@ A few details:
 - **Text.** `lines` caps the number of lines, and `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`.
 - **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.
 - **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`.
-- **Names.** `txt`, `btn`, and `sfsymbol` are shortened because `text`, `button`, `image`, and `symbol` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
+- **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
+- **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`.
+- **Sliders and steppers.** A `slider` goes from `min` to `max`, which default to 0 and 1, and snaps to multiples of `step` when you set it. `oninput` fires while the user drags, and `onchange` fires when they let go. A `stepper` changes `value` by `step`, 1 by default, and stays between `min` and `max` if you set them.
+- **Dates.** A `datepicker` takes a `Date` or an ISO 8601 string for `value`, `min`, and `max`, and `onchange` receives a `Date`. `components` is `date`, `time`, or `datetime`, the default. `variant` is `automatic`, `compact`, `graphical`, or `wheel`.
+- **Progress.** A `progressview` shows a bar filled to `value` out of `total`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
+- **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, and `progressview` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, and `progress` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
 
 ### Sheets, alerts, toolbars, and swipe actions
 
@@ -356,7 +367,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 
 ## Example app
 
-[`example/`](example) has a demo with two tabs: a to-do list with navigation, swipe to delete, and storage that survives relaunches, and a playground with a counter, a text field, a sheet, and a request to GitHub. The screenshots at the top come from it. [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run it.
+[`example/`](example) has a demo with three tabs: a to-do list with navigation, swipe to delete, and storage that survives relaunches; a playground with a counter, a text field, a sheet, and a request to GitHub; and a settings form with segmented, menu, and navigation pickers, a slider, a stepper, a time picker, and a progress bar that tracks the to-dos you've finished. The screenshots at the top come from it. [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run it.
 
 ## Contributing
 
