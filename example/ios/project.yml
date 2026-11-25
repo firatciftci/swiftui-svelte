@@ -26,6 +26,15 @@ targets:
     configFiles:
       Debug: SvelteHost.xcconfig
       Release: SvelteHost.xcconfig
+    info:
+      path: SvelteHost/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.example.SvelteHost
+            CFBundleURLSchemes:
+              - sveltehost
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

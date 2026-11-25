@@ -6,6 +6,7 @@ const config: KnipConfig = {
     "src/renderer.ts",
     "src/vite.ts",
     "src/env.ts",
+    "src/app.ts",
     "src/elements.ts",
     "example/src/main.ts",
     "test/native.ts",

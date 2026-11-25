@@ -1,5 +1,6 @@
 <script lang="ts">
   import { withAnimation } from "swiftui-svelte";
+  import { onBackground } from "swiftui-svelte/app";
   import { Sheet, TextField } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
 
@@ -8,6 +9,7 @@
   let name = $state("");
   let showSheet = $state(false);
   let celebrating = $state(false);
+  let returns = $state(0);
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
 
@@ -35,6 +37,8 @@
     loadStars();
   });
 
+  $effect(() => onBackground(() => returns++));
+
   $effect(() => {
     const interval = setInterval(() => seconds++, 1000);
     return () => clearInterval(interval);
@@ -57,6 +61,13 @@
         </hstack>
         <progressview value={Math.min(Math.max(count, 0), 10)} total={10} />
         <txt font="caption" color="secondary">Running for {seconds}s</txt>
+        {#if returns > 0}
+          <txt font="caption" color="secondary">
+            {returns === 1
+              ? "Welcome back. You've come back once."
+              : `Welcome back. You've come back ${returns} times.`}
+          </txt>
+        {/if}
       </vstack>
 
       <vstack alignment="leading" spacing={8}>

@@ -85,6 +85,11 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         context = nil
     }
 
+    func collectGarbage() {
+        dispatchPrecondition(condition: .onQueue(queue))
+        if let context { JSGarbageCollect(context.jsGlobalContextRef) }
+    }
+
     func call(_ function: String, _ arguments: Unchecked<Array<Any>>) {
         dispatchPrecondition(condition: .onQueue(queue))
         context?.objectForKeyedSubscript(function)?.call(withArguments: arguments.value)

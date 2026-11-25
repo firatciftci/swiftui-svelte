@@ -398,6 +398,30 @@ Each pushed screen is a regular component, so it's mounted when it's pushed and 
 
 Each property is tracked separately, so an effect that reads `colorScheme` doesn't run again when the keyboard opens. Outside components, `env` returns the current value without subscribing. `SvelteView` reads these values from its own SwiftUI environment, so `.environment(\.locale, …)` and similar overrides on the view reach JavaScript too.
 
+### App lifecycle
+
+`swiftui-svelte/app` lets components react when the app changes state. Each function takes a listener and returns a function that removes it, so you can return it from `$effect` and the listener goes away with the component:
+
+```svelte
+<script lang="ts">
+  import { onBackground, onMemoryWarning, onOpenURL } from "swiftui-svelte/app";
+
+  $effect(() => onBackground(() => saveDraft()));
+  $effect(() => onMemoryWarning(() => imageCache.clear()));
+  $effect(() =>
+    onOpenURL((url) => {
+      if (url.host === "todos") openTodo(Number(url.pathname.slice(1)));
+    }),
+  );
+</script>
+```
+
+- `onActive`, `onInactive`, and `onBackground` run when SwiftUI's scene phase changes to that value. While the app launches, the scene goes from inactive to active, so `onActive` also runs once at startup.
+- `onMemoryWarning` runs when iOS sends a memory warning. Free what you can there. After the listeners run, JavaScriptCore collects garbage.
+- `onOpenURL` receives a `URL` for each link that opens the app, such as a custom URL scheme or a universal link. `SvelteView` forwards SwiftUI's `onOpenURL` for you, and if several views share a runtime, the link still arrives once. If your app gets URLs somewhere else, such as in an app delegate, pass them to `runtime.open(url)`.
+
+The example app registers the `sveltehost` scheme, so `xcrun simctl openurl booted sveltehost://todos/2` opens the second to-do.
+
 ## Web APIs
 
 The host provides the web APIs that most npm packages expect, so code like this runs as it would in a browser:

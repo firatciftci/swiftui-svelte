@@ -47,6 +47,25 @@ final class SvelteHostUITests: XCTestCase {
         waitFor(app.switches["Render Svelte with SwiftUI!"])
     }
 
+    func testOpensDeepLinksAndNoticesReturns() throws {
+        tab("Playground")
+        waitFor(app.staticTexts["Counter"])
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5))
+        app.activate()
+        waitFor(app.staticTexts["Welcome back. You've come back once."])
+
+        app.open(try XCTUnwrap(URL(string: "sveltehost://todos/2")))
+        waitFor(app.navigationBars["Render Svelte with SwiftUI"])
+        XCTAssertTrue(app.tabBars.buttons["To-dos"].isSelected)
+        app.navigationBars.buttons.firstMatch.tap()
+        waitFor(app.switches["Render Svelte with SwiftUI"])
+
+        app.terminate()
+        app.open(try XCTUnwrap(URL(string: "sveltehost://todos/2")))
+        waitFor(app.navigationBars["Render Svelte with SwiftUI"])
+    }
+
     func testClearsFinishedTodosAfterConfirming() {
         waitFor(app.switches["Read the custom renderer docs"])
         app.buttons["Clear done"].tap()

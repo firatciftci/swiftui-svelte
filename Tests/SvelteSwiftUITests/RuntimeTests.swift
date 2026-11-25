@@ -3,6 +3,10 @@ import Testing
 
 @testable import SvelteSwiftUI
 
+#if canImport(UIKit)
+    import UIKit
+#endif
+
 struct RuntimeTests {
     private func runtime(_ script: String) throws -> SvelteRuntime {
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
@@ -52,6 +56,59 @@ struct RuntimeTests {
         #expect(attributes?["c"] == .number(3))
         #expect(attributes?["d"] == .number(4))
         #expect(runtime.error == nil)
+    }
+
+    @Test func passesMemoryWarningsToJavaScript() throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, payload);
+                """)
+        runtime.receiveMemoryWarning()
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["memorywarning"] == .null)
+    }
+
+    #if canImport(UIKit)
+        @Test func listensForSystemMemoryWarnings() throws {
+            let runtime = try runtime(
+                mount + """
+                    globalThis.__svelteAppEvent = (type) => attr(2, type, true);
+                    """)
+            NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
+            runtime.settle()
+            #expect(runtime.store.node(2)?.attributes["memorywarning"] == .bool(true))
+        }
+    #endif
+
+    @Test func holdsURLsThatArriveBeforeTheRuntimeStarts() throws {
+        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
+        try
+            (mount + """
+                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, payload);
+                """).write(to: url, atomically: true, encoding: .utf8)
+        let runtime = SvelteRuntime(source: url, reloadsOnChange: false)
+        runtime.open(try #require(URL(string: "sveltehost://todos/2")))
+        runtime.start()
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["openurl"] == .string("sveltehost://todos/2"))
+    }
+
+    @Test func opensEachURLOnceWhenSeveralViewsReceiveIt() async throws {
+        let runtime = try runtime(
+            mount + """
+                let opened = 0;
+                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
+                """)
+        let url = try #require(URL(string: "sveltehost://todos/4"))
+        runtime.open(url)
+        runtime.open(url)
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(1), .string("sveltehost://todos/4")]))
+        try await eventually {
+            runtime.open(url)
+            runtime.settle()
+            return runtime.store.node(2)?.attributes["openurl"] == .array([.number(2), .string("sveltehost://todos/4")])
+        }
     }
 
     @Test func dispatchesEventsWithPayloads() throws {

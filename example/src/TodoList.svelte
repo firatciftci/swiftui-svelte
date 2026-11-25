@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onOpenURL } from "swiftui-svelte/app";
   import TodoDetail from "./TodoDetail.svelte";
   import { addTodo, removeTodo, todos } from "./todos.svelte";
 
@@ -8,6 +9,15 @@
 
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
   const finished = $derived(todos.length - remaining);
+
+  $effect(() =>
+    onOpenURL((url) => {
+      if (url.host !== "todos") return;
+      const id = Number(url.pathname.slice(1));
+      stack.length = 0;
+      if (todos.some((todo) => todo.id === id)) stack.push(id);
+    }),
+  );
 
   function add() {
     const title = draft.trim();

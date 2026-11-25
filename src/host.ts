@@ -1,4 +1,5 @@
 import { installWebAPIs } from "./web/index.ts";
+import "./app.ts";
 
 const resolved = Promise.resolve();
 globalThis.queueMicrotask ??= (task) => void resolved.then(task);

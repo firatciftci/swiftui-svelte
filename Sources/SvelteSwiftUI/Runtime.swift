@@ -4,7 +4,9 @@ import Network
 import Observation
 import QuartzCore
 
-#if os(macOS)
+#if canImport(UIKit)
+    import UIKit
+#elseif os(macOS)
     import AppKit
 #endif
 
@@ -28,6 +30,9 @@ public final class SvelteRuntime {
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
+    @ObservationIgnored private var memoryObserver: (any NSObjectProtocol)?
+    @ObservationIgnored private var openingURLs: Set<URL> = []
+    @ObservationIgnored private var pendingURLs: Array<URL> = []
     @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
     @ObservationIgnored private let reloadsOnChange: Bool
@@ -58,7 +63,16 @@ public final class SvelteRuntime {
         }
         monitor.start(queue: .main)
         pathMonitor = monitor
+        #if canImport(UIKit) && !os(watchOS)
+            memoryObserver = NotificationCenter.default.addObserver(
+                forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.receiveMemoryWarning() }
+            }
+        #endif
         reload()
+        for url in pendingURLs { deliver(url) }
+        pendingURLs.removeAll()
         guard reloadsOnChange else { return }
         watcher = Task { [weak self] in
             while !Task.isCancelled {
@@ -153,6 +167,25 @@ public final class SvelteRuntime {
         Task { @MainActor in
             if node.attributes[name] == value { node.attributes[name] = settled }
         }
+    }
+
+    func receiveMemoryWarning() {
+        guard isStarted else { return }
+        call("__svelteAppEvent", ["memorywarning", NSNull()], waits: false)
+        let engine = engine
+        engine.queue.async { engine.collectGarbage() }
+    }
+
+    public func open(_ url: URL) {
+        guard openingURLs.insert(url).inserted else { return }
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated { _ = self?.openingURLs.remove(url) }
+        }
+        if isStarted { deliver(url) } else { pendingURLs.append(url) }
+    }
+
+    private func deliver(_ url: URL) {
+        call("__svelteAppEvent", ["openurl", url.absoluteString], waits: false)
     }
 
     func updateEnvironment(_ changes: [String: Any]) {

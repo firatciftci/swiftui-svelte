@@ -77,7 +77,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Transitions: `transition`, `in`, and `out` attributes map to SwiftUI transitions (`opacity`, `scale`, `slide`, `move`, `push`, and combinations), with `animation` options (`spring`, `easeInOut`, duration, and bounce)
 - [x] Per-update animation: a `withAnimation(fn, options)` helper that animates the next commit
 - [x] A reactive environment module, `swiftui-svelte/env`, with the color scheme, Dynamic Type size, locale, layout direction, size class, scene phase, safe area insets, reduce motion, and keyboard height
-- [ ] App lifecycle events: active, inactive, background, memory warning, and open URL
+- [x] App lifecycle events: active, inactive, background, memory warning, and open URL
 - [ ] Focus management: a `focused` attribute, plus `focus()` and `blur()` methods through a ref helper
 - [ ] Element refs: `bind:this` returns a handle with `scrollTo`, `focus`, and measurement methods
 - [ ] Snippets as attachments (`header`, `footer`, `label`, `background`, and `overlay`) wherever SwiftUI takes a view builder

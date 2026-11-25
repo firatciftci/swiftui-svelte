@@ -124,7 +124,7 @@ export class CustomEventShim<T = unknown> extends EventShim {
   }
 }
 
-function report(error: unknown): void {
+export function report(error: unknown): void {
   if (typeof reportError === "function") reportError(error);
   else console.error(error);
 }

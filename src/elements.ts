@@ -208,6 +208,7 @@ declare global {
   ): Uint8Array;
   function __nativeEnvironment(): string;
   var __svelteEnvironment: (json: string) => void;
+  var __svelteAppEvent: (type: string, payload: unknown) => void;
   function __nativeFetch(
     id: number,
     request: string,
