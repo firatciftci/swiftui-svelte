@@ -3,6 +3,12 @@ import SwiftUI
 
 @main
 struct SvelteHostApp: App {
+    init() {
+        if ProcessInfo.processInfo.arguments.contains("-resetStorage") {
+            UserDefaults.standard.removeObject(forKey: "SvelteSwiftUI.localStorage")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             #if targetEnvironment(simulator)

@@ -35,4 +35,20 @@ targets:
         MARKETING_VERSION: "0.1"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-    scheme: {}
+    scheme:
+      testTargets:
+        - SvelteHostUITests
+  SvelteHostUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: SvelteHostUITests
+    dependencies:
+      - target: SvelteHost
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.SvelteHostUITests
+        SWIFT_VERSION: "5.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated

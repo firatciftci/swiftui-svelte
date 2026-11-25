@@ -7,5 +7,9 @@ minimumReleaseAgeExclude:
 
 engineStrict: true
 
+overrides:
+  eslint-plugin-sonarjs>minimatch: ^11.0.1
+  katex: ^0.18.2
+
 allowBuilds:
   esbuild: true

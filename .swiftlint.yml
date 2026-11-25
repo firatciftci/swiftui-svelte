@@ -3,6 +3,7 @@ included:
   - Sources
   - Tests
   - example/ios/SvelteHost
+  - example/ios/SvelteHostUITests
 excluded:
   - .build
   - build

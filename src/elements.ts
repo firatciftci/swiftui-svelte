@@ -44,6 +44,7 @@ type Modifiers = {
   width?: number;
   height?: number;
   animated?: boolean;
+  testid?: string;
 };
 
 declare module "svelte/elements" {

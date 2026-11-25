@@ -201,6 +201,7 @@ private struct NodeModifiers: ViewModifier {
             .background(color(attributes["background"]?.string) ?? .clear)
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
+            .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
             .ifLet(attributes["animated"] == .bool(true) ? node.children.map(\.id) : nil) {
                 $0.animation(.default, value: $1)
             }

@@ -56,8 +56,8 @@
     "test:swift": "xcrun swift test",
     "lint": "knip && eslint . && swiftlint lint --strict --quiet",
     "lint:fix": "knip --fix && eslint --fix . && swiftlint lint --fix --quiet && swiftlint lint --strict --quiet",
-    "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost",
-    "format:fix": "oxfmt && xcrun swift-format format --in-place --recursive Package.swift Sources Tests example/ios/SvelteHost",
+    "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
+    "format:fix": "oxfmt && xcrun swift-format format --in-place --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
     "release": "bumpp"
   },
   "peerDependencies": {

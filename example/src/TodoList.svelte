@@ -22,6 +22,7 @@
     <list animated>
       <hstack>
         <textfield
+          testid="new-todo"
           placeholder="New to-do"
           value={draft}
           oninput={(value) => (draft = value)}
