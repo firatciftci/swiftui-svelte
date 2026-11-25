@@ -23,13 +23,13 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Live reload of the bundle in the simulator
 - [x] Protocol version handshake: the renderer sends its version in the first commit, and `SvelteView` shows an error screen when it doesn't match
 - [x] macOS 15 and visionOS 2 in `Package.swift`, with iOS-only APIs behind `#if os(iOS)`
-- [ ] Test infrastructure
+- [x] Test infrastructure
   - [x] Vitest for the JS package, with a fake native bridge that records ops and dispatches events
   - [x] A Swift Testing target that runs with `swift test` on macOS
-  - [ ] An XCUITest target in the example app, run on a simulator in CI
+  - [x] An XCUITest target in the example app, run on a simulator in CI
   - [x] Cross-language conformance: real Svelte components compiled under Node produce op logs, and Swift tests replay them and compare the resulting tree with the JS tree
   - [x] A randomized op-sequence test (insert, move, and remove) that compares both stores with a reference model
-- [ ] CI runs all of the above and reports coverage for JS and Swift
+- [x] CI runs all of the above and reports coverage for JS and Swift
 
 ## M1. Bridge, protocol, and runtime
 
