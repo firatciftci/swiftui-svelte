@@ -1,7 +1,7 @@
 import { flushSync } from "svelte";
 import { expect, it } from "vitest";
-import { mountApp, stats } from "swiftui-svelte";
-import { native, settle } from "./bridge.ts";
+import { stats } from "swiftui-svelte";
+import { mountComponent, native, settle } from "./bridge.ts";
 import Rows from "./components/Rows.svelte";
 
 declare const gc: () => void;
@@ -24,9 +24,7 @@ it("releases every node after mounting and unmounting 10,000 elements", async ()
   await collect();
   const baseline = stats.live;
   for (let round = 0; round < 3; round++) {
-    const stop = mountApp((anchor, props) =>
-      Rows(anchor, { ...props, count: 2500 }),
-    );
+    const stop = mountComponent(Rows, { count: 2500 });
     flushSync();
     await settle();
     expect(count(native.root)).toBeGreaterThan(10_000);
@@ -34,7 +32,7 @@ it("releases every node after mounting and unmounting 10,000 elements", async ()
     stop();
     flushSync();
     await settle();
-    expect(count(native.root)).toBe(1);
+    expect(count(native.root)).toBe(0);
   }
   await collect();
   expect(stats.live - baseline).toBeLessThan(50);

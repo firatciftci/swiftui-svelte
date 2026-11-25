@@ -59,7 +59,7 @@ struct SourceMapTests {
         let source = directory.appending(path: "app.js")
         try FileManager.default.copyItem(at: fixture("sourcemap.js"), to: source)
         try FileManager.default.copyItem(at: fixture("sourcemap.js.map"), to: directory.appending(path: "app.js.map"))
-        let runtime = Runtime(source: source, reloadsOnChange: false)
+        let runtime = SvelteRuntime(source: source, reloadsOnChange: false)
         runtime.start()
         let error = try #require(runtime.error)
         #expect(error.message == "Error: empty name")

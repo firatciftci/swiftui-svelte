@@ -50,7 +50,7 @@ final class Node: Identifiable {
 final class NodeStore {
     static let protocolVersion = 2
 
-    private(set) var root: Node?
+    private(set) var roots: [Int: Node] = [:]
     private(set) var bundleProtocolVersion: Int?
     private(set) var isCompatible = true
     private(set) var error: String?
@@ -61,6 +61,8 @@ final class NodeStore {
     var nodeCount: Int { nodes.count }
 
     func node(_ id: Int) -> Node? { nodes[id] }
+
+    func root(for mount: Int?) -> Node? { mount.flatMap { roots[$0] } }
 
     func dismissError() {
         error = nil
@@ -113,10 +115,13 @@ final class NodeStore {
         case 0:
             let id = try reader.int()
             let version = try reader.int()
-            if nodes[id] == nil { nodes[id] = Node(id: id, kind: .fragment, name: "", text: "") }
             bundleProtocolVersion = version
             isCompatible = version == Self.protocolVersion
-            root = isCompatible ? nodes[id] : nil
+            guard isCompatible else { return }
+            let mount = try reader.int()
+            let root = nodes[id] ?? Node(id: id, kind: .fragment, name: "", text: "")
+            nodes[id] = root
+            roots[mount] = root
         case 1:
             let parentID = try reader.int()
             let beforeID = try reader.int()
@@ -136,6 +141,7 @@ final class NodeStore {
             guard let node = nodes[try reader.int()] else { return }
             detach(node)
             forget(node)
+            if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
         case 4:
             let id = try reader.int()
             let name = try name(try reader.int())

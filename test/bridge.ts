@@ -1,3 +1,5 @@
+import type { Component } from "svelte";
+import { mountApp } from "swiftui-svelte";
 import { opcodes, protocol } from "swiftui-svelte/renderer";
 
 type Kind = "fragment" | "element" | "text";
@@ -10,17 +12,17 @@ type MirrorNode = {
   children: Array<MirrorNode>;
   parent: MirrorNode | null;
 };
-type Record = {
+type NodeRecord = {
   id: number;
   kind: "element" | "text";
   name: string;
   text: string;
   attributes: Array<[string, unknown]>;
-  children: Array<Record>;
+  children: Array<NodeRecord>;
 };
 type Op =
-  | { op: "root"; id: number; protocol: number }
-  | { op: "insert"; parent: number; before: number; node: Record }
+  | { op: "root"; id: number; protocol: number; mount: number }
+  | { op: "insert"; parent: number; before: number; node: NodeRecord }
   | { op: "move"; parent: number; before: number; id: number }
   | { op: "remove"; id: number }
   | { op: "attr"; id: number; name: string; value: unknown }
@@ -32,7 +34,12 @@ const nodes = new Map<number, MirrorNode>();
 const names: Array<string> = [];
 export const commits: Array<string> = [];
 export const ops: Array<Op> = [];
-export const native = { root: null as MirrorNode | null, frameRequests: 0 };
+export const native = {
+  root: null as MirrorNode | null,
+  roots: new Map<number, MirrorNode>(),
+  frameRequests: 0,
+  actions: [] as Array<{ mountId: number; name: string; payload: unknown }>,
+};
 
 class Cursor {
   index = 0;
@@ -72,7 +79,7 @@ class Cursor {
     return name;
   }
 
-  record(): Record {
+  record(): NodeRecord {
     const id = this.int();
     if (id < 0) {
       return {
@@ -89,7 +96,7 @@ class Cursor {
     const attributeCount = this.int();
     for (let index = 0; index < attributeCount; index++)
       attributes.push([this.name(), this.value()]);
-    const children: Array<Record> = [];
+    const children: Array<NodeRecord> = [];
     const childCount = this.int();
     for (let index = 0; index < childCount; index++)
       children.push(this.record());
@@ -100,7 +107,12 @@ class Cursor {
     const opcode = this.int();
     switch (opcode) {
       case opcodes.root: {
-        return { op: "root", id: this.int(), protocol: this.int() };
+        return {
+          op: "root",
+          id: this.int(),
+          protocol: this.int(),
+          mount: this.int(),
+        };
       }
       case opcodes.insert: {
         return {
@@ -147,7 +159,7 @@ class Cursor {
   }
 }
 
-function build(record: Record): MirrorNode {
+function build(record: NodeRecord): MirrorNode {
   if (nodes.has(record.id)) throw new Error(`node ${record.id} sent twice`);
   const node: MirrorNode = {
     id: record.id,
@@ -210,6 +222,7 @@ function apply(op: Op): void {
         parent: null,
       };
       nodes.set(op.id, root);
+      native.roots.set(op.mount, root);
       native.root = root;
       break;
     }
@@ -225,6 +238,10 @@ function apply(op: Op): void {
       const node = existing(op.id);
       detach(node);
       forget(node);
+      for (const [mount, root] of native.roots) {
+        if (root === node) native.roots.delete(mount);
+      }
+      if (native.root === node) native.root = null;
       break;
     }
     case "attr": {
@@ -347,6 +364,24 @@ export function frame(time: number): void {
   globalThis.__svelteFrame(time);
 }
 
+let nextMount = 1;
+
+export function mountComponent(
+  component: Component<never>,
+  props: Record<string, unknown> = {},
+  actions: Array<string> = [],
+): () => void {
+  const id = nextMount++;
+  const name = `component${id}`;
+  mountApp({ [name]: component });
+  globalThis.__svelteMount(id, name, JSON.stringify({ props, actions }));
+  return () => globalThis.__svelteUnmount(id);
+}
+
+export function lastMount(): number {
+  return nextMount - 1;
+}
+
 export function installBridge(): void {
   Object.assign(globalThis, {
     __nativeCommit(json: string): void {
@@ -359,6 +394,9 @@ export function installBridge(): void {
       }
     },
     __nativeNow: (): number => performance.now(),
+    __nativeAction(mountId: number, name: string, json: string): void {
+      native.actions.push({ mountId, name, payload: JSON.parse(json) });
+    },
     __nativeRequestFrame(): void {
       native.frameRequests++;
     },

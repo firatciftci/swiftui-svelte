@@ -61,7 +61,10 @@ jobs:
       - name: Test the JS package
         run: pnpm run test:coverage
 
-      - name: Check that the conformance fixtures are up to date
+      - name: Build the Swift test bundle
+        run: pnpm run fixtures
+
+      - name: Check that the test fixtures are up to date
         run: git diff --exit-code -- Tests/SvelteSwiftUITests/Fixtures
 
       - name: Test the Swift package

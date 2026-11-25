@@ -1,6 +1,7 @@
 import "./host.ts";
 import type { Component } from "svelte";
 import { mount, unmount } from "svelte";
+import { SvelteMap } from "svelte/reactivity";
 import { createRenderer } from "svelte/renderer";
 
 type Handler = (payload: unknown) => void;
@@ -398,12 +399,100 @@ globalThis.__svelteDispatch = (id, type, payload) => {
   }
 };
 
-export function mountApp(component: Component): () => void {
-  const target = renderer.createFragment();
-  target.state = State.Native;
-  send(opcodes.root, target.id, protocol);
-  const instance = mount(component, { target, renderer });
-  return () => void unmount(instance);
+type Mounted = {
+  instance: Record<string, unknown>;
+  target: FragmentNode;
+  props: SvelteMap<string, unknown>;
+  actions: Set<string>;
+};
+
+const components = new Map<string, Component<never>>();
+const mounted = new Map<number, Mounted>();
+
+function reactiveProps(
+  values: SvelteMap<string, unknown>,
+): Record<string, unknown> {
+  return new Proxy(
+    {},
+    {
+      get: (_, key) => (typeof key === "string" ? values.get(key) : undefined),
+      has: (_, key) => typeof key === "string" && values.has(key),
+      ownKeys: () => {
+        const keys: Array<string> = [];
+        for (const key of values.keys()) keys.push(key);
+        return keys;
+      },
+      getOwnPropertyDescriptor: (_, key) =>
+        typeof key === "string" && values.has(key)
+          ? { enumerable: true, configurable: true, value: values.get(key) }
+          : undefined,
+    },
+  );
+}
+
+function update(entry: Mounted, values: Record<string, unknown>): void {
+  for (const key of entry.props.keys()) {
+    if (!entry.actions.has(key) && !Object.hasOwn(values, key)) {
+      entry.props.delete(key);
+    }
+  }
+  for (const [key, value] of Object.entries(values)) {
+    if (!entry.actions.has(key)) entry.props.set(key, value);
+  }
+}
+
+globalThis.__svelteMount = (mountId, name, json) => {
+  const component = components.get(name);
+  if (component == null) {
+    throw new Error(`No component named "${name}". Pass it to mountApp().`);
+  }
+  const { props: values, actions } = JSON.parse(json) as {
+    props: Record<string, unknown>;
+    actions: Array<string>;
+  };
+  const props = new SvelteMap<string, unknown>();
+  for (const action of actions) {
+    props.set(action, (payload: unknown) =>
+      __nativeAction(mountId, action, JSON.stringify(payload ?? null, wire)),
+    );
+  }
+  const entry: Mounted = {
+    instance: {},
+    target: renderer.createFragment(),
+    props,
+    actions: new Set(actions),
+  };
+  update(entry, values);
+  entry.target.state = State.Native;
+  send(opcodes.root, entry.target.id, protocol, mountId);
+  entry.instance = mount(component as Component<Record<string, unknown>>, {
+    target: entry.target,
+    renderer,
+    props: reactiveProps(props),
+  });
+  mounted.set(mountId, entry);
+};
+
+globalThis.__svelteProps = (mountId, json) => {
+  const entry = mounted.get(mountId);
+  if (entry != null) update(entry, JSON.parse(json) as Record<string, unknown>);
+};
+
+globalThis.__svelteUnmount = (mountId) => {
+  const entry = mounted.get(mountId);
+  if (entry == null) return;
+  mounted.delete(mountId);
+  void unmount(entry.instance);
+  send(opcodes.remove, entry.target.id);
+};
+
+export function mountApp(
+  app: Component<never> | Record<string, Component<never>>,
+): void {
+  if (typeof app === "function") components.set("default", app);
+  else
+    for (const [name, component] of Object.entries(app))
+      components.set(name, component);
 }
 
 export default renderer;

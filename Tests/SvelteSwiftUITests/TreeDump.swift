@@ -34,3 +34,7 @@ func dump(_ node: Node?, depth: Int = 0) -> String {
         }
     return ([line] + node.children.map { dump($0, depth: depth + 1) }).joined(separator: "\n")
 }
+
+extension NodeStore {
+    var root: Node? { roots.max { $0.key < $1.key }?.value }
+}

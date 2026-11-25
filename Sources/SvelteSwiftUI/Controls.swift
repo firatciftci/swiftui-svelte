@@ -10,7 +10,7 @@ private struct ControlLabel: View {
 
 struct TextFieldControl: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
     @State private var text: String
     @State private var pending: Task<Void, Never>?
 
@@ -51,7 +51,7 @@ struct TextFieldControl: View {
 
 struct PickerControl: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         let picker = Picker(
@@ -89,7 +89,7 @@ struct PickerControl: View {
 
 struct SliderControl: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         let lower = node.attributes["min"]?.number ?? 0
@@ -115,7 +115,7 @@ struct SliderControl: View {
 
 struct StepperControl: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         let lower = node.attributes["min"]?.number ?? -.infinity
@@ -135,7 +135,7 @@ struct StepperControl: View {
 
 struct DatePickerControl: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         let lower = node.attributes["min"]?.date ?? .distantPast

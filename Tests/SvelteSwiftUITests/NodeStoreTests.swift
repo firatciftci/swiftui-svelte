@@ -17,7 +17,7 @@ struct NodeStoreTests {
     }
 
     private let base: Array<Any> = [
-        0, 1, NodeStore.protocolVersion,
+        0, 1, NodeStore.protocolVersion, 0,
         7, "vstack", 7, "spacing", 7, "label", 7, "sheet", 7, "hstack",
         1, 1, 0, 2, 0, 0, 3, -3, "a", -4, "b", -5, "c",
     ]
@@ -233,7 +233,7 @@ struct NodeStoreRandomTests {
         var random = SplitMix(state: seed)
         var model = Model()
         let store = NodeStore()
-        store.apply(batch([0, 1, NodeStore.protocolVersion, 7, "e"]))
+        store.apply(batch([0, 1, NodeStore.protocolVersion, 0, 7, "e"]))
         var nextID = 2
         for _ in 0..<150 {
             var tokens: Array<Any> = []

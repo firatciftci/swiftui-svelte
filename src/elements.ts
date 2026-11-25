@@ -146,6 +146,10 @@ declare global {
     message: string,
   ): void;
   var __svelteDispatch: (id: number, type: string, payload: unknown) => void;
+  var __svelteMount: (mountId: number, name: string, json: string) => void;
+  var __svelteProps: (mountId: number, json: string) => void;
+  var __svelteUnmount: (mountId: number) => void;
+  function __nativeAction(mountId: number, name: string, json: string): void;
   function __nativeStorageLoad(): string;
   function __nativeStorageSave(json: string): void;
   function __nativeFetch(

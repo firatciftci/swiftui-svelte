@@ -4,10 +4,10 @@ import Testing
 @testable import SvelteSwiftUI
 
 struct RuntimeTests {
-    private func runtime(_ script: String) throws -> Runtime {
+    private func runtime(_ script: String) throws -> SvelteRuntime {
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
         try script.write(to: url, atomically: true, encoding: .utf8)
-        let runtime = Runtime(source: url, reloadsOnChange: false)
+        let runtime = SvelteRuntime(source: url, reloadsOnChange: false)
         runtime.start()
         return runtime
     }
@@ -25,7 +25,7 @@ struct RuntimeTests {
     }
 
     private let mount = """
-        __nativeCommit(JSON.stringify([0, 1, 2, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
+        __nativeCommit(JSON.stringify([0, 1, 2, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
         let names = 1;
         const attr = (id, name, value) => __nativeCommit(JSON.stringify([7, name, 4, id, names++, value]));
         globalThis.__svelteDispatch = (id, type, payload) => attr(id, type, payload);
@@ -129,7 +129,7 @@ struct RuntimeTests {
     }
 
     @Test func reportsAMissingBundle() {
-        let runtime = Runtime(source: URL(filePath: "/nonexistent/app.js"), reloadsOnChange: false)
+        let runtime = SvelteRuntime(source: URL(filePath: "/nonexistent/app.js"), reloadsOnChange: false)
         runtime.start()
         #expect(runtime.error?.message.contains("Couldn't load") == true)
     }

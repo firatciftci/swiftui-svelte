@@ -3,7 +3,7 @@
     {
       "label": "Counter: mount",
       "commits": [
-        "[0,1,2,7,\"vstack\",7,\"spacing\",7,\"txt\",7,\"font\",7,\"btn\",7,\"textfield\",7,\"value\",1,1,0,4,0,1,1,8,3,6,2,1,3,\"headline\",1,-8,\"Count: 0\",10,4,0,1,-12,\"Increment\",14,5,1,6,\"\",0]"
+        "[0,1,2,1,7,\"vstack\",7,\"spacing\",7,\"txt\",7,\"font\",7,\"btn\",7,\"textfield\",7,\"value\",1,1,0,4,0,1,1,8,3,6,2,1,3,\"headline\",1,-8,\"Count: 0\",10,4,0,1,-12,\"Increment\",14,5,1,6,\"\",0]"
       ],
       "tree": "#fragment\n  <vstack spacing=8>\n    <txt font=\"headline\">\n      #text \"Count: 0\"\n    <btn>\n      #text \"Increment\"\n    <textfield value=\"\">"
     },
@@ -31,14 +31,14 @@
     {
       "label": "Counter: unmount",
       "commits": [
-        "[3,4]"
+        "[3,4,3,1]"
       ],
-      "tree": "#fragment"
+      "tree": ""
     },
     {
       "label": "Items: mount",
       "commits": [
-        "[0,21,2,7,\"list\",7,\"padding\",1,21,0,24,7,1,8,8,3,29,2,0,1,-31,\"1\",33,2,0,1,-35,\"2\",37,2,0,1,-39,\"3\",7,\"divider\",1,21,0,41,9,0,0]"
+        "[0,21,2,2,7,\"list\",7,\"padding\",1,21,0,24,7,1,8,8,3,29,2,0,1,-31,\"1\",33,2,0,1,-35,\"2\",37,2,0,1,-39,\"3\",7,\"divider\",1,21,0,41,9,0,0]"
       ],
       "tree": "#fragment\n  <list padding=8>\n    <txt>\n      #text \"1\"\n    <txt>\n      #text \"2\"\n    <txt>\n      #text \"3\"\n  <divider>"
     },
@@ -351,28 +351,28 @@
     {
       "label": "Items: unmount",
       "commits": [
-        "[3,24,3,57]"
+        "[3,24,3,57,3,21]"
       ],
-      "tree": "#fragment"
+      "tree": ""
     },
     {
       "label": "Values: mount",
       "commits": [
-        "[0,122,2,7,\"data-number\",7,\"data-boolean\",7,\"data-string\",7,\"data-array\",7,\"data-object\",7,\"data-date\",7,\"data-big\",7,\"data-map\",7,\"data-special\",7,\"data-nested\",1,122,0,125,0,10,11,1.5,12,true,13,\"text\",14,[1,\"two\",false],15,{\"b\":2,\"a\":[1]},16,\"2026-01-02T03:04:05.006Z\",17,12,18,{\"a\":1,\"b\":[\"x\"]},19,[null,null,null,null,0],20,{\"at\":\"2026-01-02T03:04:05.006Z\"},0]"
+        "[0,122,2,3,7,\"data-number\",7,\"data-boolean\",7,\"data-string\",7,\"data-array\",7,\"data-object\",7,\"data-date\",7,\"data-big\",7,\"data-map\",7,\"data-special\",7,\"data-nested\",1,122,0,125,0,10,11,1.5,12,true,13,\"text\",14,[1,\"two\",false],15,{\"b\":2,\"a\":[1]},16,\"2026-01-02T03:04:05.006Z\",17,12,18,{\"a\":1,\"b\":[\"x\"]},19,[null,null,null,null,0],20,{\"at\":\"2026-01-02T03:04:05.006Z\"},0]"
       ],
       "tree": "#fragment\n  <vstack data-array=[1,\"two\",false] data-big=12 data-boolean=true data-date=\"2026-01-02T03:04:05.006Z\" data-map={\"a\":1,\"b\":[\"x\"]} data-nested={\"at\":\"2026-01-02T03:04:05.006Z\"} data-number=1.5 data-object={\"a\":[1],\"b\":2} data-special=[null,null,null,null,0] data-string=\"text\">"
     },
     {
       "label": "Values: unmount",
       "commits": [
-        "[3,125]"
+        "[3,125,3,122]"
       ],
-      "tree": "#fragment"
+      "tree": ""
     },
     {
       "label": "Texts: mount",
       "commits": [
-        "[0,126,2,1,126,0,129,2,0,0]"
+        "[0,126,2,4,1,126,0,129,2,0,0]"
       ],
       "tree": "#fragment\n  <txt>"
     },
@@ -393,9 +393,9 @@
     {
       "label": "Texts: unmount",
       "commits": [
-        "[3,129]"
+        "[3,129,3,126]"
       ],
-      "tree": "#fragment"
+      "tree": ""
     }
   ]
 }

@@ -58,7 +58,8 @@
     "lint:fix": "knip --fix && eslint --fix . && swiftlint lint --fix --quiet && swiftlint lint --strict --quiet",
     "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
     "format:fix": "oxfmt && xcrun swift-format format --in-place --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
-    "release": "bumpp"
+    "release": "bumpp",
+    "fixtures": "vite build --config vite.fixtures.config.ts"
   },
   "peerDependencies": {
     "svelte": "~5.59.1",
@@ -93,7 +94,8 @@
   "packageManager": "pnpm@12.23.0",
   "knip": {
     "ignore": [
-      "Tests/SvelteSwiftUITests/Fixtures/**"
+      "Tests/SvelteSwiftUITests/Fixtures/**",
+      "test/native.ts"
     ]
   }
 }

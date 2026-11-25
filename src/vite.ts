@@ -10,14 +10,14 @@ export function swiftui({
   const slash = outFile.lastIndexOf("/");
   return {
     name: "swiftui-svelte",
-    config: () => ({
+    config: (user) => ({
       publicDir: false,
       build: {
         target: "es2023",
         outDir: slash === -1 ? "." : outFile.slice(0, slash),
         emptyOutDir: false,
-        minify: false,
-        sourcemap: true,
+        minify: user.build?.minify ?? false,
+        sourcemap: user.build?.sourcemap ?? true,
         lib: {
           entry,
           formats: ["iife"],

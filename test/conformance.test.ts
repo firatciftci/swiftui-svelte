@@ -1,11 +1,11 @@
 import { flushSync } from "svelte";
 import { expect, it } from "vitest";
-import { mountApp } from "swiftui-svelte";
 import {
   commits,
   dispatch,
   find,
   findAll,
+  mountComponent,
   serialize,
   settle,
 } from "./bridge.ts";
@@ -49,7 +49,7 @@ function random(seed: number): () => number {
 it("records op logs that the Swift tests replay", async () => {
   let unmount = noop;
 
-  await step("Counter: mount", () => (unmount = mountApp(Counter)));
+  await step("Counter: mount", () => (unmount = mountComponent(Counter)));
   await step("Counter: click twice", () => {
     dispatch(find("btn"), "click");
     dispatch(find("btn"), "click");
@@ -62,7 +62,7 @@ it("records op logs that the Swift tests replay", async () => {
   );
   await step("Counter: unmount", () => unmount());
 
-  await step("Items: mount", () => (unmount = mountApp(Items)));
+  await step("Items: mount", () => (unmount = mountComponent(Items)));
   await step("Items: reverse", () => state.items.reverse());
   await step("Items: splice, push, and unshift", () => {
     state.items.splice(1, 1);
@@ -93,10 +93,10 @@ it("records op logs that the Swift tests replay", async () => {
   }
   await step("Items: unmount", () => unmount());
 
-  await step("Values: mount", () => (unmount = mountApp(Values)));
+  await step("Values: mount", () => (unmount = mountComponent(Values)));
   await step("Values: unmount", () => unmount());
 
-  await step("Texts: mount", () => (unmount = mountApp(Texts)));
+  await step("Texts: mount", () => (unmount = mountComponent(Texts)));
   await step(
     "Texts: show a label",
     () => (state.label = 'Hi \\ "there" \n 😀'),

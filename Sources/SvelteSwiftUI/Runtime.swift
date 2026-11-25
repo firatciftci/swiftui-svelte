@@ -8,7 +8,13 @@ import QuartzCore
 #endif
 
 @Observable
-final class Runtime {
+public final class SvelteRuntime {
+    private struct Mount {
+        let component: String
+        var props: String
+        var actions: [String: @MainActor (Any) -> Void]
+    }
+
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
 
@@ -17,13 +23,15 @@ final class Runtime {
     @ObservationIgnored private var nextTimerID = 1
     @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var sourceMap: SourceMap?
+    @ObservationIgnored private var mounts: [Int: Mount] = [:]
+    @ObservationIgnored private var nextMountID = 1
     @ObservationIgnored private var loadedVersion: Date?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
     @ObservationIgnored private let source: URL
     @ObservationIgnored private let reloadsOnChange: Bool
 
-    init(source: URL, reloadsOnChange: Bool) {
+    public init(source: URL, reloadsOnChange: Bool = false) {
         self.source = source
         self.reloadsOnChange = reloadsOnChange
     }
@@ -45,6 +53,40 @@ final class Runtime {
                 reload()
             }
         }
+    }
+
+    func mount(_ component: String, props: String, actions: [String: @MainActor (Any) -> Void]) -> Int {
+        let id = nextMountID
+        nextMountID += 1
+        mounts[id] = Mount(component: component, props: props, actions: actions)
+        if context == nil { start() } else { send(id) }
+        return id
+    }
+
+    func update(_ id: Int, props: String, actions: [String: @MainActor (Any) -> Void]) {
+        guard let mount = mounts[id] else { return }
+        mounts[id]?.actions = actions
+        guard mount.props != props else { return }
+        mounts[id]?.props = props
+        context?.objectForKeyedSubscript("__svelteProps")?.call(withArguments: [id, props])
+    }
+
+    func unmount(_ id: Int) {
+        guard mounts.removeValue(forKey: id) != nil else { return }
+        context?.objectForKeyedSubscript("__svelteUnmount")?.call(withArguments: [id])
+    }
+
+    private func send(_ id: Int) {
+        guard let mount = mounts[id] else { return }
+        let actions = mount.actions.keys.sorted().map { "\"\($0)\"" }.joined(separator: ",")
+        context?.objectForKeyedSubscript("__svelteMount")?
+            .call(withArguments: [id, mount.component, "{\"props\":\(mount.props),\"actions\":[\(actions)]}"])
+    }
+
+    private func perform(_ mount: Int, _ name: String, _ json: String) {
+        guard let action = mounts[mount]?.actions[name] else { return }
+        let value = (try? JSONValue(parsing: json)) ?? .null
+        action(value.object)
     }
 
     func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull()) {
@@ -109,6 +151,7 @@ final class Runtime {
         install(into: context)
         self.context = context
         context.evaluateScript(script, withSourceURL: source)
+        for id in mounts.keys.sorted() { send(id) }
     }
 
     private func install(into context: JSContext) {
@@ -130,6 +173,9 @@ final class Runtime {
         let now: @convention(block) () -> Double = {
             CACurrentMediaTime() * 1000
         }
+        let action: @convention(block) (Int, String, String) -> Void = { [weak self] mount, name, json in
+            self?.perform(mount, name, json)
+        }
         let requestFrame: @convention(block) () -> Void = { [weak self] in
             self?.isFrameRequested = true
         }
@@ -150,6 +196,7 @@ final class Runtime {
         context.globalObject.setValue(now, forProperty: "__nativeNow")
         context.globalObject.setValue(collectGarbage, forProperty: "__nativeGC")
         context.globalObject.setValue(requestFrame, forProperty: "__nativeRequestFrame")
+        context.globalObject.setValue(action, forProperty: "__nativeAction")
         context.globalObject.setValue(stats, forProperty: "__nativeStats")
 
         let storageKey = "SvelteSwiftUI.localStorage"

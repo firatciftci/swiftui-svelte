@@ -1,10 +1,36 @@
 import SwiftUI
 
 public struct SvelteView: View {
-    @State private var runtime: Runtime
+    @State private var runtime: SvelteRuntime
+    @State private var handle: MountHandle?
+    private let component: String
+    private let props: String
+    private let actions: [String: @MainActor (Any) -> Void]
 
-    public init(source: URL, reloadsOnChange: Bool = false) {
-        _runtime = State(initialValue: Runtime(source: source, reloadsOnChange: reloadsOnChange))
+    public init(
+        source: URL,
+        component: String = "default",
+        props: [String: Any] = [:],
+        actions: [String: @MainActor (Any) -> Void] = [:],
+        reloadsOnChange: Bool = false
+    ) {
+        self.init(
+            runtime: SvelteRuntime(source: source, reloadsOnChange: reloadsOnChange),
+            component: component,
+            props: props,
+            actions: actions)
+    }
+
+    public init(
+        runtime: SvelteRuntime,
+        component: String = "default",
+        props: [String: Any] = [:],
+        actions: [String: @MainActor (Any) -> Void] = [:]
+    ) {
+        _runtime = State(initialValue: runtime)
+        self.component = component
+        self.props = Self.json(props)
+        self.actions = actions
     }
 
     public var body: some View {
@@ -18,7 +44,7 @@ public struct SvelteView: View {
                         "The JavaScript bundle uses bridge protocol \(bundle), but this app's SvelteSwiftUI package uses protocol \(NodeStore.protocolVersion). Install the same release of swiftui-svelte from npm and SvelteSwiftUI from Swift Package Manager, then rebuild the bundle."
                     )
                 )
-            } else if let root = runtime.store.root {
+            } else if let root = runtime.store.root(for: handle?.id) {
                 NodeView(node: root)
             } else {
                 ProgressView()
@@ -32,7 +58,53 @@ public struct SvelteView: View {
             #endif
         }
         .environment(runtime)
-        .task { runtime.start() }
+        .onAppear {
+            if handle == nil {
+                handle = MountHandle(runtime: runtime, id: runtime.mount(component, props: props, actions: actions))
+            }
+        }
+        .onChange(of: props) { _, props in
+            if let handle { runtime.update(handle.id, props: props, actions: actions) }
+        }
+    }
+
+    static func json(_ props: [String: Any]) -> String {
+        let value = props.mapValues(jsonCompatible)
+        guard JSONSerialization.isValidJSONObject(value),
+            let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .withoutEscapingSlashes]),
+            let json = String(bytes: data, encoding: .utf8)
+        else {
+            print("[svelte] Props must be JSON values: strings, numbers, booleans, dates, URLs, arrays, and dictionaries.")
+            return "{}"
+        }
+        return json
+    }
+
+    private static func jsonCompatible(_ value: Any) -> Any {
+        switch value {
+        case let date as Date: date.ISO8601Format(.init(includingFractionalSeconds: true))
+        case let url as URL: url.absoluteString
+        case let array as Array<Any>: array.map(jsonCompatible)
+        case let dictionary as [String: Any]: dictionary.mapValues(jsonCompatible)
+        case Optional<Any>.none: NSNull()
+        default: value
+        }
+    }
+}
+
+private final class MountHandle {
+    let runtime: SvelteRuntime
+    let id: Int
+
+    init(runtime: SvelteRuntime, id: Int) {
+        self.runtime = runtime
+        self.id = id
+    }
+
+    deinit {
+        let runtime = runtime
+        let id = id
+        Task { @MainActor in runtime.unmount(id) }
     }
 }
 

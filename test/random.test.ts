@@ -1,7 +1,6 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { mountApp } from "swiftui-svelte";
-import { findAll, reset, settle } from "./bridge.ts";
+import { findAll, mountComponent, reset, settle } from "./bridge.ts";
 import Items from "./components/Items.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
 
@@ -45,7 +44,7 @@ it.each([1, 2, 3, 4, 5, 6, 7, 8])(
     const next = random(seed);
     let nextItem = 100;
     const fresh = (): number => nextItem++;
-    unmount = mountApp(Items);
+    unmount = mountComponent(Items);
     flushSync();
     await settle();
     for (let step = 0; step < 200; step++) {

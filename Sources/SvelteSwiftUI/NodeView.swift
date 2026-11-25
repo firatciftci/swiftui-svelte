@@ -2,7 +2,7 @@ import SwiftUI
 
 struct NodeView: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         switch node.kind {
@@ -148,7 +148,7 @@ struct NodeView: View {
 
 private struct NavStack: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         NavigationStack(
@@ -241,7 +241,7 @@ private struct NodeModifiers: ViewModifier {
 
 private struct Screen: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         let alert = node.attachment("alert")
@@ -314,7 +314,7 @@ private struct Screen: View {
 
 private struct ActionButton: View {
     let node: Node
-    @Environment(Runtime.self) private var runtime
+    @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
         Button(role: buttonRole(node)) {

@@ -1,6 +1,6 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mountApp, protocol } from "swiftui-svelte";
+import { protocol } from "swiftui-svelte";
 import {
   byTestId,
   commits,
@@ -8,6 +8,8 @@ import {
   edit,
   find,
   findAll,
+  lastMount,
+  mountComponent,
   native,
   ops,
   reset,
@@ -17,6 +19,7 @@ import {
 import Boundary from "./components/Boundary.svelte";
 import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
+import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
 import Texts from "./components/Texts.svelte";
@@ -25,9 +28,9 @@ import Values from "./components/Values.svelte";
 let unmount: (() => void) | undefined;
 
 async function render(
-  component: Parameters<typeof mountApp>[0],
+  component: Parameters<typeof mountComponent>[0],
 ): Promise<void> {
-  unmount = mountApp(component);
+  unmount = mountComponent(component);
   flushSync();
   await settle();
 }
@@ -64,7 +67,12 @@ describe("mounting", () => {
 
   it("announces the bridge protocol with the root", async () => {
     await render(Counter);
-    expect(ops[0]).toEqual({ op: "root", id: native.root?.id, protocol });
+    expect(ops[0]).toEqual({
+      op: "root",
+      id: native.root?.id,
+      protocol,
+      mount: lastMount(),
+    });
   });
 
   it("never sends comments or whitespace-only text", async () => {
@@ -92,7 +100,87 @@ describe("mounting", () => {
     unmount?.();
     unmount = undefined;
     await settle();
-    expect(native.root?.children).toEqual([]);
+    expect(native.root).toBeNull();
+  });
+});
+
+function text(): string | undefined {
+  return find("txt")?.children[0]?.text;
+}
+
+describe("props and actions", () => {
+  it("mounts a component with props from Swift", async () => {
+    unmount = mountComponent(Greeting, { name: "Ada", count: 3 });
+    await update(() => {});
+    expect(text()).toBe("Ada: 3");
+  });
+
+  it("re-renders when Swift updates the props", async () => {
+    unmount = mountComponent(Greeting, { name: "Ada", count: 3 });
+    await update(() => {});
+    await update(() =>
+      globalThis.__svelteProps(
+        lastMount(),
+        JSON.stringify({ name: "Grace", count: 4 }),
+      ),
+    );
+    expect(text()).toBe("Grace: 4");
+    await update(() =>
+      globalThis.__svelteProps(lastMount(), JSON.stringify({ name: "Grace" })),
+    );
+    expect(text()).toBe("Grace: 0");
+  });
+
+  it("calls back into Swift through actions", async () => {
+    unmount = mountComponent(Greeting, { name: "Ada", count: 3 }, ["onsave"]);
+    await update(() => {});
+    native.actions.length = 0;
+    await update(() => dispatch(find("btn"), "click"));
+    expect(native.actions).toEqual([
+      {
+        mountId: lastMount(),
+        name: "onsave",
+        payload: { name: "Ada", count: 3, at: "1970-01-01T00:00:00.000Z" },
+      },
+    ]);
+  });
+
+  it("keeps actions when Swift updates the props", async () => {
+    unmount = mountComponent(Greeting, { name: "Ada" }, ["onsave"]);
+    await update(() => {});
+    await update(() =>
+      globalThis.__svelteProps(
+        lastMount(),
+        JSON.stringify({ name: "Lin", onsave: 1 }),
+      ),
+    );
+    native.actions.length = 0;
+    await update(() => dispatch(find("btn"), "click"));
+    expect(native.actions.map((action) => action.name)).toEqual(["onsave"]);
+  });
+
+  it("runs several mounts in one context", async () => {
+    const first = mountComponent(Greeting, { name: "One" });
+    const firstId = lastMount();
+    unmount = mountComponent(Greeting, { name: "Two" });
+    await update(() => {});
+    const firstRoot = native.roots.get(firstId);
+    expect(firstRoot?.children[0]?.children[0]?.text).toBe("One: 0");
+    expect(native.root?.children[0]?.children[0]?.text).toBe("Two: 0");
+    await update(first);
+    expect(native.roots.has(firstId)).toBe(false);
+    expect(firstRoot?.children).toEqual([]);
+    expect(text()).toBe("Two: 0");
+  });
+
+  it("explains a missing component", () => {
+    expect(() =>
+      globalThis.__svelteMount(
+        999,
+        "Missing",
+        JSON.stringify({ props: {}, actions: [] }),
+      ),
+    ).toThrow('No component named "Missing". Pass it to mountApp().');
   });
 });
 
