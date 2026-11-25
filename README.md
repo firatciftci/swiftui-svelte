@@ -83,7 +83,7 @@ That component is a real `NavigationStack` with a `List`, a `TextField`, a `Butt
 - **Plain Svelte 5.** Runes, components, `{#if}`, `{#each}`, and shared `.svelte.ts` state all work as they do on the web.
 - **Typed elements.** Every element and attribute is typed, so `svelte-check` catches a misspelled attribute or a wrong value before you build.
 - **Small updates.** Svelte sends only what changed, and SwiftUI re-renders only the views that changed.
-- **`fetch` and `localStorage`.** Network requests go through `URLSession`, and `localStorage` is saved in `UserDefaults`, so most web code that uses them runs unchanged.
+- **Web APIs.** `fetch`, `WebSocket`, `URL`, `crypto`, `localStorage`, `matchMedia`, and the other browser APIs that npm packages expect are built in. They are backed by `URLSession`, CryptoKit, and `UserDefaults`, so most web code runs unchanged.
 - **Live reload.** In the simulator, the app reloads as soon as Vite rebuilds the bundle, without a rebuild in Xcode.
 
 ## Requirements
@@ -282,19 +282,44 @@ Svelte owns the navigation stack. The first `screen` in a `navstack` is the root
 
 Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the example app, the to-do list and its detail screens share state through [`todos.svelte.ts`](example/src/todos.svelte.ts).
 
-## Networking and storage
+## Web APIs
 
-The host provides `fetch` and `localStorage`, so this runs as it would in a browser:
+The host provides the web APIs that most npm packages expect, so code like this runs as it would in a browser:
 
 ```ts
-async function loadRepo(): Promise<void> {
-  const response = await fetch("https://api.github.com/repos/sveltejs/svelte");
+async function loadRepo(signal: AbortSignal): Promise<void> {
+  const response = await fetch("https://api.github.com/repos/sveltejs/svelte", {
+    signal,
+  });
   const repo: unknown = await response.json();
   localStorage.setItem("repo", JSON.stringify(repo));
 }
 ```
 
-`fetch` goes through `URLSession`. It takes a `method`, `headers`, and a string `body`, and the response has `ok`, `status`, `headers`, `text()`, and `json()`. `localStorage` is saved in `UserDefaults`, so it survives relaunches. The host also provides `setTimeout`, `setInterval`, `queueMicrotask`, `requestAnimationFrame`, `cancelAnimationFrame`, and `console`, which prints to Xcode's console. Animation frame callbacks run on each display refresh, through `CADisplayLink`.
+| API                                                                       | Notes                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fetch`, `Request`, `Response`, `Headers`, and `FormData`                 | Requests go through `URLSession`. Bodies can be strings, bytes, `Blob`, `FormData`, or `URLSearchParams`, and responses stream as data arrives. `redirect` can be `follow`, `manual`, or `error`. `data:` and `file:` URLs work too.               |
+| `AbortController`, `AbortSignal`, and `AbortSignal.timeout`               | Aborting a `fetch` cancels the `URLSession` task.                                                                                                                                                                                                  |
+| `WebSocket`                                                               | Runs on `URLSessionWebSocketTask`, with text and binary messages, subprotocols, and close codes.                                                                                                                                                   |
+| `URL` and `URLSearchParams`                                               | A full WHATWG parser that passes all of the web-platform-tests URL cases.                                                                                                                                                                          |
+| `TextEncoder`, `TextDecoder`, `atob`, and `btoa`                          | `TextDecoder` reads UTF-8, UTF-16LE, and Windows-1252, and supports streaming.                                                                                                                                                                     |
+| `crypto.getRandomValues`, `crypto.randomUUID`, and `crypto.subtle.digest` | Random bytes come from `SecRandomCopyBytes`. Digests use CryptoKit, with SHA-1, SHA-256, SHA-384, and SHA-512.                                                                                                                                     |
+| `structuredClone`, `Blob`, and `File`                                     |                                                                                                                                                                                                                                                    |
+| `EventTarget`, `Event`, `CustomEvent`, and `DOMException`                 |                                                                                                                                                                                                                                                    |
+| `localStorage` and `sessionStorage`                                       | `localStorage` is saved in `UserDefaults`, so it survives relaunches. `sessionStorage` is kept in memory.                                                                                                                                          |
+| `navigator`                                                               | `language` and `languages` come from the system's preferred languages. `onLine` follows the network, and `online` and `offline` events fire on the global object.                                                                                  |
+| `matchMedia`                                                              | Handles `prefers-color-scheme`, `prefers-reduced-motion`, `prefers-reduced-transparency`, `prefers-contrast`, `hover`, and `pointer`, and fires `change` when the setting changes. `SvelteView` passes in the values from its SwiftUI environment. |
+| `performance`                                                             | `now`, `mark`, `measure`, and their entries.                                                                                                                                                                                                       |
+| Timers and frames                                                         | `setTimeout`, `setInterval`, `queueMicrotask`, `requestAnimationFrame`, and `cancelAnimationFrame`. Animation frame callbacks run on each display refresh, through `CADisplayLink`.                                                                |
+| `console`                                                                 | Prints to Xcode's console.                                                                                                                                                                                                                         |
+
+The same test suite runs against Node's built-in versions of these APIs and inside JavaScriptCore on macOS and in the iOS simulator, so the two behave the same way.
+
+A few differences from a browser:
+
+- `response.body` is a readable stream with `getReader()` and async iteration, but there's no global `ReadableStream`, `WritableStream`, or `TransformStream`.
+- `URLSession` holds back the first 512 bytes of a `text/plain` response while it estimates the content type. To stream plain text as it arrives, have the server send `X-Content-Type-Options: nosniff`, or use a type like `text/event-stream`.
+- There's no page, so there's no `window`, `document`, `location`, or cookie API. `URLSession` keeps cookies for you unless `credentials` is `"omit"`.
 
 ## Props, actions, and several views
 

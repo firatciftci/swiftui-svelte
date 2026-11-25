@@ -55,20 +55,21 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval`, and `queueMicrotask`
 - [x] `console` methods routed to the Xcode console
 - [x] Basic `fetch` through `URLSession`, and `localStorage` through `UserDefaults`
-- [ ] Complete `fetch`: `Request`, `Headers`, `Response` (`json`, `text`, `arrayBuffer`, and `blob`), `AbortController` and `AbortSignal`, timeouts, binary bodies, redirects, status text, and `FormData` and `URLSearchParams` bodies
-- [ ] `URL` and `URLSearchParams`
-- [ ] `TextEncoder` and `TextDecoder`
-- [ ] `EventTarget`, `Event`, and `CustomEvent`
-- [ ] `AbortController`, `AbortSignal`, and `AbortSignal.timeout`
-- [ ] `crypto.getRandomValues`, `crypto.randomUUID`, and `crypto.subtle.digest`
-- [ ] `structuredClone`
-- [ ] `atob`, `btoa`, `Blob`, and `File`
-- [ ] `WebSocket` through `URLSessionWebSocketTask`
-- [ ] `sessionStorage`, kept in memory
-- [ ] `navigator.language`, `navigator.languages`, and `navigator.onLine`, with `online` and `offline` events
-- [ ] `performance.now`, `performance.mark`, and `performance.measure`
-- [ ] `matchMedia` for `prefers-color-scheme` and `prefers-reduced-motion`
-- [ ] Every API tested with the same assertions in Node and in JavaScriptCore
+- [x] Complete `fetch`: `Request`, `Headers`, `Response` (`json`, `text`, `arrayBuffer`, and `blob`), `AbortController` and `AbortSignal`, timeouts, binary bodies, redirects, status text, and `FormData` and `URLSearchParams` bodies
+- [x] `URL` and `URLSearchParams`
+- [x] `TextEncoder` and `TextDecoder`
+- [x] `EventTarget`, `Event`, and `CustomEvent`
+- [x] `AbortController`, `AbortSignal`, and `AbortSignal.timeout`
+- [x] `crypto.getRandomValues`, `crypto.randomUUID`, and `crypto.subtle.digest`
+- [x] `structuredClone`
+- [x] `atob`, `btoa`, `Blob`, and `File`
+- [x] `WebSocket` through `URLSessionWebSocketTask`
+- [x] `sessionStorage`, kept in memory
+- [x] `navigator.language`, `navigator.languages`, and `navigator.onLine`, with `online` and `offline` events
+- [x] `performance.now`, `performance.mark`, and `performance.measure`
+- [x] `matchMedia` for `prefers-color-scheme` and `prefers-reduced-motion`
+- [x] Every API tested with the same assertions in Node and in JavaScriptCore
+- [ ] Global `ReadableStream`, `WritableStream`, `TransformStream`, `TextDecoderStream`, and `TextEncoderStream`, so that streaming libraries such as SSE parsers and AI SDKs work
 
 ## M3. Svelte integration and ergonomics
 

@@ -9,6 +9,7 @@ export default antfu({
     ".build/**",
     "example/ios/**",
     "Tests/SvelteSwiftUITests/Fixtures/**",
+    "test/web/wpt/**",
   ],
   stylistic: false,
   markdown: false,
@@ -70,6 +71,7 @@ export default antfu({
       "unicorn/no-negated-condition": "off",
       "unicorn/no-top-level-side-effects": "off",
       "unicorn/no-thenable": "off",
+      "unicorn/number-literal-case": "off",
       "unicorn/prevent-abbreviations": "off",
       "unicorn/prefer-ternary": "off",
       "unicorn/single-line-block-comment-style": "off",
@@ -125,4 +127,21 @@ export default antfu({
       "unicorn/no-top-level-assignment-in-function": "off",
     },
   },
+  {
+    files: ["src/web/**", "test/web/**"],
+    rules: {
+      "no-control-regex": "off",
+      "sonarjs/cognitive-complexity": "off",
+      "unicorn/no-instanceof-builtins": "off",
+      "unicorn/prefer-code-point": "off",
+      "unicorn/prefer-unicode-code-point-escapes": "off",
+      "unicorn/text-encoding-identifier-case": "off",
+    },
+  },
+  { files: ["src/web/events.ts"], rules: { "no-console": "off" } },
+  {
+    files: ["src/web/index.ts", "test/web/native.ts"],
+    rules: { "unicorn/no-global-object-property-assignment": "off" },
+  },
+  { files: ["test/web/native.ts"], rules: { "vars-on-top": "off" } },
 );

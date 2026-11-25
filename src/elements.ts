@@ -152,14 +152,41 @@ declare global {
   function __nativeAction(mountId: number, name: string, json: string): void;
   function __nativeStorageLoad(): string;
   function __nativeStorageSave(json: string): void;
+  function __nativeRandomFill(bytes: Uint8Array<ArrayBuffer>): void;
+  function __nativeDigest(
+    algorithm: string,
+    data: Uint8Array<ArrayBuffer>,
+  ): Uint8Array;
+  function __nativeEnvironment(): string;
+  var __svelteEnvironment: (json: string) => void;
   function __nativeFetch(
+    id: number,
     request: string,
-    callback: (error: string | null, response?: NativeFetchResponse) => void,
+    body: Uint8Array<ArrayBuffer> | null,
+    onResponse: (meta: string) => void,
+    onData: (chunk: Uint8Array) => void,
+    onEnd: (error: string | null) => void,
   ): void;
-  type NativeFetchResponse = {
-    status: number;
-    url: string;
-    headers: Record<string, string>;
-    body: string;
-  };
+  function __nativeFetchCancel(id: number): void;
+  function __nativeWebSocketOpen(
+    id: number,
+    url: string,
+    protocols: string,
+    handlers: {
+      open: (protocol: string) => void;
+      message: (data: string | Uint8Array) => void;
+      sent: (bytes: number) => void;
+      close: (code: number, reason: string, wasClean: boolean) => void;
+      error: (message: string) => void;
+    },
+  ): void;
+  function __nativeWebSocketSend(
+    id: number,
+    data: string | Uint8Array<ArrayBuffer>,
+  ): void;
+  function __nativeWebSocketClose(
+    id: number,
+    code: number,
+    reason: string,
+  ): void;
 }

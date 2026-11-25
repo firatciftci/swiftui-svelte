@@ -1,5 +1,7 @@
+import CryptoKit
 import Foundation
 import JavaScriptCore
+import Network
 import Observation
 import QuartzCore
 
@@ -18,7 +20,7 @@ public final class SvelteRuntime {
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
 
-    @ObservationIgnored private var context: JSContext?
+    @ObservationIgnored private(set) var context: JSContext?
     @ObservationIgnored private var timers: [Int: Task<Void, Never>] = [:]
     @ObservationIgnored private var nextTimerID = 1
     @ObservationIgnored private var isFrameRequested = false
@@ -28,6 +30,9 @@ public final class SvelteRuntime {
     @ObservationIgnored private var loadedVersion: Date?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
+    @ObservationIgnored private let network = NetworkClient()
+    @ObservationIgnored private var pathMonitor: NWPathMonitor?
+    @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
     @ObservationIgnored private let reloadsOnChange: Bool
 
@@ -44,6 +49,13 @@ public final class SvelteRuntime {
         guard context == nil else { return }
         frames.onFrame = { [weak self] timestamp in self?.frame(timestamp) }
         frames.start()
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { [weak self] path in
+            let isOnline = path.status == .satisfied
+            Task { @MainActor in self?.updateEnvironment(["onLine": isOnline]) }
+        }
+        monitor.start(queue: .main)
+        pathMonitor = monitor
         reload()
         guard reloadsOnChange else { return }
         watcher = Task { [weak self] in
@@ -111,6 +123,17 @@ public final class SvelteRuntime {
         }
     }
 
+    func updateEnvironment(_ changes: [String: Any]) {
+        var changed: [String: Any] = [:]
+        for (key, value) in changes where !((environment[key] as? NSObject)?.isEqual(value) ?? false) {
+            environment[key] = value
+            changed[key] = value
+        }
+        guard !changed.isEmpty, let data = try? JSONSerialization.data(withJSONObject: changed, options: .sortedKeys)
+        else { return }
+        context?.objectForKeyedSubscript("__svelteEnvironment")?.call(withArguments: [String(bytes: data, encoding: .utf8) ?? "{}"])
+    }
+
     func report(_ error: ScriptError) {
         print("[js:exception] \(error)")
         self.error = error
@@ -128,6 +151,7 @@ public final class SvelteRuntime {
     private func reload() {
         for timer in timers.values { timer.cancel() }
         timers = [:]
+        network.reset()
         isFrameRequested = false
         store = NodeStore()
         error = nil
@@ -206,48 +230,60 @@ public final class SvelteRuntime {
         let saveStorage: @convention(block) (String) -> Void = { json in
             UserDefaults.standard.set(json, forKey: storageKey)
         }
-        let fetch: @convention(block) (String, JSValue) -> Void = { json, callback in
-            Task {
-                do {
-                    let (data, response) = try await URLSession.shared.data(for: Self.request(from: json))
-                    var headers: [String: String] = [:]
-                    for (name, value) in (response as? HTTPURLResponse)?.allHeaderFields ?? [:] {
-                        headers[String(describing: name).lowercased()] = String(describing: value)
-                    }
-                    let result: [String: Any] = [
-                        "status": (response as? HTTPURLResponse)?.statusCode ?? 200,
-                        "url": response.url?.absoluteString ?? "",
-                        "headers": headers,
-                        "body": String(bytes: data, encoding: .utf8) ?? "",
-                    ]
-                    callback.call(withArguments: [NSNull(), result])
-                } catch {
-                    callback.call(withArguments: [error.localizedDescription])
-                }
-            }
-        }
         context.globalObject.setValue(loadStorage, forProperty: "__nativeStorageLoad")
         context.globalObject.setValue(saveStorage, forProperty: "__nativeStorageSave")
-        context.globalObject.setValue(fetch, forProperty: "__nativeFetch")
+        installHostAPIs(into: context)
     }
 
-    private struct FetchRequest: Decodable {
-        let url: String
-        let method: String?
-        let headers: [String: String]?
-        let body: String?
-    }
-
-    private static func request(from json: String) throws -> URLRequest {
-        let fetch = try JSONDecoder().decode(FetchRequest.self, from: Data(json.utf8))
-        guard let url = URL(string: fetch.url) else { throw URLError(.badURL) }
-        var request = URLRequest(url: url)
-        request.httpMethod = fetch.method ?? "GET"
-        for (name, value) in fetch.headers ?? [:] {
-            request.setValue(value, forHTTPHeaderField: name)
+    private func installHostAPIs(into context: JSContext) {
+        typealias Fetch = @convention(block) (Int, String, JSValue, JSValue, JSValue, JSValue) -> Void
+        let fetch: Fetch = { [weak self] id, json, body, onResponse, onData, onEnd in
+            let callbacks = NetworkClient.FetchCallbacks(onResponse: onResponse, onData: onData, onEnd: onEnd)
+            self?.network.fetch(id: id, json: json, body: body, callbacks: callbacks)
         }
-        request.httpBody = fetch.body.map { Data($0.utf8) }
-        return request
+        let cancelFetch: @convention(block) (Int) -> Void = { [weak self] id in
+            self?.network.cancelFetch(id: id)
+        }
+        let openSocket: @convention(block) (Int, String, String, JSValue) -> Void = { [weak self] id, url, protocols, handlers in
+            self?.network.openSocket(id: id, url: url, protocols: protocols, handlers: handlers)
+        }
+        let sendSocket: @convention(block) (Int, JSValue) -> Void = { [weak self] id, data in
+            self?.network.send(id: id, data: data)
+        }
+        let closeSocket: @convention(block) (Int, Int, String) -> Void = { [weak self] id, code, reason in
+            self?.network.closeSocket(id: id, code: code, reason: reason)
+        }
+        let randomFill: @convention(block) (JSValue) -> Void = { bytes in
+            _ = bytes.withBytes { buffer in
+                guard let base = buffer.baseAddress else { return }
+                _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, base)
+            }
+        }
+        let digest: @convention(block) (String, JSValue) -> JSValue = { algorithm, value in
+            let context = JSContext.current() ?? value.context
+            let data = value.bytes ?? Data()
+            let output: Data =
+                switch algorithm {
+                case "SHA-1": Data(Insecure.SHA1.hash(data: data))
+                case "SHA-384": Data(SHA384.hash(data: data))
+                case "SHA-512": Data(SHA512.hash(data: data))
+                default: Data(SHA256.hash(data: data))
+                }
+            return context?.bytes(output) ?? JSValue()
+        }
+        let environment: @convention(block) () -> String = { [weak self] in
+            let values = self?.environment ?? HostEnvironment.current
+            guard let data = try? JSONSerialization.data(withJSONObject: values, options: .sortedKeys) else { return "{}" }
+            return String(bytes: data, encoding: .utf8) ?? "{}"
+        }
+        context.globalObject.setValue(fetch, forProperty: "__nativeFetch")
+        context.globalObject.setValue(cancelFetch, forProperty: "__nativeFetchCancel")
+        context.globalObject.setValue(openSocket, forProperty: "__nativeWebSocketOpen")
+        context.globalObject.setValue(sendSocket, forProperty: "__nativeWebSocketSend")
+        context.globalObject.setValue(closeSocket, forProperty: "__nativeWebSocketClose")
+        context.globalObject.setValue(randomFill, forProperty: "__nativeRandomFill")
+        context.globalObject.setValue(digest, forProperty: "__nativeDigest")
+        context.globalObject.setValue(environment, forProperty: "__nativeEnvironment")
     }
 
     private func schedule(_ callback: JSValue, after delay: JSValue, repeats: Bool) -> Int {

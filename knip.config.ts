@@ -7,9 +7,14 @@ const config: KnipConfig = {
     "src/vite.ts",
     "src/elements.ts",
     "example/src/main.ts",
+    "test/native.ts",
+    "test/web/native.ts",
   ],
   ignoreBinaries: ["swiftlint", "xcodegen"],
-  ignoreFiles: ["changelogithub.config.ts"],
+  ignoreFiles: [
+    "changelogithub.config.ts",
+    "Tests/SvelteSwiftUITests/Fixtures/**",
+  ],
   ignoreIssues: {
     ".github/**/*.yml": ["binaries"],
     "tsconfig.json": ["unlisted"],

@@ -3,6 +3,10 @@ import SwiftUI
 public struct SvelteView: View {
     @State private var runtime: SvelteRuntime
     @State private var handle: MountHandle?
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private let component: String
     private let props: String
     private let actions: [String: @MainActor (Any) -> Void]
@@ -59,6 +63,7 @@ public struct SvelteView: View {
         }
         .environment(runtime)
         .onAppear {
+            runtime.updateEnvironment(environment)
             if handle == nil {
                 handle = MountHandle(runtime: runtime, id: runtime.mount(component, props: props, actions: actions))
             }
@@ -66,6 +71,18 @@ public struct SvelteView: View {
         .onChange(of: props) { _, props in
             if let handle { runtime.update(handle.id, props: props, actions: actions) }
         }
+        .onChange(of: [colorScheme == .dark, contrast == .increased, reduceMotion, reduceTransparency]) {
+            runtime.updateEnvironment(environment)
+        }
+    }
+
+    private var environment: [String: Any] {
+        [
+            "colorScheme": colorScheme == .dark ? "dark" : "light",
+            "increaseContrast": contrast == .increased,
+            "reduceMotion": reduceMotion,
+            "reduceTransparency": reduceTransparency,
+        ]
     }
 
     static func json(_ props: [String: Any]) -> String {
