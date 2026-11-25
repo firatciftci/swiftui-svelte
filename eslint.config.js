@@ -2,7 +2,14 @@ import antfu from "@antfu/eslint-config";
 
 export default antfu({
   type: "lib",
-  ignores: ["**/*.md", "dist/**", "build/**", ".build/**", "example/ios/**"],
+  ignores: [
+    "**/*.md",
+    "dist/**",
+    "build/**",
+    ".build/**",
+    "example/ios/**",
+    "Tests/SvelteSwiftUITests/Fixtures/**",
+  ],
   stylistic: false,
   markdown: false,
   antislop: true,
