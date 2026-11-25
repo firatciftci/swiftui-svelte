@@ -91,6 +91,25 @@ type LayerAlignment =
   | "leadingLastTextBaseline"
   | "centerLastTextBaseline"
   | "trailingLastTextBaseline";
+type HorizontalAlignment =
+  | "leading"
+  | "center"
+  | "trailing"
+  | "listRowSeparatorLeading"
+  | "listRowSeparatorTrailing";
+type VerticalAlignment =
+  | "top"
+  | "center"
+  | "bottom"
+  | "firstTextBaseline"
+  | "lastTextBaseline";
+type GridItemOptions = { spacing?: number; alignment?: LayerAlignment };
+type GridItem =
+  | number
+  | (GridItemOptions & { fixed: number })
+  | (GridItemOptions & { adaptive: number; max?: number })
+  | (GridItemOptions & { min?: number; max?: number });
+type Pinned = "headers" | "footers" | "both";
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
@@ -110,6 +129,9 @@ type Modifiers = {
   in?: Transition;
   out?: Transition;
   testid?: string;
+  colspan?: number;
+  columnalignment?: HorizontalAlignment;
+  cellanchor?: Exclude<LayerAlignment, `${string}Baseline`>;
   lang?: string;
   dir?: "ltr" | "rtl";
 };
@@ -131,25 +153,47 @@ declare module "svelte/elements" {
       value?: string | number;
     };
     swipeactions: { edge?: "leading" | "trailing" };
-    vstack: Modifiers & {
-      spacing?: number;
-      alignment?:
-        | "leading"
-        | "center"
-        | "trailing"
-        | "listRowSeparatorLeading"
-        | "listRowSeparatorTrailing";
-    };
-    hstack: Modifiers & {
-      spacing?: number;
-      alignment?:
-        | "top"
-        | "center"
-        | "bottom"
-        | "firstTextBaseline"
-        | "lastTextBaseline";
-    };
+    vstack: Modifiers & { spacing?: number; alignment?: HorizontalAlignment };
+    hstack: Modifiers & { spacing?: number; alignment?: VerticalAlignment };
     zstack: Modifiers & { alignment?: LayerAlignment };
+    lazyvstack: Modifiers & {
+      spacing?: number;
+      alignment?: HorizontalAlignment;
+      pinned?: Pinned;
+    };
+    lazyhstack: Modifiers & {
+      spacing?: number;
+      alignment?: VerticalAlignment;
+      pinned?: Pinned;
+    };
+    lazyvgrid: Modifiers & {
+      columns?: number | Array<GridItem>;
+      spacing?: number;
+      alignment?: HorizontalAlignment;
+      pinned?: Pinned;
+    };
+    lazyhgrid: Modifiers & {
+      rows?: number | Array<GridItem>;
+      spacing?: number;
+      alignment?: VerticalAlignment;
+      pinned?: Pinned;
+    };
+    grid: Modifiers & {
+      alignment?: LayerAlignment;
+      spacing?: number;
+      hspacing?: number;
+      vspacing?: number;
+    };
+    gridrow: Modifiers & { alignment?: VerticalAlignment };
+    viewthatfits: Modifiers & { axes?: "horizontal" | "vertical" | "both" };
+    group: Modifiers;
+    groupbox: Modifiers & { title?: string };
+    controlgroup: Modifiers & { title?: string };
+    disclosuregroup: Modifiers & {
+      title?: string;
+      expanded?: boolean;
+      ontoggle?: (expanded: boolean) => void;
+    };
     scrollview: Modifiers;
     list: Modifiers;
     spacer: Modifiers & { minlength?: number };

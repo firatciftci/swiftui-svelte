@@ -1,5 +1,6 @@
 export { default as Alert } from "./Alert.svelte";
 export { default as DatePicker } from "./DatePicker.svelte";
+export { default as DisclosureGroup } from "./DisclosureGroup.svelte";
 export { default as Picker } from "./Picker.svelte";
 export { default as Sheet } from "./Sheet.svelte";
 export { default as Slider } from "./Slider.svelte";

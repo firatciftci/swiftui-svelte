@@ -228,4 +228,25 @@ final class SvelteHostUITests: XCTestCase {
         waitFor(app.tabBars.buttons["Settings"])
         waitFor(app.staticTexts["3 to-dos a day"])
     }
+
+    func testExpandsLayouts() {
+        tab("Playground")
+        app.swipeUp()
+        let layouts = app.buttons["Layouts"]
+        waitFor(layouts)
+        XCTAssertFalse(app.staticTexts["lazyvstack"].exists)
+        layouts.tap()
+        waitFor(app.staticTexts["lazyvstack"])
+        app.swipeUp()
+        for number in 1...10 { XCTAssertTrue(app.staticTexts["\(number)"].exists, "swatch \(number)") }
+        XCTAssertTrue(app.staticTexts["Content inside a GroupBox."].exists)
+        let long = app.staticTexts["This whole sentence shows when it fits on one line."]
+        let short = app.staticTexts["A shorter fallback"]
+        XCTAssertNotEqual(long.exists, short.exists)
+        let eager = app.staticTexts["vstack"].frame
+        let lazy = app.staticTexts["lazyvstack"].frame
+        XCTAssertEqual(eager.midY, lazy.midY, accuracy: 1)
+        XCTAssertLessThan(eager.maxX, lazy.minX)
+        attachScreenshot("layouts")
+    }
 }

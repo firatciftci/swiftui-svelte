@@ -1,7 +1,7 @@
 <script lang="ts">
   import { withAnimation } from "swiftui-svelte";
   import { onBackground } from "swiftui-svelte/app";
-  import { Sheet, TextField } from "swiftui-svelte/components";
+  import { DisclosureGroup, Sheet, TextField } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
 
   let count = $state(0);
@@ -13,6 +13,20 @@
   let returns = $state(0);
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
+  let showsLayouts = $state(false);
+
+  const swatches = [
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "mint",
+    "teal",
+    "blue",
+    "indigo",
+    "purple",
+    "pink",
+  ] as const;
 
   async function loadStars() {
     fetchError = null;
@@ -131,6 +145,40 @@
       <btn variant="automatic" onclick={() => (showSheet = true)}>
         Show a sheet
       </btn>
+
+      <DisclosureGroup title="Layouts" bind:expanded={showsLayouts}>
+        <lazyvgrid columns={[{ adaptive: 44 }]} spacing={8} padding={4}>
+          {#each swatches as color, index (color)}
+            <zstack width={44} height={44} background={color} radius={10}>
+              <txt font="caption" weight="bold" color="white">{index + 1}</txt>
+            </zstack>
+          {/each}
+        </lazyvgrid>
+        <grid alignment="leading" hspacing={24} vspacing={6}>
+          <gridrow>
+            <txt weight="semibold">Eager</txt>
+            <txt weight="semibold">Lazy</txt>
+          </gridrow>
+          <divider colspan={2} />
+          <gridrow>
+            <txt design="monospaced">vstack</txt>
+            <txt design="monospaced">lazyvstack</txt>
+          </gridrow>
+          <gridrow>
+            <txt design="monospaced">hstack</txt>
+            <txt design="monospaced">lazyhstack</txt>
+          </gridrow>
+        </grid>
+        <viewthatfits axes="horizontal">
+          <txt lines={1}
+            >This whole sentence shows when it fits on one line.</txt
+          >
+          <txt lines={1}>A shorter fallback</txt>
+        </viewthatfits>
+        <groupbox title="GroupBox">
+          <txt>Content inside a GroupBox.</txt>
+        </groupbox>
+      </DisclosureGroup>
     </list>
 
     <Sheet detent="medium" bind:presented={showSheet}>

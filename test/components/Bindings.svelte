@@ -2,6 +2,7 @@
   import {
     Alert,
     DatePicker,
+    DisclosureGroup,
     Picker,
     Sheet,
     Slider,
@@ -23,6 +24,7 @@
   let isAlertPresented = $state(false);
   let submitted = $state(0);
   let changes = $state(0);
+  let isExpanded = $state(false);
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -50,6 +52,9 @@
     isAlertPresented = true;
   }}>Open</btn
 >
+<DisclosureGroup testid="more" title="More" bind:expanded={isExpanded}>
+  <txt>Details</txt>
+</DisclosureGroup>
 <Sheet bind:presented={isSheetPresented}><txt>In a sheet</txt></Sheet>
 <Alert bind:presented={isAlertPresented} title="Saved"><btn>OK</btn></Alert>
 <txt testid="state"
@@ -66,5 +71,6 @@
     isAlertPresented,
     submitted,
     changes,
+    isExpanded,
   })}</txt
 >

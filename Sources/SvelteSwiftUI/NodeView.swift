@@ -34,6 +34,9 @@ struct NodeView: View {
             VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { children }
         case "hstack":
             HStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing) { children }
+        case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "group", "groupbox",
+            "controlgroup", "disclosuregroup":
+            Container(node: node)
         case "zstack":
             ZStack(alignment: Styles.alignment(alignment)) { children }
         case "scrollview":
@@ -201,6 +204,7 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
             .modifier(Layers(node: node))
             .modifier(Measured(node: node))
+            .modifier(GridCell(attributes: attributes))
             .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
                 $0.environment(\.locale, $1)
             }

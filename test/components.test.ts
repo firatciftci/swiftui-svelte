@@ -49,6 +49,7 @@ describe("bindable components", () => {
     await update(() =>
       edit(byTestId("tabs"), "change", "selection", "settings"),
     );
+    await update(() => edit(byTestId("more"), "toggle", "expanded", true));
     expect(state()).toMatchObject({
       name: "Ada",
       isOn: true,
@@ -58,6 +59,7 @@ describe("bindable components", () => {
       date: 86_400_000,
       tab: "settings",
       changes: 1,
+      isExpanded: true,
     });
   });
 
