@@ -170,37 +170,40 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                                  |
-| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                         |
-| `screen`                            | A screen in the stack               | `title`                                                                                |
-| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)              |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                 |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                            |
-| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`) |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                       |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                  |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)             |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                 |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                             |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                              |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more         |
-| `btn`                               | `Button`                            | `variant`, `role`, `onclick`                                                           |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`                                                                        |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`                                                                           |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                       |
-| `toggle`                            | `Toggle`                            | `checked`, `onchange(checked)`                                                         |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                  |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)        |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                     |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                       |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                       |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                       |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                              |
-| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                  |
-| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                   |
-| `toolbar`                           | `.toolbar`                          | `placement`                                                                            |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                 |
+| Element                             | SwiftUI                             | Attributes and events                                                                     |
+| ----------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                            |
+| `screen`                            | A screen in the stack               | `title`                                                                                   |
+| `tabview`, `tab`                    | `TabView`, a tab                    | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)                 |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                    |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                               |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)    |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                          |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                     |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                    |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                 |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more            |
+| `btn`                               | `Button`                            | `variant`, `role`, `onclick`                                                              |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active` |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                |
+| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                             |
+| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                     |
+| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                            |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                          |
+| `toggle`                            | `Toggle`                            | `checked`, `onchange(checked)`                                                            |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                     |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`)           |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                        |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                          |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                          |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                          |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                 |
+| `sheet`                             | `.sheet`                            | `detent`, `ondismiss`                                                                     |
+| `alert`                             | `.alert`                            | `title`, `ondismiss`                                                                      |
+| `toolbar`                           | `.toolbar`                          | `placement`                                                                               |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                    |
 
 Every element also accepts these modifiers:
 
@@ -229,8 +232,10 @@ A few details:
 - **Sizes.** Any element sends `onresize` with its `{ width, height }` in points when it first appears and whenever its size changes, so you can lay out by size without SwiftUI's `GeometryReader`. The host only reports scroll and size changes for elements that have a handler.
 - **Event handlers.** Handlers receive the new value itself, such as the text for `oninput` or the boolean for a toggle's `onchange`, rather than a DOM event. Because there's no event object, there's nothing to prevent or stop. To react to an event only once, keep a flag in your state and check it in the handler.
 - **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires.
-- **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.
-- **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`.
+- **Images.** An `imageview` shows an image from the asset catalog with `name`, or a file in the app bundle with `file`, such as `file="photos/beach.jpg"`. It keeps the image's own size unless you set `fit` to `fit` or `fill` to scale it into its frame, `stretch` to fill the frame exactly, or `tile` to repeat it. `renderingmode="template"` draws it in the foreground color. VoiceOver reads an asset image's name unless you set `label`, and skips the image entirely with `decorative`.
+- **Remote images.** `asyncimage` loads `src` and scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`. It shows a spinner while it loads, or the children of a `placeholder` element, and the children of a `failure` element if the image can't load. `onload` fires when the image appears, and `onerror` receives the error message.
+- **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`. `variant` adds variants like `fill` or `circle fill`, and `value` with a value from 0 to 1 fills a variable symbol such as `wifi` part of the way. `rendering` is `monochrome`, `hierarchical`, `palette`, or `multicolor`; with `palette`, `colors` lists up to three colors. `effect` animates the symbol. `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, and `scale` run while `active` is true, which is the default. With a `trigger` value, every effect except `scale` plays once each time the value changes, and `bounce` only works this way.
+- **Labels and links.** A `labelview` shows a `title` with an SF Symbol from `symbol`, an asset image from `image`, or the children of an `icon` element, and `variant` can show only the title or only the icon. A `linkview` opens `href` in the browser. A `sharelink` opens the share sheet for `item`, a URL or text, with an optional `subject` and `message`. Both use their children as the label, or `title` if you set it.
 - **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
 - **Tabs.** Give each `tab` a `value`, and set `selection` on the `tabview` to pick the tab that's showing. `onchange` receives the `value` of the tab the user switches to. A tab without a `value` uses its position, starting at 0.
 - **Pickers.** Each `choice` is one option: its text is the title, its `value` is what `onchange` receives, and `symbol` adds an SF Symbol. `variant` is `automatic`, `menu`, `segmented`, `wheel`, `inline`, or `navigation`. With `navigation`, the options open on their own screen, so the picker has to be inside a `navstack`.
@@ -239,7 +244,7 @@ A few details:
 - **Progress.** A `progressview` shows a bar filled to `value` out of `total`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
 - **Attribute values.** Attributes reach Swift as JSON, so `null`, booleans, numbers, strings, arrays, and objects keep their types, and functions are never sent. A `Date` becomes an ISO 8601 string, a `BigInt` becomes a number, a `Map` becomes an object, and a `Set` becomes an array. `NaN`, `Infinity`, and `undefined` inside arrays become `null`, and `undefined` properties are dropped. An attribute set to `null` or `undefined` is removed. Where an element expects a number, a numeric string like `spacing="8"` works too. Where it expects a string, a number or boolean is converted. Where it expects a boolean (like `checked` or `animated`), the values `false`, `0`, `null`, and `"false"` are false, and anything else, including the empty string of a bare attribute, is true.
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
-- **Names.** `txt`, `btn`, `sfsymbol`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
+- **Names.** `txt`, `btn`, `sfsymbol`, `imageview`, `labelview`, `linkview`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `label`, `link`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
 
 ### Rich text
 

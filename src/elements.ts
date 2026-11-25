@@ -122,6 +122,7 @@ type ShapeAttributes = Modifiers & {
   fillrule?: "nonzero" | "evenodd";
 };
 type Corners = { corners?: "continuous" | "circular" };
+type SymbolVariant = "fill" | "slash" | "circle" | "square" | "rectangle";
 type Edge = "top" | "bottom" | "leading" | "trailing";
 type TransitionName =
   | "opacity"
@@ -327,13 +328,59 @@ declare module "svelte/elements" {
       minscale?: number;
       selectable?: boolean;
     };
-    asyncimage: Modifiers & { src: string; fit?: "fit" | "fill" };
+    asyncimage: Modifiers & {
+      src: string;
+      fit?: "fit" | "fill" | "stretch" | "tile";
+      onload?: () => void;
+      onerror?: (message: string) => void;
+    };
+    imageview: Modifiers & {
+      name?: string;
+      file?: string;
+      fit?: "fit" | "fill" | "stretch" | "tile";
+      renderingmode?: "original" | "template";
+      label?: string;
+      decorative?: boolean;
+    };
+    labelview: Modifiers & {
+      title?: string;
+      symbol?: string;
+      image?: string;
+      variant?: "automatic" | "titleOnly" | "iconOnly" | "titleAndIcon";
+    };
+    linkview: Modifiers & { href: string; title?: string };
+    sharelink: Modifiers & {
+      item: string;
+      subject?: string;
+      message?: string;
+      title?: string;
+    };
+    placeholder: Record<string, never>;
+    failure: Record<string, never>;
+    icon: Record<string, never>;
     btn: Modifiers & {
       variant?: "automatic" | "borderless" | "bordered" | "prominent";
       role?: "destructive" | "cancel";
       onclick?: () => void;
     };
-    sfsymbol: Modifiers & { name: string; label?: string };
+    sfsymbol: Modifiers & {
+      name: string;
+      label?: string;
+      value?: number;
+      variant?: SymbolVariant | `${SymbolVariant} ${SymbolVariant}`;
+      rendering?: "monochrome" | "hierarchical" | "palette" | "multicolor";
+      colors?: Array<Color>;
+      effect?:
+        | "bounce"
+        | "pulse"
+        | "variableColor"
+        | "breathe"
+        | "rotate"
+        | "wiggle"
+        | "scale";
+      trigger?: string | number | boolean;
+      active?: boolean;
+    };
     textfield: Modifiers & {
       value?: string;
       placeholder?: string;

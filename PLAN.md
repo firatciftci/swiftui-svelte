@@ -105,10 +105,10 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 
 - [x] `txt` with `lines` and `align`, `sfsymbol`, and `asyncimage`
 - [x] `txt` styles: size, design (`rounded`, `serif`, and `monospaced`), italic, underline, strikethrough, kerning, line spacing, truncation mode, minimum scale factor, and `selectable`
-- [ ] `label` (a title plus a symbol)
-- [ ] `image` from the asset catalog and from bundle files, with resizing, rendering mode, and symbol variants and effects
-- [ ] `asyncimage` phases: placeholder and failure snippets
-- [ ] `link` and `sharelink`
+- [x] `label` (a title plus a symbol)
+- [x] `image` from the asset catalog and from bundle files, with resizing, rendering mode, and symbol variants and effects
+- [x] `asyncimage` phases: placeholder and failure snippets
+- [x] `link` and `sharelink`
 - [x] Shapes: `rectangle`, `roundedrectangle`, `circle`, `capsule`, `ellipse`, `unevenroundedrectangle`, and `path` from an SVG path string, with fill and stroke
 - [x] Colors: hex, RGB, opacity, semantic system colors, linear, radial, and angular gradients, and materials
 

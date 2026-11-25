@@ -14,6 +14,9 @@
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
   let showsLayouts = $state(false);
+  let showsContent = $state(false);
+  let bells = $state(0);
+  let imageFailed = $state(false);
   let carouselOffset = $state(0);
   let carouselWidth = $state(0);
 
@@ -245,6 +248,81 @@
         <groupbox title="GroupBox">
           <txt>Content inside a GroupBox.</txt>
         </groupbox>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Content" bind:expanded={showsContent}>
+        <hstack spacing={16}>
+          <imageview
+            name="Logo"
+            fit="fit"
+            width={40}
+            height={40}
+            label="swiftui-svelte logo"
+          />
+          <imageview
+            file="logo-mono.png"
+            fit="fit"
+            width={40}
+            height={40}
+            decorative
+          />
+          <sfsymbol
+            name="wifi"
+            value={0.5}
+            font="title"
+            label="Wi-Fi at half strength"
+          />
+          <sfsymbol
+            name="heart"
+            variant="circle fill"
+            rendering="palette"
+            colors={["white", "pink"]}
+            font="title"
+          />
+          <sfsymbol
+            name="bell"
+            effect="bounce"
+            trigger={bells}
+            font="title"
+            label="Bell"
+          />
+          <sfsymbol
+            name="waveform"
+            effect="variableColor"
+            font="title"
+            color="accent"
+          />
+        </hstack>
+        <btn variant="borderless" onclick={() => bells++}>Ring the bell</btn>
+        <labelview title="Inbox" symbol="tray.fill" />
+        <linkview href="https://svelte.dev">Svelte docs</linkview>
+        <sharelink
+          item="https://github.com/firatciftci/swiftui-svelte"
+          subject="swiftui-svelte"
+          title="Share this project"
+        />
+        <hstack spacing={12}>
+          <asyncimage
+            src="https://github.com/swiftui-svelte-missing-user-0000.png"
+            width={40}
+            height={40}
+            onerror={() => (imageFailed = true)}
+          >
+            <failure>
+              <sfsymbol
+                name="photo.badge.exclamationmark"
+                color="red"
+                font="title"
+                label="Image failed to load"
+              />
+            </failure>
+          </asyncimage>
+          {#if imageFailed}
+            <txt font="caption" color="secondary">
+              The image didn't load, so its failure view is showing.
+            </txt>
+          {/if}
+        </hstack>
       </DisclosureGroup>
     </list>
 

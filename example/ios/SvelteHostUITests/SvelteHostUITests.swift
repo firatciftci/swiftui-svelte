@@ -258,4 +258,25 @@ final class SvelteHostUITests: XCTestCase {
         waitForExpectations(timeout: 5)
         attachScreenshot("layouts")
     }
+
+    func testShowsImagesSymbolsAndLinks() {
+        tab("Playground")
+        app.swipeUp()
+        let content = app.buttons["Content"]
+        waitFor(content)
+        content.tap()
+        waitFor(app.images["swiftui-svelte logo"])
+        app.swipeUp()
+        XCTAssertTrue(app.images["Wi-Fi at half strength"].exists)
+        XCTAssertTrue(app.images["Bell"].exists)
+        app.buttons["Ring the bell"].tap()
+        XCTAssertTrue(app.staticTexts["Inbox"].exists)
+        XCTAssertTrue(app.links["Svelte docs"].exists)
+        XCTAssertTrue(app.buttons["Share this project"].exists)
+        app.swipeUp()
+        attachScreenshot("content")
+        let caption = app.staticTexts["The image didn't load, so its failure view is showing."]
+        XCTAssertTrue(caption.waitForExistence(timeout: 15), "the failure caption never appeared")
+        XCTAssertTrue(app.images["Image failed to load"].exists)
+    }
 }

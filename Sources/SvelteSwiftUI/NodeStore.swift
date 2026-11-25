@@ -31,7 +31,8 @@ final class Node: Identifiable {
 
     private static let attachments: Set<String> = ["alert", "background", "overlay", "sheet", "swipeactions", "toolbar"]
     private static let slots: [String: Set<String>] = [
-        "controlgroup": ["label"], "disclosuregroup": ["label"], "groupbox": ["label"], "picker": ["label"],
+        "asyncimage": ["placeholder", "failure"], "controlgroup": ["label"], "labelview": ["icon"], "disclosuregroup": ["label"],
+        "groupbox": ["label"], "picker": ["label"],
         "sectionview": ["header", "footer"],
     ]
 

@@ -78,15 +78,15 @@ struct NodeView: View {
         case "txt":
             TextView(node: node)
         case "asyncimage":
-            AsyncImage(url: URL(string: node.attributes["src"]?.string ?? "")) { image in
-                if node.attributes["fit"]?.string == "fill" {
-                    image.resizable().scaledToFill()
-                } else {
-                    image.resizable().scaledToFit()
-                }
-            } placeholder: {
-                ProgressView()
-            }
+            RemoteImage(node: node)
+        case "imageview":
+            ImageElement(node: node)
+        case "labelview":
+            LabelElement(node: node)
+        case "linkview":
+            LinkElement(node: node)
+        case "sharelink":
+            ShareElement(node: node)
         case "sfsymbol":
             Symbol(node: node)
         case "btn":
@@ -343,22 +343,6 @@ private struct ActionButton: View {
             }
         }
         .tint(Palette.color(node.attributes["tint"]?.string))
-    }
-}
-
-private struct Symbol: View {
-    let node: Node
-
-    private var name: String {
-        node.attributes["name"]?.string ?? "questionmark"
-    }
-
-    var body: some View {
-        if let label = node.attributes["label"]?.string {
-            Image(systemName: name).accessibilityLabel(label)
-        } else {
-            Image(systemName: name)
-        }
     }
 }
 
