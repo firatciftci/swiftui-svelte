@@ -1,0 +1,47 @@
+import Foundation
+import Testing
+
+@testable import SvelteSwiftUI
+
+struct RemoteBundleTests {
+    private func script(_ text: String) -> String {
+        #"__nativeCommit(JSON.stringify([0, 1, 2, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 1, -3, "\#(text)"]));"#
+    }
+
+    private func text(_ runtime: SvelteRuntime) -> String? {
+        runtime.store.root?.children.first?.children.first?.text
+    }
+
+    private func eventually(_ condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(10)
+        while !condition(), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(condition())
+    }
+
+    @Test func loadsABundleFromADevServerAndReloadsWhenItChanges() async throws {
+        let server = try TestServer()
+        let port = try await server.start()
+        defer { server.stop() }
+        server.serve(script("first"), at: "/app.js")
+        let source = try #require(URL(string: "http://127.0.0.1:\(port)/app.js"))
+        let runtime = SvelteRuntime(source: source, reloadsOnChange: true)
+        runtime.start()
+        try await eventually { text(runtime) == "first" }
+        server.serve(script("second"), at: "/app.js")
+        try await eventually { text(runtime) == "second" }
+        #expect(runtime.error == nil)
+    }
+
+    @Test func reportsABundleThatTheServerDoesNotHave() async throws {
+        let server = try TestServer()
+        let port = try await server.start()
+        defer { server.stop() }
+        let source = try #require(URL(string: "http://127.0.0.1:\(port)/missing.js"))
+        let runtime = SvelteRuntime(source: source)
+        runtime.start()
+        try await eventually { runtime.error != nil }
+        #expect(runtime.error?.message == "Couldn't load \(source.absoluteString): the server answered 404.")
+    }
+}

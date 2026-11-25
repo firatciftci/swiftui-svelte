@@ -4,6 +4,7 @@ included:
   - Tests
   - example/ios/SvelteHost
   - example/ios/SvelteHostUITests
+  - template/ios/__APP_NAME__
 excluded:
   - .build
   - build

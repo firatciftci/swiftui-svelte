@@ -19,5 +19,5 @@
       "swiftui-svelte/*": ["./src/*.ts"]
     }
   },
-  "include": ["src", "example/src", "test", "*.ts", "*.js"]
+  "include": ["src", "example/src", "test", "scripts", "*.ts", "*.js"]
 }

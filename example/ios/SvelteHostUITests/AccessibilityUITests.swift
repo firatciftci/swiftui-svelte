@@ -1,0 +1,72 @@
+import XCTest
+
+extension SvelteHostUITests {
+    func testDescribesElementsToAccessibility() {
+        tab("Playground")
+        let section = app.buttons["Accessibility"]
+        scroll(to: section, attempts: 12)
+        section.tap()
+
+        let rating = app.descendants(matching: .any)["rating"]
+        scroll(to: rating)
+        waitFor(rating)
+        XCTAssertEqual(rating.label, "Rating")
+        XCTAssertEqual(rating.value as? String, "3 of 5 stars")
+
+        let grouped = app.otherElements["grouped"]
+        scroll(to: app.buttons["grouped-second"])
+        waitFor(grouped)
+        XCTAssertEqual(grouped.label, "Grouped controls")
+        XCTAssertTrue(grouped.buttons["grouped-first"].exists)
+        XCTAssertTrue(grouped.buttons["grouped-second"].exists)
+        XCTAssertTrue(grouped.staticTexts["Grouped controls"].exists)
+        attachScreenshot("accessibility")
+    }
+}
+
+extension SvelteHostUITests {
+    func testRunsATaskWhileTheElementIsVisible() {
+        tab("Playground")
+        let section = app.buttons["Lifecycle"]
+        scroll(to: section, attempts: 12)
+        section.tap()
+        let toggle = app.switches["Show the ticker"]
+        scroll(to: toggle)
+        toggle.switches.firstMatch.tap()
+        let ticker = app.staticTexts["ticker"]
+        waitFor(ticker)
+        let ticking = NSPredicate(format: "label BEGINSWITH 'Ticked' AND NOT (label IN {'Ticked 0 times', 'Ticked 1 times'})")
+        expectation(for: ticking, evaluatedWith: ticker)
+        waitForExpectations(timeout: 5)
+
+        toggle.switches.firstMatch.tap()
+        let status = app.staticTexts["ticker-status"]
+        let stopped = NSPredicate(format: "label BEGINSWITH 'Stopped after'")
+        expectation(for: stopped, evaluatedWith: status)
+        waitForExpectations(timeout: 5)
+        XCTAssertFalse(ticker.exists)
+
+        toggle.switches.firstMatch.tap()
+        waitFor(ticker)
+        XCTAssertTrue(ticker.label.hasPrefix("Ticked 0") || ticker.label.hasPrefix("Ticked 1"), ticker.label)
+    }
+}
+
+extension SvelteHostUITests {
+    func testOverridesTheEnvironmentForASubtree() {
+        tab("Playground")
+        let section = app.buttons["Environment"]
+        scroll(to: section, attempts: 12)
+        section.tap()
+        let large = app.staticTexts["large-text"]
+        scroll(to: large)
+        waitFor(large)
+        XCTAssertGreaterThan(large.frame.height, app.staticTexts["regular-text"].frame.height * 1.5)
+        XCTAssertTrue(app.staticTexts["This card always uses dark mode"].exists)
+        let glass = app.images["glass-eraser"]
+        scroll(to: glass)
+        XCTAssertTrue(glass.exists)
+        app.buttons["Tap for a success haptic"].tap()
+        attachScreenshot("environment")
+    }
+}

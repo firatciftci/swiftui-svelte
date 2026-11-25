@@ -37,7 +37,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Attribute values keep `null`, booleans, numbers, strings, arrays, objects, and `Date` exactly, and the coercion rules are documented
 - [x] Redundant ops in a batch are coalesced, such as an attribute set twice or an insert followed by a remove
 - [x] Controlled inputs without lag or cursor jumps: native state leads, and JS echoes are ignored unless they differ from the latest native value
-- [ ] Typed event payloads, including structured ones like `{ x, y }` and `{ from, to }`
+- [x] Typed event payloads, including structured ones like `{ x, y }` and `{ from, to }`
 - [x] Event modifiers that make sense natively: `once`, and an opt-in debounced `oninput`
 - [x] `requestAnimationFrame` and `cancelAnimationFrame`, driven by `CADisplayLink`
 - [x] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
@@ -152,50 +152,51 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] `overlay` and `background` with views (snippets) and shapes
 - [x] `border`, `shadow`, `blur`, `clipshape` with every shape, and `mask`
 - [x] `hidden`, `disabled`, `ignoressafearea`, `safeareainset`, and `contentshape`
-- [ ] Accessibility: `a11ylabel`, `a11yhint`, `a11yvalue`, traits, `a11yhidden`, sort priority, combined children, and `testid` (the accessibility identifier)
-- [ ] Gestures: `ontap` with count and location, `onlongpress`, `ondrag` with translation and velocity, `onmagnify`, and `onrotate`
-- [ ] Lifecycle: `onappear`, `ondisappear`, and `ontask` (async, and canceled on disappear)
-- [ ] `sensoryfeedback` (haptics)
-- [ ] `scrolldismisseskeyboard` and a keyboard toolbar
-- [ ] `preferredcolorscheme` and `environment` overrides (font, tint, and locale)
-- [ ] Glass effects on iOS 26: `glasseffect` and `glasseffectcontainer`
+- [x] Accessibility: `a11ylabel`, `a11yhint`, `a11yvalue`, traits, `a11yhidden`, sort priority, combined children, and `testid` (the accessibility identifier)
+- [x] Gestures: `ontap` with count and location, `onlongpress`, `ondrag` with translation and velocity, `onmagnify`, and `onrotate`
+- [x] Lifecycle: `onappear`, `ondisappear`, and `ontask` (async, and canceled on disappear)
+- [x] `sensoryfeedback` (haptics)
+- [x] `scrolldismisseskeyboard` and a keyboard toolbar
+- [x] `preferredcolorscheme` and `environment` overrides (font, tint, and locale)
+- [x] Glass effects on iOS 26: `glasseffect` and `glasseffectcontainer`
 
 ## M5. Native extensibility
 
-- [ ] A native component registry: `SvelteView(source:components:)` maps an element name to a Swift view builder that receives typed attributes, children, and an event sender
-- [ ] A TypeScript declaration helper, so apps can type their own native elements
-- [ ] A native module registry: Swift functions that JS calls as async functions, with typed arguments and results, plus Swift-to-JS events
-- [ ] Built-in modules that apps often need: haptics, clipboard, share sheet, open URL, Keychain-backed secure storage, and file storage in the app container
-- [ ] Examples: a MapKit `map` element and a camera module built with the registry
+- [x] A native component registry: `SvelteView(source:components:)` maps an element name to a Swift view builder that receives typed attributes, children, and an event sender
+- [x] A TypeScript declaration helper, so apps can type their own native elements
+- [x] A native module registry: Swift functions that JS calls as async functions, with typed arguments and results, plus Swift-to-JS events
+- [x] Built-in modules that apps often need: haptics, clipboard, share sheet, open URL, Keychain-backed secure storage, and file storage in the app container
+- [x] Examples: a MapKit `mapview` element and a camera module built with the registry
 
 ## M6. Performance
 
 - [x] Upstream fix for reversing keyed `{#each}` (sveltejs/svelte#19440)
-- [ ] Benchmarks in CI (create, update, swap, reverse, and clear 1,000 and 10,000 rows) with budgets that fail the build on a regression
-- [ ] Fine-grained observation: an attribute change invalidates only the node's own view, not its parent's
+- [x] Benchmarks in CI (create, update, swap, reverse, and clear 1,000 and 10,000 rows) with budgets that fail the build on a regression
+- [x] Fine-grained observation: an attribute change invalidates only the node's own view, not its parent's
 - [ ] Lazy containers keep memory flat while scrolling 10,000 rows
 - [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device _(maintainer)_
-- [ ] A bundle size budget for the renderer and the host polyfills
+- [x] A bundle size budget for the renderer and the host polyfills
 - [x] Whitespace-only text nodes stay on the JS side instead of crossing the bridge, because SwiftUI never renders them
 - [ ] Device results in the README, refreshed for 1.0 _(maintainer)_
 
 ## M7. Developer experience
 
-- [ ] An `npm create swiftui-svelte` template: Vite, Svelte, TypeScript, and an Xcode project with the Swift package and a build phase that bundles the JS for release builds
+- [x] An app template, created with `npx swiftui-svelte create`: Vite, Svelte, TypeScript, and an Xcode project with the Swift package and a build phase that bundles the JS for release builds
+- [ ] Publish a `create-swiftui-svelte` package, so `npm create swiftui-svelte` runs the same template _(maintainer)_
 - [ ] Loading the bundle from the Vite dev server on a physical device over the local network, with live reload _(maintainer)_
-- [ ] Vite plugin: production minification, source maps, dev server integration, and clear errors
-- [ ] `svelte-check` and ESLint config presets for apps
-- [ ] Error messages for unknown elements and attributes in debug builds
+- [x] Vite plugin: production minification, source maps, dev server integration, and clear errors
+- [x] `svelte-check` and ESLint config presets for apps
+- [x] Error messages for unknown elements and attributes in debug builds
 
 ## M8. Documentation
 
 - [ ] A docs site or `docs/` folder: getting started, every element and modifier with examples, and guides (navigation, forms, loading data, native modules, performance, debugging, and App Store release)
-- [ ] TSDoc on every element and attribute in `elements.ts`, so editors show docs on hover
+- [x] TSDoc on every element and attribute in `elements.ts`, so editors show docs on hover
 - [ ] The example app becomes a catalog of every element, with the to-do app as a real-world sample
 - [ ] Refreshed screenshots
 
 ## M9. Release
 
-- [ ] A supported Svelte range, decided and tested in CI (the custom renderer API is experimental upstream)
-- [ ] A semver and deprecation policy in CONTRIBUTING.md
+- [x] A supported Svelte range, decided and tested in CI (the custom renderer API is experimental upstream)
+- [x] A semver and deprecation policy in CONTRIBUTING.md
 - [ ] 0.x releases along the way, then 1.0.0 through the release workflow _(maintainer)_

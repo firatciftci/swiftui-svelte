@@ -1,6 +1,7 @@
 import { flushSync } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  announce,
   matchURL,
   onActive,
   onBackground,
@@ -10,7 +11,7 @@ import {
   restorable,
 } from "swiftui-svelte/app";
 import { createStorage } from "swiftui-svelte/web/storage";
-import "./bridge.ts";
+import { invocations } from "./bridge.ts";
 
 const cleanups: Array<() => void> = [];
 
@@ -189,5 +190,23 @@ describe("restorable", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+  it("asks the host to announce messages to VoiceOver", () => {
+    const before = invocations.length;
+    announce("Saved");
+    announce("Upload failed", { priority: "high" });
+    announce(" \n\t");
+    expect(invocations.slice(before)).toMatchObject([
+      {
+        id: 0,
+        method: "announce",
+        options: { message: "Saved", priority: "default" },
+      },
+      {
+        id: 0,
+        method: "announce",
+        options: { message: "Upload failed", priority: "high" },
+      },
+    ]);
   });
 });

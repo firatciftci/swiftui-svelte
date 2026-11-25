@@ -39,6 +39,24 @@ export const env: Readonly<HostEnvironment> = {
   get increaseContrast() {
     return read("increaseContrast");
   },
+  get voiceOver() {
+    return read("voiceOver");
+  },
+  get switchControl() {
+    return read("switchControl");
+  },
+  get differentiateWithoutColor() {
+    return read("differentiateWithoutColor");
+  },
+  get invertColors() {
+    return read("invertColors");
+  },
+  get boldText() {
+    return read("boldText");
+  },
+  get buttonShapes() {
+    return read("buttonShapes");
+  },
   get dynamicTypeSize() {
     return read("dynamicTypeSize");
   },

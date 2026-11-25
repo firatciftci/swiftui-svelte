@@ -54,6 +54,8 @@ struct NodeView: View {
             .modifier(ScrollOptions(node: node))
         case "list":
             ListElement(node: node)
+        case "glasseffectcontainer":
+            GlassContainer(node: node)
         case "formview":
             Form { children }
         case "sectionview":
@@ -124,7 +126,7 @@ struct NodeView: View {
         case "progressview":
             ProgressControl(node: node)
         default:
-            Text("Unknown element <\(node.name)>").foregroundStyle(.red)
+            CustomElement(node: node)
         }
     }
 
@@ -196,13 +198,17 @@ private struct NodeModifiers: ViewModifier {
             .modifier(Typography(attributes: attributes))
             .modifier(Appearance(attributes: attributes))
             .modifier(Decorations(node: node))
+            .modifier(GlassSurface(attributes: attributes))
             .modifier(Transforms(attributes: attributes))
-            .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
             .modifier(Layers(node: node))
+            .modifier(Accessible(node: node))
+            .modifier(Lifecycle(node: node))
+            .modifier(GestureHandlers(node: node))
             .modifier(Measured(node: node))
             .modifier(GridCell(attributes: attributes))
             .modifier(Resizing(node: node))
             .modifier(Localized(attributes: attributes))
+            .modifier(Preferences(attributes: attributes))
             .modifier(Availability(node: node))
         styled
             .modifier(PresentationHost(node: node))
@@ -218,7 +224,7 @@ private struct Typography: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(Styles.font(attributes))
+            .ifLet(Styles.font(attributes)) { $0.font($1) }
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .fontWeight(Styles.weight(attributes["weight"]?.string))
             .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }

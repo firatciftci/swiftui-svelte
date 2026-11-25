@@ -4,6 +4,7 @@ import { flushSync, mount, unmount } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import { createRenderer } from "svelte/renderer";
 import type { AnimationOptions } from "./elements.ts";
+import { checkAttribute, checkElement } from "./dev.ts";
 
 type Handler = (payload: unknown) => unknown;
 type Container = { first: ChildNode | null; last: ChildNode | null };
@@ -69,6 +70,11 @@ export const opcodes = {
   text: 6,
   name: 7,
 } as const;
+
+declare const __SWIFTUI_SVELTE_DEV__: boolean | undefined;
+
+const isDevelopment =
+  typeof __SWIFTUI_SVELTE_DEV__ !== "undefined" && __SWIFTUI_SVELTE_DEV__;
 
 export const stats = {
   live: 0,
@@ -406,13 +412,25 @@ function linked(): Linked {
 }
 
 const observedEvents = new Set([
+  "a11yactivate",
+  "a11yadjust",
+  "a11yescape",
+  "a11ymagictap",
+  "appear",
   "delete",
+  "disappear",
+  "drag",
+  "longpress",
+  "magnify",
   "move",
   "primaryaction",
   "refresh",
   "resize",
+  "rotate",
   "scroll",
   "selectionchange",
+  "tap",
+  "task",
 ]);
 
 function updateListens(element: ElementNode): void {
@@ -441,6 +459,7 @@ const renderer = createRenderer<{
     });
   },
   createElement(name) {
+    if (isDevelopment) checkElement(name);
     const node: ElementNode = {
       ...linked(),
       kind: "element",
@@ -487,6 +506,7 @@ const renderer = createRenderer<{
     return value == null ? null : String(value);
   },
   setAttribute(element, name, value: unknown) {
+    if (isDevelopment) checkAttribute(element.name, name);
     element.attributes.set(name, value);
     changeAttribute(element, name);
   },
@@ -562,14 +582,18 @@ const controlledAttributes = new Map<string, Record<string, string>>([
   ],
 ]);
 
+const tasks = new Map<number, AbortController>();
+
 function awaitHandlers(
   element: ElementNode,
   request: number,
   results: Array<unknown>,
 ): void {
   void Promise.allSettled(results).then((outcomes) => {
+    const signal = tasks.get(request)?.signal;
+    tasks.delete(request);
     for (const outcome of outcomes) {
-      if (outcome.status === "rejected") {
+      if (outcome.status === "rejected" && signal?.aborted !== true) {
         setTimeout(() => {
           throw outcome.reason;
         }, 0);
@@ -579,7 +603,17 @@ function awaitHandlers(
   });
 }
 
+function startTask(request: number | undefined): AbortSignal {
+  const controller = new AbortController();
+  if (request != null) tasks.set(request, controller);
+  return controller.signal;
+}
+
 globalThis.__svelteDispatch = (id, type, payload, request) => {
+  if (type === "taskcancel") {
+    if (typeof payload === "number") tasks.get(payload)?.abort();
+    return;
+  }
   const element = elements.get(id)?.deref();
   const handlers = element?.listeners.get(type);
   if (element == null || handlers == null || handlers.size === 0) {
@@ -588,7 +622,8 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     }
     return;
   }
-  const results = Array.from(handlers, (handler) => handler(payload));
+  const argument = type === "task" ? startTask(request) : payload;
+  const results = Array.from(handlers, (handler) => handler(argument));
   if (request != null) awaitHandlers(element, request, results);
   const name =
     controlledAttributes.get(element.name)?.[type] ??

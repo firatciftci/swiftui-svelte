@@ -133,6 +133,21 @@ struct NodeStoreTests {
         #expect(texts(store([6, 3, "z"])) == ["z", "b", "c"])
     }
 
+    @Test func invalidatesTheParentOnlyWhenAChildTextTurnsBlank() {
+        let store = store([])
+        let flag = Flag()
+        withObservationTracking {
+            _ = store.node(2)?.renderedChildren
+        } onChange: {
+            flag.isSet = true
+        }
+        store.apply(batch([6, 3, "z", 6, 4, "b!"]))
+        #expect(!flag.isSet)
+        store.apply(batch([6, 5, " "]))
+        #expect(flag.isSet)
+        #expect(store.node(2)?.renderedChildren.map(\.text) == ["z", "b!"])
+    }
+
     @Test func decodesEscapedText() {
         let store = store([])
         store.apply(#"[6,3,"line\nbreak \"q\" \\ \u00e9 \ud83d\ude00 \/ \t", 6,4,"\ud83d", 6,5,"plain ✨"]"#)

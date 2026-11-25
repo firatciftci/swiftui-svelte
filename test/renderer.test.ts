@@ -18,12 +18,18 @@ import {
   serialize,
   settle,
 } from "./bridge.ts";
+import Accessible from "./components/Accessible.svelte";
 import Boundary from "./components/Boundary.svelte";
 import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
+import Gestures from "./components/Gestures.svelte";
 import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
+import Lifecycle from "./components/Lifecycle.svelte";
+import { log, signals } from "./components/lifecycle.ts";
 import Lists from "./components/Lists.svelte";
+import NativeMap from "./components/NativeMap.svelte";
+import "./components/native-elements.ts";
 import Refresh from "./components/Refresh.svelte";
 import { pending } from "./components/refresh.ts";
 import Scrolling from "./components/Scrolling.svelte";
@@ -252,6 +258,150 @@ describe("observed events", () => {
     expect(byTestId("plain-menu")?.attributes.has("listens")).toBe(false);
     await update(() => dispatch(byTestId("menu"), "primaryaction"));
     expect(findAll("txt")[2]?.children[0]?.text).toBe("Primary 1");
+  });
+});
+
+function run(testid: string, request: number): void {
+  const node = byTestId(testid);
+  if (node == null) throw new Error(`no ${testid}`);
+  globalThis.__svelteDispatch(node.id, "task", null, request);
+}
+
+describe("lifecycle", () => {
+  beforeEach(() => {
+    log.length = 0;
+    signals.length = 0;
+  });
+
+  it("tells the host which elements run tasks and notice appearing", async () => {
+    await render(Lifecycle);
+    expect(byTestId("page")?.attributes.get("listens")).toEqual([
+      "appear",
+      "disappear",
+      "task",
+    ]);
+    expect(byTestId("page")?.attributes.get("taskid")).toBe(1);
+    await update(() => {
+      dispatch(byTestId("page"), "appear");
+      dispatch(byTestId("page"), "disappear");
+    });
+    expect(log).toEqual(["appear", "disappear"]);
+  });
+
+  it("aborts a canceled task without reporting an error and settles it", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      await render(Lifecycle);
+      await update(() => run("page", 11));
+      expect(log).toEqual(["load 1"]);
+      expect(signals[0]?.aborted).toBe(false);
+      expect(settled()).toEqual([]);
+      await update(() => dispatch(byTestId("next"), "click"));
+      expect(byTestId("page")?.attributes.get("taskid")).toBe(2);
+      await update(() =>
+        globalThis.__svelteDispatch(
+          byTestId("page")?.id ?? 0,
+          "taskcancel",
+          11,
+        ),
+      );
+      expect(signals[0]?.aborted).toBe(true);
+      expect(log).toEqual(["load 1", "cancel 2"]);
+      await update(() => run("page", 12));
+      expect(settled()).toEqual([11]);
+      expect(() => vi.runOnlyPendingTimers()).not.toThrow();
+      expect(signals[1]?.aborted).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("settles a synchronous task right away and ignores unknown cancels", async () => {
+    await render(Lifecycle);
+    await update(() => {
+      run("quick", 13);
+      globalThis.__svelteDispatch(0, "taskcancel", 99);
+    });
+    expect(log).toEqual(["quick"]);
+    expect(settled()).toEqual([13]);
+  });
+});
+
+function labels(): Array<string | undefined> {
+  return findAll("txt").map((node) => node.children[0]?.text);
+}
+
+describe("gestures", () => {
+  it("tells the host which gestures an element handles and passes their payloads", async () => {
+    await render(Gestures);
+    const canvas = byTestId("canvas");
+    expect(canvas?.attributes.get("listens")).toEqual([
+      "drag",
+      "longpress",
+      "magnify",
+      "tap",
+    ]);
+    expect(canvas?.attributes.get("tapcount")).toBe(2);
+    await update(() => {
+      dispatch(canvas, "tap", { x: 4, y: 8 });
+      dispatch(canvas, "tap", { x: 4, y: 8 });
+      dispatch(canvas, "drag", {
+        phase: "changed",
+        location: { x: 30, y: 0 },
+        start: { x: 0, y: 0 },
+        translation: { x: 30, y: 0 },
+        velocity: { x: 120, y: 0 },
+        predictedEnd: { x: 60, y: 0 },
+      });
+      dispatch(canvas, "magnify", {
+        phase: "ended",
+        magnification: 1.5,
+        velocity: 0,
+      });
+    });
+    expect(labels()).toEqual(["Taps 2", "Drag 30", "Scale 1.5"]);
+    await update(() => dispatch(canvas, "longpress"));
+    expect(labels()[0]).toBe("Taps 0");
+  });
+});
+
+describe("native elements", () => {
+  it("passes attributes to an app's own element and receives its events", async () => {
+    await render(NativeMap);
+    const map = byTestId("map");
+    expect(map?.name).toBe("weathermap");
+    expect(map?.attributes.get("latitude")).toBe(41.88);
+    await update(() =>
+      dispatch(map, "regionchange", { latitude: 40.71, longitude: -74 }),
+    );
+    expect(find("txt")?.children[0]?.text).toBe("40.71");
+  });
+});
+
+describe("accessibility", () => {
+  it("passes accessibility attributes and listens for adjustments", async () => {
+    await render(Accessible);
+    const rating = byTestId("rating");
+    expect(rating?.attributes.get("a11ychildren")).toBe("combine");
+    expect(rating?.attributes.get("a11ylabel")).toBe("Rating");
+    expect(rating?.attributes.get("a11yvalue")).toBe(3);
+    expect(rating?.attributes.get("a11ytraits")).toEqual([
+      "button",
+      "selected",
+    ]);
+    expect(rating?.attributes.get("a11yactions")).toEqual(["Reset", "Maximum"]);
+    expect(rating?.attributes.get("listens")).toEqual(["a11yadjust"]);
+    expect(byTestId("title")?.attributes.get("a11yheading")).toBe(1);
+    expect(byTestId("decoration")?.attributes.get("a11yhidden")).toBe("");
+
+    await update(() => dispatch(rating, "a11yadjust", "increment"));
+    expect(byTestId("rating")?.attributes.get("a11yvalue")).toBe(4);
+    await update(() => dispatch(rating, "a11yadjust", "decrement"));
+    await update(() => dispatch(rating, "a11yadjust", "decrement"));
+    expect(byTestId("rating")?.attributes.get("a11yvalue")).toBe(2);
+    await update(() => dispatch(rating, "a11yaction", "Maximum"));
+    expect(byTestId("rating")?.attributes.get("a11yvalue")).toBe(5);
+    expect(byTestId("last")?.children[0]?.text).toBe("Maximum");
   });
 });
 

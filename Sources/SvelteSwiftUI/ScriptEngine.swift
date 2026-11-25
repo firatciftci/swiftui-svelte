@@ -13,6 +13,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         case commit(String, String?)
         case action(Int, String, String)
         case invoke(Int, String, String)
+        case nativeCall(Int, String, String, String)
         case error(ScriptError)
         case requestFrame
     }
@@ -93,7 +94,8 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
 
     func call(_ function: String, _ arguments: Unchecked<Array<Any>>) {
         dispatchPrecondition(condition: .onQueue(queue))
-        context?.objectForKeyedSubscript(function)?.call(withArguments: arguments.value)
+        guard let callee = context?.objectForKeyedSubscript(function), !callee.isUndefined else { return }
+        callee.call(withArguments: arguments.value)
     }
 
     private func install(into context: JSContext) {
@@ -120,6 +122,9 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         }
         let invoke: @convention(block) (Int, String, String) -> Void = { [weak self] id, method, json in
             self?.post(.invoke(id, method, json))
+        }
+        let nativeCall: @convention(block) (Int, String, String, String) -> Void = { [weak self] id, module, method, json in
+            self?.post(.nativeCall(id, module, method, json))
         }
         let requestFrame: @convention(block) () -> Void = { [weak self] in
             self?.post(.requestFrame)
@@ -150,6 +155,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let globals: [String: Any] = [
             "__nativeCommit": commit,
             "__nativeInvoke": invoke,
+            "__nativeCall": nativeCall,
             "__nativeLog": log,
             "setTimeout": setTimeout,
             "setInterval": setInterval,

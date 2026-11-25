@@ -10,7 +10,13 @@ final class Node: Identifiable {
     let id: Int
     let kind: Kind
     let name: String
-    var text: String
+    var text: String {
+        didSet {
+            let isBlank = text.allSatisfy(\.isWhitespace)
+            if isBlank != self.isBlank { self.isBlank = isBlank }
+        }
+    }
+    private(set) var isBlank: Bool
     var attributes: [String: JSONValue] = [:]
     var children: Array<Node> = [] {
         didSet {
@@ -40,6 +46,7 @@ final class Node: Identifiable {
         self.kind = kind
         self.name = name
         self.text = text
+        isBlank = text.allSatisfy(\.isWhitespace)
         hostsPresentations = kind == .fragment || Presenting.hosts.contains(name)
         hostsInspector = name == "screen"
     }
@@ -65,7 +72,7 @@ final class Node: Identifiable {
         return children.filter { child in
             switch child.kind {
             case .element: !Self.attachments.contains(child.name) && !slots.contains(child.name)
-            case .text: !child.text.allSatisfy(\.isWhitespace)
+            case .text: !child.isBlank
             case .fragment: false
             }
         }

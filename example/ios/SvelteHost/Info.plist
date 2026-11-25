@@ -34,5 +34,14 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>The example app uses the camera to take a photo when you tap Take photo.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The example app loads its JavaScript from the Vite dev server on your Mac while you develop.</string>
 </dict>
 </plist>

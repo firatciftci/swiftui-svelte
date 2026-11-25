@@ -54,6 +54,18 @@ observeEnvironment((previous) => {
 
 Object.assign(globalThis, { __svelteAppEvent: receive });
 
+export function announce(
+  message: string,
+  options: { priority?: "low" | "default" | "high" } = {},
+): void {
+  if (message.trim() === "") return;
+  __nativeInvoke(
+    0,
+    "announce",
+    JSON.stringify({ message, priority: options.priority ?? "default" }),
+  );
+}
+
 export function onActive(listener: () => void): Unsubscribe {
   return subscribe(phases.get("active"), listener);
 }

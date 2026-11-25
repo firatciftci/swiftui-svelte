@@ -1,0 +1,1 @@
+{ "extends": "swiftui-svelte/tsconfig", "include": ["src", "*.ts", "*.js"] }

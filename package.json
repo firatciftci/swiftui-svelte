@@ -24,7 +24,9 @@
     "access": "public"
   },
   "files": [
-    "dist"
+    "bin",
+    "dist",
+    "template"
   ],
   "exports": {
     ".": {
@@ -48,13 +50,26 @@
       "types": "./dist/env.d.ts",
       "default": "./dist/env.js"
     },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "default": "./dist/native.js"
+    },
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
     },
+    "./eslint": {
+      "types": "./dist/eslint.d.ts",
+      "default": "./dist/eslint.js"
+    },
+    "./create": {
+      "types": "./dist/create.d.ts",
+      "default": "./dist/create.js"
+    },
     "./elements": {
       "types": "./dist/elements.d.ts"
-    }
+    },
+    "./tsconfig": "./dist/tsconfig.app.json"
   },
   "scripts": {
     "build": "vite build",
@@ -70,13 +85,15 @@
     "test:swift": "xcrun swift test",
     "lint": "knip && eslint . && swiftlint lint --strict --quiet",
     "lint:fix": "knip --fix && eslint --fix . && swiftlint lint --fix --quiet && swiftlint lint --strict --quiet",
-    "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
-    "format:fix": "oxfmt && xcrun swift-format format --in-place --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests",
+    "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests template/ios/__APP_NAME__",
+    "format:fix": "oxfmt && xcrun swift-format format --in-place --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests template/ios/__APP_NAME__",
     "release": "bumpp",
-    "fixtures": "vite build --config vite.fixtures.config.ts && vite build --config vite.fixtures.config.ts --mode web"
+    "fixtures": "vite build --config vite.fixtures.config.ts && vite build --config vite.fixtures.config.ts --mode web",
+    "elements": "node scripts/elements.ts && oxfmt src/known.ts",
+    "template": "xcodegen generate --spec template/ios/project.yml"
   },
   "peerDependencies": {
-    "svelte": "~5.59.1",
+    "svelte": "~5.59.0",
     "vite": ">=7"
   },
   "peerDependenciesMeta": {
@@ -105,6 +122,7 @@
     "svelte-check": "4.7.8",
     "svelte-eslint-parser": "^1.12.0",
     "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0",
     "vite": "8.3.8",
     "vitest": "^5.1.1",
     "ws": "^8.23.0"
@@ -112,5 +130,8 @@
   "packageManager": "pnpm@12.23.0",
   "dependencies": {
     "web-streams-polyfill": "^4.5.1"
+  },
+  "bin": {
+    "swiftui-svelte": "./bin/swiftui-svelte.js"
   }
 }

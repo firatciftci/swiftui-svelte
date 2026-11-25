@@ -84,18 +84,33 @@ That component is a real `NavigationStack` with a `List`, a `TextField`, a `Butt
 - **Typed elements.** Every element and attribute is typed, so `svelte-check` catches a misspelled attribute or a wrong value before you build.
 - **Small updates.** Svelte sends only what changed, and SwiftUI re-renders only the views that changed.
 - **Web APIs.** `fetch`, `WebSocket`, `URL`, `crypto`, `localStorage`, `matchMedia`, and the other browser APIs that npm packages expect are built in. They are backed by `URLSession`, CryptoKit, and `UserDefaults`, so most web code runs unchanged.
+- **Native modules and components.** Call your own Swift functions from Svelte as async functions, and register SwiftUI views, such as a MapKit map, as new elements. Haptics, the clipboard, the share sheet, links, the Keychain, and app files are built in.
 - **Live reload.** In the simulator, the app reloads as soon as Vite rebuilds the bundle, without a rebuild in Xcode.
 
 ## Requirements
 
 | Side           | Needs                                              |
 | -------------- | -------------------------------------------------- |
-| The Svelte app | Svelte 5.59 (`~5.59.1`) and Vite 7 or later        |
+| The Svelte app | Svelte 5.59 (`~5.59.0`) and Vite 7 or later        |
 | The iOS app    | iOS 18 or later, and Xcode 26 or later to build it |
 
-Svelte's custom renderer API is experimental and can change in a minor release, so the package only accepts the Svelte 5.59 releases it's been tested with. A new release of swiftui-svelte will widen the range once a newer Svelte is tested.
+Svelte's custom renderer API is experimental and can change in a minor release, so the package only accepts the Svelte 5.59 releases it's been tested with. CI runs the tests on Svelte 5.59.0, the first release with the custom renderer API, and on the newest 5.59 release. A new release of swiftui-svelte will widen the range once a newer Svelte is tested.
 
 ## Quick start
+
+The quickest start is a new app from the template:
+
+```sh
+npx swiftui-svelte create my-app
+cd my-app
+npm install
+npm run build
+open ios/MyApp.xcodeproj
+```
+
+The template has a Svelte app with TypeScript, ESLint, and the presets below, and an Xcode project that depends on the Swift package. A build phase in the Xcode project bundles the JavaScript for Release builds, and for any build that doesn't have a bundle yet. Run `npm run dev` while you work, and the app in the simulator reloads each time you save. Use `npm run serve` for an app on a device. It starts Vite's dev server.
+
+To add swiftui-svelte to an app you already have, follow the steps below.
 
 ### 1. Set up the Svelte app
 
@@ -139,7 +154,21 @@ import App from "./App.svelte";
 mountApp(App);
 ```
 
-Finally, add `"swiftui-svelte/elements"` to `compilerOptions.types` in `tsconfig.json`, so `svelte-check` knows the elements and their attributes. Run `vite build` to write `app.js`.
+Finally, add `"swiftui-svelte/elements"` to `compilerOptions.types` in `tsconfig.json`, so `svelte-check` can find the elements and their attributes. Run `vite build` to write `app.js`, minified, with `app.js.map` beside it. `vite build --watch` and `--mode development` skip the minification, so the code stays readable in Safari's Web Inspector. To choose for yourself, set `build.minify` in your Vite config.
+
+The package also has presets for TypeScript and ESLint. To start from compiler options that match the iOS runtime, extend the TypeScript preset in `tsconfig.json`. It already includes the element types and Vite's `import.meta.env` types:
+
+```json
+{ "extends": "swiftui-svelte/tsconfig", "include": ["src"] }
+```
+
+The ESLint preset reports browser globals that the iOS app doesn't have, such as `document`, `ResizeObserver`, and `XMLHttpRequest`, and says what to use instead. Add it to a flat config:
+
+```js
+import { swiftuiSvelte } from "swiftui-svelte/eslint";
+
+export default [...swiftuiSvelte];
+```
 
 ### 2. Show it in the iOS app
 
@@ -162,9 +191,19 @@ struct MyApp: App {
 > [!TIP]
 > For live reload, pass `reloadsOnChange: true` and, in the simulator, point `source` at the `app.js` in your source tree instead of the bundled copy. Then run `vite build --watch`, and the app reloads each time you save. [`SvelteHostApp.swift`](example/ios/SvelteHost/SvelteHostApp.swift) in the example shows how.
 
+To load the app from Vite's dev server instead, which also works on a device, run `vite --host` in place of `vite build --watch`. The `swiftui()` plugin then builds the bundle in watch mode and serves it from the dev server under the file name of `outFile`, with its source map. Point `SvelteView` at the Network address that Vite prints, and the app reloads each time you save:
+
+```swift
+SvelteView(source: URL(string: "http://192.168.1.20:5173/app.js")!, reloadsOnChange: true)
+```
+
+The iPhone needs to be on the same network as your Mac. For a Debug build to connect, add two keys to its Info.plist: `NSAppTransportSecurity` with `NSAllowsLocalNetworking` set to `true`, which allows plain HTTP to your Mac, and `NSLocalNetworkUsageDescription`, the reason iOS shows when it asks the user for access to the local network. The plugin still writes `outFile`, so the simulator can keep loading the file directly.
+
 To debug the JavaScript, open Safari's **Develop** menu and pick the "Svelte" context under your simulator or device. This works in Debug builds.
 
 When the JavaScript throws, Debug builds show the error over your app, with the message, the file and line in your Svelte or TypeScript source, and the stack trace. **Reload** restarts the bundle, and **Dismiss** hides the error and leaves the app as it was. The `swiftui()` Vite plugin writes `app.js.map` next to `app.js`, and `SvelteView` uses it to turn bundle positions into source positions, so add both files to your app target. Release builds don't show the overlay: they print the error to the console and keep the last screen that rendered.
+
+While `vite build --watch` runs, or in a build with `--mode development`, the bundle also checks element and attribute names and prints a warning to Xcode's console for any it doesn't recognize, such as `<txt> doesn't have an attribute named "paddng". Did you mean "padding"?`. Each name is reported once. An element name that isn't built in renders as a red "Unknown element" label, unless you registered a native component with that name. Release builds leave the checks out.
 
 ## Elements
 
@@ -219,27 +258,35 @@ The elements and their attributes are typed in [`src/elements.ts`](src/elements.
 | `contextmenu`, `preview`            | `.contextMenu`                      |                                                                                                                                                                                                                                                                                 |
 | `maskview`                          | `.mask`                             | `alignment`                                                                                                                                                                                                                                                                     |
 | `safeareainset`                     | `.safeAreaInset`                    | `edge`, `alignment`, `spacing`                                                                                                                                                                                                                                                  |
+| `glasseffectcontainer`              | `GlassEffectContainer`              | `spacing`                                                                                                                                                                                                                                                                       |
 
 Every element also accepts these modifiers:
 
-| Modifier                                                                                                  | What it does                                                                                                                                                                    |
-| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `padding`                                                                                                 | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute. An object such as `{ horizontal: 20, top: 4 }` pads each edge separately |
-| `width`, `height`                                                                                         | Sets a fixed size                                                                                                                                                               |
-| `minwidth`, `idealwidth`, `maxwidth`, `minheight`, `idealheight`, `maxheight`, `framealignment`           | Sets a flexible frame. `"infinity"` fills the available space, and `framealignment` places the content inside the frame                                                         |
-| `aspectratio`, `contentmode`                                                                              | Keeps the ratio of width to height, and either fits the element in the space (`fit`) or fills it (`fill`)                                                                       |
-| `offset`, `position`, `rotation`, `scale`, `zindex`                                                       | Moves, places, rotates, scales, or layers the element. See the details below                                                                                                    |
-| `font`, `size`, `design`, `weight`                                                                        | Sets the text style or a fixed size, the design, and the weight                                                                                                                 |
-| `color`, `tint`, `background`                                                                             | Colors the content, the controls, or the background. See [Colors and shapes](#colors-and-shapes)                                                                                |
-| `controlsize`                                                                                             | Sets the size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`                                                                          |
-| `radius`, `opacity`                                                                                       | Rounds the corners and sets the opacity                                                                                                                                         |
-| `clipshape`, `contentshape`, `border`, `shadow`, `blur`                                                   | Clips the element to a shape, sets the shape that responds to taps, and draws a border, a shadow, or a blur                                                                     |
-| `hidden`, `disabled`                                                                                      | Hides the element but keeps its space, or disables every control inside it                                                                                                      |
-| `ignoressafearea`                                                                                         | Lets the element extend under the safe area                                                                                                                                     |
-| `animated`, `animation`                                                                                   | Animates children as they're added, removed, or reordered, with the curve from `animation`                                                                                      |
-| `lang`, `dir`                                                                                             | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it                                                                              |
-| `onresize`                                                                                                | Reports the element's size whenever it changes                                                                                                                                  |
-| `tag`, `rowinsets`, `rowseparator`, `rowseparatortint`, `rowbackground`, `deletedisabled`, `movedisabled` | Identifies a list row for selection and sets its insets, separator, background, and whether the user can delete or move it                                                      |
+| Modifier                                                                                                   | What it does                                                                                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `padding`                                                                                                  | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute. An object such as `{ horizontal: 20, top: 4 }` pads each edge separately |
+| `width`, `height`                                                                                          | Sets a fixed size                                                                                                                                                               |
+| `minwidth`, `idealwidth`, `maxwidth`, `minheight`, `idealheight`, `maxheight`, `framealignment`            | Sets a flexible frame. `"infinity"` fills the available space, and `framealignment` places the content inside the frame                                                         |
+| `aspectratio`, `contentmode`                                                                               | Keeps the ratio of width to height, and either fits the element in the space (`fit`) or fills it (`fill`)                                                                       |
+| `offset`, `position`, `rotation`, `scale`, `zindex`                                                        | Moves, places, rotates, scales, or layers the element. See the details below                                                                                                    |
+| `font`, `size`, `design`, `weight`                                                                         | Sets the text style or a fixed size, the design, and the weight                                                                                                                 |
+| `color`, `tint`, `background`                                                                              | Colors the content, the controls, or the background. See [Colors and shapes](#colors-and-shapes)                                                                                |
+| `controlsize`                                                                                              | Sets the size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`                                                                          |
+| `radius`, `opacity`                                                                                        | Rounds the corners and sets the opacity                                                                                                                                         |
+| `clipshape`, `contentshape`, `border`, `shadow`, `blur`                                                    | Clips the element to a shape, sets the shape that responds to taps, and draws a border, a shadow, or a blur                                                                     |
+| `hidden`, `disabled`                                                                                       | Hides the element but keeps its space, or disables every control inside it                                                                                                      |
+| `ignoressafearea`                                                                                          | Lets the element extend under the safe area                                                                                                                                     |
+| `glasseffect`, `glassid`, `glassunion`                                                                     | Draws Liquid Glass behind the element on iOS 26 and later                                                                                                                       |
+| `animated`, `animation`                                                                                    | Animates children as they're added, removed, or reordered, with the curve from `animation`                                                                                      |
+| `lang`, `dir`                                                                                              | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it                                                                              |
+| `sensoryfeedback`, `feedbacktrigger`                                                                       | Plays haptic feedback each time `feedbacktrigger` changes                                                                                                                       |
+| `colorscheme`, `preferredcolorscheme`                                                                      | Forces light or dark mode on the element, or requests a mode switch from the window that contains it                                                                            |
+| `dynamictypesize`                                                                                          | Pins the Dynamic Type size, or keeps it within a range                                                                                                                          |
+| `scrolldismisseskeyboard`                                                                                  | Sets whether scrolling hides the keyboard                                                                                                                                       |
+| `onresize`                                                                                                 | Reports the element's size whenever it changes                                                                                                                                  |
+| `onappear`, `ondisappear`, `ontask`, `taskid`                                                              | Runs code when the element appears or disappears, and runs a task that's canceled when the element disappears. See the details below                                            |
+| `ontap`, `tapcount`, `onlongpress`, `longpressduration`, `ondrag`, `dragdistance`, `onmagnify`, `onrotate` | Handles taps, long presses, drags, pinches, and rotations. See the details below                                                                                                |
+| `tag`, `rowinsets`, `rowseparator`, `rowseparatortint`, `rowbackground`, `deletedisabled`, `movedisabled`  | Identifies a list row for selection and sets its insets, separator, background, and whether the user can delete or move it                                                      |
 
 A few details:
 
@@ -254,6 +301,10 @@ A few details:
 - **Fitting content.** A `viewthatfits` shows the first child that fits in the available space. `axes` limits the check to `horizontal` or `vertical`.
 - **Groups.** A `group` applies its modifiers to each child without adding a container. A `groupbox` draws its children in a box, and a `controlgroup` joins buttons into one control. A `disclosuregroup` shows its children when the user expands it. Its `expanded` attribute and `ontoggle` event work like a toggle's `checked` and `onchange`, and the `DisclosureGroup` component supports `bind:expanded`. All three take a `title`, or a `label` child for a custom view.
 - **Layout and effects.** `offset` and `position` take `{ x, y }` in points. `offset` moves the element without changing the layout around it, and `position` places the element's center in its parent's coordinate space. `rotation` turns the element by a number of degrees around `rotationanchor`, and `scale` takes a number, or `{ x, y }` to scale each axis, around `scaleanchor`. Both anchors take a unit point such as `center` or `topLeading`. `clipshape` and `contentshape` take `rectangle`, `circle`, `capsule`, `ellipse`, a corner radius, an object with `cornerradius` or with a radius for each corner (`topleading`, `toptrailing`, `bottomleading`, and `bottomtrailing`), or an SVG path as `{ d, viewbox }`. `border` takes a color or `{ color, width }`, and `shadow` takes a radius, a color, or `{ color, radius, x, y }`. A `maskview` child masks the element with its content. `ignoressafearea` is `true` for every edge, `keyboard` or `container` for only that region, an edge such as `top`, an array of edges, or `{ regions, edges }`. A `safeareainset` child pins its content to one `edge` of the element (`bottom` unless you set it) and insets the rest of the element's content to make room. That suits a bar under a scroll view. It also takes `alignment` and `spacing`.
+- **Gestures.** `ontap` receives the tap's `{ x, y }` in the element's own coordinates, and `tapcount` sets how many taps it takes, such as `2` for a double tap. `onlongpress` fires after the user holds a finger down for `longpressduration` seconds, or half a second by default. `ondrag` sends `{ phase, location, start, translation, velocity, predictedEnd }` as the finger moves. `phase` is `"changed"` while the finger moves and `"ended"` when it lifts. A drag starts once the finger moves `dragdistance` points, 10 by default. `onmagnify` sends `{ phase, magnification, velocity }` for a pinch, and `onrotate` sends `{ phase, degrees, velocity }` for a two-finger rotation. One two-finger gesture produces both, so a pinch usually reports some rotation too, and a rotation reports some magnification. Drags, pinches, and rotations are recognized alongside the element's other gestures, so a card can follow a drag while it scales. Velocities are per second. To move, scale, or rotate an element with its own gesture, put the handlers on a container that stays still and the `offset`, `scale`, or `rotation` on an element inside it. Otherwise the gesture measures the fingers against an element that is already changing under them.
+- **Appearing and tasks.** `onappear` and `ondisappear` fire when SwiftUI shows and hides the element. For a row in a `list`, that happens as it scrolls into and out of view, so `onappear` on the last row can load the next page. `ontask` runs when the element appears, like SwiftUI's `.task`, and receives an `AbortSignal` that aborts when the element disappears. Pass the signal to `fetch` to cancel the request: `ontask={(signal) => load(signal)}`. Set `taskid` to run the task again whenever that value changes. SwiftUI cancels the previous run first, so its signal aborts too. An error from a task whose signal has aborted isn't reported.
+- Haptics and environment overrides. `sensoryfeedback` takes `success`, `warning`, `error`, `selection`, `increase`, `decrease`, `start`, `stop`, `alignment`, `levelChange`, or `impact`, or an object such as `{ weight: "light", intensity: 0.5 }` or `{ flexibility: "soft" }` for an impact. SwiftUI plays it each time `feedbacktrigger` changes, so pass the value whose change the user should feel. `colorscheme` forces light or dark mode on the element and everything inside it. `preferredcolorscheme` requests that the window, sheet, or popover that contains the element use that mode. `dynamictypesize` pins text to one Dynamic Type size, such as `xLarge`, or keeps it within `{ min, max }`. `scrolldismisseskeyboard` on a `scrollview`, `list`, or `formview` sets whether scrolling hides the keyboard: `immediately`, `interactively`, `never`, or `automatic`. For buttons above the keyboard, use a `toolbar` with `placement="keyboard"`.
+- **Liquid Glass.** On iOS 26 and later, `glasseffect` draws Liquid Glass behind the element, in a capsule unless you pick a shape. Write it as a bare attribute for regular glass, as `clear` or `identity`, or as an object: `{ variant, tint, interactive, shape }`, where `shape` takes the same values as `clipshape`. Earlier iOS versions draw the element without glass. Put elements with glass inside a `glasseffectcontainer` so that SwiftUI renders them together and blends shapes that are closer than its `spacing`. Wrap them in one stack inside the container, because the container doesn't lay out its children. Inside a container, elements with the same `glassunion` share one glass shape, and `glassid` lets a shape morph into another one as elements appear and disappear.
 - **Scrolling.** A `scrollview` scrolls vertically unless you set `axes` to `horizontal` or `both`. Set `snap="paging"` to stop on each screen-sized page, or `snap="view"` to stop at the start of each child of the stack inside it, like a carousel. `indicators={false}` hides the scroll bars, `bounce="basedOnSize"` only bounces when the content is larger than the view, and `anchor="bottom"` starts at the bottom, as a chat does. `scrollview` and `list` both send `onscroll` with `{ x, y, width, height, contentWidth, contentHeight }`: the scroll offset from the top leading corner, the visible size, and the size of the content, all in points. To scroll from code, use a [ref](#element-refs-and-focus).
 - **Pull to refresh.** Give a `list` or `scrollview` an `onrefresh` handler, and the user can pull it down to refresh. If the handler returns a promise, the spinner keeps spinning until the promise settles, so `onrefresh={async () => (items = await load())}` shows the new items as the spinner goes away. If the promise rejects, the spinner stops and the error shows up like any other error from your app.
 - **Lists.** `variant` sets the list style: `plain`, `inset`, `grouped`, `insetGrouped`, `sidebar`, or `automatic`. To let the user select rows, give each row a `tag` and handle `onselectionchange` on the `list`, which receives the selected row's `tag`, or `null` when nothing is selected. With `multiple`, `selection` is an array of tags. Use the `List` and `MultiList` components for `bind:selection`. `editing` turns on edit mode, and `oneditingchange` reports when SwiftUI turns it on or off.
@@ -562,6 +613,43 @@ These elements aren't drawn where they appear. Instead, they attach to the eleme
 </navstack>
 ```
 
+### Accessibility
+
+Every element is a SwiftUI view, so VoiceOver, Voice Control, and Switch Control work without extra code. Controls read their own labels and values, and `sfsymbol` and `imageview` take a `label`. These attributes adjust what assistive technologies hear and do on any element:
+
+| Attribute                                          | SwiftUI                                                                                                                                                                             |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `a11ylabel`, `a11yvalue`, `a11yhint`               | `.accessibilityLabel`, `.accessibilityValue`, and `.accessibilityHint`                                                                                                              |
+| `a11yinputlabels`                                  | `.accessibilityInputLabels`: the names that Voice Control accepts for the element                                                                                                   |
+| `a11ytraits`, `a11yremovetraits`                   | `.accessibilityAddTraits` and `.accessibilityRemoveTraits`, with names such as `button`, `header`, `selected`, or `toggle`                                                          |
+| `a11yheading`                                      | `.accessibilityHeading`, with a level from `1` to `6`, or `true` for a heading without a level                                                                                      |
+| `a11ysortpriority`                                 | `.accessibilitySortPriority`. VoiceOver visits elements with higher priorities first                                                                                                |
+| `a11ychildren`                                     | `.accessibilityElement(children:)`. `combine` merges the children into one element, `contain` groups them under the element, and `ignore` hides them behind the element's own label |
+| `a11yhidden`                                       | `.accessibilityHidden`                                                                                                                                                              |
+| `a11yactions`, `ona11yaction(name)`                | `.accessibilityActions`: custom actions that VoiceOver lists in its Actions rotor                                                                                                   |
+| `ona11yadjust(direction)`                          | `.accessibilityAdjustableAction`, where `direction` is `"increment"` or `"decrement"`                                                                                               |
+| `ona11yactivate`, `ona11yescape`, `ona11ymagictap` | `.accessibilityAction` for the default action, the escape gesture, and the magic tap                                                                                                |
+| `testid`                                           | `.accessibilityIdentifier`, for UI tests                                                                                                                                            |
+
+This star rating reads as one adjustable element, so VoiceOver users swipe up or down to change it:
+
+```svelte
+<hstack
+  a11ychildren="ignore"
+  a11ylabel="Rating"
+  a11yvalue="{rating} of 5 stars"
+  ona11yadjust={(direction) => (rating += direction === "increment" ? 1 : -1)}
+>
+  {#each [1, 2, 3, 4, 5] as star (star)}
+    <sfsymbol name={star <= rating ? "star.fill" : "star"} />
+  {/each}
+</hstack>
+```
+
+- `testid` on a container applies to every element inside it, as `accessibilityIdentifier` does in SwiftUI. To give the container its own identifier and keep the identifiers of its children, add `a11ychildren="contain"`.
+- `announce(message)` from `swiftui-svelte/app` makes VoiceOver speak a message, such as "Saved" after a background save. Pass `{ priority: "high" }` so that other speech can't interrupt it, or `{ priority: "low" }` to wait until current speech ends.
+- `env` reports whether VoiceOver or Switch Control is running and whether the user turned on the related display settings. See [Device environment](#device-environment).
+
 ## Navigation
 
 Svelte owns the navigation stack. The first `screen` in a `navstack` is the root, and every `screen` after it is pushed on top, so you push a screen by rendering another one, usually from an `{#each}` over a state array. When the user taps the back button or swipes back, `onpop` receives the number of pushed screens that are left, and your app trims its array to match:
@@ -636,20 +724,21 @@ A `searchable` inside a `screen` adds a search field to the navigation bar. `val
 {/if}
 ```
 
-| Property                                                 | Value                                                                                                                         |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `colorScheme`                                            | `"light"` or `"dark"`                                                                                                         |
-| `dynamicTypeSize`                                        | SwiftUI's `DynamicTypeSize` case name, from `"xSmall"` through `"xxxLarge"` and `"accessibility1"` through `"accessibility5"` |
-| `locale`                                                 | The BCP 47 identifier of SwiftUI's locale, such as `"en-US"`                                                                  |
-| `languages`                                              | The user's preferred languages, in order                                                                                      |
-| `timeZone`                                               | The time zone identifier, such as `"America/Chicago"`                                                                         |
-| `layoutDirection`                                        | `"leftToRight"` or `"rightToLeft"`                                                                                            |
-| `horizontalSizeClass`, `verticalSizeClass`               | `"compact"` or `"regular"`, or `null` on macOS, which has no size classes                                                     |
-| `scenePhase`                                             | `"active"`, `"inactive"`, or `"background"`                                                                                   |
-| `safeAreaInsets`                                         | `{ top, leading, bottom, trailing }` in points, not counting the keyboard                                                     |
-| `keyboardHeight`                                         | The height of the on-screen keyboard in points, or `0` when it's hidden                                                       |
-| `reduceMotion`, `reduceTransparency`, `increaseContrast` | The accessibility settings, as booleans                                                                                       |
-| `onLine`                                                 | Whether the device has a network connection                                                                                   |
+| Property                                                                                              | Value                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `colorScheme`                                                                                         | `"light"` or `"dark"`                                                                                                         |
+| `dynamicTypeSize`                                                                                     | SwiftUI's `DynamicTypeSize` case name, from `"xSmall"` through `"xxxLarge"` and `"accessibility1"` through `"accessibility5"` |
+| `locale`                                                                                              | The BCP 47 identifier of SwiftUI's locale, such as `"en-US"`                                                                  |
+| `languages`                                                                                           | The user's preferred languages, in order                                                                                      |
+| `timeZone`                                                                                            | The time zone identifier, such as `"America/Chicago"`                                                                         |
+| `layoutDirection`                                                                                     | `"leftToRight"` or `"rightToLeft"`                                                                                            |
+| `horizontalSizeClass`, `verticalSizeClass`                                                            | `"compact"` or `"regular"`, or `null` on macOS, which has no size classes                                                     |
+| `scenePhase`                                                                                          | `"active"`, `"inactive"`, or `"background"`                                                                                   |
+| `safeAreaInsets`                                                                                      | `{ top, leading, bottom, trailing }` in points, not counting the keyboard                                                     |
+| `keyboardHeight`                                                                                      | The height of the on-screen keyboard in points, or `0` when it's hidden                                                       |
+| `reduceMotion`, `reduceTransparency`, `increaseContrast`                                              | The accessibility settings, as booleans                                                                                       |
+| `voiceOver`, `switchControl`, `differentiateWithoutColor`, `invertColors`, `boldText`, `buttonShapes` | Whether VoiceOver or Switch Control is running, and the matching display settings, as booleans                                |
+| `onLine`                                                                                              | Whether the device has a network connection                                                                                   |
 
 Each property is tracked separately, so an effect that reads `colorScheme` doesn't run again when the keyboard opens. Outside components, `env` returns the current value without subscribing. `SvelteView` reads these values from its own SwiftUI environment, so `.environment(\.locale, …)` and similar overrides on the view reach JavaScript too.
 
@@ -811,6 +900,102 @@ A few differences from a browser:
 - `URLSession` holds back the first 512 bytes of a `text/plain` response while it estimates the content type. To stream plain text as it arrives, have the server send `X-Content-Type-Options: nosniff`, or use a type like `text/event-stream`.
 - There's no page, so there's no `document`, `location`, or cookie API. `window` and `self` point to the global object, as they do in React Native, so libraries that check for `window` to tell a browser from a server take their browser path, Paraglide among them. `URLSession` keeps cookies for you unless `credentials` is `"omit"`.
 
+## Native modules and components
+
+### Calling Swift from JavaScript
+
+Register Swift functions in a `NativeModule` and pass it to the view. Arguments arrive through `Decodable`, and the return value goes back to JavaScript through `Encodable`:
+
+```swift
+struct Forecast: Codable {
+    let high: Double
+    let low: Double
+}
+
+let weather = NativeModule("weather")
+    .function("forecast") { (city: String, days: Int) async throws -> Array<Forecast> in
+        try await WeatherService.shared.forecast(for: city, days: days)
+    }
+
+SvelteView(source: bundle, modules: [weather])
+```
+
+In JavaScript, each function becomes an async function:
+
+```ts
+import { nativeModule } from "swiftui-svelte/native";
+
+const weather = nativeModule("weather");
+const days = await weather.forecast("Chicago", 3);
+```
+
+To type the module, declare its functions and events:
+
+```ts
+declare module "swiftui-svelte/native" {
+  interface NativeModules {
+    weather: {
+      forecast: (
+        city: string,
+        days: number,
+      ) => Promise<Array<{ high: number; low: number }>>;
+    };
+  }
+  interface NativeEvents {
+    weather: { alert: { message: string } };
+  }
+}
+```
+
+- A function takes up to two arguments. A missing argument decodes as `nil`, so make it optional when JavaScript can leave it out.
+- When the function throws `NativeModuleError(code:message:)`, the promise rejects with a `NativeError` that has the same `code` and `message`. Other errors reject with the code `native`. Arguments that don't decode reject with `invalidArguments`, and calls to functions that don't exist reject with `unknownFunction`.
+- `runtime.emit("alert", from: "weather", Alert(message: "Storm"))` sends an event, and `weather.on("alert", (alert) => …)` receives it. `on` returns a function that unsubscribes.
+- After a reload, the runtime drops the replies to calls that the old bundle made.
+
+### Built-in modules
+
+`swiftui-svelte/native` also exports modules that most apps need:
+
+| Export          | What it does                                                                                                                                                                                    |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `haptics`       | `impact({ style, intensity })`, `notification(type)`, and `selection()` play haptics                                                                                                            |
+| `clipboard`     | `readText()`, `writeText(text)`, and `hasText()`. iOS asks the user before an app reads text that another app copied                                                                            |
+| `share`         | `share({ text, url, subject })` opens the share sheet and resolves with `{ completed }`                                                                                                         |
+| `links`         | `open(url)` opens a URL in the app that handles it, and `canOpen(url)` checks whether an app can                                                                                                |
+| `secureStorage` | `get(key)`, `set(key, value)`, and `delete(key)` keep strings in the Keychain                                                                                                                   |
+| `files`         | `readText(path)`, `writeText(path, text)`, `delete(path)`, `exists(path)`, and `list(path)` work with files in the app's Application Support folder. Paths are relative, and `..` isn't allowed |
+
+For `canOpen` to see a custom URL scheme, list the scheme under `LSApplicationQueriesSchemes` in Info.plist.
+
+### Native components
+
+To show a SwiftUI view that the library doesn't include, such as a map, register a `NativeComponent` under an element name:
+
+```swift
+let map = NativeComponent("mapview") { element in
+    MapElement(element: element)
+}
+
+SvelteView(source: bundle, components: [map])
+```
+
+`element` reads attributes with `string`, `number`, `bool`, `value`, and `decode(_:_:)`. It renders the element's children with `children`, or one named child with `slot(name)`, and it sends events to `on<event>` handlers with `send`. The view updates when an attribute changes, and modifiers like `padding` and `frame` still apply. To type the element in Svelte, add it to `SvelteHTMLElements` with the `NativeElement` helper:
+
+```ts
+import type { NativeElement } from "swiftui-svelte/elements";
+
+declare module "svelte/elements" {
+  interface SvelteHTMLElements {
+    mapview: NativeElement<
+      { latitude: number; longitude: number },
+      { regionchange: { latitude: number; longitude: number } }
+    >;
+  }
+}
+```
+
+The example app's `mapview` shows a complete component built on MapKit.
+
 ## Props, actions, and several views
 
 `mountApp` can register several components by name, so one bundle can provide any number of screens:
@@ -932,7 +1117,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **Large lists take a few frames.** Svelte's work happens off the main thread, but SwiftUI still needs several frames to lay out 1,000 new rows.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.
-- **Limited animation.** Transitions, `animated`, and `withAnimation` cover most changes, but there are no gestures beyond taps and swipes yet. Inside a `list` row, the row resizes on its own when an element leaves, so a removal transition there can look abrupt.
+- **Removal transitions in lists.** Inside a `list` row, the row resizes on its own when an element leaves, so a removal transition there can look abrupt.
 
 ## Example app
 

@@ -1,7 +1,10 @@
 export type {
   AnimationOptions,
   Color,
+  DragEvent,
+  MagnifyEvent,
   NumberFormat,
+  RotateEvent,
   RowMove,
   ScrollGeometry,
   SearchScope,

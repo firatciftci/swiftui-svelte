@@ -46,11 +46,21 @@ enum HostEnvironment {
     }
 }
 
+struct AccessibilitySettings: Equatable {
+    var voiceOver = false
+    var switchControl = false
+    var differentiateWithoutColor = false
+    var invertColors = false
+    var boldText = false
+    var buttonShapes = false
+}
+
 struct EnvironmentSnapshot: Equatable {
     var colorScheme = ColorScheme.light
     var increaseContrast = false
     var reduceMotion = false
     var reduceTransparency = false
+    var accessibility = AccessibilitySettings()
     var dynamicTypeSize = DynamicTypeSize.large
     var locale = Locale(identifier: "en_US")
     var timeZone = TimeZone(identifier: "UTC") ?? .current
@@ -67,6 +77,12 @@ struct EnvironmentSnapshot: Equatable {
             "increaseContrast": increaseContrast,
             "reduceMotion": reduceMotion,
             "reduceTransparency": reduceTransparency,
+            "voiceOver": accessibility.voiceOver,
+            "switchControl": accessibility.switchControl,
+            "differentiateWithoutColor": accessibility.differentiateWithoutColor,
+            "invertColors": accessibility.invertColors,
+            "boldText": accessibility.boldText,
+            "buttonShapes": accessibility.buttonShapes,
             "dynamicTypeSize": Self.name(of: dynamicTypeSize),
             "locale": locale.identifier(.bcp47),
             "timeZone": timeZone.identifier,

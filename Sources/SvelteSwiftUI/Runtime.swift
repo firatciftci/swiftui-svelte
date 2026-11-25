@@ -28,7 +28,8 @@ public final class SvelteRuntime {
     @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
-    @ObservationIgnored private var loadedVersion: Date?
+    @ObservationIgnored private var loadedVersion: String?
+    @ObservationIgnored private var isDownloading = false
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
@@ -39,20 +40,26 @@ public final class SvelteRuntime {
     @ObservationIgnored private var settlements: [Int: CheckedContinuation<Void, Never>] = [:]
     @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
+    @ObservationIgnored private(set) var modules: [String: NativeModule] = [:]
+    @ObservationIgnored private(set) var components: [String: NativeComponent] = [:]
+    @ObservationIgnored private var generation = 0
     @ObservationIgnored private let reloadsOnChange: Bool
 
-    public init(source: URL, reloadsOnChange: Bool = false) {
+    public init(
+        source: URL,
+        reloadsOnChange: Bool = false,
+        modules: Array<NativeModule> = [],
+        components: Array<NativeComponent> = []
+    ) {
         self.source = source
         self.reloadsOnChange = reloadsOnChange
+        for module in BuiltInModules.all + modules { self.modules[module.name] = module }
+        for component in components { self.components[component.name] = component }
         let drain = Unchecked(value: WeakBox<SvelteRuntime>())
         engine = ScriptEngine {
             DispatchQueue.main.async { MainActor.assumeIsolated { drain.value.object?.drain() } }
         }
         drain.value.object = self
-    }
-
-    nonisolated private static func version(of source: URL) -> Date? {
-        try? source.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
     func start() {
@@ -84,8 +91,7 @@ public final class SvelteRuntime {
             var seen = initial
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
-                let version = Self.version(of: source)
-                guard version != seen else { continue }
+                guard let version = await BundleLoader.version(of: source), version != seen else { continue }
                 seen = version
                 await self?.reload(ifNewerThan: version)
             }
@@ -132,6 +138,25 @@ public final class SvelteRuntime {
         }
     }
 
+    func runTask(_ id: Int) async {
+        requestSerial += 1
+        let request = requestSerial
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                settlements[request] = continuation
+                call("__svelteDispatch", [id, "task", NSNull(), request])
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.cancelTask(request, of: id) }
+        }
+    }
+
+    private func cancelTask(_ request: Int, of id: Int) {
+        guard let continuation = settlements.removeValue(forKey: request) else { return }
+        call("__svelteDispatch", [id, "taskcancel", request, NSNull()])
+        continuation.resume()
+    }
+
     private func call(_ function: String, _ arguments: Array<Any>, waits: Bool = true) {
         let engine = engine
         let arguments = Unchecked(value: arguments)
@@ -152,6 +177,7 @@ public final class SvelteRuntime {
             case let .commit(json, animation): store.apply(json, animation: animation)
             case let .action(mount, name, json): perform(mount, name, json)
             case let .invoke(id, method, json): invoke(id, method, json)
+            case let .nativeCall(id, module, method, json): callModule(id, module, method, json)
             case let .error(error): report(error)
             case .requestFrame: isFrameRequested = true
             }
@@ -175,6 +201,10 @@ public final class SvelteRuntime {
         let request = options["request"]?.number.map { Int($0) }
         if method == "settled" {
             if let request { settlements.removeValue(forKey: request)?.resume() }
+            return
+        }
+        if method == "announce" {
+            Accessibility.announce(options["message"]?.string, priority: options["priority"]?.string)
             return
         }
         guard let node = store.node(id) else {
@@ -295,32 +325,97 @@ public final class SvelteRuntime {
         store.dismissError()
     }
 
+    public func emit(_ event: String, from module: String) {
+        call("__svelteNativeEvent", [module, event, NSNull()])
+    }
+
+    public func emit(_ event: String, from module: String, _ payload: some Encodable) {
+        guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
+        call("__svelteNativeEvent", [module, event, json])
+    }
+
+    private func callModule(_ id: Int, _ module: String, _ method: String, _ json: String) {
+        guard let handler = modules[module]?.functions[method] else {
+            let error = NativeModuleError(code: "unknownFunction", message: "There's no native function \(module).\(method).")
+            replyToCall(id, error: error, result: nil)
+            return
+        }
+        let generation = generation
+        Task {
+            let outcome: Result<Data?, NativeModuleError>
+            do {
+                outcome = .success(try await handler(Data(json.utf8)))
+            } catch let error as NativeModuleError {
+                outcome = .failure(error)
+            } catch {
+                outcome = .failure(NativeModuleError(code: "native", message: error.localizedDescription))
+            }
+            guard generation == self.generation else { return }
+            switch outcome {
+            case let .success(data): replyToCall(id, error: nil, result: data)
+            case let .failure(error): replyToCall(id, error: error, result: nil)
+            }
+        }
+    }
+
+    private func replyToCall(_ id: Int, error: NativeModuleError?, result: Data?) {
+        let errorJSON = error.flatMap { error in
+            (try? JSONEncoder().encode(["code": error.code, "message": error.message])).flatMap {
+                String(bytes: $0, encoding: .utf8)
+            }
+        }
+        let resultJSON = result.flatMap { String(bytes: $0, encoding: .utf8) }
+        call("__svelteNativeReply", [id, errorJSON ?? NSNull(), resultJSON ?? NSNull()])
+    }
+
     func restart() {
         reload()
     }
 
-    private func reload(ifNewerThan version: Date?) {
-        if version != loadedVersion { reload() }
+    private func reload(ifNewerThan version: String) {
+        if !isDownloading, version != loadedVersion { reload() }
     }
 
     private func reload() {
+        generation += 1
+        guard !source.isFileURL else {
+            load(BundleLoader.load(source))
+            return
+        }
+        let generation = generation
+        let source = source
+        isDownloading = true
+        Task {
+            let result = await BundleLoader.download(source)
+            guard generation == self.generation else { return }
+            isDownloading = false
+            load(result)
+        }
+    }
+
+    private func load(_ result: Result<BundleLoader.Bundle, BundleLoader.Failure>) {
         isFrameRequested = false
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
         store = NodeStore()
         error = nil
-        loadedVersion = Self.version(of: source)
         let engine = engine
-        guard let script = try? String(contentsOf: source, encoding: .utf8) else {
+        let bundle: BundleLoader.Bundle
+        switch result {
+        case let .success(loaded):
+            bundle = loaded
+        case let .failure(failure):
             engine.queue.sync { engine.stop() }
             _ = engine.takeMessages()
-            report(ScriptError(message: "Couldn't load \(source.path()).", frames: []))
+            report(ScriptError(message: failure.message, frames: []))
             return
         }
-        let map = (try? Data(contentsOf: source.appendingPathExtension("map"))).flatMap { try? SourceMap(json: $0) }
+        loadedVersion = bundle.version
+        let map = bundle.map.flatMap { try? SourceMap(json: $0) }
         let mounts = self.mounts.keys.sorted().map { Unchecked(value: arguments(for: $0)) }
         let environment = Self.json(environment)
         let source = source
+        let script = bundle.script
         engine.queue.sync {
             engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
@@ -388,7 +483,9 @@ nonisolated extension ScriptError {
         guard parts.count >= 3, let lineNumber = Int(parts[parts.count - 2]), let column = Int(parts[parts.count - 1])
         else { return Frame(function: function, location: String(line[line.index(after: at)...])) }
         let file = parts.dropLast(2).joined(separator: ":")
-        if file == source.absoluteString || file == source.path(), let mapped = map?.location(line: lineNumber, column: column) {
+        if file == source.absoluteString || file == source.path(percentEncoded: false),
+            let mapped = map?.location(line: lineNumber, column: column)
+        {
             return Frame(function: function, location: "\(clean(mapped.file)):\(mapped.line):\(mapped.column)")
         }
         let name = file.split(separator: "/").last.map(String.init) ?? file

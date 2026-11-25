@@ -67,6 +67,12 @@ jobs:
       - name: Check that the test fixtures are up to date
         run: git diff --exit-code -- Tests/SvelteSwiftUITests/Fixtures
 
+      - name: Check that the known element names are up to date
+        run: pnpm run elements && git diff --exit-code -- src/known.ts
+
+      - name: Check that the template's Xcode project is up to date
+        run: pnpm run template && git diff --exit-code -- template
+
       - name: Test the Swift package
         run: xcrun swift test --enable-code-coverage
 
@@ -108,6 +114,98 @@ jobs:
           name: build-log
           path: build/xcodebuild.log
           if-no-files-found: ignore
+
+  svelte:
+    name: Svelte ${{ matrix.svelte }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        svelte: [5.59.0, ~5.59.0]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Svelte ${{ matrix.svelte }}
+        env:
+          SVELTE: ${{ matrix.svelte }}
+        run: pnpm add --save-dev "svelte@$SVELTE"
+
+      - name: Check types
+        run: pnpm run check
+
+      - name: Test the JS package
+        run: pnpm test
+
+  template:
+    name: App template
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install tools
+        run: brew bundle
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pack the npm package
+        run: |
+          mkdir -p build/template
+          pnpm pack --pack-destination build/template
+
+      - name: Create an app
+        run: |
+          tarball="$(ls "$PWD"/build/template/swiftui-svelte-*.tgz)"
+          cd build/template
+          npx --yes --package "$tarball" swiftui-svelte create hello-app
+          cd hello-app
+          npm pkg set "devDependencies.swiftui-svelte=file:$tarball"
+          npm install --no-audit --no-fund
+
+      - name: Build, check, and lint the app
+        working-directory: build/template/hello-app
+        run: npm run build && npm run check && npm run lint
+
+      - name: Build the app's Xcode project against this commit
+        working-directory: build/template/hello-app/ios
+        run: |
+          sed -i '' -e "s#url: https://github.com/firatciftci/swiftui-svelte#path: $GITHUB_WORKSPACE#" -e '/^    from: /d' project.yml
+          xcodegen generate
+          xcodebuild build \
+            -project HelloApp.xcodeproj \
+            -scheme HelloApp \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath ../../derived \
+            CODE_SIGNING_ALLOWED=NO
 
   ui-tests:
     name: UI tests

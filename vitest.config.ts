@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [svelte()],
+  define: { __SWIFTUI_SVELTE_DEV__: "true" },
   resolve: {
     alias: { "swiftui-svelte": new URL("src", import.meta.url).pathname },
     conditions: ["svelte-custom-renderer", "browser"],

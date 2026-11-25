@@ -9,6 +9,12 @@ public struct SvelteView: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
+    @Environment(\.accessibilitySwitchControlEnabled) private var switchControl
+    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
+    @Environment(\.accessibilityInvertColors) private var invertColors
+    @Environment(\.accessibilityShowButtonShapes) private var buttonShapes
+    @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.locale) private var locale
     @Environment(\.timeZone) private var timeZone
@@ -27,10 +33,13 @@ public struct SvelteView: View {
         component: String = "default",
         props: [String: Any] = [:],
         actions: [String: @MainActor (Any) -> Void] = [:],
-        reloadsOnChange: Bool = false
+        reloadsOnChange: Bool = false,
+        modules: Array<NativeModule> = [],
+        components: Array<NativeComponent> = []
     ) {
         self.init(
-            runtime: SvelteRuntime(source: source, reloadsOnChange: reloadsOnChange),
+            runtime: SvelteRuntime(
+                source: source, reloadsOnChange: reloadsOnChange, modules: modules, components: components),
             component: component,
             props: props,
             actions: actions)
@@ -114,6 +123,14 @@ public struct SvelteView: View {
             scenePhase: scenePhase,
             safeAreaInsets: safeAreaInsets,
             keyboardHeight: keyboardHeight
+        )
+        snapshot.accessibility = AccessibilitySettings(
+            voiceOver: voiceOver,
+            switchControl: switchControl,
+            differentiateWithoutColor: differentiateWithoutColor,
+            invertColors: invertColors,
+            boldText: legibilityWeight == .bold,
+            buttonShapes: buttonShapes
         )
         #if os(iOS) || os(visionOS)
             snapshot.horizontalSizeClass = EnvironmentSnapshot.name(of: horizontalSizeClass)

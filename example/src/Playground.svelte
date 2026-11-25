@@ -1,6 +1,6 @@
 <script lang="ts">
   import { withAnimation } from "swiftui-svelte";
-  import { onBackground } from "swiftui-svelte/app";
+  import { announce, onBackground } from "swiftui-svelte/app";
   import {
     ColorPicker,
     ConfirmationDialog,
@@ -19,6 +19,7 @@
     Toggle,
   } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
+  import { files, nativeModule } from "swiftui-svelte/native";
   import Mail from "./Mail.svelte";
   import Produce from "./Produce.svelte";
 
@@ -34,6 +35,54 @@
   let fetchError = $state<string | null>(null);
   let refreshes = $state(0);
   let showsLayouts = $state(false);
+  let showsAccessibility = $state(false);
+  let showsLifecycle = $state(false);
+  let showsEnvironment = $state(false);
+  let showsGestures = $state(false);
+  let lastGesture = $state("none yet");
+  let cardOffset = $state({ x: 0, y: 0 });
+  let cardScale = $state(1);
+  let cardRotation = $state(0);
+  let isPinched = false;
+  let haptics = $state(0);
+  let showsNative = $state(false);
+  let place = $state({
+    latitude: 41.7886,
+    longitude: -87.5987,
+    name: "Chicago",
+  });
+  let mapCenter = $state("not reported yet");
+  let photo = $state<string | null>(null);
+  let cameraStatus = $state("");
+  let savedNote = $state("");
+  const camera = nativeModule("camera");
+
+  async function takePhoto() {
+    if (!(await camera.isAvailable())) {
+      cameraStatus = "This device doesn't have a camera.";
+      return;
+    }
+    photo = await camera.takePhoto();
+  }
+
+  async function saveNote() {
+    await files.writeText("notes/hello.txt", "Hello from Svelte");
+    const text = await files.readText("notes/hello.txt");
+    const names = await files.list("notes");
+    savedNote = `${text ?? ""} (${names.join(", ")})`;
+  }
+  let showsTicker = $state(false);
+  let ticks = $state(0);
+  let tickerStatus = $state("Not started yet");
+
+  async function tick(signal: AbortSignal) {
+    ticks = 0;
+    while (!signal.aborted) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (!signal.aborted) ticks++;
+    }
+  }
+  let rating = $state(3);
   let showsContent = $state(false);
   let bells = $state(0);
   let imageFailed = $state(false);
@@ -94,11 +143,12 @@
     "pink",
   ] as const;
 
-  async function loadStars() {
+  async function loadStars(signal?: AbortSignal) {
     fetchError = null;
     try {
       const response = await fetch(
         "https://api.github.com/repos/sveltejs/svelte",
+        { signal },
       );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const repo: unknown = await response.json();
@@ -110,13 +160,10 @@
         stars = Number(repo.stargazers_count);
       }
     } catch (error) {
+      if (signal?.aborted === true) return;
       fetchError = error instanceof Error ? error.message : String(error);
     }
   }
-
-  $effect(() => {
-    loadStars();
-  });
 
   async function refresh() {
     await Promise.all([
@@ -186,7 +233,7 @@
         {/if}
       </vstack>
 
-      <hstack spacing={12}>
+      <hstack spacing={12} ontask={(signal) => loadStars(signal)}>
         <asyncimage
           src="https://github.com/sveltejs.png"
           width={48}
@@ -223,7 +270,7 @@
           </txt>
         </vstack>
         <spacer />
-        <btn variant="borderless" onclick={loadStars}>
+        <btn variant="borderless" onclick={() => loadStars()}>
           <sfsymbol name="arrow.clockwise" label="Refresh" />
         </btn>
       </hstack>
@@ -747,6 +794,216 @@
             </tab>
           {/each}
         </TabView>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Accessibility" bind:expanded={showsAccessibility}>
+        <hstack
+          spacing={4}
+          testid="rating"
+          a11ychildren="ignore"
+          a11ylabel="Rating"
+          a11yvalue="{rating} of 5 stars"
+          a11yhint="Swipe up or down to change the rating"
+          a11yactions={["Clear rating", "Rate 5 stars"]}
+          ona11yaction={(name) => (rating = name === "Clear rating" ? 0 : 5)}
+          ona11yadjust={(direction) =>
+            (rating = Math.min(
+              5,
+              Math.max(0, rating + (direction === "increment" ? 1 : -1)),
+            ))}
+        >
+          {#each [1, 2, 3, 4, 5] as star (star)}
+            <btn
+              variant="plain"
+              onclick={() => (rating = star)}
+              testid="star-{star}"
+            >
+              <sfsymbol
+                name={star <= rating ? "star.fill" : "star"}
+                color="yellow"
+              />
+            </btn>
+          {/each}
+        </hstack>
+        <btn onclick={() => announce(`Rated ${rating} of 5 stars`)}>
+          Announce the rating
+        </btn>
+        <vstack
+          alignment="leading"
+          spacing={6}
+          testid="grouped"
+          a11ychildren="contain"
+          a11ylabel="Grouped controls"
+        >
+          <txt font="headline" a11yheading={2}>Grouped controls</txt>
+          <hstack spacing={12}>
+            <btn variant="bordered" testid="grouped-first">First</btn>
+            <btn variant="bordered" testid="grouped-second">Second</btn>
+          </hstack>
+        </vstack>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Environment" bind:expanded={showsEnvironment}>
+        <vstack
+          colorscheme="dark"
+          background="secondarySystemBackground"
+          padding
+          radius={12}
+          maxwidth="infinity"
+          testid="dark-card"
+        >
+          <txt color="primary">This card always uses dark mode</txt>
+        </vstack>
+        <hstack spacing={16}>
+          <txt testid="regular-text">Regular text</txt>
+          <txt dynamictypesize="accessibility2" testid="large-text"
+            >Large text</txt
+          >
+        </hstack>
+        <glasseffectcontainer spacing={24}>
+          <hstack spacing={24} padding={8}>
+            <sfsymbol
+              name="scribble.variable"
+              font="title"
+              width={64}
+              height={64}
+              glasseffect
+            />
+            <sfsymbol
+              name="eraser.fill"
+              testid="glass-eraser"
+              font="title"
+              width={64}
+              height={64}
+              glasseffect={{ tint: "blue", interactive: true }}
+            />
+            <sfsymbol
+              name="paintbrush.fill"
+              font="title"
+              width={64}
+              height={64}
+              glasseffect={{ variant: "clear", shape: 16 }}
+            />
+          </hstack>
+        </glasseffectcontainer>
+        <btn
+          sensoryfeedback="success"
+          feedbacktrigger={haptics}
+          onclick={() => haptics++}
+        >
+          Tap for a success haptic
+        </btn>
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Gestures" bind:expanded={showsGestures}>
+        <zstack
+          testid="gesture-card"
+          height={120}
+          maxwidth="infinity"
+          contentshape="rectangle"
+          tapcount={2}
+          ontap={(location) =>
+            (lastGesture = `double tap at ${Math.round(location.x)}, ${Math.round(location.y)}`)}
+          onlongpress={() => (lastGesture = "long press")}
+          ondrag={(drag) => {
+            if (drag.phase === "ended") {
+              withAnimation(() => (cardOffset = { x: 0, y: 0 }), "bouncy");
+              lastGesture = `drag by ${Math.round(drag.translation.x)}, ${Math.round(drag.translation.y)}`;
+            } else {
+              cardOffset = drag.translation;
+            }
+          }}
+          onmagnify={(magnify) => {
+            cardScale = magnify.phase === "ended" ? 1 : magnify.magnification;
+            isPinched =
+              magnify.phase === "ended" &&
+              Math.abs(magnify.magnification - 1) > 0.2;
+            if (isPinched) {
+              lastGesture = `pinch to ${magnify.magnification.toFixed(1)}×`;
+            }
+          }}
+          onrotate={(rotate) => {
+            cardRotation = rotate.phase === "ended" ? 0 : rotate.degrees;
+            if (
+              rotate.phase === "ended" &&
+              !isPinched &&
+              Math.abs(rotate.degrees) > 10
+            ) {
+              lastGesture = `rotation by ${Math.round(rotate.degrees)}°`;
+            }
+          }}
+        >
+          <zstack
+            maxwidth="infinity"
+            maxheight="infinity"
+            background="indigo"
+            radius={16}
+            offset={cardOffset}
+            scale={cardScale}
+            rotation={cardRotation}
+          >
+            <txt color="white" weight="semibold" align="center" padding
+              >Double tap, long press, drag, pinch, or rotate this card</txt
+            >
+          </zstack>
+        </zstack>
+        <txt font="caption" color="secondary" testid="last-gesture"
+          >Last gesture: {lastGesture}</txt
+        >
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Lifecycle" bind:expanded={showsLifecycle}>
+        <toggle checked={showsTicker} onchange={(next) => (showsTicker = next)}
+          >Show the ticker</toggle
+        >
+        {#if showsTicker}
+          <txt
+            testid="ticker"
+            ontask={tick}
+            ondisappear={() => (tickerStatus = `Stopped after ${ticks} ticks`)}
+            >Ticked {ticks} times</txt
+          >
+        {/if}
+        <txt font="caption" color="secondary" testid="ticker-status"
+          >{tickerStatus}</txt
+        >
+      </DisclosureGroup>
+
+      <DisclosureGroup title="Native" bind:expanded={showsNative}>
+        <mapview
+          testid="map"
+          latitude={place.latitude}
+          longitude={place.longitude}
+          span={0.05}
+          marker={place.name}
+          height={200}
+          radius={12}
+          onregionchange={(center) =>
+            (mapCenter = `${center.latitude.toFixed(2)}, ${center.longitude.toFixed(2)}`)}
+        />
+        <txt font="caption" color="secondary" testid="map-center"
+          >Map center: {mapCenter}</txt
+        >
+        <btn
+          onclick={() =>
+            (place = { latitude: 35.6764, longitude: 139.65, name: "Tokyo" })}
+          >Go to Tokyo</btn
+        >
+        <btn onclick={takePhoto}>Take photo</btn>
+        {#if cameraStatus !== ""}
+          <txt font="caption" color="secondary" testid="camera-status"
+            >{cameraStatus}</txt
+          >
+        {/if}
+        {#if photo != null}
+          <asyncimage src={photo} height={120} />
+        {/if}
+        <btn onclick={saveNote}>Save a note</btn>
+        {#if savedNote !== ""}
+          <txt font="caption" color="secondary" testid="saved-note"
+            >{savedNote}</txt
+          >
+        {/if}
       </DisclosureGroup>
     </list>
 

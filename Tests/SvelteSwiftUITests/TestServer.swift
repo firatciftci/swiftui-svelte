@@ -7,6 +7,7 @@ nonisolated final class TestServer: @unchecked Sendable {
     private let listener: NWListener
     private var connections: Array<NWConnection> = []
     private var isStarted = false
+    private var files: [String: String] = [:]
 
     init() throws {
         let parameters = NWParameters.tcp
@@ -32,10 +33,14 @@ nonisolated final class TestServer: @unchecked Sendable {
             listener.newConnectionHandler = { [weak self] connection in
                 guard let self else { return }
                 connections.append(connection)
-                ServerConnection(connection: connection, queue: queue).start()
+                ServerConnection(connection: connection, queue: queue) { [weak self] in self?.files[$0] }.start()
             }
             listener.start(queue: queue)
         }
+    }
+
+    func serve(_ text: String, at path: String) {
+        queue.sync { files[path] = text }
     }
 
     func stop() {
@@ -50,15 +55,17 @@ nonisolated final class TestServer: @unchecked Sendable {
 nonisolated private final class ServerConnection: @unchecked Sendable {
     private let connection: NWConnection
     private let queue: DispatchQueue
+    private let files: (String) -> String?
     private var buffer = Data()
     private var isWebSocket = false
     private var message = Data()
     private var messageOpcode: UInt8 = 0
     private var isClosing = false
 
-    init(connection: NWConnection, queue: DispatchQueue) {
+    init(connection: NWConnection, queue: DispatchQueue, files: @escaping (String) -> String?) {
         self.connection = connection
         self.queue = queue
+        self.files = files
     }
 
     func start() {
@@ -131,6 +138,10 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
         case let path where path.hasPrefix("/status/"):
             let status = Int(path.dropFirst(8)) ?? 500
             respond(status, [:], status == 204 || status == 304 ? Data() : Data("status \(status)".utf8))
+        case let path where files(path) != nil:
+            let body = Data((files(path) ?? "").utf8)
+            let tag = SHA256.hash(data: body).prefix(8).map { String(format: "%02x", $0) }.joined()
+            respond(200, ["content-type": "text/javascript", "etag": "\"\(tag)\""], body, sendsBody: method != "HEAD")
         default:
             respond(404, [:], Data("not found".utf8))
         }
@@ -142,12 +153,12 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
         return text + "\r\n"
     }
 
-    private func respond(_ status: Int, _ headers: [String: String], _ body: Data) {
+    private func respond(_ status: Int, _ headers: [String: String], _ body: Data, sendsBody: Bool = true) {
         var headers = headers
         headers["connection"] = "close"
         if status != 204, status != 304 { headers["content-length"] = String(body.count) }
         var data = Data(head(status, headers).utf8)
-        data.append(body)
+        if sendsBody { data.append(body) }
         connection.send(content: data, completion: .contentProcessed { [connection] _ in connection.cancel() })
     }
 

@@ -7,6 +7,12 @@ export type HostEnvironment = {
   reduceMotion: boolean;
   reduceTransparency: boolean;
   increaseContrast: boolean;
+  voiceOver: boolean;
+  switchControl: boolean;
+  differentiateWithoutColor: boolean;
+  invertColors: boolean;
+  boldText: boolean;
+  buttonShapes: boolean;
   dynamicTypeSize:
     | "xSmall"
     | "small"
@@ -43,6 +49,12 @@ export const environment: HostEnvironment = {
   reduceMotion: false,
   reduceTransparency: false,
   increaseContrast: false,
+  voiceOver: false,
+  switchControl: false,
+  differentiateWithoutColor: false,
+  invertColors: false,
+  boldText: false,
+  buttonShapes: false,
   dynamicTypeSize: "large",
   locale: "en-US",
   languages: ["en-US"],

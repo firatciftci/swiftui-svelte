@@ -1,4 +1,5 @@
 import antfu from "@antfu/eslint-config";
+import { swiftuiSvelte } from "./src/eslint.ts";
 
 export default antfu({
   type: "lib",
@@ -11,6 +12,7 @@ export default antfu({
     "Tests/SvelteSwiftUITests/Fixtures/**",
     "test/web/wpt/**",
     "example/src/paraglide/**",
+    "template/**",
   ],
   stylistic: false,
   markdown: false,
@@ -108,6 +110,7 @@ export default antfu({
     rules: { "ts/explicit-function-return-type": "off" },
   },
   { files: ["example/src/Bench.svelte"], rules: { "no-console": "off" } },
+  ...swiftuiSvelte.map((config) => ({ ...config, files: ["example/src/**"] })),
   {
     files: ["src/host.ts", "src/renderer.ts"],
     rules: { "unicorn/no-global-object-property-assignment": "off" },
