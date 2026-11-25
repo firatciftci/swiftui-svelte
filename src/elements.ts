@@ -84,6 +84,7 @@ declare module "svelte/elements" {
     textfield: Modifiers & {
       value?: string;
       placeholder?: string;
+      debounce?: number;
       oninput?: (value: string) => void;
       onsubmit?: () => void;
     };
@@ -137,6 +138,8 @@ declare global {
   function __nativeCommit(json: string): void;
   function __nativeNow(): number;
   function __nativeGC(): void;
+  function __nativeRequestFrame(): void;
+  var __svelteFrame: (time: number) => void;
   function __nativeStats(): { nodes: number; maxFrameGapMs: number };
   function __nativeLog(
     level: "log" | "info" | "warn" | "error" | "debug",

@@ -15,6 +15,7 @@ final class Runtime {
     @ObservationIgnored private var context: JSContext?
     @ObservationIgnored private var timers: [Int: Task<Void, Never>] = [:]
     @ObservationIgnored private var nextTimerID = 1
+    @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var loadedVersion: Date?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
@@ -32,6 +33,7 @@ final class Runtime {
 
     func start() {
         guard context == nil else { return }
+        frames.onFrame = { [weak self] timestamp in self?.frame(timestamp) }
         frames.start()
         reload()
         guard reloadsOnChange else { return }
@@ -49,6 +51,12 @@ final class Runtime {
             .call(withArguments: [id, type, payload])
     }
 
+    private func frame(_ timestamp: CFTimeInterval) {
+        guard isFrameRequested else { return }
+        isFrameRequested = false
+        context?.objectForKeyedSubscript("__svelteFrame")?.call(withArguments: [timestamp * 1000])
+    }
+
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
         node.attributes[name] = value
         dispatch(node.id, event, payload)
@@ -63,6 +71,7 @@ final class Runtime {
     private func reload() {
         for timer in timers.values { timer.cancel() }
         timers = [:]
+        isFrameRequested = false
         store = NodeStore()
         error = nil
         loadedVersion = bundleVersion
@@ -108,6 +117,9 @@ final class Runtime {
         let now: @convention(block) () -> Double = {
             CACurrentMediaTime() * 1000
         }
+        let requestFrame: @convention(block) () -> Void = { [weak self] in
+            self?.isFrameRequested = true
+        }
         let collectGarbage: @convention(block) () -> Void = { [weak context] in
             if let context { JSGarbageCollect(context.jsGlobalContextRef) }
         }
@@ -124,6 +136,7 @@ final class Runtime {
         context.globalObject.setValue(clearTimer, forProperty: "clearInterval")
         context.globalObject.setValue(now, forProperty: "__nativeNow")
         context.globalObject.setValue(collectGarbage, forProperty: "__nativeGC")
+        context.globalObject.setValue(requestFrame, forProperty: "__nativeRequestFrame")
         context.globalObject.setValue(stats, forProperty: "__nativeStats")
 
         let storageKey = "SvelteSwiftUI.localStorage"
@@ -197,11 +210,12 @@ private final class FrameMonitor: NSObject {
     private var link: CADisplayLink?
     private var lastTimestamp: CFTimeInterval = 0
     private var maxGap: Double = 0
+    var onFrame: ((CFTimeInterval) -> Void)?
 
     func start() {
         guard link == nil else { return }
         #if os(macOS)
-            guard let link = NSScreen.main?.displayLink(target: self, selector: #selector(tick)) else { return }
+            guard let link = (NSScreen.main ?? NSScreen.screens.first)?.displayLink(target: self, selector: #selector(tick)) else { return }
         #else
             let link = CADisplayLink(target: self, selector: #selector(tick))
         #endif
@@ -219,5 +233,6 @@ private final class FrameMonitor: NSObject {
             maxGap = max(maxGap, (link.timestamp - lastTimestamp) * 1000)
         }
         lastTimestamp = link.timestamp
+        onFrame?(link.timestamp)
     }
 }

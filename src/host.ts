@@ -1,6 +1,23 @@
 const resolved = Promise.resolve();
 globalThis.queueMicrotask ??= (task) => void resolved.then(task);
 
+if (typeof requestAnimationFrame === "undefined") {
+  let callbacks = new Map<number, FrameRequestCallback>();
+  let nextFrameId = 1;
+  globalThis.__svelteFrame = (time) => {
+    const due = callbacks;
+    callbacks = new Map();
+    for (const callback of due.values()) callback(time);
+  };
+  globalThis.requestAnimationFrame = (callback) => {
+    if (callbacks.size === 0) __nativeRequestFrame();
+    const id = nextFrameId++;
+    callbacks.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => void callbacks.delete(id);
+}
+
 function format(value: unknown): string {
   if (typeof value === "string") return value;
   if (value instanceof Error) return value.stack ?? value.message;

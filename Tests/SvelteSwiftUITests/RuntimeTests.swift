@@ -12,9 +12,14 @@ struct RuntimeTests {
         return runtime
     }
 
+    private func pumpRunLoop() {
+        CFRunLoopRunInMode(.defaultMode, 0.005, false)
+    }
+
     private func eventually(_ condition: () -> Bool) async throws {
         for _ in 0..<200 where !condition() {
-            try await Task.sleep(for: .milliseconds(10))
+            pumpRunLoop()
+            try await Task.sleep(for: .milliseconds(5))
         }
         #expect(condition())
     }
@@ -60,6 +65,21 @@ struct RuntimeTests {
         let node = try #require(runtime.store.node(2))
         runtime.edit(node, "input", to: .string("typed"), event: "input", payload: "typed")
         #expect(node.attributes["input"] == .string("typed"))
+    }
+
+    @Test func callsBackOnceForEachRequestedFrame() async throws {
+        let runtime = try runtime(
+            mount + """
+                let frames = 0;
+                globalThis.__svelteFrame = (time) => {
+                  frames++;
+                  if (frames < 3) __nativeRequestFrame();
+                  else attr(2, "frames", typeof time === "number" && time > 0 ? frames : -1);
+                };
+                __nativeRequestFrame();
+                __nativeRequestFrame();
+                """)
+        try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(3) }
     }
 
     @Test func runsTimers() async throws {

@@ -38,8 +38,8 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Redundant ops in a batch are coalesced, such as an attribute set twice or an insert followed by a remove
 - [x] Controlled inputs without lag or cursor jumps: native state leads, and JS echoes are ignored unless they differ from the latest native value
 - [ ] Typed event payloads, including structured ones like `{ x, y }` and `{ from, to }`
-- [ ] Event modifiers that make sense natively: `once`, and an opt-in debounced `oninput`
-- [ ] `requestAnimationFrame` and `cancelAnimationFrame`, driven by `CADisplayLink`
+- [x] Event modifiers that make sense natively: `once`, and an opt-in debounced `oninput`
+- [x] `requestAnimationFrame` and `cancelAnimationFrame`, driven by `CADisplayLink`
 - [ ] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
 - [ ] The failed snippet of `<svelte:boundary>` renders natively
 - [ ] Source maps: Vite emits them, and the runtime maps stack traces with them

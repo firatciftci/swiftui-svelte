@@ -179,7 +179,7 @@ The elements and their attributes are typed in [`src/elements.ts`](src/elements.
 | `btn`                          | `Button`                       | `variant`, `role`, `onclick`                                                    |
 | `sfsymbol`                     | `Image(systemName:)`           | `name`, `label`                                                                 |
 | `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                                                    |
-| `textfield`                    | `TextField`                    | `value`, `placeholder`, `oninput(value)`, `onsubmit`                            |
+| `textfield`                    | `TextField`                    | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                |
 | `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                                                  |
 | `formview`, `sectionview`      | `Form`, `Section`              | `header`, `footer` (on `sectionview`)                                           |
 | `picker`, `choice`             | `Picker` and its options       | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`) |
@@ -208,6 +208,8 @@ A few details:
 
 - **Buttons.** `variant` is `automatic`, `borderless`, `bordered`, or `prominent`, and `role` is `destructive` or `cancel`. With `variant="automatic"`, a button in a list makes its whole row tappable.
 - **Text.** `lines` caps the number of lines, and `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`.
+- **Event handlers.** Handlers receive the new value itself, such as the text for `oninput` or the boolean for a toggle's `onchange`, rather than a DOM event. Because there's no event object, there's nothing to prevent or stop. To react to an event only once, keep a flag in your state and check it in the handler.
+- **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires.
 - **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.
 - **Symbols.** Without a `label`, VoiceOver reads an `sfsymbol` with SwiftUI's built-in description of the symbol. Set `label` to say what the icon does, especially on icon-only buttons: `<sfsymbol name="trash" label="Delete to-do" />`.
 - **Forms.** `formview` gives a screen the grouped look of the Settings app. Group its rows with `sectionview`, which shows an optional `header` above the rows and `footer` below them. `sectionview` works inside a `list` too.
@@ -289,7 +291,7 @@ async function loadRepo(): Promise<void> {
 }
 ```
 
-`fetch` goes through `URLSession`. It takes a `method`, `headers`, and a string `body`, and the response has `ok`, `status`, `headers`, `text()`, and `json()`. `localStorage` is saved in `UserDefaults`, so it survives relaunches. The host also provides `setTimeout`, `setInterval`, `queueMicrotask`, and `console`, which prints to Xcode's console.
+`fetch` goes through `URLSession`. It takes a `method`, `headers`, and a string `body`, and the response has `ok`, `status`, `headers`, `text()`, and `json()`. `localStorage` is saved in `UserDefaults`, so it survives relaunches. The host also provides `setTimeout`, `setInterval`, `queueMicrotask`, `requestAnimationFrame`, `cancelAnimationFrame`, and `console`, which prints to Xcode's console. Animation frame callbacks run on each display refresh, through `CADisplayLink`.
 
 ## How it works
 

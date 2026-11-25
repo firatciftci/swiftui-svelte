@@ -1,5 +1,3 @@
-import Foundation
-
 struct BridgeError: Error, CustomStringConvertible {
     let description: String
 }

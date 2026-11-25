@@ -32,7 +32,7 @@ const nodes = new Map<number, MirrorNode>();
 const names: Array<string> = [];
 export const commits: Array<string> = [];
 export const ops: Array<Op> = [];
-export const native = { root: null as MirrorNode | null };
+export const native = { root: null as MirrorNode | null, frameRequests: 0 };
 
 class Cursor {
   index = 0;
@@ -343,6 +343,10 @@ export function byTestId(id: string): MirrorNode | undefined {
   return native.root == null ? undefined : search(native.root);
 }
 
+export function frame(time: number): void {
+  globalThis.__svelteFrame(time);
+}
+
 export function installBridge(): void {
   Object.assign(globalThis, {
     __nativeCommit(json: string): void {
@@ -355,5 +359,8 @@ export function installBridge(): void {
       }
     },
     __nativeNow: (): number => performance.now(),
+    __nativeRequestFrame(): void {
+      native.frameRequests++;
+    },
   });
 }

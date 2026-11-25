@@ -57,6 +57,7 @@
         <textfield
           placeholder="Your name"
           value={name}
+          debounce={150}
           oninput={(value) => (name = value.slice(0, 12))}
         />
         {#if name.trim() !== ""}
