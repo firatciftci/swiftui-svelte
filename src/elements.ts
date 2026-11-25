@@ -32,6 +32,40 @@ type Color =
   | "gray"
   | "white"
   | "black";
+type Edge = "top" | "bottom" | "leading" | "trailing";
+type TransitionName =
+  | "opacity"
+  | "fade"
+  | "scale"
+  | "slide"
+  | "blur"
+  | "move"
+  | "push"
+  | `move-${Edge}`
+  | `push-${Edge}`;
+type Transition = TransitionName | `${TransitionName} ${string}`;
+type Curve =
+  | "default"
+  | "linear"
+  | "easeIn"
+  | "easeOut"
+  | "easeInOut"
+  | "spring"
+  | "bouncy"
+  | "smooth"
+  | "snappy";
+type AnimationOptions =
+  | boolean
+  | Curve
+  | {
+      type?: Curve;
+      duration?: number;
+      bounce?: number;
+      delay?: number;
+      speed?: number;
+      repeat?: boolean | number;
+      autoreverses?: boolean;
+    };
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
@@ -44,6 +78,10 @@ type Modifiers = {
   width?: number;
   height?: number;
   animated?: boolean;
+  animation?: AnimationOptions;
+  transition?: Transition;
+  in?: Transition;
+  out?: Transition;
   testid?: string;
 };
 

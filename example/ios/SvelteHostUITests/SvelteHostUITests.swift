@@ -77,6 +77,10 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Show a sheet"].tap()
         waitFor(app.staticTexts["Hello from a sheet"])
         XCTAssertTrue(app.staticTexts["The counter is at 1."].exists)
+        app.buttons["Celebrate"].tap()
+        waitFor(app.images["Party popper"])
+        app.buttons["Calm down"].tap()
+        XCTAssertTrue(app.images["Party popper"].waitForNonExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["Hello from a sheet"].waitForNonExistence(timeout: 5))
     }

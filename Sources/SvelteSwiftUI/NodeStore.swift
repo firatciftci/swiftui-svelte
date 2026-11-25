@@ -1,4 +1,5 @@
 import Observation
+import SwiftUI
 
 @Observable
 final class Node: Identifiable {
@@ -57,6 +58,7 @@ final class NodeStore {
     @ObservationIgnored private var nodes: [Int: Node] = [:]
     @ObservationIgnored private var names: Array<String> = []
     @ObservationIgnored private var dirty: Set<Int> = []
+    @ObservationIgnored private var transitions: [Int: MotionCurve] = [:]
 
     var nodeCount: Int { nodes.count }
 
@@ -90,9 +92,15 @@ final class NodeStore {
         }
         for id in dirty {
             guard let parent = nodes[id] else { continue }
-            parent.children = children(of: parent)
+            let children = children(of: parent)
+            if let curve = transitions[id] {
+                withAnimation(curve.animation) { parent.children = children }
+            } else {
+                parent.children = children
+            }
         }
         dirty.removeAll(keepingCapacity: true)
+        transitions.removeAll(keepingCapacity: true)
     }
 
     private func children(of parent: Node) -> Array<Node> {
@@ -131,6 +139,7 @@ final class NodeStore {
                 return
             }
             insert(node, into: parent, before: nodes[beforeID])
+            if let curve = MotionTransition.curve(for: node.attributes) { transitions[parentID] = curve }
         case 2:
             let parentID = try reader.int()
             let beforeID = try reader.int()
@@ -139,6 +148,9 @@ final class NodeStore {
             insert(node, into: parent, before: nodes[beforeID])
         case 3:
             guard let node = nodes[try reader.int()] else { return }
+            if let parentID = node.parentID, let curve = MotionTransition.curve(for: node.attributes) {
+                transitions[parentID] = curve
+            }
             detach(node)
             forget(node)
             if node.kind == .fragment { roots = roots.filter { $0.value !== node } }

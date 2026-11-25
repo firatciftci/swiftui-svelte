@@ -5,6 +5,7 @@
   let seconds = $state(0);
   let name = $state("");
   let showSheet = $state(false);
+  let celebrating = $state(false);
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
 
@@ -101,6 +102,19 @@
         <sfsymbol name="sparkles" font="largeTitle" color="accent" />
         <txt font="title2" weight="semibold">Hello from a sheet</txt>
         <txt color="secondary">The counter is at {count}.</txt>
+        <btn onclick={() => (celebrating = !celebrating)}>
+          {celebrating ? "Calm down" : "Celebrate"}
+        </btn>
+        {#if celebrating}
+          <sfsymbol
+            name="party.popper.fill"
+            label="Party popper"
+            font="largeTitle"
+            color="orange"
+            transition="scale opacity"
+            animation="bouncy"
+          />
+        {/if}
         <btn variant="prominent" onclick={() => (showSheet = false)}>
           Done
         </btn>

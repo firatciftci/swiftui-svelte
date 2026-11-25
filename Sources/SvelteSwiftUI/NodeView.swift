@@ -197,7 +197,11 @@ private struct NodeModifiers: ViewModifier {
 
     func body(content: Content) -> some View {
         let attributes = node.attributes
-        content
+        let animation = (MotionCurve(attributes["animation"]) ?? MotionCurve()).animation
+        let childIDs = attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil
+        let transition = MotionTransition.transition(for: attributes)
+        let styled =
+            content
             .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
             .padding(padding(attributes["padding"]))
             .font(font(attributes["font"]?.string))
@@ -208,9 +212,9 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
-            .ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) {
-                $0.animation(.default, value: $1)
-            }
+        styled
+            .ifLet(childIDs) { $0.animation(animation, value: $1) }
+            .ifLet(transition) { $0.transition($1) }
             .ifLet(node.attachment("swipeactions")) { view, actions in
                 view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
                     ForEach(actions.renderedChildren) { ActionButton(node: $0) }

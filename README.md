@@ -204,7 +204,7 @@ Every element also accepts these modifiers:
 | `font`, `weight`              | Sets the text style, such as `headline` or `caption`, and the weight                                  |
 | `color`, `tint`, `background` | Colors the content, the controls, or the background                                                   |
 | `radius`, `opacity`           | Rounds the corners and sets the opacity                                                               |
-| `animated`                    | Animates children as they're added, removed, or reordered                                             |
+| `animated`, `animation`       | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
 
 A few details:
 
@@ -258,6 +258,31 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 | `Alert`      | `presented` | `alert`      |
 
 Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. `Sheet` and `Alert` are presented while `presented` is true, and set it to false when the user dismisses them.
+
+### Transitions and animation
+
+Svelte's `transition:`, `in:`, and `out:` directives need the DOM, so the compiler rejects them in custom renderer components. Use the `transition`, `in`, and `out` attributes instead. They work on any element and use SwiftUI's transitions:
+
+```svelte
+{#if saved}
+  <txt transition="scale opacity" animation="bouncy">Saved!</txt>
+{/if}
+
+{#if open}
+  <vstack
+    in="move-top"
+    out="opacity"
+    animation={{ type: "easeOut", duration: 250 }}
+  >
+    <txt>Details</txt>
+  </vstack>
+{/if}
+```
+
+- `transition` plays when the element is added and when it's removed. `in` plays only when it's added, and `out` only when it's removed, the way Svelte's directives do.
+- The names are `opacity` (or `fade`), `scale`, `slide`, `blur`, `move`, and `push`. `move` and `push` take an edge: `move-top`, `move-bottom`, `move-leading`, `move-trailing`, and the same for `push`. Without an edge, `move` comes from the bottom and `push` from the trailing edge. Separate names with spaces to combine them, as in `"scale opacity"`.
+- `animation` sets the curve: `default`, `linear`, `easeIn`, `easeOut`, `easeInOut`, `spring`, `smooth`, `snappy`, or `bouncy`. For more control, pass an object. Its `type` is the curve, `duration` and `delay` are in milliseconds, and `bounce` goes from -1 to 1 for the spring curves. It also takes `speed`, `repeat` (a count, or `true` to repeat forever), and `autoreverses`.
+- `animation` also sets the curve that `animated` uses when a container's children change.
 
 ### Sheets, alerts, toolbars, and swipe actions
 
@@ -479,7 +504,7 @@ With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the dev
 - **`checked` arrives as a string.** Svelte sends `checked` as `""` or removes it, the way it handles HTML boolean attributes, instead of passing the boolean through ([sveltejs/svelte#19435](https://github.com/sveltejs/svelte/issues/19435)). The host accepts both that and a real boolean, in case [#19437](https://github.com/sveltejs/svelte/pull/19437) is merged.
 - **Large lists take a few frames.** Svelte's work happens off the main thread, but SwiftUI still needs several frames to lay out 1,000 new rows.
 - **Slow keyed reverses.** In Svelte 5.59, reversing a keyed `{#each}` takes time proportional to the square of its length ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). With the fix in [#19440](https://github.com/sveltejs/svelte/pull/19440), reversing 1,000 rows on the iPhone takes about 21ms in Svelte's part, down from 122ms, and the longest frame falls from about 140ms to about 70ms.
-- **Limited animation.** Animation is limited to `animated` on containers. There are no transitions, custom animations, or gestures beyond taps and swipes.
+- **Limited animation.** Transitions and `animated` cover elements that are added, removed, or reordered, but there's no way yet to animate a change to an attribute, and no gestures beyond taps and swipes. Inside a `list` row, the row resizes on its own when an element leaves, so a removal transition there can look abrupt.
 
 ## Example app
 
