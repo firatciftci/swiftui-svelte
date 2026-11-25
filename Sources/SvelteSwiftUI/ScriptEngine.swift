@@ -26,7 +26,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     let stats = Mutex(Stats())
     private let outbox = Mutex<(messages: Array<Message>, isScheduled: Bool)>(([], false))
     private let deliver: @Sendable () -> Void
-    private var context: JSContext?
+    private(set) var context: JSContext?
     private var timers: [Int: any DispatchSourceTimer] = [:]
     private var nextTimerID = 1
     private var environment = "{}"
@@ -88,11 +88,6 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     func call(_ function: String, _ arguments: Unchecked<Array<Any>>) {
         dispatchPrecondition(condition: .onQueue(queue))
         context?.objectForKeyedSubscript(function)?.call(withArguments: arguments.value)
-    }
-
-    func evaluate<Result>(_ body: (JSContext) -> Result) -> Result? {
-        dispatchPrecondition(condition: .onQueue(queue))
-        return context.map(body)
     }
 
     private func install(into context: JSContext) {

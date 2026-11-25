@@ -19,7 +19,7 @@ public final class SvelteRuntime {
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
 
-    @ObservationIgnored private let engine: ScriptEngine
+    @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
@@ -111,19 +111,7 @@ public final class SvelteRuntime {
         }
     }
 
-    func settle() {
-        engine.queue.sync {}
-        drain()
-    }
-
-    func evaluate<Result>(_ body: (JSContext) -> Result) -> Result? {
-        let engine = engine
-        let result = engine.queue.sync { engine.evaluate(body) }
-        drain()
-        return result
-    }
-
-    private func drain() {
+    func drain() {
         let messages = engine.takeMessages()
         guard !messages.isEmpty else { return }
         let start = CACurrentMediaTime()
