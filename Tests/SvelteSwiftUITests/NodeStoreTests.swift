@@ -96,6 +96,16 @@ struct NodeStoreTests {
         #expect(store.nodeCount == 1)
     }
 
+    @Test func forgetsEveryNodeOfALargeRemovedSubtree() {
+        var tokens: Array<Any> = [1, 1, 0, 100, 4, 0, 10_000]
+        for index in 0..<10_000 { tokens += [101 + index * 2, 0, 0, 1, -(102 + index * 2), "row \(index)"] }
+        let store = store(tokens)
+        #expect(store.nodeCount == 20_006)
+        store.apply(batch([3, 100]))
+        #expect(store.nodeCount == 5)
+        #expect(store.node(20_100) == nil)
+    }
+
     @Test func setsAndRemovesAttributes() {
         let store = store([4, 2, 1, 8, 4, 2, 2, "x", 5, 2, 2, 4, 2, 3, NSNull(), 4, 2, 4, ["a": [1, true]]])
         #expect(

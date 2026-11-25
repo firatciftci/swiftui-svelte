@@ -11,6 +11,7 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     environment: "./test/environment.ts",
     setupFiles: ["test/setup.ts"],
+    execArgv: ["--expose-gc"],
     coverage: { include: ["src/**/*.ts"], reporter: ["text", "lcov"] },
   },
 });
