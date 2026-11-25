@@ -31,6 +31,10 @@ targets:
       properties:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: en
+        CFBundleLocalizations:
+          - en
+          - ar
         CFBundleURLTypes:
           - CFBundleURLName: com.example.SvelteHost
             CFBundleURLSchemes:

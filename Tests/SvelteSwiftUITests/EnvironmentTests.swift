@@ -34,6 +34,21 @@ struct EnvironmentTests {
         #expect(JSONSerialization.isValidJSONObject(dictionary))
     }
 
+    @Test func startsWithTheDeviceLocaleTimeZoneAndDirection() {
+        let current = HostEnvironment.current
+        #expect(current["locale"] as? String == Locale.current.identifier(.bcp47))
+        #expect(current["timeZone"] as? String == TimeZone.current.identifier)
+        #expect(current["layoutDirection"] as? String == "leftToRight")
+        #expect(JSONSerialization.isValidJSONObject(current))
+    }
+
+    @Test func readsLayoutDirectionsLikeHTML() {
+        #expect(Styles.layoutDirection("rtl") == .rightToLeft)
+        #expect(Styles.layoutDirection("ltr") == .leftToRight)
+        #expect(Styles.layoutDirection("auto") == nil)
+        #expect(Styles.layoutDirection(nil) == nil)
+    }
+
     @Test func namesEveryDynamicTypeSizeLikeSwiftUI() {
         for size in DynamicTypeSize.allCases {
             #expect(EnvironmentSnapshot.name(of: size) == String(describing: size))

@@ -63,7 +63,8 @@
     "package": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json && publint --strict && attw --pack --profile esm-only --exclude-entrypoints ./components",
     "prepack": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json",
     "ios:project": "xcodegen generate --spec example/ios/project.yml",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "pnpm run compile-paraglide && svelte-check --tsconfig ./tsconfig.json",
+    "compile-paraglide": "paraglide-js compile --project ./example/project.inlang --outdir ./example/src/paraglide --strategy preferredLanguage baseLocale --silent",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:swift": "xcrun swift test",
@@ -86,6 +87,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^10.0.0",
     "@arethetypeswrong/cli": "^0.18.5",
+    "@inlang/paraglide-js": "3.2.2",
     "@sveltejs/package": "3.0.3",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@types/ws": "^8.18.2",

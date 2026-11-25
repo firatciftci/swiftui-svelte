@@ -13,6 +13,7 @@
     ".svelte-kit",
     "build",
     ".build",
-    "Tests/SvelteSwiftUITests/Fixtures"
+    "Tests/SvelteSwiftUITests/Fixtures",
+    "example/src/paraglide"
   ]
 }

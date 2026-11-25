@@ -8,6 +8,9 @@
     Toggle,
   } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
+  import { language } from "./language.svelte";
+  import { m } from "./paraglide/messages.js";
+  import { isLocale } from "./paraglide/runtime.js";
   import { todos } from "./todos.svelte";
 
   const accents = ["blue", "orange", "green", "pink"] as const;
@@ -41,11 +44,28 @@
 </script>
 
 <navstack>
-  <screen title="Settings">
+  <screen title={m.settings_title()}>
     <formview tint={accent} {@attach form}>
-      <sectionview header="Accent color">
+      <sectionview header={m.language_header()} footer={m.language_footer()}>
         <Picker
-          label="Accent color"
+          label={m.language_label()}
+          variant="menu"
+          bind:value={
+            () => language.choice,
+            (value) =>
+              (language.choice =
+                typeof value === "string" && isLocale(value) ? value : "system")
+          }
+        >
+          <choice value="system">{m.language_system()}</choice>
+          <choice value="en">English</choice>
+          <choice value="ar">العربية</choice>
+        </Picker>
+      </sectionview>
+
+      <sectionview header={m.accent_header()}>
+        <Picker
+          label={m.accent_header()}
           variant="segmented"
           bind:value={
             () => accent,
@@ -53,75 +73,73 @@
               (accent = accents.find((name) => name === value) ?? "blue")
           }
         >
-          <choice value="blue">Blue</choice>
-          <choice value="orange">Orange</choice>
-          <choice value="green">Green</choice>
-          <choice value="pink">Pink</choice>
+          <choice value="blue">{m.accent_blue()}</choice>
+          <choice value="orange">{m.accent_orange()}</choice>
+          <choice value="green">{m.accent_green()}</choice>
+          <choice value="pink">{m.accent_pink()}</choice>
         </Picker>
       </sectionview>
 
-      <sectionview
-        header="Daily goal"
-        footer="Finished to-dos count toward today's goal."
-      >
+      <sectionview header={m.goal_header()} footer={m.goal_footer()}>
         <Stepper bind:value={goal} min={1} max={20}>
-          <txt>{goal} {goal === 1 ? "to-do" : "to-dos"} a day</txt>
+          <txt>{m.goal_count({ count: goal })}</txt>
         </Stepper>
         <progressview value={done} total={goal}>
-          <txt>{Math.min(done, goal)} of {goal} done</txt>
+          <txt>{m.goal_progress({ done: Math.min(done, goal), goal })}</txt>
         </progressview>
       </sectionview>
 
-      <sectionview header="Reminders">
+      <sectionview header={m.reminders_header()}>
         <Toggle bind:checked={reminds}>
-          <txt>Remind me</txt>
+          <txt>{m.remind_me()}</txt>
         </Toggle>
         {#if reminds}
           <DatePicker components="time" bind:value={reminderTime}>
-            <txt>Time</txt>
+            <txt>{m.time()}</txt>
           </DatePicker>
-          <Picker label="Repeat" variant="menu" bind:value={repeat}>
-            <choice value="daily">Every day</choice>
-            <choice value="weekdays">Weekdays</choice>
-            <choice value="weekends">Weekends</choice>
+          <Picker label={m.repeat()} variant="menu" bind:value={repeat}>
+            <choice value="daily">{m.repeat_daily()}</choice>
+            <choice value="weekdays">{m.repeat_weekdays()}</choice>
+            <choice value="weekends">{m.repeat_weekends()}</choice>
           </Picker>
         {/if}
       </sectionview>
 
-      <sectionview header="Sound">
+      <sectionview header={m.sound_header()}>
         <hstack spacing={12}>
           <sfsymbol name="speaker.fill" color="secondary" />
           <Slider bind:value={volume}>
-            <txt>Volume</txt>
+            <txt>{m.volume()}</txt>
           </Slider>
           <sfsymbol name="speaker.wave.3.fill" color="secondary" />
         </hstack>
-        <Picker label="Tone" variant="navigation" bind:value={tone}>
-          <choice value="chime" symbol="bell">Chime</choice>
-          <choice value="glass" symbol="wineglass">Glass</choice>
-          <choice value="pulse" symbol="waveform">Pulse</choice>
+        <Picker label={m.tone()} variant="navigation" bind:value={tone}>
+          <choice value="chime" symbol="bell">{m.tone_chime()}</choice>
+          <choice value="glass" symbol="wineglass">{m.tone_glass()}</choice>
+          <choice value="pulse" symbol="waveform">{m.tone_pulse()}</choice>
         </Picker>
       </sectionview>
 
-      <sectionview
-        footer="These values update as you change the device's settings."
-      >
+      <sectionview footer={m.device_footer()}>
         <header>
           <hstack spacing={6}>
             <sfsymbol name="iphone" />
-            <txt>This device</txt>
+            <txt>{m.device_header()}</txt>
           </hstack>
         </header>
-        {@render row("Appearance", env.colorScheme)}
-        {@render row("Text size", env.dynamicTypeSize)}
-        {@render row("Locale", env.locale)}
-        {@render row("Layout direction", env.layoutDirection)}
-        {@render row("Width", env.horizontalSizeClass ?? "")}
+        {@render row(m.appearance(), env.colorScheme)}
+        {@render row(m.text_size(), env.dynamicTypeSize)}
+        {@render row(m.locale(), env.locale)}
+        {@render row(m.layout_direction(), env.layoutDirection)}
+        {@render row(m.width(), env.horizontalSizeClass ?? "")}
         {@render row(
-          "Safe area",
-          `${Math.round(env.safeAreaInsets.top)} pt top, ${Math.round(env.safeAreaInsets.bottom)} pt bottom`,
+          m.safe_area(),
+          m.safe_area_value({
+            top: Math.round(env.safeAreaInsets.top),
+            bottom: Math.round(env.safeAreaInsets.bottom),
+          }),
         )}
-        {@render row("Form size", formSize)}
+        {@render row(m.form_size(), formSize)}
       </sectionview>
     </formview>
   </screen>

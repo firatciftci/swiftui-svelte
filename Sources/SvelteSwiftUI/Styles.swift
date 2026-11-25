@@ -52,4 +52,12 @@ enum Styles {
         default: nil
         }
     }
+
+    static func layoutDirection(_ name: String?) -> LayoutDirection? {
+        switch name {
+        case "ltr": .leftToRight
+        case "rtl": .rightToLeft
+        default: nil
+        }
+    }
 }

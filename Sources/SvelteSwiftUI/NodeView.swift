@@ -222,6 +222,10 @@ private struct NodeModifiers: ViewModifier {
             .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
             .modifier(Layers(node: node))
             .modifier(Measured(node: node))
+            .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
+                $0.environment(\.locale, $1)
+            }
+            .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
         styled
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
             .ifLet(transition) { $0.transition($1) }

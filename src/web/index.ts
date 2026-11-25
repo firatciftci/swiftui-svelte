@@ -71,6 +71,8 @@ function define(name: string, create: () => unknown): void {
 }
 
 export function installWebAPIs(): void {
+  define("window", () => globalThis);
+  define("self", () => globalThis);
   define("DOMException", () => DOMExceptionShim);
   define("Event", () => EventShim);
   define("EventTarget", () => EventTargetShim);

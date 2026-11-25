@@ -146,6 +146,7 @@ final class SvelteHostUITests: XCTestCase {
         waitFor(app.staticTexts["4 to-dos a day"])
         waitFor(app.staticTexts["1 of 4 done"])
 
+        app.swipeUp()
         let slider = app.sliders.firstMatch
         slider.adjust(toNormalizedSliderPosition: 0.2)
         XCTAssertNotEqual(slider.value as? String, "60%")
@@ -182,5 +183,48 @@ final class SvelteHostUITests: XCTestCase {
         tab("To-dos")
         waitFor(app.switches["Render Svelte with SwiftUI"])
         XCTAssertTrue(app.tabBars.buttons["To-dos"].isSelected)
+    }
+
+    private func attachScreenshot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func testFollowsTheDeviceLanguageAndDirection() {
+        app.terminate()
+        app.launchArguments = ["-resetStorage", "-AppleLanguages", "(ar)", "-AppleLocale", "ar_EG"]
+        app.launch()
+        tab("الإعدادات")
+        waitFor(app.staticTexts["3 مهام في اليوم"])
+        let label = app.staticTexts["3 مهام في اليوم"]
+        let stepper = app.steppers.firstMatch
+        XCTAssertGreaterThan(label.frame.minX, stepper.buttons.firstMatch.frame.minX)
+        attachScreenshot("device-arabic")
+        app.swipeUp()
+        app.swipeUp()
+        waitFor(app.staticTexts["rightToLeft"])
+        XCTAssertTrue(app.staticTexts["ar-EG"].exists)
+    }
+
+    func testSwitchesLanguageInTheApp() {
+        tab("Settings")
+        let stepper = app.steppers.firstMatch
+        waitFor(app.staticTexts["3 to-dos a day"])
+        XCTAssertLessThan(app.staticTexts["3 to-dos a day"].frame.minX, stepper.buttons.firstMatch.frame.minX)
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Language'")).firstMatch.tap()
+        app.buttons["العربية"].tap()
+        waitFor(app.tabBars.buttons["الإعدادات"])
+        let label = app.staticTexts["3 مهام في اليوم"]
+        waitFor(label)
+        XCTAssertGreaterThan(label.frame.minX, stepper.buttons.firstMatch.frame.minX)
+        attachScreenshot("in-app-arabic")
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'اللغة'")).firstMatch.tap()
+        app.buttons["لغة الجهاز"].tap()
+        waitFor(app.tabBars.buttons["Settings"])
+        waitFor(app.staticTexts["3 to-dos a day"])
     }
 }

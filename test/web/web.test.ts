@@ -186,6 +186,11 @@ const shimValues: unknown = {
           new EventShim(environment.onLine ? "online" : "offline"),
         );
     },
+    globals: {
+      window: Reflect.get(globalThis, "window"),
+      self: Reflect.get(globalThis, "self"),
+      global: globalThis,
+    },
   },
 };
 const shims = shimValues as Web;

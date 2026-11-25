@@ -82,7 +82,7 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] Element refs: Svelte rejects `bind:this` in custom renderer components, so `ref()` attachments provide `focus`, `blur`, `scrollIntoView`, `scrollTo`, and `measure`
 - [x] Snippets as attachments (`header`, `footer`, `label`, `background`, and `overlay`) wherever SwiftUI takes a view builder
 - [x] Rich text: nested `txt` spans with their own font, color, and weight concatenate into one `Text`, plus a `markdown` attribute
-- [ ] Localization: the device locale is exposed to JS and works with Paraglide, and right-to-left layout follows the locale
+- [x] Localization: the device locale is exposed to JS and works with Paraglide, and right-to-left layout follows the locale
 
 ## M4. Element coverage
 

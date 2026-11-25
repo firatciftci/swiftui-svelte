@@ -30,12 +30,16 @@ enum HostEnvironment {
             let increaseContrast = false
         #endif
         let languages = Locale.preferredLanguages.isEmpty ? ["en-US"] : Locale.preferredLanguages
+        let localization = Locale.Language(identifier: Bundle.main.preferredLocalizations.first ?? "en")
         return [
             "colorScheme": isDark ? "dark" : "light",
             "reduceMotion": reduceMotion,
             "reduceTransparency": reduceTransparency,
             "increaseContrast": increaseContrast,
             "languages": languages,
+            "locale": Locale.current.identifier(.bcp47),
+            "timeZone": TimeZone.current.identifier,
+            "layoutDirection": localization.characterDirection == .rightToLeft ? "rightToLeft" : "leftToRight",
             "onLine": true,
             "userAgent": "swiftui-svelte (\(platform) \(system))",
         ]

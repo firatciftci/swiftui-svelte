@@ -93,6 +93,8 @@ type Modifiers = {
   in?: Transition;
   out?: Transition;
   testid?: string;
+  lang?: string;
+  dir?: "ltr" | "rtl";
 };
 
 declare module "svelte/elements" {

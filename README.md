@@ -205,6 +205,7 @@ Every element also accepts these modifiers:
 | `color`, `tint`, `background` | Colors the content, the controls, or the background                                                   |
 | `radius`, `opacity`           | Rounds the corners and sets the opacity                                                               |
 | `animated`, `animation`       | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
+| `lang`, `dir`                 | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
 
 A few details:
 
@@ -515,6 +516,63 @@ Each property is tracked separately, so an effect that reads `colorScheme` doesn
 
 The example app registers the `sveltehost` scheme, so `xcrun simctl openurl booted sveltehost://todos/2` opens the second to-do.
 
+### Localization
+
+JavaScript starts with the device's language settings, so locale-aware code works from the first line of your app:
+
+- `Intl`, `toLocaleString`, and `Date` use the device's language and time zone.
+- `navigator.language` and `navigator.languages` list the user's preferred languages.
+- `env.locale`, `env.timeZone`, and `env.layoutDirection` match the device before any component mounts.
+
+[Paraglide](https://paraglidejs.com/) works with its usual Vite plugin. Pick the device's language with the `preferredLanguage` strategy:
+
+```ts
+// vite.config.ts
+paraglideVitePlugin({
+  project: "./project.inlang",
+  outdir: "./src/paraglide",
+  strategy: ["preferredLanguage", "baseLocale"],
+}),
+```
+
+Message functions read the locale each time they run but don't subscribe to it, so a language picker inside the app needs the locale in `$state`. Overwrite `getLocale` to read it, and every message in your markup updates when it changes:
+
+```ts
+// src/language.svelte.ts
+import {
+  getLocale,
+  getTextDirection,
+  overwriteGetLocale,
+} from "./paraglide/runtime.js";
+import type { Locale } from "./paraglide/runtime.js";
+
+const device = getLocale();
+const selection = $state<{ locale: Locale | null }>({ locale: null });
+overwriteGetLocale(() => selection.locale ?? device);
+
+export const language = {
+  get locale() {
+    return getLocale();
+  },
+  set locale(next: Locale | null) {
+    selection.locale = next;
+  },
+  get dir() {
+    return getTextDirection(getLocale());
+  },
+};
+```
+
+Then set `lang` and `dir` on the root element. Like the HTML attributes, they work on any element. `lang` sets SwiftUI's locale for everything inside, so date pickers and other controls format dates and numbers for that language. `dir` is `ltr` or `rtl` and mirrors the layout, including navigation bars and the tab bar:
+
+```svelte
+<tabview lang={language.locale} dir={language.dir}>
+```
+
+When the device itself uses a right-to-left language, iOS mirrors the app on its own, but only if the app declares that language. List every language you translate to under `CFBundleLocalizations` in the app's Info.plist. Otherwise iOS falls back to your development language, and `env.layoutDirection` stays `leftToRight`.
+
+The example app translates its tab titles and Settings screen into Arabic with Paraglide. It follows the device's language and has a picker for choosing one, and it saves that choice in `localStorage`.
+
 ## Web APIs
 
 The host provides the web APIs that most npm packages expect, so code like this runs as it would in a browser:
@@ -553,7 +611,7 @@ A few differences from a browser:
 
 - A `ReadableStream` request body is read to the end before the request starts, so uploads don't stream.
 - `URLSession` holds back the first 512 bytes of a `text/plain` response while it estimates the content type. To stream plain text as it arrives, have the server send `X-Content-Type-Options: nosniff`, or use a type like `text/event-stream`.
-- There's no page, so there's no `window`, `document`, `location`, or cookie API. `URLSession` keeps cookies for you unless `credentials` is `"omit"`.
+- There's no page, so there's no `document`, `location`, or cookie API. `window` and `self` point to the global object, as they do in React Native, so libraries that check for `window` to tell a browser from a server take their browser path, Paraglide among them. `URLSession` keeps cookies for you unless `credentials` is `"omit"`.
 
 ## Props, actions, and several views
 

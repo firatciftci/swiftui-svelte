@@ -1,0 +1,52 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "tab_todos": "To-dos",
+  "tab_playground": "Playground",
+  "tab_settings": "Settings",
+  "settings_title": "Settings",
+  "language_header": "Language",
+  "language_label": "Language",
+  "language_system": "Same as device",
+  "language_footer": "The app uses your device's language unless you choose another one here.",
+  "accent_header": "Accent color",
+  "accent_blue": "Blue",
+  "accent_orange": "Orange",
+  "accent_green": "Green",
+  "accent_pink": "Pink",
+  "goal_header": "Daily goal",
+  "goal_footer": "Finished to-dos count toward today's goal.",
+  "goal_count": [
+    {
+      "declarations": ["input count", "local countPlural = count: plural"],
+      "selectors": ["countPlural"],
+      "match": {
+        "countPlural=one": "{count} to-do a day",
+        "countPlural=*": "{count} to-dos a day"
+      }
+    }
+  ],
+  "goal_progress": "{done} of {goal} done",
+  "reminders_header": "Reminders",
+  "remind_me": "Remind me",
+  "time": "Time",
+  "repeat": "Repeat",
+  "repeat_daily": "Every day",
+  "repeat_weekdays": "Weekdays",
+  "repeat_weekends": "Weekends",
+  "sound_header": "Sound",
+  "volume": "Volume",
+  "tone": "Tone",
+  "tone_chime": "Chime",
+  "tone_glass": "Glass",
+  "tone_pulse": "Pulse",
+  "device_header": "This device",
+  "device_footer": "These values update as you change the device's settings.",
+  "appearance": "Appearance",
+  "text_size": "Text size",
+  "locale": "Locale",
+  "layout_direction": "Layout direction",
+  "width": "Width",
+  "safe_area": "Safe area",
+  "safe_area_value": "{top} pt top, {bottom} pt bottom",
+  "form_size": "Form size"
+}

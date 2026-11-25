@@ -10,6 +10,7 @@ export default antfu({
     "example/ios/**",
     "Tests/SvelteSwiftUITests/Fixtures/**",
     "test/web/wpt/**",
+    "example/src/paraglide/**",
   ],
   stylistic: false,
   markdown: false,

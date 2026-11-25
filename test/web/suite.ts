@@ -63,6 +63,7 @@ export type Web = {
       listener: (event: Event) => void,
     ) => void;
     setEnvironment: (changes: Record<string, unknown>) => void;
+    globals: { window: unknown; self: unknown; global: unknown };
   };
 };
 
@@ -1035,6 +1036,12 @@ test("navigator reports languages", (web) => {
   equal(web.navigator.language, web.navigator.languages[0]);
   for (const language of web.navigator.languages)
     ok(/^[a-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(language), language);
+});
+
+hostTest("window and self are the global object", (web) => {
+  const { window, self, global } = host(web).globals;
+  ok(window === global, "window");
+  ok(self === global, "self");
 });
 
 hostTest("sessionStorage stores strings in memory", (web) => {

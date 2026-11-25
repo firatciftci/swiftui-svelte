@@ -47,6 +47,11 @@ const web: Web = {
     removeEventListener: (type, listener) =>
       removeEventListener(type, listener),
     setEnvironment: (changes) => __svelteEnvironment(JSON.stringify(changes)),
+    globals: {
+      window: Reflect.get(globalThis, "window"),
+      self: Reflect.get(globalThis, "self"),
+      global: globalThis,
+    },
   },
 };
 
