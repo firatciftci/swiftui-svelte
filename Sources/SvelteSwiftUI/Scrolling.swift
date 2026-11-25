@@ -22,6 +22,7 @@ struct ScrollOptions: ViewModifier {
             .ifLet(Self.bounce(attributes["bounce"]?.string)) { $0.scrollBounceBehavior($1) }
             .ifLet(UnitPoint(anchor: attributes["anchor"]?.string)) { $0.defaultScrollAnchor($1) }
             .modifier(SnapBehavior(snap: attributes["snap"]?.string))
+            .modifier(Refreshing(node: node))
             .ifLet(node.listens(to: "scroll") ? node.id : nil) { view, id in
                 view.onScrollGeometryChange(
                     for: ScrollPayload.self,
@@ -81,6 +82,20 @@ struct ScrollPayload: Equatable {
 
     var dictionary: [String: Double] {
         ["x": x, "y": y, "width": width, "height": height, "contentWidth": contentWidth, "contentHeight": contentHeight]
+    }
+}
+
+private struct Refreshing: ViewModifier {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    func body(content: Content) -> some View {
+        if node.listens(to: "refresh") {
+            let id = node.id
+            content.refreshable { await runtime.dispatchAndWait(id, "refresh") }
+        } else {
+            content
+        }
     }
 }
 

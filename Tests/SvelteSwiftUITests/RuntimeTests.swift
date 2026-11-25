@@ -247,6 +247,38 @@ struct RuntimeTests {
         #expect(runtime.store.node(2)?.attributes["canceled"] == nil)
     }
 
+    @Test func waitsForAnAwaitedDispatchToSettle() async throws {
+        let runtime = try runtime(
+            mount + """
+                globalThis.__svelteDispatch = (id, type, payload, request) => {
+                  attr(id, type, request ?? null);
+                  setTimeout(() => {
+                    attr(id, "done", true);
+                    __nativeInvoke(id, "settled", JSON.stringify({ request }));
+                  }, 30);
+                };
+                """)
+        let start = ContinuousClock.now
+        await runtime.dispatchAndWait(2, "refresh")
+        #expect(ContinuousClock.now - start >= .milliseconds(25))
+        #expect(runtime.store.node(2)?.attributes["done"] == .bool(true))
+        #expect(runtime.store.node(2)?.attributes["refresh"]?.number != nil)
+    }
+
+    @Test func endsAwaitedDispatchesWhenTheBundleRestarts() async throws {
+        let runtime = try runtime(mount + "globalThis.__svelteDispatch = () => {};")
+        var isDone = false
+        let task = Task {
+            await runtime.dispatchAndWait(2, "refresh")
+            isDone = true
+        }
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(!isDone)
+        runtime.restart()
+        await task.value
+        #expect(isDone)
+    }
+
     @Test func runsSlowHandlersWithoutBlockingTheMainThread() throws {
         let runtime = try runtime(
             mount + """

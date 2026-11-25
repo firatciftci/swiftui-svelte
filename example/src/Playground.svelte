@@ -23,6 +23,7 @@
   import Produce from "./Produce.svelte";
 
   let count = $state(0);
+  let badgeHidden = $state(false);
   let seconds = $state(0);
   let name = $state("");
   let editingName = $state(false);
@@ -31,12 +32,14 @@
   let returns = $state(0);
   let stars = $state<number | null>(null);
   let fetchError = $state<string | null>(null);
+  let refreshes = $state(0);
   let showsLayouts = $state(false);
   let showsContent = $state(false);
   let bells = $state(0);
   let imageFailed = $state(false);
   let carouselOffset = $state(0);
   let carouselWidth = $state(0);
+  let ratioSize = $state({ width: 0, height: 0 });
   let showsInputs = $state(false);
   let repeats = $state(0);
   let isFavorite = $state(false);
@@ -115,6 +118,14 @@
     loadStars();
   });
 
+  async function refresh() {
+    await Promise.all([
+      loadStars(),
+      new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]);
+    refreshes++;
+  }
+
   $effect(() => onBackground(() => returns++));
 
   $effect(() => {
@@ -130,7 +141,7 @@
   }}
 >
   <screen title="Playground">
-    <list>
+    <list onrefresh={refresh}>
       <vstack alignment="leading" spacing={8}>
         <txt font="headline">Counter</txt>
         <hstack spacing={16}>
@@ -203,6 +214,13 @@
               {stars.toLocaleString()} stars on GitHub
             </txt>
           {/if}
+          <txt testid="refreshes" font="caption2" color="secondary">
+            {refreshes === 0
+              ? "Pull down to refresh"
+              : refreshes === 1
+                ? "Refreshed once"
+                : `Refreshed ${refreshes} times`}
+          </txt>
         </vstack>
         <spacer />
         <btn variant="borderless" onclick={loadStars}>
@@ -284,6 +302,101 @@
             height={40}
           />
         </hstack>
+        <hstack spacing={20} testid="transforms" padding={{ vertical: 6 }}>
+          <txt
+            background="orange"
+            color="white"
+            padding={{ horizontal: 10, vertical: 4 }}
+            radius={6}
+            rotation={-8}>Tilted</txt
+          >
+          <txt
+            background="teal"
+            color="white"
+            padding={{ horizontal: 10, vertical: 4 }}
+            radius={6}
+            scale={1.2}>Scaled</txt
+          >
+          <txt
+            background="indigo"
+            color="white"
+            padding={{ horizontal: 10, vertical: 4 }}
+            radius={6}
+            offset={{ y: -6 }}>Raised</txt
+          >
+        </hstack>
+        <rectangle
+          fill={{ linear: ["mint", "teal"], start: "leading", end: "trailing" }}
+          aspectratio={4}
+          maxwidth="infinity"
+          radius={8}
+          onresize={(size) => (ratioSize = size)}
+        />
+        <txt font="caption" color="secondary" testid="ratio"
+          >{Math.round(ratioSize.width)} × {Math.round(ratioSize.height)} pt at 4:1</txt
+        >
+        <hstack spacing={14} padding={{ vertical: 6 }}>
+          <txt
+            background="white"
+            color="black"
+            padding={{ horizontal: 10, vertical: 6 }}
+            clipshape="capsule"
+            shadow={{ radius: 6, y: 3 }}>Shadow</txt
+          >
+          <txt
+            padding={{ horizontal: 10, vertical: 6 }}
+            border={{ color: "blue", width: 2 }}>Bordered</txt
+          >
+          <circleshape fill="pink" width={24} height={24} blur={3} />
+          <rectangle
+            fill={{ linear: ["red", "purple"], start: "top", end: "bottom" }}
+            width={32}
+            height={32}
+          >
+            <maskview><sfsymbol name="heart.fill" size={28} /></maskview>
+          </rectangle>
+        </hstack>
+        <hstack spacing={12}>
+          <toggle
+            checked={badgeHidden}
+            onchange={(next) => (badgeHidden = next)}>Hide the badge</toggle
+          >
+          <txt
+            testid="badge"
+            hidden={badgeHidden}
+            background="red"
+            color="white"
+            padding={{ horizontal: 8, vertical: 2 }}
+            clipshape="capsule">Badge</txt
+          >
+        </hstack>
+        <btn disabled testid="disabled-button">Disabled</btn>
+        <scrollview
+          height={110}
+          testid="inset-scroll"
+          background="#8E8E9314"
+          radius={10}
+        >
+          <vstack
+            alignment="leading"
+            spacing={8}
+            padding={10}
+            maxwidth="infinity"
+            framealignment="leading"
+          >
+            {#each [1, 2, 3, 4, 5, 6] as row (row)}
+              <txt>Row {row}</txt>
+            {/each}
+          </vstack>
+          <safeareainset edge="bottom">
+            <txt
+              testid="inset-footer"
+              maxwidth="infinity"
+              padding={6}
+              background="thinMaterial">Pinned below the rows</txt
+            >
+          </safeareainset>
+        </scrollview>
         <scrollview
           axes="horizontal"
           snap="view"

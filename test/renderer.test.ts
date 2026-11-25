@@ -1,6 +1,6 @@
 import { flushSync } from "svelte";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { protocol, withAnimation } from "swiftui-svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { move, protocol, withAnimation } from "swiftui-svelte";
 import {
   animations,
   byTestId,
@@ -9,6 +9,7 @@ import {
   edit,
   find,
   findAll,
+  invocations,
   lastMount,
   mountComponent,
   native,
@@ -22,6 +23,9 @@ import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
+import Lists from "./components/Lists.svelte";
+import Refresh from "./components/Refresh.svelte";
+import { pending } from "./components/refresh.ts";
 import Scrolling from "./components/Scrolling.svelte";
 import Slots from "./components/Slots.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
@@ -248,6 +252,167 @@ describe("observed events", () => {
     expect(byTestId("plain-menu")?.attributes.has("listens")).toBe(false);
     await update(() => dispatch(byTestId("menu"), "primaryaction"));
     expect(findAll("txt")[2]?.children[0]?.text).toBe("Primary 1");
+  });
+});
+
+function refresh(testid: string, request: number): void {
+  const node = byTestId(testid);
+  if (node == null) throw new Error(`no ${testid}`);
+  globalThis.__svelteDispatch(node.id, "refresh", null, request);
+}
+
+function settled(): Array<number> {
+  return invocations
+    .filter((invocation) => invocation.method === "settled")
+    .map((invocation) => Number(invocation.options.request));
+}
+
+describe("refresh", () => {
+  beforeEach(() => {
+    pending.length = 0;
+  });
+
+  it("tells the host which elements refresh", async () => {
+    await render(Refresh);
+    expect(byTestId("feed")?.attributes.get("listens")).toEqual(["refresh"]);
+    expect(byTestId("plain")?.attributes.has("listens")).toBe(false);
+  });
+
+  it("settles a refresh after the handler's promise resolves and its changes commit", async () => {
+    await render(Refresh);
+    await update(() => refresh("feed", 7));
+    expect(settled()).toEqual([]);
+    const before = commits.length;
+    await update(() => pending[0]?.());
+    expect(settled()).toEqual([7]);
+    const invocation = invocations.find((item) => item.method === "settled");
+    expect(invocation?.id).toBe(byTestId("feed")?.id);
+    expect(invocation?.afterCommit).toBeGreaterThan(before);
+    expect(find("txt", byTestId("feed"))?.children[0]?.text).toBe(
+      "Refreshes 1",
+    );
+  });
+
+  it("settles a synchronous handler right away", async () => {
+    await render(Refresh);
+    await update(() => refresh("quick", 3));
+    expect(settled()).toEqual([3]);
+  });
+
+  it("settles an element without a handler and an unknown element", async () => {
+    await render(Refresh);
+    await update(() => {
+      refresh("plain", 4);
+      globalThis.__svelteDispatch(-1, "refresh", null, 5);
+    });
+    expect(settled()).toEqual([4, 5]);
+  });
+
+  it("settles a failed refresh and reports the error", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      await render(Refresh);
+      await update(() => refresh("failing", 6));
+      expect(settled()).toEqual([6]);
+      expect(() => vi.runOnlyPendingTimers()).toThrow("offline");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("settles a refresh whose element was removed", async () => {
+    await render(Refresh);
+    await update(() => refresh("feed", 8));
+    await update(() => dispatch(byTestId("hide"), "click"));
+    expect(byTestId("feed")).toBeUndefined();
+    await update(() => pending[0]?.());
+    expect(settled()).toEqual([8]);
+  });
+});
+
+function texts(): Array<string | undefined> {
+  return findAll("txt", byTestId("section")).map(
+    (node) => node.children[0]?.text,
+  );
+}
+
+function moved(from: Array<number>, to: number): Array<string> {
+  const items = ["a", "b", "c", "d", "e"];
+  move(items, from, to);
+  return items;
+}
+
+describe("lists", () => {
+  it("tells the host which lists select and which sections edit rows", async () => {
+    await render(Lists);
+    expect(byTestId("rows")?.attributes.get("listens")).toEqual([
+      "selectionchange",
+    ]);
+    expect(byTestId("section")?.attributes.get("listens")).toEqual([
+      "delete",
+      "move",
+    ]);
+    expect(byTestId("plain")?.attributes.has("listens")).toBe(false);
+  });
+
+  it("binds the selection and edit mode", async () => {
+    await render(Lists);
+    await update(() =>
+      edit(byTestId("rows"), "selectionchange", "selection", "B"),
+    );
+    await update(() =>
+      edit(byTestId("rows"), "editingchange", "editing", true),
+    );
+    expect(byTestId("picked")?.children[0]?.text).toBe("B editing 0");
+    expect(byTestId("rows")?.attributes.get("selection")).toBe("B");
+    expect(byTestId("rows")?.attributes.get("editing")).toBe(true);
+  });
+
+  it("keeps the selection and edit mode when the handlers reject changes", async () => {
+    await render(Lists);
+    await update(() =>
+      edit(byTestId("locked"), "selectionchange", "selection", "B"),
+    );
+    await update(() =>
+      edit(byTestId("locked"), "editingchange", "editing", true),
+    );
+    expect(byTestId("locked")?.attributes.get("selection")).toBe("A");
+    expect(byTestId("locked")?.attributes.get("editing")).toBe(false);
+  });
+
+  it("deletes and moves rows by index", async () => {
+    await render(Lists);
+    await update(() => dispatch(byTestId("section"), "delete", [0, 2]));
+    expect(texts()).toEqual(["B", "D"]);
+    await update(() =>
+      dispatch(byTestId("section"), "move", { from: [0], to: 2 }),
+    );
+    expect(texts()).toEqual(["D", "B"]);
+    expect(byTestId("picked")?.children[0]?.text).toBe("none done 1");
+  });
+
+  it("sends row tags and options as attributes", async () => {
+    await render(Lists);
+    const row = findAll("txt", byTestId("section"))[1];
+    expect(row?.attributes.get("tag")).toBe("B");
+    expect(row?.attributes.get("rowseparator")).toBe("hidden");
+    expect(byTestId("section")?.attributes.get("indexlabel")).toBe("R");
+  });
+});
+
+describe("move", () => {
+  it("moves rows the way SwiftUI's onMove reports them", () => {
+    expect(moved([0], 2)).toEqual(["b", "a", "c", "d", "e"]);
+    expect(moved([4], 0)).toEqual(["e", "a", "b", "c", "d"]);
+    expect(moved([1, 3], 5)).toEqual(["a", "c", "e", "b", "d"]);
+    expect(moved([3, 1], 0)).toEqual(["b", "d", "a", "c", "e"]);
+    expect(moved([2], 2)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(moved([2], 3)).toEqual(["a", "b", "c", "d", "e"]);
+  });
+
+  it("ignores indices outside the array", () => {
+    expect(moved([7, -1], 0)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(moved([0, 0], 9)).toEqual(["b", "c", "d", "e", "a"]);
   });
 });
 

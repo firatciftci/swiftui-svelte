@@ -80,25 +80,38 @@ enum Presenting {
 struct Presentations: ViewModifier {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
+    #if os(iOS)
+        @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
     @State private var hasAppeared = false
+
+    private var showsInspectorColumn: Bool {
+        #if os(iOS)
+            sizeClass != .compact
+        #else
+            true
+        #endif
+    }
 
     func body(content: Content) -> some View {
         let alert = presentation("alert")
         let dialog = presentation("confirmationdialog")
         let popover = node.attachment("popover")
         content
-            .sheet(item: presented("sheet")) { NodeView(node: $0).modifier(SheetOptions(node: $0)) }
+            .sheet(item: presented(showsInspectorColumn ? ["sheet"] : ["sheet", "inspector"])) {
+                NodeView(node: $0).modifier(SheetOptions(node: $0))
+            }
             #if os(macOS)
-                .sheet(item: presented("fullscreencover")) { NodeView(node: $0).modifier(SheetOptions(node: $0)) }
+                .sheet(item: presented(["fullscreencover"])) { NodeView(node: $0).modifier(SheetOptions(node: $0)) }
             #else
-                .fullScreenCover(item: presented("fullscreencover")) { NodeView(node: $0).modifier(SheetOptions(node: $0)) }
+                .fullScreenCover(item: presented(["fullscreencover"])) { NodeView(node: $0).modifier(SheetOptions(node: $0)) }
             #endif
-            .popover(item: presented("popover"), arrowEdge: Presenting.edge(popover?.attributes["arrowedge"]?.string)) { popover in
+            .popover(item: presented(["popover"]), arrowEdge: Presenting.edge(popover?.attributes["arrowedge"]?.string)) { popover in
                 NodeView(node: popover)
                     .modifier(SheetOptions(node: popover))
                     .ifLet(Presenting.adaptation(popover.attributes["adaptation"]?.string)) { $0.presentationCompactAdaptation($1) }
             }
-            .modifier(InspectorHost(node: node, isPresented: isPresented("inspector")))
+            .modifier(InspectorHost(node: node, isColumn: showsInspectorColumn, isPresented: isPresented("inspector")))
             .alert(alert?.attributes["title"]?.string ?? "", isPresented: isPresented("alert"), presenting: alert) { alert in
                 ForEach(alert.renderedChildren.filter { $0.name == "btn" }) { ActionButton(node: $0) }
             } message: { alert in
@@ -123,11 +136,12 @@ struct Presentations: ViewModifier {
         return Presenting.anchored.contains(name) ? node.attachment(name) : node.presented.first { $0.name == name }
     }
 
-    private func presented(_ name: String) -> Binding<Node?> {
-        Binding {
-            presentation(name)
+    private func presented(_ names: Array<String>) -> Binding<Node?> {
+        let current = { names.lazy.compactMap(presentation).first }
+        return Binding {
+            current()
         } set: { value in
-            if value == nil, let current = presentation(name) { runtime.dispatch(current.id, "dismiss") }
+            if value == nil, let current = current() { runtime.dispatch(current.id, "dismiss") }
         }
     }
 
@@ -142,10 +156,11 @@ struct Presentations: ViewModifier {
 
 private struct InspectorHost: ViewModifier {
     let node: Node
+    let isColumn: Bool
     let isPresented: Binding<Bool>
 
     func body(content: Content) -> some View {
-        if node.hostsInspector {
+        if node.hostsInspector, isColumn {
             content.inspector(isPresented: isPresented) {
                 if let inspector = node.presented.first(where: { $0.name == "inspector" }) {
                     NodeView(node: inspector)

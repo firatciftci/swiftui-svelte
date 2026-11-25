@@ -1,11 +1,15 @@
+import { flushSync } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  matchURL,
   onActive,
   onBackground,
   onInactive,
   onMemoryWarning,
   onOpenURL,
+  restorable,
 } from "swiftui-svelte/app";
+import { createStorage } from "swiftui-svelte/web/storage";
 import "./bridge.ts";
 
 const cleanups: Array<() => void> = [];
@@ -111,5 +115,79 @@ describe("swiftui-svelte/app", () => {
     globalThis.__svelteAppEvent("memorywarning", null);
     globalThis.__svelteAppEvent("memorywarning", null);
     expect(second).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("deep links", () => {
+  it("holds links that arrive before anything listens", async () => {
+    globalThis.__svelteAppEvent("openurl", "sveltehost://todos/7");
+    const opened: Array<string> = [];
+    cleanups.push(
+      onOpenURL((url) => {
+        opened.push(url.href);
+      }),
+    );
+    expect(opened).toEqual([]);
+    await Promise.resolve();
+    expect(opened).toEqual(["sveltehost://todos/7"]);
+    cleanups.push(
+      onOpenURL((url) => {
+        opened.push(`late ${url.href}`);
+      }),
+    );
+    await Promise.resolve();
+    expect(opened).toEqual(["sveltehost://todos/7"]);
+  });
+
+  it("matches custom schemes and web links against the same pattern", () => {
+    expect(matchURL("todos/:id", "sveltehost://todos/2")).toEqual({ id: "2" });
+    expect(matchURL("/todos/:id", "https://example.com/todos/2?x=1")).toEqual({
+      id: "2",
+    });
+    expect(matchURL("todos", new URL("sveltehost://todos"))).toEqual({});
+    expect(matchURL("todos/:id", "sveltehost://todos")).toBeNull();
+    expect(matchURL("todos/:id", "sveltehost://todos/2/edit")).toBeNull();
+    expect(matchURL("todos/:id", "sveltehost://notes/2")).toBeNull();
+    expect(matchURL("notes/*", "sveltehost://notes/a/b%20c")).toEqual({
+      "*": "a/b c",
+    });
+    expect(matchURL("tag/:name", "sveltehost://tag/%E0%A4%A")).toEqual({
+      name: "%E0%A4%A",
+    });
+    expect(matchURL("todos/:id", "not a url")).toBeNull();
+  });
+});
+
+describe("restorable", () => {
+  it("restores saved state and saves every change", () => {
+    vi.stubGlobal(
+      "localStorage",
+      createStorage([
+        ["swiftui-svelte.restorable.stack", "[3,4]"],
+        ["swiftui-svelte.restorable.tab", "42"],
+        ["swiftui-svelte.restorable.broken", "{"],
+      ]),
+    );
+    try {
+      const stack = restorable<Array<number>>("stack", []);
+      expect(stack.value).toEqual([3, 4]);
+      expect(restorable<Array<number>>("stack", [])).toBe(stack);
+      stack.value.push(5);
+      flushSync();
+      expect(localStorage.getItem("swiftui-svelte.restorable.stack")).toBe(
+        "[3,4,5]",
+      );
+      expect(restorable("tab", "todos").value).toBe("todos");
+      expect(restorable("broken", "fallback").value).toBe("fallback");
+      const isIDs = (value: unknown): value is Array<number> =>
+        Array.isArray(value) && value.every((item) => typeof item === "number");
+      expect(restorable("fresh", [1], isIDs).value).toEqual([1]);
+      flushSync();
+      expect(localStorage.getItem("swiftui-svelte.restorable.fresh")).toBe(
+        "[1]",
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

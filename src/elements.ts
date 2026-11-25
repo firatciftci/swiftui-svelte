@@ -206,7 +206,37 @@ type ScrollOptions = {
   bounce?: "automatic" | "always" | "basedOnSize";
   anchor?: UnitPointName;
   onscroll?: (scroll: ScrollGeometry) => void;
+  onrefresh?: () => Promise<unknown> | void;
 };
+export type RowMove = { from: Array<number>; to: number };
+type RowEdits = {
+  ondelete?: (indices: Array<number>) => void;
+  onmove?: (move: RowMove) => void;
+};
+type ListSelection =
+  | {
+      multiple?: false;
+      selection?: string | number | null;
+      onselectionchange?: (selection: string | number | null) => void;
+    }
+  | {
+      multiple: true;
+      selection?: Array<string | number>;
+      onselectionchange?: (selection: Array<string | number>) => void;
+    };
+type Inset = number | boolean;
+type Insets =
+  | Inset
+  | {
+      top?: Inset;
+      leading?: Inset;
+      bottom?: Inset;
+      trailing?: Inset;
+      horizontal?: Inset;
+      vertical?: Inset;
+    };
+type Length = number | "infinity";
+type Point = { x?: number; y?: number };
 type TextInput = Modifiers & {
   placeholder?: string;
   focused?: boolean;
@@ -311,8 +341,33 @@ export type NumberFormat =
   | "integer"
   | "percent"
   | { currency: string };
+type ClipShape =
+  | "rectangle"
+  | "circle"
+  | "capsule"
+  | "ellipse"
+  | number
+  | { cornerradius: number }
+  | {
+      topleading?: number;
+      toptrailing?: number;
+      bottomleading?: number;
+      bottomtrailing?: number;
+    }
+  | { d: string; viewbox?: string };
+type EdgeSet = Edge | "all" | "horizontal" | "vertical";
+type SafeAreaIgnoring =
+  | boolean
+  | "container"
+  | "keyboard"
+  | EdgeSet
+  | Array<EdgeSet>
+  | {
+      regions?: "all" | "container" | "keyboard";
+      edges?: EdgeSet | Array<EdgeSet>;
+    };
 type Modifiers = {
-  padding?: number | boolean;
+  padding?: Insets;
   font?: Font;
   size?: number;
   design?: "default" | "rounded" | "serif" | "monospaced";
@@ -325,6 +380,33 @@ type Modifiers = {
   opacity?: number;
   width?: number;
   height?: number;
+  minwidth?: Length;
+  idealwidth?: Length;
+  maxwidth?: Length;
+  minheight?: Length;
+  idealheight?: Length;
+  maxheight?: Length;
+  framealignment?: LayerAlignment;
+  aspectratio?: number;
+  contentmode?: "fit" | "fill";
+  offset?: Point;
+  position?: Point;
+  rotation?: number;
+  rotationanchor?: UnitPointName;
+  scale?: number | Point;
+  scaleanchor?: UnitPointName;
+  zindex?: number;
+  clipshape?: ClipShape;
+  contentshape?: ClipShape;
+  border?: Color | { color?: ShapeStyle; width?: number };
+  shadow?:
+    | number
+    | Color
+    | { color?: Color; radius?: number; x?: number; y?: number };
+  blur?: number;
+  hidden?: boolean;
+  disabled?: boolean;
+  ignoressafearea?: SafeAreaIgnoring;
   animated?: boolean;
   animation?: AnimationOptions;
   transition?: Transition;
@@ -335,6 +417,13 @@ type Modifiers = {
   columnalignment?: HorizontalAlignment;
   cellanchor?: UnitPointName;
   completion?: string;
+  tag?: string | number;
+  rowinsets?: Insets;
+  rowseparator?: BarVisibility;
+  rowseparatortint?: Color;
+  rowbackground?: ShapeStyle;
+  deletedisabled?: boolean;
+  movedisabled?: boolean;
   onresize?: (size: Size) => void;
   lang?: string;
   dir?: "ltr" | "rtl";
@@ -424,6 +513,8 @@ declare module "svelte/elements" {
       role?: "search";
     };
     swipeactions: { edge?: "leading" | "trailing" };
+    contextmenu: Record<string, never>;
+    preview: Record<string, never>;
     vstack: Modifiers & { spacing?: number; alignment?: HorizontalAlignment };
     hstack: Modifiers & { spacing?: number; alignment?: VerticalAlignment };
     zstack: Modifiers & { alignment?: LayerAlignment };
@@ -483,7 +574,21 @@ declare module "svelte/elements" {
         axes?: "vertical" | "horizontal" | "both";
         snap?: "paging" | "view";
       };
-    list: Modifiers & ScrollOptions;
+    list: Modifiers &
+      ScrollOptions &
+      RowEdits &
+      ListSelection & {
+        variant?:
+          | "automatic"
+          | "plain"
+          | "inset"
+          | "grouped"
+          | "insetGrouped"
+          | "sidebar";
+        editing?: boolean;
+        oneditingchange?: (editing: boolean) => void;
+        sectionindex?: BarVisibility;
+      };
     spacer: Modifiers & { minlength?: number };
     divider: Modifiers;
     txt: Modifiers & {
@@ -592,9 +697,16 @@ declare module "svelte/elements" {
       onchange?: (checked: boolean) => void;
     };
     formview: Modifiers;
-    sectionview: Modifiers & { header?: string; footer?: string };
+    sectionview: Modifiers &
+      RowEdits & { header?: string; footer?: string; indexlabel?: string };
     background: { alignment?: LayerAlignment };
     overlay: { alignment?: LayerAlignment };
+    maskview: { alignment?: LayerAlignment };
+    safeareainset: {
+      edge?: Edge;
+      alignment?: HorizontalAlignment | VerticalAlignment;
+      spacing?: number;
+    };
     picker: Modifiers &
       (
         | {
@@ -706,7 +818,12 @@ declare global {
     level: "log" | "info" | "warn" | "error" | "debug",
     message: string,
   ): void;
-  var __svelteDispatch: (id: number, type: string, payload: unknown) => void;
+  var __svelteDispatch: (
+    id: number,
+    type: string,
+    payload: unknown,
+    request?: number,
+  ) => void;
   var __svelteMount: (mountId: number, name: string, json: string) => void;
   var __svelteProps: (mountId: number, json: string) => void;
   var __svelteUnmount: (mountId: number) => void;

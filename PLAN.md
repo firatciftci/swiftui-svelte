@@ -138,20 +138,20 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] `sheet` detents (fractions and heights), drag indicator, locked interactive dismissal, and background interaction
 - [x] `toolbar` items in every placement, menus in toolbars, and `toolbaritemgroup` spacing
 - [x] `searchable`, with tokens, suggestions, scopes, and `onsubmit`
-- [ ] `refreshable`, with an async handler that SwiftUI awaits
-- [ ] `contextmenu`, with a preview
-- [ ] `list` selection, edit mode, `onmove`, `ondelete`, list styles, row insets, separators, row background, and section index
-- [ ] Deep links: open URL events and helpers for restoring navigation
+- [x] `refreshable`, with an async handler that SwiftUI awaits
+- [x] `contextmenu`, with a preview
+- [x] `list` selection, edit mode, `onmove`, `ondelete`, list styles, row insets, separators, row background, and section index
+- [x] Deep links: open URL events and helpers for restoring navigation
 
 ### Modifiers
 
 - [x] `padding`, `width`, `height`, `font`, `weight`, `color`, `tint`, `background`, `radius`, `opacity`, and `animated`
-- [ ] `padding` per edge and per axis
-- [ ] `frame` minimum, maximum, and ideal sizes, infinity, and alignment
-- [ ] `offset`, `position`, `rotation`, `scale`, `zindex`, and `aspectratio`
-- [ ] `overlay` and `background` with views (snippets) and shapes
-- [ ] `border`, `shadow`, `blur`, `clipshape` with every shape, and `mask`
-- [ ] `hidden`, `disabled`, `ignoressafearea`, `safeareainset`, and `contentshape`
+- [x] `padding` per edge and per axis
+- [x] `frame` minimum, maximum, and ideal sizes, infinity, and alignment
+- [x] `offset`, `position`, `rotation`, `scale`, `zindex`, and `aspectratio`
+- [x] `overlay` and `background` with views (snippets) and shapes
+- [x] `border`, `shadow`, `blur`, `clipshape` with every shape, and `mask`
+- [x] `hidden`, `disabled`, `ignoressafearea`, `safeareainset`, and `contentshape`
 - [ ] Accessibility: `a11ylabel`, `a11yhint`, `a11yvalue`, traits, `a11yhidden`, sort priority, combined children, and `testid` (the accessibility identifier)
 - [ ] Gestures: `ontap` with count and location, `onlongpress`, `ondrag` with translation and velocity, `onmagnify`, and `onrotate`
 - [ ] Lifecycle: `onappear`, `ondisappear`, and `ontask` (async, and canceled on disappear)

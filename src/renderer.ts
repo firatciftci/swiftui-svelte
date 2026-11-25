@@ -5,7 +5,7 @@ import { SvelteMap } from "svelte/reactivity";
 import { createRenderer } from "svelte/renderer";
 import type { AnimationOptions } from "./elements.ts";
 
-type Handler = (payload: unknown) => void;
+type Handler = (payload: unknown) => unknown;
 type Container = { first: ChildNode | null; last: ChildNode | null };
 type Linked = {
   parent: ParentNode | null;
@@ -203,7 +203,7 @@ function flushInvocations(): void {
   const waiting: typeof invocations = [];
   for (const invocation of invocations) {
     const [element, method, options] = invocation;
-    if (element.state === State.Native) {
+    if (method === "settled" || element.state === State.Native) {
       __nativeInvoke(element.id, method, JSON.stringify(options));
     } else if (element.state === State.Pending) {
       waiting.push(invocation);
@@ -296,6 +296,20 @@ export function ref(): Ref {
 }
 
 globalThis.__svelteReply = (request, rect) => settle(request, rect);
+
+export function move<T>(
+  items: Array<T>,
+  from: Array<number>,
+  to: number,
+): void {
+  const indices = [...new Set(from)]
+    .filter((index) => index >= 0 && index < items.length)
+    .toSorted((a, b) => a - b);
+  const moving = indices.map((index) => items[index] as T);
+  const target = to - indices.filter((index) => index < to).length;
+  for (const index of indices.toReversed()) items.splice(index, 1);
+  items.splice(Math.min(Math.max(target, 0), items.length), 0, ...moving);
+}
 
 export function withAnimation<T>(
   fn: () => T,
@@ -391,7 +405,15 @@ function linked(): Linked {
   return { parent: null, prev: null, next: null, state: State.Local };
 }
 
-const observedEvents = new Set(["primaryaction", "resize", "scroll"]);
+const observedEvents = new Set([
+  "delete",
+  "move",
+  "primaryaction",
+  "refresh",
+  "resize",
+  "scroll",
+  "selectionchange",
+]);
 
 function updateListens(element: ElementNode): void {
   const types: Array<string> = [];
@@ -525,6 +547,7 @@ const renderer = createRenderer<{
 const controlledAttributes = new Map<string, Record<string, string>>([
   ["toggle", { change: "checked" }],
   ["tabview", { change: "selection" }],
+  ["list", { editingchange: "editing", selectionchange: "selection" }],
   [
     "searchable",
     {
@@ -539,11 +562,34 @@ const controlledAttributes = new Map<string, Record<string, string>>([
   ],
 ]);
 
-globalThis.__svelteDispatch = (id, type, payload) => {
+function awaitHandlers(
+  element: ElementNode,
+  request: number,
+  results: Array<unknown>,
+): void {
+  void Promise.allSettled(results).then((outcomes) => {
+    for (const outcome of outcomes) {
+      if (outcome.status === "rejected") {
+        setTimeout(() => {
+          throw outcome.reason;
+        }, 0);
+      }
+    }
+    invoke(element, "settled", { request });
+  });
+}
+
+globalThis.__svelteDispatch = (id, type, payload, request) => {
   const element = elements.get(id)?.deref();
   const handlers = element?.listeners.get(type);
-  if (element == null || handlers == null || handlers.size === 0) return;
-  for (const handler of handlers) handler(payload);
+  if (element == null || handlers == null || handlers.size === 0) {
+    if (request != null) {
+      __nativeInvoke(id, "settled", JSON.stringify({ request }));
+    }
+    return;
+  }
+  const results = Array.from(handlers, (handler) => handler(payload));
+  if (request != null) awaitHandlers(element, request, results);
   const name =
     controlledAttributes.get(element.name)?.[type] ??
     (type === "input" || type === "change" ? "value" : undefined);

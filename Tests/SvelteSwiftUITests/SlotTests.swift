@@ -30,6 +30,23 @@ struct SlotTests {
         #expect(section.attachment("footer") == nil)
     }
 
+    @Test func keepsMasksAndSafeAreaInsetsOutOfTheContent() {
+        let mask = element("maskview", id: 1)
+        let card = element("zstack", [element("txt"), mask, element("safeareainset"), element("safeareainset")])
+        #expect(names(card) == ["txt"])
+        #expect(card.attachment("maskview") === mask)
+    }
+
+    @Test func keepsAContextMenuAndItsPreviewOutOfTheContent() {
+        let preview = element("preview", id: 3)
+        let menu = element("contextmenu", [element("btn"), element("divider"), preview], id: 2)
+        let row = element("hstack", [element("toggle"), menu])
+        #expect(names(row) == ["toggle"])
+        #expect(row.attachment("contextmenu") === menu)
+        #expect(names(menu) == ["btn", "divider"])
+        #expect(menu.attachment("preview") === preview)
+    }
+
     @Test func alignsLayersLikeSwiftUI() {
         let names = ["top", "bottom", "leading", "trailing", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing"]
         let alignments: Array<Alignment> = [.top, .bottom, .leading, .trailing, .topLeading, .topTrailing, .bottomLeading, .bottomTrailing]

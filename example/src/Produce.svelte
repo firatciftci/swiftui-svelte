@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SearchToken } from "swiftui-svelte";
-  import { Searchable } from "swiftui-svelte/components";
+  import { List, Searchable } from "swiftui-svelte/components";
 
   const kinds = [
     { id: "fruit", label: "Fruit", symbol: "basket" },
@@ -20,6 +20,7 @@
   let tokens = $state<Array<SearchToken>>([]);
   let searching = $state(false);
   let submitted = $state<string | null>(null);
+  let picked = $state<string | number | null>(null);
 
   const needle = $derived(query.trim().toLowerCase());
   const chosen = $derived(
@@ -32,6 +33,9 @@
         item.name.toLowerCase().includes(needle),
     ),
   );
+  const letters = $derived([
+    ...new Set(matches.map((item) => item.name.charAt(0))),
+  ]);
   const completions = $derived(
     needle === ""
       ? []
@@ -44,25 +48,44 @@
 </script>
 
 <screen title="Produce" titledisplaymode="inline">
-  <list>
-    <txt color="secondary">
+  <List bind:selection={picked} sectionindex="visible">
+    <txt color="secondary" rowseparator="hidden">
       Type a name, or pick Fruit or Vegetable to filter by kind.
     </txt>
-    <txt testid="search-state" font="caption" color="secondary">
+    <txt
+      testid="search-state"
+      font="caption"
+      color="secondary"
+      rowseparator="hidden"
+      rowinsets={{ top: 2, bottom: 2, horizontal: 20 }}
+    >
       {searching ? "Searching" : "Not searching"} · {submitted == null
         ? "No search yet"
         : `Last search: ${submitted}`}
     </txt>
-    {#each matches as item (item.name)}
-      <labelview
-        title={item.name}
-        symbol={item.kind === "fruit" ? "basket" : "carrot"}
-      />
+    <txt
+      testid="selected-produce"
+      font="caption"
+      color="secondary"
+      rowinsets={{ top: 2, bottom: 10, horizontal: 20 }}
+    >
+      {picked == null ? "Tap a row to select it" : `Selected: ${picked}`}
+    </txt>
+    {#each letters as letter (letter)}
+      <sectionview header={letter} indexlabel={letter}>
+        {#each matches.filter( (item) => item.name.startsWith(letter) ) as item (item.name)}
+          <labelview
+            tag={item.name}
+            title={item.name}
+            symbol={item.kind === "fruit" ? "basket" : "carrot"}
+          />
+        {/each}
+      </sectionview>
     {/each}
     {#if matches.length === 0}
       <contentunavailableview variant="search" {query} />
     {/if}
-  </list>
+  </List>
   <Searchable
     bind:value={query}
     bind:tokens

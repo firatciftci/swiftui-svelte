@@ -159,6 +159,27 @@ struct MenuItem: View {
     }
 }
 
+struct ContextMenu: ViewModifier {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    func body(content: Content) -> some View {
+        if let preview = node.attachment("preview") {
+            content.contextMenu {
+                items
+            } preview: {
+                Slot(node: preview).environment(runtime)
+            }
+        } else {
+            content.contextMenu { items }
+        }
+    }
+
+    private var items: some View {
+        ForEach(node.renderedChildren) { MenuItem(node: $0) }.environment(runtime)
+    }
+}
+
 private struct MenuToggle: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime

@@ -1,7 +1,7 @@
 import XCTest
 
 final class SvelteHostUITests: XCTestCase {
-    private var app = XCUIApplication()
+    var app = XCUIApplication()
 
     override func setUp() {
         continueAfterFailure = false
@@ -9,7 +9,7 @@ final class SvelteHostUITests: XCTestCase {
         app.launch()
     }
 
-    private func tab(_ title: String) {
+    func tab(_ title: String) {
         guard UIDevice.current.userInterfaceIdiom == .pad else {
             app.tabBars.buttons[title].tap()
             return
@@ -19,7 +19,7 @@ final class SvelteHostUITests: XCTestCase {
         cell.tap()
     }
 
-    private func waitFor(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
+    func waitFor(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.waitForExistence(timeout: 5), "\(element) never appeared", file: file, line: line)
     }
 
@@ -195,7 +195,7 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["To-dos"].isSelected)
     }
 
-    private func attachScreenshot(_ name: String) {
+    func attachScreenshot(_ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
@@ -246,25 +246,37 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["lazyvstack"].exists)
         layouts.tap()
         waitFor(app.staticTexts["lazyvstack"])
-        app.swipeUp()
         for number in 1...10 { XCTAssertTrue(app.staticTexts["\(number)"].exists, "swatch \(number)") }
-        XCTAssertTrue(app.staticTexts["Content inside a GroupBox."].exists)
-        let long = app.staticTexts["This whole sentence shows when it fits on one line."]
-        let short = app.staticTexts["A shorter fallback"]
-        XCTAssertNotEqual(long.exists, short.exists)
         let eager = app.staticTexts["vstack"].frame
         let lazy = app.staticTexts["lazyvstack"].frame
         XCTAssertEqual(eager.midY, lazy.midY, accuracy: 1)
         XCTAssertLessThan(eager.maxX, lazy.minX)
 
+        let ratio = app.staticTexts["ratio"]
+        scroll(to: ratio)
+        let scaled = app.staticTexts["Scaled"].frame
+        XCTAssertLessThan(app.staticTexts["Raised"].frame.midY, scaled.midY - 3)
+        let size = ratio.label.split(separator: " ").compactMap { Double($0) }
+        XCTAssertEqual(size.count, 2, ratio.label)
+        if size.count == 2 {
+            XCTAssertEqual(size[0] / size[1], 4, accuracy: 0.1)
+            XCTAssertGreaterThan(size[0], scaled.width * 3)
+        }
+
         let caption = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Scrolled'")).firstMatch
-        waitFor(caption)
+        scroll(to: caption)
         XCTAssertTrue(caption.label.hasPrefix("Scrolled 0 pt across a "))
         XCTAssertFalse(caption.label.hasSuffix(" 0 pt carousel"))
         app.staticTexts["Card 2"].swipeLeft()
         let scrolled = NSPredicate(format: "NOT (label BEGINSWITH 'Scrolled 0 pt')")
         expectation(for: scrolled, evaluatedWith: caption)
         waitForExpectations(timeout: 5)
+
+        let groupBox = app.staticTexts["Content inside a GroupBox."]
+        scroll(to: groupBox)
+        let long = app.staticTexts["This whole sentence shows when it fits on one line."]
+        let short = app.staticTexts["A shorter fallback"]
+        XCTAssertNotEqual(long.exists, short.exists)
         attachScreenshot("layouts")
     }
 
@@ -331,14 +343,14 @@ extension SvelteHostUITests {
         attachScreenshot("inputs")
     }
 
-    private func dismissSheet(from element: XCUIElement? = nil) {
+    func dismissSheet(from element: XCUIElement? = nil) {
         let start =
             element?.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
             ?? app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12))
         start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
     }
 
-    private func scroll(to element: XCUIElement, attempts: Int = 8) {
+    func scroll(to element: XCUIElement, attempts: Int = 8) {
         for _ in 0..<attempts where !element.isHittable { app.swipeUp() }
     }
 
@@ -514,7 +526,7 @@ extension SvelteHostUITests {
         XCTAssertFalse(app.navigationBars["Toolbars"].exists)
     }
 
-    private func cancelSearch() {
+    func cancelSearch() {
         app.buttons.matching(NSPredicate(format: "label IN %@", ["Cancel", "Close"])).firstMatch.tap()
     }
 
@@ -567,10 +579,11 @@ extension SvelteHostUITests {
         search.typeText("\n")
         XCTAssertEqual(state.label, "Searching · Last search: Vegetable Lettuce")
         attachScreenshot("submitted search")
-        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Lettuce".count + 1))
-        waitFor(app.staticTexts["Apple"])
-        XCTAssertEqual(search.value as? String, "Fruits and vegetables")
+        search.buttons["Clear text"].tap()
+        waitFor(app.buttons["Vegetable"])
+        XCTAssertTrue(app.buttons["Fruit"].exists, "clearing the field removes the token too")
         cancelSearch()
+        waitFor(app.staticTexts["Apple"])
         XCTAssertTrue(state.waitForLabel("Not searching · Last search: Vegetable Lettuce"), state.label)
     }
 

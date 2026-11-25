@@ -45,10 +45,12 @@ final class Node: Identifiable {
     }
 
     private static let attachments: Set<String> = Presenting.names.union([
-        "background", "overlay", "searchable", "swipeactions", "toolbar", "toolbarspacer",
+        "background", "contextmenu", "maskview", "overlay", "safeareainset", "searchable", "swipeactions", "toolbar",
+        "toolbarspacer",
     ])
     private static let slots: [String: Set<String>] = [
-        "asyncimage": ["placeholder", "failure"], "controlgroup": ["label"], "labelview": ["icon"], "disclosuregroup": ["label"],
+        "asyncimage": ["placeholder", "failure"], "contextmenu": ["preview"], "controlgroup": ["label"], "labelview": ["icon"],
+        "disclosuregroup": ["label"],
         "groupbox": ["label"], "picker": ["label"], "labeledcontent": ["label"], "menuview": ["label"],
         "contentunavailableview": ["label"],
         "sectionview": ["header", "footer"],

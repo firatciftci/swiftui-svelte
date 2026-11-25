@@ -53,12 +53,12 @@ struct NodeView: View {
             .modifier(Scrollable())
             .modifier(ScrollOptions(node: node))
         case "list":
-            List { children }.modifier(Scrollable()).modifier(ScrollOptions(node: node))
+            ListElement(node: node)
         case "formview":
             Form { children }
         case "sectionview":
             Section {
-                children
+                Rows(node: node)
             } header: {
                 if let header = node.attachment("header") {
                     Slot(node: header)
@@ -72,6 +72,7 @@ struct NodeView: View {
                     Text(footer)
                 }
             }
+            .modifier(SectionIndexLabel(label: node.attributes["indexlabel"]?.string))
         case "spacer":
             Spacer(minLength: node.attributes["minlength"]?.number.map { CGFloat($0) })
         case "divider":
@@ -190,42 +191,77 @@ private struct NodeModifiers: ViewModifier {
         let transition = MotionTransition.transition(for: attributes)
         let styled =
             content
-            .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
-            .padding(Styles.padding(attributes["padding"]))
+            .modifier(SafeAreaInsets(node: node))
+            .modifier(Framing(attributes: attributes))
+            .modifier(Typography(attributes: attributes))
+            .modifier(Appearance(attributes: attributes))
+            .modifier(Decorations(node: node))
+            .modifier(Transforms(attributes: attributes))
+            .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
+            .modifier(Layers(node: node))
+            .modifier(Measured(node: node))
+            .modifier(GridCell(attributes: attributes))
+            .modifier(Resizing(node: node))
+            .modifier(Localized(attributes: attributes))
+            .modifier(Availability(node: node))
+        styled
+            .modifier(PresentationHost(node: node))
+            .ifLet(childIDs) { $0.animation(animation, value: $1) }
+            .ifLet(transition) { $0.transition($1) }
+            .modifier(Attachments(node: node))
+            .modifier(RowOptions(attributes: attributes))
+    }
+}
+
+private struct Typography: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content
             .font(Styles.font(attributes))
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .fontWeight(Styles.weight(attributes["weight"]?.string))
             .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }
             .ifLet(Palette.color(attributes["tint"]?.string)) { $0.tint($1) }
             .ifLet(Inputs.controlSize(attributes["controlsize"]?.string)) { $0.controlSize($1) }
+    }
+}
+
+private struct Appearance: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
-            .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
-            .modifier(Layers(node: node))
-            .modifier(Measured(node: node))
-            .modifier(GridCell(attributes: attributes))
-            .modifier(Resizing(node: node))
+    }
+}
+
+private struct Localized: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content
             .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
                 $0.environment(\.locale, $1)
             }
             .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
-        styled
-            .modifier(PresentationHost(node: node))
-            .ifLet(childIDs) { $0.animation(animation, value: $1) }
-            .ifLet(transition) { $0.transition($1) }
+    }
+}
+
+private struct Attachments: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
+        content
             .ifLet(node.attachment("searchable")) { $0.modifier(Searching(node: $1)) }
+            .ifLet(node.attachment("contextmenu")) { $0.modifier(ContextMenu(node: $1)) }
             .ifLet(node.attachment("swipeactions")) { view, actions in
                 view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
                     ForEach(actions.renderedChildren) { ActionButton(node: $0) }
                 }
             }
-    }
-
-    private func frame(_ attributes: [String: JSONValue]) -> (width: CGFloat?, height: CGFloat?)? {
-        let width = attributes["width"]?.number.map { CGFloat($0) }
-        let height = attributes["height"]?.number.map { CGFloat($0) }
-        return width == nil && height == nil ? nil : (width, height)
     }
 }
 

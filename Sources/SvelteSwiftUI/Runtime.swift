@@ -36,6 +36,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var pendingURLs: Array<URL> = []
     @ObservationIgnored private var measureRequests: [Int: Array<Int>] = [:]
     @ObservationIgnored private var requestSerial = 0
+    @ObservationIgnored private var settlements: [Int: CheckedContinuation<Void, Never>] = [:]
     @ObservationIgnored private var environment = HostEnvironment.current
     @ObservationIgnored private let source: URL
     @ObservationIgnored private let reloadsOnChange: Bool
@@ -50,7 +51,7 @@ public final class SvelteRuntime {
         drain.value.object = self
     }
 
-    private var bundleVersion: Date? {
+    nonisolated private static func version(of source: URL) -> Date? {
         try? source.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
     }
 
@@ -77,11 +78,16 @@ public final class SvelteRuntime {
         for url in pendingURLs { deliver(url) }
         pendingURLs.removeAll()
         guard reloadsOnChange else { return }
-        watcher = Task { [weak self] in
+        let source = source
+        let initial = loadedVersion
+        watcher = Task.detached { [weak self] in
+            var seen = initial
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
-                guard let self, bundleVersion != loadedVersion else { continue }
-                reload()
+                let version = Self.version(of: source)
+                guard version != seen else { continue }
+                seen = version
+                await self?.reload(ifNewerThan: version)
             }
         }
     }
@@ -115,6 +121,15 @@ public final class SvelteRuntime {
 
     func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull(), waits: Bool = true) {
         call("__svelteDispatch", [id, type, payload], waits: waits)
+    }
+
+    func dispatchAndWait(_ id: Int, _ type: String, _ payload: Any = NSNull()) async {
+        requestSerial += 1
+        let request = requestSerial
+        await withCheckedContinuation { continuation in
+            settlements[request] = continuation
+            call("__svelteDispatch", [id, type, payload, request])
+        }
     }
 
     private func call(_ function: String, _ arguments: Array<Any>, waits: Bool = true) {
@@ -158,6 +173,10 @@ public final class SvelteRuntime {
                 if case let .object(options) = value { options } else { nil }
             } ?? [:]
         let request = options["request"]?.number.map { Int($0) }
+        if method == "settled" {
+            if let request { settlements.removeValue(forKey: request)?.resume() }
+            return
+        }
         guard let node = store.node(id) else {
             if let request { reply(request, frame: nil) }
             return
@@ -280,11 +299,17 @@ public final class SvelteRuntime {
         reload()
     }
 
+    private func reload(ifNewerThan version: Date?) {
+        if version != loadedVersion { reload() }
+    }
+
     private func reload() {
         isFrameRequested = false
+        for continuation in settlements.values { continuation.resume() }
+        settlements.removeAll()
         store = NodeStore()
         error = nil
-        loadedVersion = bundleVersion
+        loadedVersion = Self.version(of: source)
         let engine = engine
         guard let script = try? String(contentsOf: source, encoding: .utf8) else {
             engine.queue.sync { engine.stop() }

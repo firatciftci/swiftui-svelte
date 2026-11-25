@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onOpenURL } from "swiftui-svelte/app";
+  import { matchURL, onOpenURL, restorable } from "swiftui-svelte/app";
   import { TabView } from "swiftui-svelte/components";
   import { language } from "./language.svelte";
   import { m } from "./paraglide/messages.js";
@@ -8,18 +8,18 @@
   import TodoList from "./TodoList.svelte";
   import { todos } from "./todos.svelte";
 
-  let tab = $state("todos");
+  const tab = restorable("app.tab", "todos");
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
 
   $effect(() =>
     onOpenURL((url) => {
-      if (url.host === "todos") tab = "todos";
+      if (matchURL("todos/*", url) != null) tab.value = "todos";
     }),
   );
 </script>
 
 <TabView
-  bind:selection={tab}
+  bind:selection={tab.value}
   variant="sidebarAdaptable"
   lang={language.locale}
   dir={language.dir}
