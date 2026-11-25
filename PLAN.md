@@ -40,9 +40,9 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [ ] Typed event payloads, including structured ones like `{ x, y }` and `{ from, to }`
 - [x] Event modifiers that make sense natively: `once`, and an opt-in debounced `oninput`
 - [x] `requestAnimationFrame` and `cancelAnimationFrame`, driven by `CADisplayLink`
-- [ ] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
+- [x] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
 - [ ] The failed snippet of `<svelte:boundary>` renders natively
-- [ ] Source maps: Vite emits them, and the runtime maps stack traces with them
+- [x] Source maps: Vite emits them, and the runtime maps stack traces with them
 - [ ] Safari Web Inspector works with debug builds in the simulator and on devices (verify `isInspectable` and document it)
 - [ ] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency
 - [ ] A startup time budget: measure cold start to first frame on a device, and speed up bundle evaluation _(maintainer)_

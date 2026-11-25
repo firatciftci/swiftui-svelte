@@ -17,6 +17,7 @@ export function swiftui({
         outDir: slash === -1 ? "." : outFile.slice(0, slash),
         emptyOutDir: false,
         minify: false,
+        sourcemap: true,
         lib: {
           entry,
           formats: ["iife"],

@@ -62,6 +62,10 @@ final class NodeStore {
 
     func node(_ id: Int) -> Node? { nodes[id] }
 
+    func dismissError() {
+        error = nil
+    }
+
     func apply(_ json: String) {
         var json = json
         let failure: BridgeError? = json.withUTF8 { bytes in

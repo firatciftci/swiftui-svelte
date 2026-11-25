@@ -112,12 +112,25 @@ struct RuntimeTests {
 
     @Test func reportsExceptions() throws {
         let runtime = try runtime("throw new Error('boom')")
-        #expect(runtime.error?.contains("boom") == true)
+        #expect(runtime.error?.message.contains("boom") == true)
+    }
+
+    @Test func dismissesAndRestartsAfterAnError() throws {
+        let runtime = try runtime(mount + "__nativeCommit('[42]'); throw new Error('boom');")
+        #expect(runtime.error?.message.contains("boom") == true)
+        #expect(runtime.store.error != nil)
+        runtime.dismissError()
+        #expect(runtime.error == nil)
+        #expect(runtime.store.error == nil)
+        #expect(runtime.store.root?.children.first?.name == "txt")
+        runtime.restart()
+        #expect(runtime.error?.message.contains("boom") == true)
+        #expect(runtime.store.root?.children.first?.name == "txt")
     }
 
     @Test func reportsAMissingBundle() {
         let runtime = Runtime(source: URL(filePath: "/nonexistent/app.js"), reloadsOnChange: false)
         runtime.start()
-        #expect(runtime.error?.contains("Couldn't load") == true)
+        #expect(runtime.error?.message.contains("Couldn't load") == true)
     }
 }

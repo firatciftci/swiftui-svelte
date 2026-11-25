@@ -10,12 +10,13 @@ import QuartzCore
 @Observable
 final class Runtime {
     private(set) var store = NodeStore()
-    private(set) var error: String?
+    private(set) var error: ScriptError?
 
     @ObservationIgnored private var context: JSContext?
     @ObservationIgnored private var timers: [Int: Task<Void, Never>] = [:]
     @ObservationIgnored private var nextTimerID = 1
     @ObservationIgnored private var isFrameRequested = false
+    @ObservationIgnored private var sourceMap: SourceMap?
     @ObservationIgnored private var loadedVersion: Date?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
@@ -68,6 +69,20 @@ final class Runtime {
         }
     }
 
+    func report(_ error: ScriptError) {
+        print("[js:exception] \(error)")
+        self.error = error
+    }
+
+    func dismissError() {
+        error = nil
+        store.dismissError()
+    }
+
+    func restart() {
+        reload()
+    }
+
     private func reload() {
         for timer in timers.values { timer.cancel() }
         timers = [:]
@@ -79,19 +94,17 @@ final class Runtime {
         guard let script = try? String(contentsOf: source, encoding: .utf8),
             let context = JSContext()
         else {
-            error = "Couldn't load \(source.path())."
+            report(ScriptError(message: "Couldn't load \(source.path()).", frames: []))
             return
         }
 
         #if DEBUG
             context.isInspectable = true
         #endif
+        sourceMap = (try? Data(contentsOf: source.appendingPathExtension("map"))).flatMap { try? SourceMap(json: $0) }
         context.exceptionHandler = { [weak self] _, exception in
-            let message = [exception?.toString(), exception?.objectForKeyedSubscript("stack")?.toString()]
-                .compactMap(\.self)
-                .joined(separator: "\n")
-            print("[js:exception] \(message)")
-            self?.error = message
+            guard let self, let exception else { return }
+            report(ScriptError(exception: exception, source: source, map: sourceMap))
         }
         install(into: context)
         self.context = context
@@ -234,5 +247,55 @@ private final class FrameMonitor: NSObject {
         }
         lastTimestamp = link.timestamp
         onFrame?(link.timestamp)
+    }
+}
+
+struct ScriptError: Equatable, CustomStringConvertible {
+    struct Frame: Equatable {
+        let function: String
+        let location: String
+    }
+
+    let message: String
+    let frames: Array<Frame>
+
+    var description: String {
+        ([message] + frames.map { "  at \($0.function.isEmpty ? "<anonymous>" : $0.function) (\($0.location))" })
+            .joined(separator: "\n")
+    }
+}
+
+extension ScriptError {
+    init(exception: JSValue, source: URL, map: SourceMap?) {
+        let stack = exception.objectForKeyedSubscript("stack")
+        let lines = stack?.isString == true ? stack?.toString().split(separator: "\n").map(String.init) ?? [] : []
+        self.init(
+            message: exception.toString() ?? "Unknown error",
+            frames: lines.compactMap { Self.frame($0, source: source, map: map) })
+    }
+
+    static func frame(_ line: String, source: URL, map: SourceMap?) -> Frame? {
+        guard let at = line.lastIndex(of: "@") else {
+            return line == "[native code]" ? nil : Frame(function: line, location: "native")
+        }
+        let function = String(line[..<at])
+        let parts = line[line.index(after: at)...].split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count >= 3, let lineNumber = Int(parts[parts.count - 2]), let column = Int(parts[parts.count - 1])
+        else { return Frame(function: function, location: String(line[line.index(after: at)...])) }
+        let file = parts.dropLast(2).joined(separator: ":")
+        if file == source.absoluteString || file == source.path(), let mapped = map?.location(line: lineNumber, column: column) {
+            return Frame(function: function, location: "\(clean(mapped.file)):\(mapped.line):\(mapped.column)")
+        }
+        let name = file.split(separator: "/").last.map(String.init) ?? file
+        return Frame(function: function, location: "\(name):\(lineNumber):\(column)")
+    }
+
+    private static func clean(_ path: String) -> String {
+        if let range = path.range(of: "node_modules/", options: .backwards) { return String(path[range.upperBound...]) }
+        var path = Substring(path)
+        while path.hasPrefix("../") || path.hasPrefix("./") {
+            path = path.dropFirst(path.hasPrefix("../") ? 3 : 2)
+        }
+        return String(path)
     }
 }
