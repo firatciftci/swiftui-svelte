@@ -3,6 +3,8 @@ export type {
   Color,
   NumberFormat,
   ScrollGeometry,
+  SearchScope,
+  SearchToken,
   ShapeStyle,
   Size,
 } from "./elements.ts";

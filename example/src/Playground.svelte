@@ -20,6 +20,7 @@
   } from "swiftui-svelte/components";
   import { env } from "swiftui-svelte/env";
   import Mail from "./Mail.svelte";
+  import Produce from "./Produce.svelte";
 
   let count = $state(0);
   let seconds = $state(0);
@@ -62,6 +63,7 @@
   let showsNavigation = $state(false);
   let showsToolbars = $state(false);
   let showsMail = $state(false);
+  let showsSearch = $state(false);
   let page = $state(1);
   let barAction = $state<string | null>(null);
   let hidesNavBar = $state(false);
@@ -121,7 +123,12 @@
   });
 </script>
 
-<navstack onpop={() => (showsToolbars = false)}>
+<navstack
+  onpop={() => {
+    showsToolbars = false;
+    showsSearch = false;
+  }}
+>
   <screen title="Playground">
     <list>
       <vstack alignment="leading" spacing={8}>
@@ -604,6 +611,7 @@
           Open a screen with toolbars
         </btn>
         <btn onclick={() => (showsMail = true)}>Open a split view</btn>
+        <btn onclick={() => (showsSearch = true)}>Open a search screen</btn>
         <FullScreenCover bind:presented={showsMail}>
           <Mail onclose={() => (showsMail = false)} />
         </FullScreenCover>
@@ -722,5 +730,9 @@
         </btn>
       </toolbar>
     </screen>
+  {/if}
+
+  {#if showsSearch}
+    <Produce />
   {/if}
 </navstack>

@@ -79,7 +79,7 @@ That component is a real `NavigationStack` with a `List`, a `TextField`, a `Butt
 
 ## Features
 
-- **Native controls.** Lists, forms, pickers, sliders, date pickers, navigation stacks, tab views, sheets, alerts, toolbars, and swipe actions are the SwiftUI views themselves.
+- **Native controls.** Lists, forms, pickers, sliders, date pickers, navigation stacks, tab views, search fields, sheets, alerts, toolbars, and swipe actions are the SwiftUI views themselves.
 - **Plain Svelte 5.** Runes, components, `{#if}`, `{#each}`, and shared `.svelte.ts` state all work as they do on the web.
 - **Typed elements.** Every element and attribute is typed, so `svelte-check` catches a misspelled attribute or a wrong value before you build.
 - **Small updates.** Svelte sends only what changed, and SwiftUI re-renders only the views that changed.
@@ -170,51 +170,52 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                             | SwiftUI                             | Attributes and events                                                                                                                                        |
-| ----------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                                                                                               |
-| `navsplitview`                      | `NavigationSplitView`               | `visibility`, `onvisibilitychange(visibility)`, `compactcolumn`, `oncompactcolumnchange(column)`, `variant`                                                  |
-| `screen`                            | A screen in the stack               | `title`, `subtitle`, `titledisplaymode`, `backbuttonhidden`, `navbarvisibility`, `tabbarvisibility`, `navbarbackground`                                      |
-| `tabview`, `tabsection`, `tab`      | `TabView`, `TabSection`, `Tab`      | `selection`, `onchange(selection)`, `variant`, `indexdisplay`, `minimize`; `title` (on `tabsection`); `title`, `symbol`, `value`, `badge`, `role` (on `tab`) |
-| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                                                                                       |
-| `zstack`                            | `ZStack`                            | `alignment`                                                                                                                                                  |
-| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)                                                                       |
-| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                                                                                             |
-| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                                                                                        |
-| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                                                                                   |
-| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                                                                                       |
-| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                                                                                   |
-| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                                                                                    |
-| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, `whitespace`, and more                                                                 |
-| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                                                                                        |
-| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`                                                                    |
-| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                                                                                   |
-| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                                                                                                |
-| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                                                                                        |
-| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                                                                                               |
-| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit`                                                                  |
-| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                                                                                            |
-| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                                                                                    |
-| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                                                                                        |
-| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `multiple`, `onchange(value)`; `value`, `symbol` (on `choice`)                                                                  |
-| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                                                                                           |
-| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                                                                                             |
-| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                                                                                             |
-| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                                                                                             |
-| `multidatepicker`                   | `MultiDatePicker`                   | `value`, `min`, `max`, `onchange(days)`                                                                                                                      |
-| `colorpicker`                       | `ColorPicker`                       | `value`, `supportsopacity`, `onchange(hex)`                                                                                                                  |
-| `gauge`                             | `Gauge`                             | `value`, `min`, `max`, `current`, `minlabel`, `maxlabel`, `variant`                                                                                          |
-| `labeledcontent`                    | `LabeledContent`                    | `title`, `value`                                                                                                                                             |
-| `contentunavailableview`            | `ContentUnavailableView`            | `title`, `symbol`, `description`, `variant`, `query`                                                                                                         |
-| `menuview`                          | `Menu`                              | `title`, `symbol`, `variant`, `order`, `onprimaryaction`                                                                                                     |
-| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                                                                                    |
-| `sheet`                             | `.sheet`                            | `detents`, `dragindicator`, `dismissible`, `backgroundinteraction`, `cornerradius`, `ondismiss`                                                              |
-| `fullscreencover`                   | `.fullScreenCover`                  | `dismissible`, `ondismiss`                                                                                                                                   |
-| `popover`                           | `.popover`                          | `adaptation`, `arrowedge`, `detents`, `ondismiss`                                                                                                            |
-| `inspector`                         | `.inspector`                        | `columnwidth`, `detents`, `ondismiss`                                                                                                                        |
-| `alert`, `confirmationdialog`       | `.alert`, `.confirmationDialog`     | `title`, `ondismiss`; `titlevisibility` (on `confirmationdialog`)                                                                                            |
-| `toolbar`, `toolbarspacer`          | `.toolbar`, `ToolbarSpacer`         | `placement`; `variant` (on `toolbarspacer`)                                                                                                                  |
-| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                                                                                       |
+| Element                             | SwiftUI                             | Attributes and events                                                                                                                                                      |
+| ----------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `navstack`                          | `NavigationStack`                   | `onpop(depth)`                                                                                                                                                             |
+| `navsplitview`                      | `NavigationSplitView`               | `visibility`, `onvisibilitychange(visibility)`, `compactcolumn`, `oncompactcolumnchange(column)`, `variant`                                                                |
+| `screen`                            | A screen in the stack               | `title`, `subtitle`, `titledisplaymode`, `backbuttonhidden`, `navbarvisibility`, `tabbarvisibility`, `navbarbackground`                                                    |
+| `tabview`, `tabsection`, `tab`      | `TabView`, `TabSection`, `Tab`      | `selection`, `onchange(selection)`, `variant`, `indexdisplay`, `minimize`; `title` (on `tabsection`); `title`, `symbol`, `value`, `badge`, `role` (on `tab`)               |
+| `vstack`, `hstack`                  | `VStack`, `HStack`                  | `spacing`, `alignment`                                                                                                                                                     |
+| `zstack`                            | `ZStack`                            | `alignment`                                                                                                                                                                |
+| `scrollview`, `list`                | `ScrollView`, `List`                | `indicators`, `bounce`, `anchor`, `onscroll(scroll)`; `axes`, `snap` (on `scrollview`)                                                                                     |
+| `lazyvstack`, `lazyhstack`          | `LazyVStack`, `LazyHStack`          | `spacing`, `alignment`, `pinned`                                                                                                                                           |
+| `lazyvgrid`, `lazyhgrid`            | `LazyVGrid`, `LazyHGrid`            | `columns` or `rows`, `spacing`, `alignment`, `pinned`                                                                                                                      |
+| `grid`, `gridrow`                   | `Grid`, `GridRow`                   | `alignment`, `spacing`, `hspacing`, `vspacing`; `alignment` (on `gridrow`)                                                                                                 |
+| `viewthatfits`                      | `ViewThatFits`                      | `axes`                                                                                                                                                                     |
+| `group`, `groupbox`, `controlgroup` | `Group`, `GroupBox`, `ControlGroup` | `title` (on `groupbox` and `controlgroup`)                                                                                                                                 |
+| `disclosuregroup`                   | `DisclosureGroup`                   | `title`, `expanded`, `ontoggle(expanded)`                                                                                                                                  |
+| `txt`                               | `Text`                              | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, `whitespace`, and more                                                                               |
+| `btn`                               | `Button`                            | `variant`, `role`, `bordershape`, `repeat`, `onclick`                                                                                                                      |
+| `sfsymbol`                          | `Image(systemName:)`                | `name`, `label`, `variant`, `value`, `rendering`, `colors`, `effect`, `trigger`, `active`                                                                                  |
+| `asyncimage`                        | `AsyncImage`                        | `src`, `fit`, `onload`, `onerror(message)`                                                                                                                                 |
+| `imageview`                         | `Image`                             | `name`, `file`, `fit`, `renderingmode`, `label`, `decorative`                                                                                                              |
+| `labelview`                         | `Label`                             | `title`, `symbol`, `image`, `variant`                                                                                                                                      |
+| `linkview`, `sharelink`             | `Link`, `ShareLink`                 | `href`; `item`, `subject`, `message` (on `sharelink`); `title`                                                                                                             |
+| `textfield`                         | `TextField`                         | `value`, `placeholder`, `format`, `axis`, `lines`, `debounce`, `oninput(value)`, `onsubmit`                                                                                |
+| `securefield`, `texteditor`         | `SecureField`, `TextEditor`         | `value`, `debounce`, `oninput(value)`, `onsubmit`                                                                                                                          |
+| `toggle`                            | `Toggle`                            | `checked`, `variant`, `onchange(checked)`                                                                                                                                  |
+| `formview`, `sectionview`           | `Form`, `Section`                   | `header`, `footer` (on `sectionview`)                                                                                                                                      |
+| `picker`, `choice`                  | `Picker` and its options            | `label`, `value`, `variant`, `multiple`, `onchange(value)`; `value`, `symbol` (on `choice`)                                                                                |
+| `slider`                            | `Slider`                            | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`                                                                                                         |
+| `stepper`                           | `Stepper`                           | `value`, `min`, `max`, `step`, `onchange(value)`                                                                                                                           |
+| `datepicker`                        | `DatePicker`                        | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                                                                                                           |
+| `progressview`                      | `ProgressView`                      | `value`, `total`                                                                                                                                                           |
+| `multidatepicker`                   | `MultiDatePicker`                   | `value`, `min`, `max`, `onchange(days)`                                                                                                                                    |
+| `colorpicker`                       | `ColorPicker`                       | `value`, `supportsopacity`, `onchange(hex)`                                                                                                                                |
+| `gauge`                             | `Gauge`                             | `value`, `min`, `max`, `current`, `minlabel`, `maxlabel`, `variant`                                                                                                        |
+| `labeledcontent`                    | `LabeledContent`                    | `title`, `value`                                                                                                                                                           |
+| `contentunavailableview`            | `ContentUnavailableView`            | `title`, `symbol`, `description`, `variant`, `query`                                                                                                                       |
+| `menuview`                          | `Menu`                              | `title`, `symbol`, `variant`, `order`, `onprimaryaction`                                                                                                                   |
+| `spacer`, `divider`                 | `Spacer`, `Divider`                 | `minlength` (on `spacer`)                                                                                                                                                  |
+| `sheet`                             | `.sheet`                            | `detents`, `dragindicator`, `dismissible`, `backgroundinteraction`, `cornerradius`, `ondismiss`                                                                            |
+| `fullscreencover`                   | `.fullScreenCover`                  | `dismissible`, `ondismiss`                                                                                                                                                 |
+| `popover`                           | `.popover`                          | `adaptation`, `arrowedge`, `detents`, `ondismiss`                                                                                                                          |
+| `inspector`                         | `.inspector`                        | `columnwidth`, `detents`, `ondismiss`                                                                                                                                      |
+| `alert`, `confirmationdialog`       | `.alert`, `.confirmationDialog`     | `title`, `ondismiss`; `titlevisibility` (on `confirmationdialog`)                                                                                                          |
+| `searchable`                        | `.searchable`                       | `value`, `oninput(value)`, `onsubmit`, `prompt`, `placement`, `drawer`, `presented`, `tokens`, `suggestedtokens`, `scopes`, `selectedscope`, `scopeactivation`, `minimize` |
+| `toolbar`, `toolbarspacer`          | `.toolbar`, `ToolbarSpacer`         | `placement`; `variant` (on `toolbarspacer`)                                                                                                                                |
+| `swipeactions`                      | `.swipeActions`                     | `edge`                                                                                                                                                                     |
 
 Every element also accepts these modifiers:
 
@@ -361,29 +362,30 @@ Svelte doesn't allow `bind:` on elements in custom renderer components, so `swif
 <Sheet bind:presented={editing}><txt>Editing {name}</txt></Sheet>
 ```
 
-| Component            | Binds                         | Element                     |
-| -------------------- | ----------------------------- | --------------------------- |
-| `TextField`          | `value`                       | `textfield`                 |
-| `NumberField`        | `value`                       | `textfield` with a `format` |
-| `SecureField`        | `value`                       | `securefield`               |
-| `TextEditor`         | `value`                       | `texteditor`                |
-| `Toggle`             | `checked`                     | `toggle`                    |
-| `Picker`             | `value`                       | `picker`                    |
-| `MultiPicker`        | `value`                       | `picker` with `multiple`    |
-| `MultiDatePicker`    | `value`                       | `multidatepicker`           |
-| `ColorPicker`        | `value`                       | `colorpicker`               |
-| `Slider`             | `value`                       | `slider`                    |
-| `Stepper`            | `value`                       | `stepper`                   |
-| `DatePicker`         | `value`                       | `datepicker`                |
-| `DisclosureGroup`    | `expanded`                    | `disclosuregroup`           |
-| `TabView`            | `selection`                   | `tabview`                   |
-| `NavSplitView`       | `visibility`, `compactcolumn` | `navsplitview`              |
-| `Sheet`              | `presented`                   | `sheet`                     |
-| `FullScreenCover`    | `presented`                   | `fullscreencover`           |
-| `Popover`            | `presented`                   | `popover`                   |
-| `Inspector`          | `presented`                   | `inspector`                 |
-| `ConfirmationDialog` | `presented`                   | `confirmationdialog`        |
-| `Alert`              | `presented`                   | `alert`                     |
+| Component            | Binds                                           | Element                     |
+| -------------------- | ----------------------------------------------- | --------------------------- |
+| `TextField`          | `value`                                         | `textfield`                 |
+| `NumberField`        | `value`                                         | `textfield` with a `format` |
+| `SecureField`        | `value`                                         | `securefield`               |
+| `TextEditor`         | `value`                                         | `texteditor`                |
+| `Toggle`             | `checked`                                       | `toggle`                    |
+| `Picker`             | `value`                                         | `picker`                    |
+| `MultiPicker`        | `value`                                         | `picker` with `multiple`    |
+| `MultiDatePicker`    | `value`                                         | `multidatepicker`           |
+| `ColorPicker`        | `value`                                         | `colorpicker`               |
+| `Slider`             | `value`                                         | `slider`                    |
+| `Stepper`            | `value`                                         | `stepper`                   |
+| `DatePicker`         | `value`                                         | `datepicker`                |
+| `DisclosureGroup`    | `expanded`                                      | `disclosuregroup`           |
+| `TabView`            | `selection`                                     | `tabview`                   |
+| `NavSplitView`       | `visibility`, `compactcolumn`                   | `navsplitview`              |
+| `Searchable`         | `value`, `presented`, `tokens`, `selectedscope` | `searchable`                |
+| `Sheet`              | `presented`                                     | `sheet`                     |
+| `FullScreenCover`    | `presented`                                     | `fullscreencover`           |
+| `Popover`            | `presented`                                     | `popover`                   |
+| `Inspector`          | `presented`                                     | `inspector`                 |
+| `ConfirmationDialog` | `presented`                                     | `confirmationdialog`        |
+| `Alert`              | `presented`                                     | `alert`                     |
 
 Each component takes the same attributes and events as its element, and still calls your handlers. To change a value on its way in, use a function binding: `bind:value={() => name, (value) => (name = value.slice(0, 12))}` limits a field to 12 characters, and the field shows the shortened text. The presentation components, from `Sheet` to `Alert`, show their content while `presented` is true, and set it to false when the user dismisses them.
 
@@ -563,6 +565,40 @@ Svelte owns the navigation stack. The first `screen` in a `navstack` is the root
 ```
 
 Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the example app, the to-do list and its detail screens share state through [`todos.svelte.ts`](example/src/todos.svelte.ts).
+
+### Search
+
+A `searchable` inside a `screen` adds a search field to the navigation bar. `value` is the text in the field, `oninput` receives each change, and `onsubmit` fires when the user presses Search or picks a suggestion. `prompt` is the placeholder. `placement` is `automatic`, `toolbar`, `sidebar`, or `navigationBarDrawer`. On iOS 26, the drawer stays hidden until the user scrolls down, so set `placement="navigationBarDrawer"` and `drawer="always"` to keep the field showing. `presented` is true while the user is searching, and `onpresentedchange` fires when they start or cancel a search. On iOS 26, `minimize` collapses the field into a toolbar button. Use the `Searchable` component to bind `value`, `presented`, `tokens`, and `selectedscope`.
+
+- **Suggestions.** The children of a `searchable` show in place of the screen's content while the user is searching. Give a child a `completion`, and tapping it puts that text in the field. Render suggestions only when you have some, because any child hides the content.
+- **Scopes.** `scopes` lists the buttons below the field, as strings or as `{ value, title }`, and `selectedscope` is the one that's picked. `onscopechange` receives the scope the user picks, and `scopeactivation` (`automatic`, `onTextEntry`, or `onSearchPresentation`) sets when the buttons appear. SwiftUI keeps the scope when the user cancels, so reset it in `onpresentedchange` if your list should show everything again.
+- **Tokens.** `tokens` are the chips in the field, as strings or as `{ id, label, symbol }`. `suggestedtokens` lists tokens the user can add, shown as suggestions. When the user picks one or deletes one, `ontokenschange` receives the new list.
+
+```svelte
+<script lang="ts">
+  import { Searchable } from "swiftui-svelte/components";
+
+  const fruits = ["Apple", "Apricot", "Banana", "Cherry"];
+  let query = $state("");
+  const matches = $derived(
+    fruits.filter((fruit) => fruit.toLowerCase().includes(query.toLowerCase())),
+  );
+</script>
+
+<navstack>
+  <screen title="Fruits">
+    <list>
+      {#each matches as fruit (fruit)}
+        <txt>{fruit}</txt>
+      {/each}
+      {#if matches.length === 0}
+        <contentunavailableview variant="search" {query} />
+      {/if}
+    </list>
+    <Searchable bind:value={query} prompt="Search fruits" />
+  </screen>
+</navstack>
+```
 
 ## Device environment
 

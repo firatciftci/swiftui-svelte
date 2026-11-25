@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ref } from "swiftui-svelte";
   import { onOpenURL } from "swiftui-svelte/app";
+  import { Searchable } from "swiftui-svelte/components";
   import TodoDetail from "./TodoDetail.svelte";
   import { addTodo, removeTodo, todos } from "./todos.svelte";
 
@@ -12,6 +13,16 @@
 
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
   const finished = $derived(todos.length - remaining);
+  let query = $state("");
+  let filter = $state("all");
+  const needle = $derived(query.trim().toLowerCase());
+  const visible = $derived(
+    todos.filter(
+      (todo) =>
+        (filter === "all" || todo.done === (filter === "done")) &&
+        todo.title.toLowerCase().includes(needle),
+    ),
+  );
 
   $effect(() =>
     onOpenURL((url) => {
@@ -57,7 +68,7 @@
         </btn>
       </hstack>
 
-      {#each todos as todo (todo.id)}
+      {#each visible as todo (todo.id)}
         <hstack spacing={12}>
           <toggle
             checked={todo.done}
@@ -76,10 +87,30 @@
         </hstack>
       {/each}
 
+      {#if visible.length === 0 && needle !== ""}
+        <contentunavailableview variant="search" {query} />
+      {/if}
+
       <txt font="footnote" color="secondary">
         {remaining === 0 ? "All done" : `${remaining} left`}
       </txt>
     </list>
+
+    <Searchable
+      bind:value={query}
+      bind:selectedscope={filter}
+      onpresentedchange={(presented) => {
+        if (!presented) filter = "all";
+      }}
+      prompt="Search to-dos"
+      placement="navigationBarDrawer"
+      drawer="always"
+      scopes={[
+        { value: "all", title: "All" },
+        { value: "open", title: "Open" },
+        { value: "done", title: "Done" },
+      ]}
+    />
 
     {#if finished > 0}
       <toolbar>

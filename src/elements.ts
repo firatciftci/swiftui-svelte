@@ -288,6 +288,10 @@ type Detent = "medium" | "large" | number;
 type ColumnWidth = number | { min?: number; ideal?: number; max?: number };
 type SplitVisibility = "automatic" | "all" | "doubleColumn" | "detailOnly";
 type SplitColumn = "sidebar" | "content" | "detail";
+export type SearchToken =
+  | string
+  | { id?: string | number; label: string; symbol?: string };
+export type SearchScope = string | { value: string; title?: string };
 type PresentationOptions = {
   detents?: Array<Detent>;
   dragindicator?: "automatic" | "visible" | "hidden";
@@ -330,6 +334,7 @@ type Modifiers = {
   colspan?: number;
   columnalignment?: HorizontalAlignment;
   cellanchor?: UnitPointName;
+  completion?: string;
   onresize?: (size: Size) => void;
   lang?: string;
   dir?: "ltr" | "rtl";
@@ -379,6 +384,24 @@ declare module "svelte/elements" {
       title: string;
       titlevisibility?: "automatic" | "visible" | "hidden";
       ondismiss?: () => void;
+    };
+    searchable: {
+      value?: string;
+      oninput?: (value: string) => void;
+      onsubmit?: () => void;
+      prompt?: string;
+      placement?: "automatic" | "toolbar" | "sidebar" | "navigationBarDrawer";
+      drawer?: "automatic" | "always";
+      presented?: boolean;
+      onpresentedchange?: (presented: boolean) => void;
+      tokens?: Array<SearchToken>;
+      ontokenschange?: (tokens: Array<SearchToken>) => void;
+      suggestedtokens?: Array<SearchToken>;
+      scopes?: Array<SearchScope>;
+      selectedscope?: string;
+      onscopechange?: (scope: string) => void;
+      scopeactivation?: "automatic" | "onTextEntry" | "onSearchPresentation";
+      minimize?: boolean;
     };
     toolbar: { placement?: ToolbarPlacement };
     toolbarspacer: {

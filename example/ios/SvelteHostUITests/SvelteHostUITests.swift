@@ -514,6 +514,66 @@ extension SvelteHostUITests {
         XCTAssertFalse(app.navigationBars["Toolbars"].exists)
     }
 
+    private func cancelSearch() {
+        app.buttons.matching(NSPredicate(format: "label IN %@", ["Cancel", "Close"])).firstMatch.tap()
+    }
+
+    func testSearchesTodosWithScopes() {
+        let search = app.searchFields["Search to-dos"]
+        waitFor(search)
+        search.tap()
+        search.typeText("svelte")
+        let open = app.switches["Render Svelte with SwiftUI"]
+        let done = app.switches["Read the custom renderer docs"]
+        waitFor(open)
+        XCTAssertTrue(done.waitForNonExistence(timeout: 5))
+        attachScreenshot("search with scopes")
+        search.buttons["Clear text"].tap()
+        waitFor(done)
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(open.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(done.exists)
+        search.typeText("zzz")
+        waitFor(app.staticTexts["No Results for “zzz”"])
+        attachScreenshot("no results")
+        cancelSearch()
+        waitFor(open)
+        XCTAssertTrue(done.exists)
+    }
+
+    func testSearchesWithTokensAndSuggestions() {
+        tab("Playground")
+        let section = app.buttons["Navigation"]
+        scroll(to: section)
+        section.tap()
+        let open = app.buttons["Open a search screen"]
+        scroll(to: open)
+        open.tap()
+        let state = app.staticTexts["search-state"]
+        waitFor(state)
+        XCTAssertEqual(state.label, "Not searching · No search yet")
+        let search = app.searchFields["Fruits and vegetables"]
+        search.tap()
+        XCTAssertTrue(state.label.hasPrefix("Searching"), state.label)
+        attachScreenshot("suggested tokens")
+        app.buttons["Vegetable"].firstMatch.tap()
+        waitFor(app.staticTexts["Carrot"])
+        XCTAssertEqual(state.label, "Searching · Last search: Vegetable", "picking a suggestion submits the search")
+        XCTAssertFalse(app.staticTexts["Apple"].exists)
+        search.typeText("le")
+        attachScreenshot("completions")
+        app.buttons["Lettuce"].firstMatch.tap()
+        XCTAssertTrue((search.value as? String)?.hasSuffix("Lettuce") == true, "\(search.value ?? "")")
+        search.typeText("\n")
+        XCTAssertEqual(state.label, "Searching · Last search: Vegetable Lettuce")
+        attachScreenshot("submitted search")
+        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Lettuce".count + 1))
+        waitFor(app.staticTexts["Apple"])
+        XCTAssertEqual(search.value as? String, "Fruits and vegetables")
+        cancelSearch()
+        XCTAssertTrue(state.waitForLabel("Not searching · Last search: Vegetable Lettuce"), state.label)
+    }
+
     func testShowsTabSectionsInTheSidebar() throws {
         try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "the sidebar only shows on iPad")
         let tabBar = app.otherElements.containing(.button, identifier: "ToggleSideBar").firstMatch
@@ -584,6 +644,12 @@ extension SvelteHostUITests {
 }
 
 extension XCUIElement {
+    func waitForLabel(_ label: String, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        while self.label != label, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }
+        return self.label == label
+    }
+
     func waitForHittable(timeout: TimeInterval = 5) -> Bool {
         let deadline = Date.now.addingTimeInterval(timeout)
         while !isHittable, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }

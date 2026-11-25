@@ -444,6 +444,19 @@ describe("controlled inputs", () => {
     expect(byTestId("split")?.attributes.get("compactcolumn")).toBe("sidebar");
   });
 
+  it("keeps the search field's state when the handlers reject changes", async () => {
+    await render(Controlled);
+    const search = find("searchable");
+    await update(() => edit(search, "input", "value", "other"));
+    await update(() => edit(search, "presentedchange", "presented", true));
+    await update(() => edit(search, "tokenschange", "tokens", []));
+    await update(() => edit(search, "scopechange", "selectedscope", "recent"));
+    expect(search?.attributes.get("value")).toBe("fixed");
+    expect(search?.attributes.get("presented")).toBe(false);
+    expect(search?.attributes.get("tokens")).toEqual(["Fruit"]);
+    expect(search?.attributes.get("selectedscope")).toBe("all");
+  });
+
   it("keeps a toggle on when the handler accepts it", async () => {
     await render(Controlled);
     await update(() => edit(byTestId("free"), "change", "checked", true));

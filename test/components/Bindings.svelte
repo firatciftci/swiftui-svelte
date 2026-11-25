@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { SearchToken } from "swiftui-svelte";
   import {
     Alert,
     ColorPicker,
@@ -13,6 +14,7 @@
     NumberField,
     Picker,
     Popover,
+    Searchable,
     SecureField,
     Sheet,
     Slider,
@@ -50,6 +52,11 @@
     "all",
   );
   let column = $state<"sidebar" | "content" | "detail">("sidebar");
+  let query = $state("");
+  let isSearching = $state(false);
+  let tokens = $state<Array<SearchToken>>([{ id: 1, label: "Fruit" }]);
+  let scope = $state("all");
+  let searches = $state(0);
 </script>
 
 <TextField testid="name" bind:value={name} onsubmit={() => submitted++} />
@@ -80,6 +87,18 @@
   <screen title="Content" />
   <screen title="Detail" />
 </NavSplitView>
+<vstack>
+  <Searchable
+    bind:value={query}
+    bind:presented={isSearching}
+    bind:tokens
+    bind:selectedscope={scope}
+    scopes={["all", { value: "recent", title: "Recent" }]}
+    onsubmit={() => searches++}
+  >
+    <txt completion="Apple">Apple</txt>
+  </Searchable>
+</vstack>
 <TabView testid="tabs" bind:selection={tab}>
   <tab title="Home" value="home"><txt>Home</txt></tab>
   <tab title="Settings" value="settings"><txt>Settings</txt></tab>
@@ -143,5 +162,10 @@
     color,
     visibility,
     column,
+    query,
+    isSearching,
+    tokens,
+    scope,
+    searches,
   })}</txt
 >

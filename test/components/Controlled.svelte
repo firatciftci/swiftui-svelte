@@ -26,3 +26,16 @@
   <screen title="Sidebar" />
   <screen title="Detail" />
 </navsplitview>
+<vstack>
+  <searchable
+    value="fixed"
+    oninput={() => {}}
+    presented={false}
+    onpresentedchange={() => {}}
+    tokens={["Fruit"]}
+    ontokenschange={() => {}}
+    scopes={["all", "recent"]}
+    selectedscope="all"
+    onscopechange={() => {}}
+  />
+</vstack>

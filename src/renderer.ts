@@ -526,6 +526,14 @@ const controlledAttributes = new Map<string, Record<string, string>>([
   ["toggle", { change: "checked" }],
   ["tabview", { change: "selection" }],
   [
+    "searchable",
+    {
+      presentedchange: "presented",
+      scopechange: "selectedscope",
+      tokenschange: "tokens",
+    },
+  ],
+  [
     "navsplitview",
     { visibilitychange: "visibility", compactcolumnchange: "compactcolumn" },
   ],

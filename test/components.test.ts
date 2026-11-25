@@ -66,6 +66,20 @@ describe("bindable components", () => {
     await update(() =>
       edit(byTestId("split"), "compactcolumnchange", "compactcolumn", "detail"),
     );
+    const search = find("searchable");
+    await update(() => edit(search, "input", "value", "app"));
+    await update(() => edit(search, "presentedchange", "presented", true));
+    await update(() => edit(search, "tokenschange", "tokens", []));
+    await update(() => edit(search, "scopechange", "selectedscope", "recent"));
+    await update(() => dispatch(search, "submit"));
+    expect(state()).toMatchObject({
+      query: "app",
+      isSearching: true,
+      tokens: [],
+      scope: "recent",
+      searches: 1,
+    });
+    expect(search?.attributes.get("tokens")).toEqual([]);
     expect(state()).toMatchObject({
       name: "Ada",
       isOn: true,
@@ -101,6 +115,16 @@ describe("bindable components", () => {
     expect(byTestId("color")?.attributes.get("value")).toBe("#FF0000");
     expect(byTestId("split")?.attributes.get("visibility")).toBe("all");
     expect(byTestId("split")?.attributes.get("compactcolumn")).toBe("sidebar");
+    const search = find("searchable");
+    expect(search?.attributes.get("tokens")).toEqual([
+      { id: 1, label: "Fruit" },
+    ]);
+    expect(search?.attributes.get("selectedscope")).toBe("all");
+    expect(search?.attributes.get("scopes")).toEqual([
+      "all",
+      { value: "recent", title: "Recent" },
+    ]);
+    expect(find("txt", search)?.attributes.get("completion")).toBe("Apple");
     expect(byTestId("price")?.attributes.get("format")).toEqual({
       currency: "USD",
     });

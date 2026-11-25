@@ -214,6 +214,7 @@ private struct NodeModifiers: ViewModifier {
             .modifier(PresentationHost(node: node))
             .ifLet(childIDs) { $0.animation(animation, value: $1) }
             .ifLet(transition) { $0.transition($1) }
+            .ifLet(node.attachment("searchable")) { $0.modifier(Searching(node: $1)) }
             .ifLet(node.attachment("swipeactions")) { view, actions in
                 view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
                     ForEach(actions.renderedChildren) { ActionButton(node: $0) }

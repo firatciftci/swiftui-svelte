@@ -11,6 +11,7 @@ export { default as NavSplitView } from "./NavSplitView.svelte";
 export { default as NumberField } from "./NumberField.svelte";
 export { default as Picker } from "./Picker.svelte";
 export { default as Popover } from "./Popover.svelte";
+export { default as Searchable } from "./Searchable.svelte";
 export { default as SecureField } from "./SecureField.svelte";
 export { default as Sheet } from "./Sheet.svelte";
 export { default as Slider } from "./Slider.svelte";

@@ -137,7 +137,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] `confirmationdialog`
 - [x] `sheet` detents (fractions and heights), drag indicator, locked interactive dismissal, and background interaction
 - [x] `toolbar` items in every placement, menus in toolbars, and `toolbaritemgroup` spacing
-- [ ] `searchable`, with tokens, suggestions, scopes, and `onsubmit`
+- [x] `searchable`, with tokens, suggestions, scopes, and `onsubmit`
 - [ ] `refreshable`, with an async handler that SwiftUI awaits
 - [ ] `contextmenu`, with a preview
 - [ ] `list` selection, edit mode, `onmove`, `ondelete`, list styles, row insets, separators, row background, and section index
