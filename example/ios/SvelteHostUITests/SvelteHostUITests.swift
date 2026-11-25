@@ -105,6 +105,7 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Decrease"].tap()
         waitFor(app.staticTexts["1"])
         XCTAssertEqual(app.progressIndicators.firstMatch.value as? String, "10%")
+        attachScreenshot("playground")
 
         let name = app.textFields["Your name"]
         name.tap()

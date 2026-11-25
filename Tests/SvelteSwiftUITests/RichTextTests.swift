@@ -81,4 +81,35 @@ struct RichTextTests {
         let off = Styles.attributedString(txt(["markdown": .string("false")], [text("**Hi**")]))
         #expect(String(off.characters) == "**Hi**")
     }
+
+    @Test func sizesAndDesignsSpans() throws {
+        let string = Styles.attributedString(
+            txt(
+                ["font": .string("title"), "kerning": .number(2)],
+                [
+                    text("A"),
+                    txt(["design": .string("rounded")], [text("B")]),
+                    txt(["size": .number(12), "design": .string("monospaced"), "tracking": .number(1)], [text("C")]),
+                ]))
+        #expect(run(string, "A")?.swiftUI.font == nil)
+        #expect(run(string, "A")?.swiftUI.kern == 2)
+        #expect(run(string, "B")?.swiftUI.font == Font.system(.title, design: .rounded))
+        let small = try #require(run(string, "C"))
+        #expect(small.swiftUI.font == Font.system(size: 12, design: .monospaced))
+        #expect(small.swiftUI.tracking == 1)
+        #expect(small.swiftUI.kern == 2)
+    }
+
+    @Test func readsFontsLikeSwiftUI() {
+        #expect(Styles.font(["size": .number(20), "font": .string("title")]) == Font.system(size: 20))
+        #expect(Styles.font(["font": .string("title")]) == .title)
+        #expect(Styles.font([:]) == nil)
+        #expect(Styles.weight("black") == .black)
+        #expect(Styles.weight("ultraLight") == .ultraLight)
+        #expect(Styles.design("serif") == .serif)
+        #expect(Styles.verticalAlignment("firstTextBaseline") == .firstTextBaseline)
+        #expect(Styles.horizontalAlignment("listRowSeparatorLeading") == .listRowSeparatorLeading)
+        #expect(Styles.truncationMode("middle") == .middle)
+        #expect(Styles.truncationMode("none") == nil)
+    }
 }

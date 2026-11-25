@@ -16,7 +16,6 @@ const config: KnipConfig = {
   ignoreFiles: [
     "changelogithub.config.ts",
     "Tests/SvelteSwiftUITests/Fixtures/**",
-    "example/src/paraglide/**",
   ],
   ignoreIssues: {
     ".github/**/*.yml": ["binaries"],

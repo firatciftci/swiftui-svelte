@@ -12,7 +12,16 @@ type Font =
   | "footnote"
   | "caption"
   | "caption2";
-type Weight = "regular" | "medium" | "semibold" | "bold" | "heavy";
+type Weight =
+  | "ultraLight"
+  | "thin"
+  | "light"
+  | "regular"
+  | "medium"
+  | "semibold"
+  | "bold"
+  | "heavy"
+  | "black";
 type Color =
   | "primary"
   | "secondary"
@@ -75,10 +84,18 @@ type LayerAlignment =
   | "topLeading"
   | "topTrailing"
   | "bottomLeading"
-  | "bottomTrailing";
+  | "bottomTrailing"
+  | "leadingFirstTextBaseline"
+  | "centerFirstTextBaseline"
+  | "trailingFirstTextBaseline"
+  | "leadingLastTextBaseline"
+  | "centerLastTextBaseline"
+  | "trailingLastTextBaseline";
 type Modifiers = {
   padding?: number | boolean;
   font?: Font;
+  size?: number;
+  design?: "default" | "rounded" | "serif" | "monospaced";
   weight?: Weight;
   color?: Color;
   tint?: Color;
@@ -116,16 +133,26 @@ declare module "svelte/elements" {
     swipeactions: { edge?: "leading" | "trailing" };
     vstack: Modifiers & {
       spacing?: number;
-      alignment?: "leading" | "center" | "trailing";
+      alignment?:
+        | "leading"
+        | "center"
+        | "trailing"
+        | "listRowSeparatorLeading"
+        | "listRowSeparatorTrailing";
     };
     hstack: Modifiers & {
       spacing?: number;
-      alignment?: "top" | "center" | "bottom";
+      alignment?:
+        | "top"
+        | "center"
+        | "bottom"
+        | "firstTextBaseline"
+        | "lastTextBaseline";
     };
-    zstack: Modifiers;
+    zstack: Modifiers & { alignment?: LayerAlignment };
     scrollview: Modifiers;
     list: Modifiers;
-    spacer: Modifiers;
+    spacer: Modifiers & { minlength?: number };
     divider: Modifiers;
     txt: Modifiers & {
       lines?: number;
@@ -135,6 +162,12 @@ declare module "svelte/elements" {
       strikethrough?: boolean;
       href?: string;
       markdown?: boolean | string;
+      kerning?: number;
+      tracking?: number;
+      linespacing?: number;
+      truncation?: "head" | "middle" | "tail";
+      minscale?: number;
+      selectable?: boolean;
     };
     asyncimage: Modifiers & { src: string; fit?: "fit" | "fill" };
     btn: Modifiers & {

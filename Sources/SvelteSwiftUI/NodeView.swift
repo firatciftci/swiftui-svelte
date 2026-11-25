@@ -31,11 +31,11 @@ struct NodeView: View {
         case "tabview":
             Tabs(node: node)
         case "vstack":
-            VStack(alignment: horizontalAlignment, spacing: spacing) { children }
+            VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { children }
         case "hstack":
-            HStack(alignment: verticalAlignment, spacing: spacing) { children }
+            HStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing) { children }
         case "zstack":
-            ZStack { children }
+            ZStack(alignment: Styles.alignment(alignment)) { children }
         case "scrollview":
             ScrollView { children }.modifier(Scrollable())
         case "list":
@@ -59,13 +59,11 @@ struct NodeView: View {
                 }
             }
         case "spacer":
-            Spacer()
+            Spacer(minLength: node.attributes["minlength"]?.number.map { CGFloat($0) })
         case "divider":
             Divider()
         case "txt":
-            Styles.text(node)
-                .lineLimit(node.attributes["lines"]?.number.map { Int($0) })
-                .multilineTextAlignment(textAlignment)
+            TextView(node: node)
         case "asyncimage":
             AsyncImage(url: URL(string: node.attributes["src"]?.string ?? "")) { image in
                 if node.attributes["fit"]?.string == "fill" {
@@ -117,32 +115,12 @@ struct NodeView: View {
         }
     }
 
-    private var textAlignment: TextAlignment {
-        switch node.attributes["align"]?.string {
-        case "center": .center
-        case "trailing": .trailing
-        default: .leading
-        }
-    }
-
     private var spacing: CGFloat? {
         node.attributes["spacing"]?.number.map { CGFloat($0) }
     }
 
-    private var horizontalAlignment: HorizontalAlignment {
-        switch node.attributes["alignment"]?.string {
-        case "leading": .leading
-        case "trailing": .trailing
-        default: .center
-        }
-    }
-
-    private var verticalAlignment: VerticalAlignment {
-        switch node.attributes["alignment"]?.string {
-        case "top": .top
-        case "bottom": .bottom
-        default: .center
-        }
+    private var alignment: String? {
+        node.attributes["alignment"]?.string
     }
 }
 
@@ -212,7 +190,8 @@ private struct NodeModifiers: ViewModifier {
             content
             .ifLet(frame(attributes)) { $0.frame(width: $1.width, height: $1.height) }
             .padding(padding(attributes["padding"]))
-            .font(Styles.font(attributes["font"]?.string))
+            .font(Styles.font(attributes))
+            .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .fontWeight(Styles.weight(attributes["weight"]?.string))
             .ifLet(Styles.color(attributes["color"]?.string)) { $0.foregroundStyle($1) }
             .ifLet(Styles.color(attributes["tint"]?.string)) { $0.tint($1) }

@@ -34,11 +34,10 @@ struct SlotTests {
         let names = ["top", "bottom", "leading", "trailing", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing"]
         let alignments: Array<Alignment> = [.top, .bottom, .leading, .trailing, .topLeading, .topTrailing, .bottomLeading, .bottomTrailing]
         for (name, alignment) in zip(names, alignments) {
-            let layer = element("overlay")
-            layer.attributes["alignment"] = .string(name)
-            #expect(Alignment(slot: layer) == alignment)
+            #expect(Styles.alignment(name) == alignment)
         }
-        #expect(Alignment(slot: nil) == .center)
-        #expect(Alignment(slot: element("background")) == .center)
+        #expect(Styles.alignment(nil) == .center)
+        #expect(Styles.alignment("leadingFirstTextBaseline") == .leadingFirstTextBaseline)
+        #expect(Styles.alignment("trailingLastTextBaseline") == .trailingLastTextBaseline)
     }
 }

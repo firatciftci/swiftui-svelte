@@ -91,20 +91,20 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 ### Layout
 
 - [x] `vstack`, `hstack`, `zstack`, `spacer`, `divider`, `scrollview`, and `list`
-- [ ] Full parameters for `vstack`, `hstack`, and `zstack`: `alignment` for every alignment guide, and `spacing`
+- [x] Full parameters for `vstack`, `hstack`, and `zstack`: `alignment` for every alignment guide, and `spacing`
 - [ ] `lazyvstack` and `lazyhstack`, with pinned section headers
 - [ ] `lazyvgrid` and `lazyhgrid`, with fixed, flexible, and adaptive columns
 - [ ] `grid` and `gridrow`, with cell spans and alignment
 - [ ] `viewthatfits`
 - [ ] `group`, `groupbox`, `controlgroup`, and `disclosuregroup` (with `expanded` and `ontoggle`)
 - [ ] `scrollview` axes, indicators, scroll position, `onscroll`, paging, and `scrollTo`
-- [ ] `spacer` `minlength`
+- [x] `spacer` `minlength`
 - [ ] An `onresize` event that reports an element's size, in place of `GeometryReader`
 
 ### Text and images
 
 - [x] `txt` with `lines` and `align`, `sfsymbol`, and `asyncimage`
-- [ ] `txt` styles: size, design (`rounded`, `serif`, and `monospaced`), italic, underline, strikethrough, kerning, line spacing, truncation mode, minimum scale factor, and `selectable`
+- [x] `txt` styles: size, design (`rounded`, `serif`, and `monospaced`), italic, underline, strikethrough, kerning, line spacing, truncation mode, minimum scale factor, and `selectable`
 - [ ] `label` (a title plus a symbol)
 - [ ] `image` from the asset catalog and from bundle files, with resizing, rendering mode, and symbol variants and effects
 - [ ] `asyncimage` phases: placeholder and failure snippets

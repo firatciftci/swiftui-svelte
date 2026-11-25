@@ -94,23 +94,6 @@ struct Slot: View {
     }
 }
 
-extension Alignment {
-    init(slot node: Node?) {
-        self =
-            switch node?.attributes["alignment"]?.string {
-            case "top": .top
-            case "bottom": .bottom
-            case "leading": .leading
-            case "trailing": .trailing
-            case "topLeading": .topLeading
-            case "topTrailing": .topTrailing
-            case "bottomLeading": .bottomLeading
-            case "bottomTrailing": .bottomTrailing
-            default: .center
-            }
-    }
-}
-
 struct Layers: ViewModifier {
     let node: Node
 
@@ -118,10 +101,10 @@ struct Layers: ViewModifier {
         let background = node.attachment("background")
         let overlay = node.attachment("overlay")
         content
-            .background(alignment: Alignment(slot: background)) {
+            .background(alignment: Styles.alignment(background?.attributes["alignment"]?.string)) {
                 if let background { Slot(node: background) }
             }
-            .overlay(alignment: Alignment(slot: overlay)) {
+            .overlay(alignment: Styles.alignment(overlay?.attributes["alignment"]?.string)) {
                 if let overlay { Slot(node: overlay) }
             }
     }

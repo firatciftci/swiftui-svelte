@@ -170,47 +170,50 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 The elements and their attributes are typed in [`src/elements.ts`](src/elements.ts).
 
-| Element                        | SwiftUI                        | Attributes and events                                                           |
-| ------------------------------ | ------------------------------ | ------------------------------------------------------------------------------- |
-| `navstack`                     | `NavigationStack`              | `onpop(depth)`                                                                  |
-| `screen`                       | A screen in the stack          | `title`                                                                         |
-| `tabview`, `tab`               | `TabView`, a tab               | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)       |
-| `vstack`, `hstack`             | `VStack`, `HStack`             | `spacing`, `alignment`                                                          |
-| `zstack`, `scrollview`, `list` | `ZStack`, `ScrollView`, `List` |                                                                                 |
-| `txt`                          | `Text`                         | `lines`, `align`, `italic`, `underline`, `strikethrough`, `href`, `markdown`    |
-| `btn`                          | `Button`                       | `variant`, `role`, `onclick`                                                    |
-| `sfsymbol`                     | `Image(systemName:)`           | `name`, `label`                                                                 |
-| `asyncimage`                   | `AsyncImage`                   | `src`, `fit`                                                                    |
-| `textfield`                    | `TextField`                    | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                |
-| `toggle`                       | `Toggle`                       | `checked`, `onchange(checked)`                                                  |
-| `formview`, `sectionview`      | `Form`, `Section`              | `header`, `footer` (on `sectionview`)                                           |
-| `picker`, `choice`             | `Picker` and its options       | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`) |
-| `slider`                       | `Slider`                       | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`              |
-| `stepper`                      | `Stepper`                      | `value`, `min`, `max`, `step`, `onchange(value)`                                |
-| `datepicker`                   | `DatePicker`                   | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                |
-| `progressview`                 | `ProgressView`                 | `value`, `total`                                                                |
-| `spacer`, `divider`            | `Spacer`, `Divider`            |                                                                                 |
-| `sheet`                        | `.sheet`                       | `detent`, `ondismiss`                                                           |
-| `alert`                        | `.alert`                       | `title`, `ondismiss`                                                            |
-| `toolbar`                      | `.toolbar`                     | `placement`                                                                     |
-| `swipeactions`                 | `.swipeActions`                | `edge`                                                                          |
+| Element                   | SwiftUI                  | Attributes and events                                                           |
+| ------------------------- | ------------------------ | ------------------------------------------------------------------------------- |
+| `navstack`                | `NavigationStack`        | `onpop(depth)`                                                                  |
+| `screen`                  | A screen in the stack    | `title`                                                                         |
+| `tabview`, `tab`          | `TabView`, a tab         | `selection`, `onchange(selection)`; `title`, `symbol`, `value` (on `tab`)       |
+| `vstack`, `hstack`        | `VStack`, `HStack`       | `spacing`, `alignment`                                                          |
+| `zstack`                  | `ZStack`                 | `alignment`                                                                     |
+| `scrollview`, `list`      | `ScrollView`, `List`     |                                                                                 |
+| `txt`                     | `Text`                   | `lines`, `align`, `truncation`, `minscale`, `selectable`, `markdown`, and more  |
+| `btn`                     | `Button`                 | `variant`, `role`, `onclick`                                                    |
+| `sfsymbol`                | `Image(systemName:)`     | `name`, `label`                                                                 |
+| `asyncimage`              | `AsyncImage`             | `src`, `fit`                                                                    |
+| `textfield`               | `TextField`              | `value`, `placeholder`, `debounce`, `oninput(value)`, `onsubmit`                |
+| `toggle`                  | `Toggle`                 | `checked`, `onchange(checked)`                                                  |
+| `formview`, `sectionview` | `Form`, `Section`        | `header`, `footer` (on `sectionview`)                                           |
+| `picker`, `choice`        | `Picker` and its options | `label`, `value`, `variant`, `onchange(value)`; `value`, `symbol` (on `choice`) |
+| `slider`                  | `Slider`                 | `value`, `min`, `max`, `step`, `oninput(value)`, `onchange(value)`              |
+| `stepper`                 | `Stepper`                | `value`, `min`, `max`, `step`, `onchange(value)`                                |
+| `datepicker`              | `DatePicker`             | `value`, `min`, `max`, `components`, `variant`, `onchange(date)`                |
+| `progressview`            | `ProgressView`           | `value`, `total`                                                                |
+| `spacer`, `divider`       | `Spacer`, `Divider`      | `minlength` (on `spacer`)                                                       |
+| `sheet`                   | `.sheet`                 | `detent`, `ondismiss`                                                           |
+| `alert`                   | `.alert`                 | `title`, `ondismiss`                                                            |
+| `toolbar`                 | `.toolbar`               | `placement`                                                                     |
+| `swipeactions`            | `.swipeActions`          | `edge`                                                                          |
 
 Every element also accepts these modifiers:
 
-| Modifier                      | What it does                                                                                          |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `padding`                     | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute |
-| `width`, `height`             | Sets a fixed size                                                                                     |
-| `font`, `weight`              | Sets the text style, such as `headline` or `caption`, and the weight                                  |
-| `color`, `tint`, `background` | Colors the content, the controls, or the background                                                   |
-| `radius`, `opacity`           | Rounds the corners and sets the opacity                                                               |
-| `animated`, `animation`       | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
-| `lang`, `dir`                 | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
+| Modifier                           | What it does                                                                                          |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `padding`                          | Pads the element by a number of points, or by 16 points when `padding` is written as a bare attribute |
+| `width`, `height`                  | Sets a fixed size                                                                                     |
+| `font`, `size`, `design`, `weight` | Sets the text style or a fixed size, the design, and the weight                                       |
+| `color`, `tint`, `background`      | Colors the content, the controls, or the background                                                   |
+| `radius`, `opacity`                | Rounds the corners and sets the opacity                                                               |
+| `animated`, `animation`            | Animates children as they're added, removed, or reordered, with the curve from `animation`            |
+| `lang`, `dir`                      | Sets the locale and the layout direction (`ltr` or `rtl`) for the element and everything inside it    |
 
 A few details:
 
 - **Buttons.** `variant` is `automatic`, `borderless`, `bordered`, or `prominent`, and `role` is `destructive` or `cancel`. With `variant="automatic"`, a button in a list makes its whole row tappable.
-- **Text.** `lines` caps the number of lines, and `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`.
+- **Stacks.** `alignment` takes any of SwiftUI's alignment guides. On a `vstack` that's `leading`, `center`, `trailing`, `listRowSeparatorLeading`, or `listRowSeparatorTrailing`. On an `hstack` it's `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`, which lines up text of different sizes. A `zstack` takes a corner or edge such as `topLeading`, or a baseline alignment such as `leadingFirstTextBaseline`. A `spacer` with `minlength` never shrinks below that many points.
+- **Text.** `lines` caps the number of lines, and `truncation` picks where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`. `minscale` lets the text shrink to that fraction of its size before it truncates. `align` sets the alignment of wrapped text: `leading`, `center`, or `trailing`. `linespacing` adds points of space between lines, `kerning` and `tracking` adjust the space between letters, and `selectable` lets the user select and copy the text.
+- **Fonts.** `font` picks a text style that follows Dynamic Type, such as `headline` or `caption`. `size` sets a fixed size in points instead, like `.system(size:)`, so it doesn't follow Dynamic Type. `design` is `rounded`, `serif`, or `monospaced`, and `weight` goes from `ultraLight` to `black`. These work on any element and apply to all the text inside it.
 - **Event handlers.** Handlers receive the new value itself, such as the text for `oninput` or the boolean for a toggle's `onchange`, rather than a DOM event. Because there's no event object, there's nothing to prevent or stop. To react to an event only once, keep a flag in your state and check it in the handler.
 - **Text fields.** `oninput` fires on every keystroke. Set `debounce` to a number of milliseconds to wait until the user pauses typing instead, which helps when each change starts a search or a request. The field shows what the user types right away either way, and pressing Return sends any pending input before `onsubmit` fires.
 - **Images.** `asyncimage` shows a spinner while the image loads, then scales it to fit its frame, or to fill it with `fit="fill"`. Give it a `width` and `height`.

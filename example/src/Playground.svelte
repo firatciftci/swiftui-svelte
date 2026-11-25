@@ -55,7 +55,7 @@
           <btn onclick={() => withAnimation(() => count--, "bouncy")}>
             <sfsymbol name="minus.circle.fill" label="Decrease" font="title" />
           </btn>
-          <txt font="title" weight="bold">{count}</txt>
+          <txt size={34} design="rounded" weight="heavy">{count}</txt>
           <btn onclick={() => withAnimation(() => count++, "bouncy")}>
             <sfsymbol name="plus.circle.fill" label="Increase" font="title" />
           </btn>
@@ -111,7 +111,7 @@
           </overlay>
         </asyncimage>
         <vstack alignment="leading" spacing={2}>
-          <txt font="headline">sveltejs/svelte</txt>
+          <txt font="headline" selectable>sveltejs/svelte</txt>
           {#if fetchError != null}
             <txt font="caption" color="red" lines={2}>{fetchError}</txt>
           {:else if stars == null}
