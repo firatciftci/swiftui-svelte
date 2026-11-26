@@ -28,9 +28,9 @@ struct EffectsTests {
     }
 
     @Test func readsBordersAndShadows() {
-        #expect(Effects.border(.string("red"))?.width == 1)
-        #expect(Effects.border(.object(["color": .string("blue"), "width": .number(3)]))?.width == 3)
-        #expect(Effects.border(.object(["width": .number(-2)]))?.width == 0)
+        #expect(Effects.border(.string("red"))?.widths == EdgeInsets(top: 1, leading: 1, bottom: 1, trailing: 1))
+        #expect(Effects.border(.object(["color": .string("blue"), "width": .number(3)]))?.widths == EdgeInsets(top: 3, leading: 3, bottom: 3, trailing: 3))
+        #expect(Effects.border(.object(["width": .number(-2)]))?.widths == EdgeInsets())
         #expect(Effects.border(.number(2)) == nil)
         let fallback = Color.black.opacity(0.33)
         #expect(Effects.shadow(.number(6)) == Effects.Shadow(color: fallback, radius: 6, x: 0, y: 0))
@@ -61,7 +61,6 @@ struct EffectsTests {
     @Test func readsBorderWidthsPerEdge() {
         let partial = Effects.border(.object(["width": .object(["top": .number(2), "leading": .number(-1)])]))
         #expect(partial?.widths == EdgeInsets(top: 2, leading: 0, bottom: 0, trailing: 0))
-        #expect(partial?.width == 2)
         #expect(Effects.border(.object(["color": .string("red")]))?.widths == EdgeInsets(top: 1, leading: 1, bottom: 1, trailing: 1))
     }
 }
