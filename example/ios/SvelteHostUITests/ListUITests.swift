@@ -26,7 +26,8 @@ extension SvelteHostUITests {
         waitFor(handle)
         attachScreenshot("edit mode")
         let target = app.buttons["Reorder Read the custom renderer docs"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0))
-        handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.6, thenDragTo: target)
+        handle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.8, thenDragTo: target, withVelocity: .slow, thenHoldForDuration: 0.5)
         let reordered = NSPredicate { _, _ in second.frame.minY < first.frame.minY }
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: reordered, object: nil)], timeout: 5), .completed)
         attachScreenshot("reordered")
