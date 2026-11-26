@@ -26,7 +26,12 @@ export function swiftui({
       const isDevelopment = mode === "development" || user.build?.watch != null;
       return {
         publicDir: false,
-        define: { __SWIFTUI_SVELTE_DEV__: JSON.stringify(isDevelopment) },
+        define: {
+          __SWIFTUI_SVELTE_DEV__: JSON.stringify(isDevelopment),
+          "process.env.NODE_ENV": JSON.stringify(
+            isDevelopment ? "development" : "production",
+          ),
+        },
         build: {
           target: "es2023",
           outDir: slash === -1 ? "." : outFile.slice(0, slash),

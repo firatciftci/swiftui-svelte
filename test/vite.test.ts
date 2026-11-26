@@ -98,6 +98,20 @@ describe("the Vite plugin", () => {
     expect(code).toContain("doesn't have an attribute");
   }, 60_000);
 
+  it("replaces process.env.NODE_ENV, which JavaScriptCore doesn't define", async () => {
+    const entry = path.join(
+      mkdtempSync(path.join(tmpdir(), "node-env-")),
+      "main.ts",
+    );
+    writeFileSync(entry, "export const mode = process.env.NODE_ENV;\n");
+    const production = await bundle({ entry });
+    expect(production.code).not.toContain("process.env");
+    expect(production.code).toMatch(/["'`]production["'`]/);
+    const development = await bundle({ entry, mode: "development" });
+    expect(development.code).not.toContain("process.env");
+    expect(development.code).toMatch(/["'`]development["'`]/);
+  });
+
   it("bundles the linear keyed each fix into Svelte's each block", async () => {
     const { code } = await bundle({
       mode: "development",
