@@ -155,7 +155,7 @@ struct ImageElement: View {
             fit: attributes["fit"]?.string
         )
         .ifLet(attributes["label"]?.string) { $0.accessibilityLabel($1) }
-        .accessibilityHidden(isDecorative)
+        .gated(isDecorative) { $0.accessibilityHidden(true) }
     }
 
     @ViewBuilder static func sized(_ image: Image, fit: String?) -> some View {
