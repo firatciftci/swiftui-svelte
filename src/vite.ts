@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { build } from "vite";
+import { fixSvelte } from "./svelte-fixes.ts";
 
 export function swiftui({
   entry = "src/main.ts",
@@ -41,6 +42,7 @@ export function swiftui({
         },
       };
     },
+    transform: (code, id) => fixSvelte(code, id),
     configResolved(config) {
       ({ root } = config);
     },

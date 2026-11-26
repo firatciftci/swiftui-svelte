@@ -107,8 +107,28 @@ struct TextView: View {
 }
 
 extension Styles {
+    private static let spanAttributes = ["kerning", "tracking", "italic", "underline", "strikethrough", "href"]
+
     static func text(_ node: Node) -> Text {
-        Text(attributedString(node))
+        if let plain = plainText(node) { return Text(plain) }
+        return Text(attributedString(node))
+    }
+
+    private static func plainText(_ node: Node) -> String? {
+        let attributes = node.attributes
+        guard markdown(node) == nil, !spanAttributes.contains(where: { (attributes[$0] ?? .null) != .null }) else { return nil }
+        let whitespace = Whitespace(attributes["whitespace"]?.string)
+        var isAfterSpace = true
+        var result = ""
+        for child in node.children {
+            switch child.kind {
+            case .text: result += whitespace.collapse(child.text, isAfterSpace: &isAfterSpace)
+            case .element where child.name == "txt": return nil
+            case .element, .fragment: continue
+            }
+        }
+        if whitespace != .pre, result.last == " " { result.removeLast() }
+        return result
     }
 
     static func attributedString(_ node: Node) -> AttributedString {

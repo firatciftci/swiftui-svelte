@@ -35,9 +35,13 @@ struct SvelteHostApp: App {
 
     var body: some Scene {
         WindowGroup {
-            SvelteView(
-                source: Self.source, reloadsOnChange: Self.reloadsOnChange, modules: Self.modules,
-                components: Self.components)
+            if ProcessInfo.processInfo.arguments.contains("-NativeBench") {
+                NativeBench()
+            } else {
+                SvelteView(
+                    source: Self.source, reloadsOnChange: Self.reloadsOnChange, modules: Self.modules,
+                    components: Self.components)
+            }
         }
     }
 }

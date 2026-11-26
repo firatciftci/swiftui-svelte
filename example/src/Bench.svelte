@@ -5,6 +5,8 @@
   const ROWS = 1000;
 
   let rows = $state<Array<{ id: number; label: string; done: boolean }>>([]);
+  let page = $state(false);
+  let entries = $state<Array<{ id: number; title: string; body: string }>>([]);
   let text = $state("");
   let status = $state("Starting");
   let field: { id: number } | undefined;
@@ -121,6 +123,19 @@
       await typing();
       await measure("clear", () => (rows = []));
       await churn();
+      flushSync(() => (page = true));
+      await wait(500);
+      await measure("page-create", () => {
+        entries = Array.from({ length: 300 }, (_, index) => ({
+          id: index,
+          title: `Entry ${index}`,
+          body: `The meaning of entry ${index}, with a few more words to wrap.`,
+        }));
+      });
+      await measure("page-update", () => {
+        for (const entry of entries) entry.title += "!";
+      });
+      await measure("page-clear", () => (entries = []));
       status = "Done";
       console.log("BENCH done");
     })();
@@ -129,25 +144,43 @@
 
 <navstack>
   <screen title="Benchmark">
-    <list>
-      <txt font="headline">{status}</txt>
-      <textfield
-        value={text}
-        oninput={(value) => (text = value)}
-        {@attach (node: { id: number }) => {
-          field = node;
-        }}
-      />
-      {#each rows as row (row.id)}
-        <hstack>
-          <txt>{row.label}</txt>
-          <spacer />
-          <toggle
-            checked={row.done}
-            onchange={(checked) => (row.done = checked)}
-          />
-        </hstack>
-      {/each}
-    </list>
+    {#if page}
+      <scrollview>
+        <vstack alignment="leading" spacing={12} padding>
+          <txt font="headline">{status}</txt>
+          {#each entries as entry (entry.id)}
+            <vstack alignment="leading" spacing={4}>
+              <txt font="headline">{entry.title}</txt>
+              <txt color="secondary">{entry.body}</txt>
+              <hstack spacing={6}>
+                <sfsymbol name="book" />
+                <txt font="caption">Source {entry.id}</txt>
+              </hstack>
+            </vstack>
+          {/each}
+        </vstack>
+      </scrollview>
+    {:else}
+      <list>
+        <txt font="headline">{status}</txt>
+        <textfield
+          value={text}
+          oninput={(value) => (text = value)}
+          {@attach (node: { id: number }) => {
+            field = node;
+          }}
+        />
+        {#each rows as row (row.id)}
+          <hstack>
+            <txt>{row.label}</txt>
+            <spacer />
+            <toggle
+              checked={row.done}
+              onchange={(checked) => (row.done = checked)}
+            />
+          </hstack>
+        {/each}
+      </list>
+    {/if}
   </screen>
 </navstack>

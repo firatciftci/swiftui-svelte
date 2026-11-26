@@ -1,8 +1,12 @@
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { defineConfig } from "vitest/config";
+import { fixSvelte } from "./src/svelte-fixes.ts";
 
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [
+    svelte(),
+    { name: "svelte-fixes", transform: (code, id) => fixSvelte(code, id) },
+  ],
   define: { __SWIFTUI_SVELTE_DEV__: "true" },
   resolve: {
     alias: { "swiftui-svelte": new URL("src", import.meta.url).pathname },

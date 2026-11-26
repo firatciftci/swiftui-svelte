@@ -36,7 +36,7 @@ private struct NodeContent<Element: View>: View {
             Text(Whitespace.normal.collapsed(node.text))
         case .element:
             element.modifier(NodeModifiers(node: node, isRow: isRow))
-                .layoutPriority(node.name == "spacer" ? -1 : 0)
+                .gated(node.name == "spacer") { $0.layoutPriority(-1) }
         case .fragment:
             VStack(spacing: 0) { ForEach(node.renderedChildren) { NodeView(node: $0) } }
                 .modifier(Presentations(node: node))
@@ -227,50 +227,80 @@ private struct NavStack: View {
     }
 }
 
-private struct PresentationHost: ViewModifier {
-    let node: Node
-
-    func body(content: Content) -> some View {
-        if node.hostsPresentations {
-            content.modifier(Presentations(node: node))
-        } else {
-            content
-        }
-    }
-}
-
 private struct NodeModifiers: ViewModifier {
     let node: Node
     let isRow: Bool
 
     func body(content: Content) -> some View {
+        let modifiers = isRow ? node.modifiers.subtracting(.rowTraits) : node.modifiers
+        if modifiers.isEmpty, !node.hostsPresentations {
+            content
+        } else {
+            content
+                .modifier(Shaping(node: node, modifiers: modifiers))
+                .modifier(Behaving(node: node, modifiers: modifiers))
+                .modifier(Hosting(node: node, modifiers: modifiers))
+        }
+    }
+}
+
+private struct Shaping: ViewModifier {
+    let node: Node
+    let modifiers: ModifierSet
+
+    func body(content: Content) -> some View {
+        let attributes = node.attributes
+        content
+            .gated(modifiers.contains(.safeArea)) { $0.modifier(SafeAreaInsets(node: node)) }
+            .gated(modifiers.contains(.framing)) { $0.modifier(Framing(attributes: attributes)) }
+            .gated(modifiers.contains(.typography)) { $0.modifier(Typography(attributes: attributes)) }
+            .gated(modifiers.contains(.appearance)) { $0.modifier(Appearance(attributes: attributes)) }
+            .gated(modifiers.contains(.decorations)) { $0.modifier(Decorations(node: node)) }
+            .gated(modifiers.contains(.glass)) { $0.modifier(GlassSurface(attributes: attributes)) }
+            .gated(modifiers.contains(.transforms)) { $0.modifier(Transforms(attributes: attributes)) }
+            .gated(modifiers.contains(.layers)) { $0.modifier(Layers(node: node)) }
+    }
+}
+
+private struct Behaving: ViewModifier {
+    let node: Node
+    let modifiers: ModifierSet
+
+    func body(content: Content) -> some View {
+        let attributes = node.attributes
+        content
+            .gated(modifiers.contains(.accessible)) { $0.modifier(Accessible(node: node)) }
+            .gated(modifiers.contains(.lifecycle)) { $0.modifier(Lifecycle(node: node)) }
+            .gated(modifiers.contains(.gestures)) { $0.modifier(GestureHandlers(node: node)) }
+            .gated(modifiers.contains(.measured)) { $0.modifier(Measured(node: node)) }
+            .gated(modifiers.contains(.gridCell)) { $0.modifier(GridCell(attributes: attributes)) }
+            .gated(modifiers.contains(.resizing)) { $0.modifier(Resizing(node: node)) }
+            .gated(modifiers.contains(.localized)) { $0.modifier(Localized(attributes: attributes)) }
+            .gated(modifiers.contains(.preferences)) { $0.modifier(Preferences(attributes: attributes)) }
+            .gated(modifiers.contains(.availability)) { $0.modifier(Availability(node: node)) }
+    }
+}
+
+private struct Hosting: ViewModifier {
+    let node: Node
+    let modifiers: ModifierSet
+
+    func body(content: Content) -> some View {
+        content
+            .gated(node.hostsPresentations) { $0.modifier(Presentations(node: node)) }
+            .gated(modifiers.contains(.animated)) { $0.modifier(AnimatedChildren(node: node)) }
+            .gated(modifiers.contains(.attachments)) { $0.modifier(Attachments(node: node)) }
+            .gated(modifiers.contains(.rowTraits)) { $0.modifier(RowTraits(node: node)) }
+    }
+}
+
+private struct AnimatedChildren: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
         let attributes = node.attributes
         let animation = (MotionCurve(attributes["animation"]) ?? MotionCurve()).animation
-        let childIDs = attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil
-        let styled =
-            content
-            .modifier(SafeAreaInsets(node: node))
-            .modifier(Framing(attributes: attributes))
-            .modifier(Typography(attributes: attributes))
-            .modifier(Appearance(attributes: attributes))
-            .modifier(Decorations(node: node))
-            .modifier(GlassSurface(attributes: attributes))
-            .modifier(Transforms(attributes: attributes))
-            .modifier(Layers(node: node))
-            .modifier(Accessible(node: node))
-            .modifier(Lifecycle(node: node))
-            .modifier(GestureHandlers(node: node))
-            .modifier(Measured(node: node))
-            .modifier(GridCell(attributes: attributes))
-            .modifier(Resizing(node: node))
-            .modifier(Localized(attributes: attributes))
-            .modifier(Preferences(attributes: attributes))
-            .modifier(Availability(node: node))
-        styled
-            .modifier(PresentationHost(node: node))
-            .ifLet(childIDs) { $0.animation(animation, value: $1) }
-            .modifier(Attachments(node: node))
-            .ifLet(isRow ? nil : node) { $0.modifier(RowTraits(node: $1)) }
+        content.ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) { $0.animation(animation, value: $1) }
     }
 }
 
@@ -298,7 +328,7 @@ private struct Typography: ViewModifier {
         content
             .ifLet(Styles.font(attributes)) { $0.font($1) }
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
-            .fontWeight(Styles.weight(attributes["weight"]?.string))
+            .ifLet(Styles.weight(attributes["weight"]?.string)) { $0.fontWeight($1) }
             .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }
             .ifLet(Palette.color(attributes["tint"]?.string)) { $0.tint($1) }
             .ifLet(Inputs.controlSize(attributes["controlsize"]?.string)) { $0.controlSize($1) }
@@ -353,6 +383,11 @@ struct ActionButton: View {
 }
 
 extension View {
+    @ViewBuilder
+    func gated<Modified: View>(_ isOn: Bool, _ transform: (Self) -> Modified) -> some View {
+        if isOn { transform(self) } else { self }
+    }
+
     @ViewBuilder
     func ifLet<Value, Modified: View>(
         _ value: Value?, _ transform: (Self, Value) -> Modified

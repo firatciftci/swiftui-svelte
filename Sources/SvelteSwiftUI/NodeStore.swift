@@ -17,9 +17,12 @@ final class Node: Identifiable {
         }
     }
     private(set) var isBlank: Bool
-    var attributes: [String: JSONValue] = [:]
+    var attributes: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: attributes)) }
+    }
     var children: Array<Node> = [] {
         didSet {
+            enable(ModifierSet(children: children))
             if !hostsPresentations, children.contains(where: { $0.kind == .element && Presenting.anchored.contains($0.name) }) {
                 hostsPresentations = true
             }
@@ -33,7 +36,10 @@ final class Node: Identifiable {
     var hostsPresentations: Bool
     var hostsInspector: Bool
     var focusRequest = FocusRequest()
-    var isMeasured = false
+    var isMeasured = false {
+        didSet { if isMeasured { enable(.measured) } }
+    }
+    private(set) var modifiers: ModifierSet = []
     @ObservationIgnored var frame: CGRect?
     @ObservationIgnored var parentID: Int?
     @ObservationIgnored var previousID: Int?
@@ -62,6 +68,10 @@ final class Node: Identifiable {
         "contentunavailableview": ["label"],
         "sectionview": ["header", "footer"],
     ]
+
+    private func enable(_ set: ModifierSet) {
+        if !modifiers.isSuperset(of: set) { modifiers.formUnion(set) }
+    }
 
     func attachment(_ name: String) -> Node? {
         children.first { $0.kind == .element && $0.name == name }

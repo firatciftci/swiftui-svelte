@@ -7,6 +7,7 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
+import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 
 const budget = { minified: 180_000, gzipped: 55_000 };
@@ -95,6 +96,24 @@ describe("the Vite plugin", () => {
     expect(code.split("\n").length).toBeGreaterThan(1000);
     expect(code).toContain("doesn't have an attribute");
   }, 60_000);
+
+  it("bundles the linear keyed each fix into Svelte's each block", async () => {
+    const { code } = await bundle({
+      mode: "development",
+      entry: "test/native.ts",
+    });
+    expect(code).toContain("new Map()).set(current, stashed.length)");
+    expect(code).not.toContain("new Set()).add(current)");
+  }, 60_000);
+
+  it("leaves other files and changed each blocks alone", () => {
+    const each = "/node_modules/svelte/src/internal/client/dom/blocks/each.js";
+    expect(
+      fixSvelte("(seen ??= new Set()).add(current);", "/src/each.js"),
+    ).toBeNull();
+    expect(fixSvelte("export {};", each)).toBeNull();
+    expect(fixSvelte("(seen ??= new Set()).add(current);", each)).toBeNull();
+  });
 
   it("explains a missing entry and an outFile that isn't JavaScript", async () => {
     await expect(bundle({ entry: "test/size/missing.ts" })).rejects.toThrow(
