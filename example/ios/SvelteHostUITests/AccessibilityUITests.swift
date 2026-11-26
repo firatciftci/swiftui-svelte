@@ -32,21 +32,21 @@ extension SvelteHostUITests {
         section.tap()
         let toggle = app.switches["Show the ticker"]
         scroll(to: toggle)
-        toggle.switches.firstMatch.tap()
+        flip(toggle)
         let ticker = app.staticTexts["ticker"]
         waitFor(ticker)
         let ticking = NSPredicate(format: "label BEGINSWITH 'Ticked' AND NOT (label IN {'Ticked 0 times', 'Ticked 1 times'})")
         expectation(for: ticking, evaluatedWith: ticker)
         waitForExpectations(timeout: 5)
 
-        toggle.switches.firstMatch.tap()
+        flip(toggle)
         let status = app.staticTexts["ticker-status"]
         let stopped = NSPredicate(format: "label BEGINSWITH 'Stopped after'")
         expectation(for: stopped, evaluatedWith: status)
         waitForExpectations(timeout: 5)
         XCTAssertFalse(ticker.exists)
 
-        toggle.switches.firstMatch.tap()
+        flip(toggle)
         waitFor(ticker)
         XCTAssertTrue(ticker.label.hasPrefix("Ticked 0") || ticker.label.hasPrefix("Ticked 1"), ticker.label)
     }

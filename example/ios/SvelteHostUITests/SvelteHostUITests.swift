@@ -34,7 +34,7 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, "New to-do")
 
         XCTAssertEqual(row.value as? String, "0")
-        row.switches.firstMatch.tap()
+        flip(row)
         XCTAssertEqual(row.value as? String, "1")
 
         row.swipeLeft()
@@ -162,9 +162,9 @@ final class SvelteHostUITests: XCTestCase {
         XCTAssertNotEqual(slider.value as? String, "60%")
 
         let reminder = app.switches["Remind me"]
-        reminder.switches.firstMatch.tap()
+        flip(reminder)
         XCTAssertTrue(app.staticTexts["Repeat"].waitForNonExistence(timeout: 5))
-        reminder.switches.firstMatch.tap()
+        flip(reminder)
         waitFor(app.staticTexts["Repeat"])
 
         let repeatMenu = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Repeat'")).firstMatch
@@ -352,6 +352,24 @@ extension SvelteHostUITests {
 
     func scroll(to element: XCUIElement, attempts: Int = 8) {
         for _ in 0..<attempts where !element.isHittable { app.swipeUp() }
+        settle(element)
+    }
+
+    func flip(_ toggle: XCUIElement) {
+        settle(toggle)
+        toggle.switches.firstMatch.tap()
+    }
+
+    func settle(_ element: XCUIElement, timeout: TimeInterval = 3) {
+        guard element.exists else { return }
+        var previous = element.frame
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+            let current = element.frame
+            if current == previous { return }
+            previous = current
+        }
     }
 
     func testPicksAndOpensMenus() {
@@ -505,20 +523,21 @@ extension SvelteHostUITests {
         app.buttons.matching(NSPredicate(format: "identifier ENDSWITH %@", "OverflowBarButtonItem")).firstMatch.tap()
         app.buttons["Pin"].tap()
         XCTAssertEqual(action.label, "Last action: Pin")
+        XCTAssertTrue(app.buttons["Pin"].waitForNonExistence(timeout: 5))
         attachScreenshot("toolbars")
 
-        app.switches["Hide the navigation bar"].switches.firstMatch.tap()
+        flip(app.switches["Hide the navigation bar"])
         XCTAssertTrue(app.navigationBars["Toolbars"].waitForNonExistence(timeout: 5))
         attachScreenshot("hidden navigation bar")
-        app.switches["Hide the navigation bar"].switches.firstMatch.tap()
+        flip(app.switches["Hide the navigation bar"])
         waitFor(app.navigationBars["Toolbars"])
-        app.switches["Hide the back button"].switches.firstMatch.tap()
+        flip(app.switches["Hide the back button"])
         XCTAssertTrue(app.navigationBars["Toolbars"].buttons["BackButton"].waitForNonExistence(timeout: 5))
-        app.switches["Color the navigation bar"].switches.firstMatch.tap()
+        flip(app.switches["Color the navigation bar"])
         attachScreenshot("colored navigation bar without a back button")
-        app.switches["Hide the back button"].switches.firstMatch.tap()
+        flip(app.switches["Hide the back button"])
         waitFor(app.navigationBars["Toolbars"].buttons["BackButton"])
-        app.switches["Hide the tab bar"].switches.firstMatch.tap()
+        flip(app.switches["Hide the tab bar"])
         XCTAssertTrue(app.tabBars.buttons["Playground"].waitForHittable())
 
         app.navigationBars["Toolbars"].buttons["BackButton"].tap()
