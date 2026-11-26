@@ -319,3 +319,5 @@ export const modifierGroups: Array<{
     modifiers: [],
   },
 ];
+
+export const libraries: Array<string> = ["sonner", "mode-watcher"];

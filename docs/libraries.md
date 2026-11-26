@@ -1,6 +1,6 @@
 # Libraries
 
-Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each one talks to a server through `fetch` or `EventSource`, which the host provides. This page covers the setup each one needs.
+Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page.
 
 ## TanStack Query
 
@@ -142,3 +142,47 @@ Send the `Origin` header on every request. Better Auth checks the `Origin` of ea
 The focus refetch in Better Auth's client never runs here, because it listens for `visibilitychange` on `document`. The `onActive` line above refetches the session when the app comes to the foreground.
 
 Social sign-in doesn't work yet. Better Auth's client sends the browser to the provider by assigning `window.location`, and the host has no way to open a sign-in page in a web authentication session. `signIn.social` still returns the provider URL, so you can open it yourself, but the callback needs a native module for web authentication sessions, which the host doesn't include yet.
+
+## svelte-sonner and mode-watcher
+
+swiftui-svelte has native versions of [svelte-sonner](https://github.com/wobsoriano/svelte-sonner) and [mode-watcher](https://mode-watcher.sveco.dev). The Vite plugin redirects imports of `svelte-sonner` to `swiftui-svelte/sonner` and imports of `mode-watcher` to `swiftui-svelte/mode-watcher`, so web code that uses them runs unchanged. The real packages render DOM elements and read `document`, so they can't run in the app.
+
+The redirect means the real packages are never bundled. TypeScript still reads their types from the installed packages, so install them, or import from `swiftui-svelte/sonner` and `swiftui-svelte/mode-watcher` directly, which skips the redirect. Use only the options listed below. The types of the real packages include options this version doesn't support, and those compile but do nothing at runtime.
+
+### Toasts
+
+Place `<Toaster />` in a `zstack` above the content it should cover, usually at the root of the app. A sheet covers the root toaster, so give a sheet its own `Toaster` with an `id`, and send its toasts there with `toasterId`.
+
+```svelte
+<script lang="ts">
+  import { toast, Toaster } from "svelte-sonner";
+</script>
+
+<zstack>
+  <btn onclick={() => toast.success("Saved")}>Save</btn>
+  <Toaster richColors />
+</zstack>
+```
+
+`toast` supports `toast(message, options)`, `toast.success`, `toast.error`, `toast.info`, `toast.warning`, `toast.loading`, `toast.message`, `toast.promise`, `toast.custom`, `toast.dismiss`, and `toast.getActiveToasts`. `useSonner()` returns the active toasts. The options are `id`, `description`, `duration`, `action`, `cancel`, `closeButton`, `dismissible`, `richColors`, `toasterId`, `onDismiss`, and `onAutoClose`. Giving a toast an `id` that's already showing updates it, as `toast.promise` does when it moves from loading to success.
+
+`Toaster` takes `id`, `theme`, `position`, `expand`, `duration`, `gap`, `visibleToasts`, `closeButton`, and `richColors`. The default look uses Liquid Glass on iOS 26 and later, and a material before that. Swipe a toast to dismiss it.
+
+For your own look, pass a component to `toast.custom`. The component receives the `componentProps` you pass, and a `closeToast` function that dismisses the toast:
+
+```ts
+toast.custom(RatingToast, { componentProps: { stars: 4 } });
+```
+
+These options aren't supported: `title` and `description` as components, `icon`, `class`, `style`, `classes`, `unstyled`, `toastOptions`, `hotkey`, `offset`, `swipeDirections`, `pauseWhenPageIsHidden`, `invert`, and `dir`.
+
+### Color scheme with mode-watcher
+
+Mount `<ModeWatcher />` once, at the root. It sends the saved preference to the host, which applies it to the whole app with SwiftUI's `preferredColorScheme`. `dark:` classes and the SwiftUI environment follow the app's color scheme, so they match the choice.
+
+- `userPrefersMode.current` is `"light"`, `"dark"`, or `"system"`, and assigning it saves the choice in `localStorage` under `mode-watcher-mode`.
+- `setMode`, `toggleMode`, and `resetMode` change the preference. `toggleMode` switches between light and dark from the mode the app shows.
+- `mode.current` is the mode the app shows, `"light"` or `"dark"`.
+- `systemPrefersMode.current` is the device setting.
+
+The `prefers-color-scheme` media query follows the device setting, not the app's choice, as it does in a browser that overrides the color scheme.

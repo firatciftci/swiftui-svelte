@@ -26,6 +26,15 @@ export function swiftui({
       const isDevelopment = mode === "development" || user.build?.watch != null;
       return {
         publicDir: false,
+        resolve: {
+          alias: [
+            { find: /^svelte-sonner$/, replacement: "swiftui-svelte/sonner" },
+            {
+              find: /^mode-watcher$/,
+              replacement: "swiftui-svelte/mode-watcher",
+            },
+          ],
+        },
         define: {
           __SWIFTUI_SVELTE_DEV__: JSON.stringify(isDevelopment),
           "process.env.NODE_ENV": JSON.stringify(

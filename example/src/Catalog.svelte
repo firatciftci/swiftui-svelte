@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Component } from "svelte";
-  import { modifierGroups, sections } from "./catalog/sections";
+  import { libraries, modifierGroups, sections } from "./catalog/sections";
   import { m } from "./paraglide/messages.js";
 
   type Entry = { key: string; title: string; component: Component };
@@ -9,6 +9,10 @@
     eager: true,
     import: "default",
   });
+  const librarySources = import.meta.glob<Component>(
+    "./catalog/libraries/*.svelte",
+    { eager: true, import: "default" },
+  );
   const modifiers = import.meta.glob<Component>(
     "./catalog/modifiers/*.svelte",
     { eager: true, import: "default" },
@@ -28,6 +32,13 @@
         entry(name, name, elements[`./catalog/elements/${name}.svelte`]),
       ),
     })),
+    {
+      title: "Libraries",
+      fullscreen: false,
+      entries: libraries.map((name) =>
+        entry(name, name, librarySources[`./catalog/libraries/${name}.svelte`]),
+      ),
+    },
     {
       title: m.catalog_modifiers(),
       fullscreen: false,

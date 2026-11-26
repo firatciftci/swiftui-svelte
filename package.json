@@ -42,6 +42,16 @@
       "svelte": "./dist/components/index.js",
       "default": "./dist/components/index.js"
     },
+    "./sonner": {
+      "types": "./dist/sonner/index.d.ts",
+      "svelte": "./dist/sonner/index.js",
+      "default": "./dist/sonner/index.js"
+    },
+    "./mode-watcher": {
+      "types": "./dist/mode-watcher/index.d.ts",
+      "svelte": "./dist/mode-watcher/index.js",
+      "default": "./dist/mode-watcher/index.js"
+    },
     "./app": {
       "types": "./dist/app.d.ts",
       "default": "./dist/app.js"

@@ -45,7 +45,7 @@ This stack has no padding. Inside a class string, later rules win, as they do in
 
 ## Variants
 
-- `dark:` applies when the device uses Dark Mode.
+- `dark:` applies when the app's color scheme is dark. The app follows the device's Dark Mode setting unless you choose a mode with `ModeWatcher`, in which case the choice wins.
 - `sm:`, `md:`, `lg:`, and the other width variants apply when the window is at least that wide. Widths are in points, and they use Tailwind's default breakpoints. On iPhone the window width rarely changes, but on iPad and Mac it does.
 - `hover:` applies while the pointer is over the element. It maps to the `hovered` state.
 - `active:` applies while the element is pressed. It maps to the `pressed` state.

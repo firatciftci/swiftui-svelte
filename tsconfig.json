@@ -16,6 +16,8 @@
     "paths": {
       "swiftui-svelte": ["./src/index.ts"],
       "swiftui-svelte/components": ["./src/components/index.ts"],
+      "swiftui-svelte/sonner": ["./src/sonner/index.ts"],
+      "swiftui-svelte/mode-watcher": ["./src/mode-watcher/index.ts"],
       "swiftui-svelte/*": ["./src/*.ts"]
     }
   },

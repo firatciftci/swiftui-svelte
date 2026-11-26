@@ -3,12 +3,20 @@ import { flushSync } from "svelte";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { registerClasses } from "swiftui-svelte/renderer";
 import Catalog from "../example/src/Catalog.svelte";
-import { modifierGroups, sections } from "../example/src/catalog/sections.ts";
+import {
+  libraries,
+  modifierGroups,
+  sections,
+} from "../example/src/catalog/sections.ts";
 import { buildClassTable } from "../src/tailwind/build.ts";
 import { dispatch, find, mountComponent, reset, settle } from "./bridge.ts";
 
 const examples = import.meta.glob<Component>(
   "../example/src/catalog/*/*.svelte",
+  { eager: true, import: "default" },
+);
+const libraryExamples = import.meta.glob<Component>(
+  "../example/src/catalog/libraries/*.svelte",
   { eager: true, import: "default" },
 );
 const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -68,6 +76,12 @@ describe("catalog", () => {
       await render(examples[`../example/src/catalog/modifiers/${name}.svelte`]);
     },
   );
+
+  it.each(libraries)("renders the %s library example", async (name) => {
+    await render(
+      libraryExamples[`../example/src/catalog/libraries/${name}.svelte`],
+    );
+  });
 
   it("renders the catalog screen", async () => {
     await render(Catalog);
