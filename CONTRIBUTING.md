@@ -25,6 +25,14 @@ open example/ios/SvelteHost.xcodeproj
 
 `pnpm dev` rebuilds the example's JavaScript bundle whenever you save. Run the SvelteHost scheme on a simulator, and the app reloads the bundle by itself when it changes, so most edits to the Svelte side show up without rebuilding in Xcode. Changes to the Swift package need a rebuild.
 
+To open one catalog page right away, pass its name after `-catalog` when you launch a Debug build. The name is the page's key in `example/src/catalog/sections.ts`, such as `sonner` or `mode-watcher`. The argument is ignored in Release builds.
+
+```sh
+xcrun simctl launch --terminate-running-process booted com.example.SvelteHost -catalog sonner
+```
+
+Use it when you want to check one example without tapping through the Catalog tab.
+
 To try the dev server instead, run `pnpm vite --host` and set `SVELTE_SOURCE` to the bundle's address when you launch a Debug build. In the simulator, that looks like this:
 
 ```sh
