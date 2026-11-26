@@ -2,10 +2,10 @@
   import type { Color, DragEvent } from "swiftui-svelte/elements";
   import { env } from "swiftui-svelte/env";
   import { withAnimation } from "swiftui-svelte/renderer";
-  import { toastStore } from "./state.svelte.ts";
   import type { Position, ToastT, ToastType } from "./types.ts";
+  import { toastStore } from "./state.svelte.ts";
 
-  let {
+  const {
     toast,
     position,
     duration,
@@ -127,7 +127,7 @@
   ondrag={toast.dismissible === false ? undefined : onDrag}
   dragdistance={4}
 >
-  <hstack offset={offset} opacity={isLeaving ? 0 : 1}>
+  <hstack {offset} opacity={isLeaving ? 0 : 1}>
     {#if CustomComponent != null}
       <CustomComponent {...toast.componentProps} closeToast={close} />
     {:else}
