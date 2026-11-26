@@ -18,7 +18,15 @@ final class Node: Identifiable {
     }
     private(set) var isBlank: Bool
     var nativeAttributes: [String: JSONValue] {
-        feedback.isEmpty ? ownAttributes : ownAttributes.merging(feedback) { _, override in override }
+        guard !labelFeedback.isEmpty || !stateFeedback.isEmpty else { return ownAttributes }
+        return ownAttributes.merging(labelFeedback) { _, override in override }
+            .merging(stateFeedback) { _, override in override }
+    }
+    var ownsButtonFeedback: Bool {
+        ButtonFeedback(attributes["pressed"]) != nil || ButtonFeedback(attributes["hovered"]) != nil
+    }
+    var hasButtonFeedback: Bool {
+        ownsButtonFeedback || children.contains(where: \.hasButtonFeedback)
     }
     var attributes: [String: JSONValue] {
         get {
@@ -35,8 +43,11 @@ final class Node: Identifiable {
     private var ownAttributes: [String: JSONValue] = [:] {
         didSet { enable(ModifierSet(attributes: ownAttributes)) }
     }
-    var feedback: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: feedback)) }
+    var labelFeedback: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: labelFeedback)) }
+    }
+    var stateFeedback: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: stateFeedback)) }
     }
     var children: Array<Node> = [] {
         didSet {

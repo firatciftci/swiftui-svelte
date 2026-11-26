@@ -39,4 +39,27 @@
       Press feedback
     </txt>
   </btn>
+  <btn onclick={() => count++}>
+    <zstack>
+      <hstack
+        spacing={8}
+        padding={{ horizontal: 16, vertical: 12 }}
+        background="white"
+        radius={12}
+        shadow={{ color: "#00000033", radius: 6, y: 3 }}
+        pressed={{ shadow: false }}
+        hovered={{ lighten: 0.125 }}
+      >
+        <txt color="black" pressed={{ color: "red" }}>Nested press</txt>
+        <sfsymbol name="arrow.right" hovered={{ offset: { x: 2 } }} />
+      </hstack>
+      <rectangle
+        background="clear"
+        radius={12}
+        insetshadow
+        opacity={0}
+        pressed={{ opacity: 1 }}
+      />
+    </zstack>
+  </btn>
 </vstack>

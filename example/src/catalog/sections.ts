@@ -158,6 +158,8 @@ export const modifierGroups: Array<{
       "colormultiply",
       "blendmode",
       "compositinggroup",
+      "lighten",
+      "insetshadow",
       "border",
       "shadow",
       "blur",
@@ -232,6 +234,8 @@ export const modifierGroups: Array<{
       "onscrollvisibility",
       "visibilitythreshold",
       "allowshittesting",
+      "pressed",
+      "hovered",
     ],
   },
   {

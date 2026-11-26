@@ -37,6 +37,7 @@ private struct NodeContent<Element: View>: View {
         case .element:
             element.modifier(NodeModifiers(node: node, isRow: isRow))
                 .gated(node.name == "spacer") { $0.layoutPriority(-1) }
+                .gated(node.ownsButtonFeedback) { $0.modifier(StateFeedback(node: node)) }
         case .fragment:
             VStack(spacing: 0) { ForEach(node.renderedChildren) { NodeView(node: $0) } }
                 .modifier(Presentations(node: node))
@@ -357,6 +358,7 @@ private struct Appearance: ViewModifier {
         content
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
+            .gated(attributes["insetshadow"]?.isTrue == true) { $0.modifier(InsetShadow(radius: attributes["radius"]?.number ?? 0)) }
     }
 }
 
@@ -370,6 +372,7 @@ private struct Compositing: ViewModifier {
             .ifLet(Palette.color(attributes["colormultiply"]?.string)) { $0.colorMultiply($1) }
             .ifLet(Effects.blendMode(attributes["blendmode"]?.string)) { $0.blendMode($1) }
             .gated(attributes["compositinggroup"]?.isTrue == true) { $0.compositingGroup() }
+            .ifLet(attributes["lighten"]?.number) { $0.modifier(Lightening(amount: $1)) }
     }
 }
 

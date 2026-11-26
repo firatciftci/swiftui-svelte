@@ -141,7 +141,7 @@ struct ButtonElement: View {
     }
 
     @ViewBuilder private func styled(_ button: some View, pressed: ButtonFeedback?, hovered: ButtonFeedback?) -> some View {
-        if pressed != nil || hovered != nil {
+        if node.hasButtonFeedback {
             button.buttonStyle(FeedbackButtonStyle(pressed: pressed, hovered: hovered, labels: node.renderedChildren))
         } else {
             switch node.attributes["variant"]?.string {

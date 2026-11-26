@@ -224,3 +224,34 @@ struct SafeAreaInsets: ViewModifier {
         Styles.verticalAlignment(inset.attributes["alignment"]?.string)
     }
 }
+
+struct InsetShadow: ViewModifier {
+    let radius: CGFloat
+
+    func body(content: Content) -> some View {
+        content.overlay {
+            Canvas { context, size in
+                let path = RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: CGRect(origin: .zero, size: size))
+                context.clip(to: path)
+                for step in (0..<6).reversed() {
+                    let offset = CGFloat(1 << step)
+                    var shadow = context
+                    shadow.addFilter(.blur(radius: offset))
+                    shadow.translateBy(x: 0, y: offset)
+                    shadow.stroke(path, with: .color(.black.opacity(0.07)), lineWidth: offset * 2)
+                }
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+struct Lightening: ViewModifier {
+    let amount: Double
+
+    func body(content: Content) -> some View {
+        content.compositingGroup().overlay {
+            content.compositingGroup().opacity(amount).blendMode(.plusLighter).allowsHitTesting(false)
+        }
+    }
+}

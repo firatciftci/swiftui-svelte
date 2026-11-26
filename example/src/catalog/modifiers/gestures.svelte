@@ -99,4 +99,15 @@
     </hstack>
   </scrollview>
   <txt font="caption" color="secondary">Last chip seen: {shown}</txt>
+  <btn pressed={{ scale: 0.95 }} hovered={{ opacity: 0.8 }}>
+    <txt
+      padding
+      background="blue"
+      color="white"
+      radius={8}
+      pressed={{ color: "yellow" }}
+    >
+      Press or hover
+    </txt>
+  </btn>
 </vstack>

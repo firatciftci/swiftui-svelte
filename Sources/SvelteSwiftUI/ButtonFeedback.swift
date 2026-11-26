@@ -11,6 +11,15 @@ struct ButtonFeedback {
     }
 }
 
+struct ButtonPress: Equatable {
+    var isPressed = false
+    var isHovered = false
+}
+
+extension EnvironmentValues {
+    @Entry var buttonPress = ButtonPress()
+}
+
 struct FeedbackButtonStyle: ButtonStyle {
     let pressed: ButtonFeedback?
     let hovered: ButtonFeedback?
@@ -33,12 +42,30 @@ struct FeedbackButtonStyle: ButtonStyle {
             let overrides = active?.overrides ?? [:]
             let animation = active?.animation ?? .easeInOut(duration: 0.2)
             configuration.label
+                .environment(\.buttonPress, ButtonPress(isPressed: isPressed, isHovered: isHovered))
                 .onChange(of: overrides, initial: true) { _, overrides in
                     withAnimation(animation) {
-                        for label in labels { label.feedback = overrides }
+                        for label in labels { label.labelFeedback = overrides }
                     }
                 }
                 .onHover { isHovered = $0 }
+        }
+    }
+}
+
+struct StateFeedback: ViewModifier {
+    let node: Node
+    @Environment(\.buttonPress) private var press
+
+    func body(content: Content) -> some View {
+        content.onChange(of: press, initial: true) { _, press in
+            let active =
+                press.isPressed
+                ? ButtonFeedback(node.attributes["pressed"])
+                : (press.isHovered ? ButtonFeedback(node.attributes["hovered"]) : nil)
+            withAnimation(active?.animation ?? .easeInOut(duration: 0.2)) {
+                node.stateFeedback = active?.overrides ?? [:]
+            }
         }
     }
 }

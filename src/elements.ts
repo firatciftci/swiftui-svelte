@@ -223,7 +223,7 @@ export type AnimationOptions =
       /** The control points of a `timingCurve`, given as `[x1, y1, x2, y2]`, the same as a CSS `cubic-bezier`. Required with `type: "timingCurve"`. */
       curve?: [number, number, number, number];
     };
-type ButtonFeedback = Modifiers;
+type ButtonFeedback = Omit<Modifiers, "pressed" | "hovered">;
 type LayerAlignment =
   | "center"
   | "top"
@@ -673,6 +673,14 @@ type Modifiers = {
   blendmode?: BlendMode;
   /** Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole. */
   compositinggroup?: boolean;
+  /** Brightens the element by blending a copy of it over itself with the plus-lighter mode at this opacity, from 0 to 1. Unlike brightness, which adds the same amount to every color, the copy's opacity sets the strength, so 0.125 adds an eighth of the element's color again. */
+  lighten?: number;
+  /** Draws a soft inner edge along the rounded corners set by `radius`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed. */
+  insetshadow?: boolean;
+  /** The look of this element while the `btn` around it is pressed. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. */
+  pressed?: ButtonFeedback;
+  /** The look of this element while the pointer is over the `btn` around it. It takes the same values as `pressed`, and `pressed` wins while both apply. */
+  hovered?: ButtonFeedback;
   /** A fixed width in points. */
   width?: number;
   /** A fixed height in points. */
@@ -1371,10 +1379,6 @@ declare module "svelte/elements" {
     icon: Record<string, never>;
     /** A `Button`: runs `onclick` when tapped. */
     btn: Modifiers & {
-      /** The look of the button while it's pressed. Any modifier overrides the same attribute on the label while the button is pressed. These include `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. */
-      pressed?: ButtonFeedback;
-      /** The look of the button while the pointer is over it. It takes the same values as `pressed`, and `pressed` wins while both apply. */
-      hovered?: ButtonFeedback;
       /** The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. */
       variant?:
         | "automatic"

@@ -1565,15 +1565,13 @@ A `ContentUnavailableView`: an empty state with a symbol, a title, a description
 
 A `Button`: runs `onclick` when tapped.
 
-| Attribute     | Type                                                                                                 | Description                                                                                                                                                                                                                                                                                                                                                        |
-| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pressed`     | `ButtonFeedback`                                                                                     | The look of the button while it's pressed. Any modifier overrides the same attribute on the label while the button is pressed. These include `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. |
-| `hovered`     | `ButtonFeedback`                                                                                     | The look of the button while the pointer is over it. It takes the same values as `pressed`, and `pressed` wins while both apply.                                                                                                                                                                                                                                   |
-| `variant`     | `"automatic" \| "borderless" \| "plain" \| "bordered" \| "prominent" \| "glass" \| "glassProminent"` | The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions.                                                                                                                                           |
-| `role`        | `"destructive" \| "cancel" \| "confirm" \| "close"`                                                  | The role of the button: `destructive` or `cancel`, or `confirm` and `close` on iOS 26 and later.                                                                                                                                                                                                                                                                   |
-| `bordershape` | `"automatic" \| "capsule" \| "roundedRectangle" \| "circle" \| number`                               | The shape of a bordered or glass button: `automatic`, `capsule`, `roundedRectangle`, `circle`, or a corner radius in points.                                                                                                                                                                                                                                       |
-| `repeat`      | `boolean`                                                                                            | Runs `onclick` again and again while the button is held down, as a stepper does.                                                                                                                                                                                                                                                                                   |
-| `onclick`     | `() => void`                                                                                         | Runs when the button is tapped.                                                                                                                                                                                                                                                                                                                                    |
+| Attribute     | Type                                                                                                 | Description                                                                                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `variant`     | `"automatic" \| "borderless" \| "plain" \| "bordered" \| "prominent" \| "glass" \| "glassProminent"` | The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. |
+| `role`        | `"destructive" \| "cancel" \| "confirm" \| "close"`                                                  | The role of the button: `destructive` or `cancel`, or `confirm` and `close` on iOS 26 and later.                                                                                                                         |
+| `bordershape` | `"automatic" \| "capsule" \| "roundedRectangle" \| "circle" \| number`                               | The shape of a bordered or glass button: `automatic`, `capsule`, `roundedRectangle`, `circle`, or a corner radius in points.                                                                                             |
+| `repeat`      | `boolean`                                                                                            | Runs `onclick` again and again while the button is held down, as a stepper does.                                                                                                                                         |
+| `onclick`     | `() => void`                                                                                         | Runs when the button is tapped.                                                                                                                                                                                          |
 
 ```svelte
 <script lang="ts">
@@ -1616,6 +1614,29 @@ A `Button`: runs `onclick` when tapped.
     >
       Press feedback
     </txt>
+  </btn>
+  <btn onclick={() => count++}>
+    <zstack>
+      <hstack
+        spacing={8}
+        padding={{ horizontal: 16, vertical: 12 }}
+        background="white"
+        radius={12}
+        shadow={{ color: "#00000033", radius: 6, y: 3 }}
+        pressed={{ shadow: false }}
+        hovered={{ lighten: 0.125 }}
+      >
+        <txt color="black" pressed={{ color: "red" }}>Nested press</txt>
+        <sfsymbol name="arrow.right" hovered={{ offset: { x: 2 } }} />
+      </hstack>
+      <rectangle
+        background="clear"
+        radius={12}
+        insetshadow
+        opacity={0}
+        pressed={{ opacity: 1 }}
+      />
+    </zstack>
   </btn>
 </vstack>
 ```
@@ -2496,21 +2517,23 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Color and style
 
-| Attribute          | Type                                                                                      | Description                                                                                                                                                                                                 |
-| ------------------ | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `color`            | `ShapeStyle`                                                                              | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                                                                                                     |
-| `tint`             | `Color`                                                                                   | The tint of the controls inside the element. Takes a color only.                                                                                                                                            |
-| `background`       | `ShapeStyle`                                                                              | The background style, such as a color, a material, or a gradient, drawn behind the element.                                                                                                                 |
-| `opacity`          | `number`                                                                                  | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                                                                                              |
-| `brightness`       | `number`                                                                                  | Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged.                                                                                        |
-| `colormultiply`    | `Color`                                                                                   | Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only.                                                                                                 |
-| `blendmode`        | `BlendMode`                                                                               | How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`.                                                                                              |
-| `compositinggroup` | `boolean`                                                                                 | Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole.                                                                                |
-| `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                                        | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                                                                                                          |
-| `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has. |
-| `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                 |
-| `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                 |
-| `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                               | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                                                                                                          |
+| Attribute          | Type                                                                                      | Description                                                                                                                                                                                                                                                                   |
+| ------------------ | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `color`            | `ShapeStyle`                                                                              | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                                                                                                                                                                       |
+| `tint`             | `Color`                                                                                   | The tint of the controls inside the element. Takes a color only.                                                                                                                                                                                                              |
+| `background`       | `ShapeStyle`                                                                              | The background style, such as a color, a material, or a gradient, drawn behind the element.                                                                                                                                                                                   |
+| `opacity`          | `number`                                                                                  | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                                                                                                                                                                |
+| `brightness`       | `number`                                                                                  | Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged.                                                                                                                                                          |
+| `colormultiply`    | `Color`                                                                                   | Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only.                                                                                                                                                                   |
+| `blendmode`        | `BlendMode`                                                                               | How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`.                                                                                                                                                                |
+| `compositinggroup` | `boolean`                                                                                 | Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole.                                                                                                                                                  |
+| `lighten`          | `number`                                                                                  | Brightens the element by blending a copy of it over itself with the plus-lighter mode at this opacity, from 0 to 1. Unlike brightness, which adds the same amount to every color, the copy's opacity sets the strength, so 0.125 adds an eighth of the element's color again. |
+| `insetshadow`      | `boolean`                                                                                 | Draws a soft inner edge along the rounded corners set by `radius`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed.                                       |
+| `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                                        | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                                                                                                                                                                            |
+| `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has.                                                                   |
+| `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                                                                                   |
+| `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                                                                                   |
+| `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                               | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                                                                                                                                                                            |
 
 ```svelte
 <vstack spacing={16} padding>
@@ -2539,11 +2562,22 @@ Every element takes these attributes, except the few whose entries say they don'
   </hstack>
   <hstack spacing={16}>
     <txt padding background="orange" radius={8} brightness={0.3}>Brighter</txt>
+    <txt padding background="orange" radius={8} lighten={0.125}>Lightened</txt>
     <txt padding background="orange" radius={8} colormultiply="blue">Tinted</txt
     >
     <txt padding background="white" radius={8} blendmode="multiply" color="red"
       >Multiplied</txt
     >
+  </hstack>
+  <hstack
+    spacing={16}
+    padding
+    background="white"
+    radius={12}
+    hovered={{ lighten: 0.125 }}
+  >
+    <txt>Lightened on hover</txt>
+    <rectangle background="clear" radius={12} insetshadow />
   </hstack>
   <txt compositinggroup opacity={0.5}>
     <span color="red">Grouped</span> <span color="blue">spans</span>
@@ -2807,20 +2841,22 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Gestures
 
-| Attribute             | Type                                     | Description                                                                                                                                                                                       |
-| --------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ontap`               | `(location: GesturePoint) => void`       | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.                                                                                                 |
-| `tapcount`            | `number`                                 | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                                                                                                                  |
-| `onlongpress`         | `() => void`                             | Runs when the user holds a finger down on the element for `longpressduration` seconds.                                                                                                            |
-| `longpressduration`   | `number`                                 | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5.                                                                                                |
-| `ondrag`              | `(drag: DragEvent) => void`              | Runs as the user drags the element, with the drag's phase, position, and velocity.                                                                                                                |
-| `dragdistance`        | `number`                                 | The distance in points the finger must move before a drag starts. Defaults to 10.                                                                                                                 |
-| `onmagnify`           | `(magnify: MagnifyEvent) => void`        | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                 |
-| `onrotate`            | `(rotate: RotateEvent) => void`          | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                |
-| `onhover`             | `(event: HoverEvent) => void`            | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. |
-| `onscrollvisibility`  | `(event: { visible: boolean; }) => void` | Runs when the element scrolls into or out of view in its `scrollview` or `list`, with `visible`.                                                                                                  |
-| `visibilitythreshold` | `number`                                 | The share of the element that must be on screen to count as visible, from 0 to 1. Defaults to 0, which counts any part of the element.                                                            |
-| `allowshittesting`    | `boolean`                                | Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind.                                                                    |
+| Attribute             | Type                                     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ontap`               | `(location: GesturePoint) => void`       | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `tapcount`            | `number`                                 | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `onlongpress`         | `() => void`                             | Runs when the user holds a finger down on the element for `longpressduration` seconds.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `longpressduration`   | `number`                                 | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `ondrag`              | `(drag: DragEvent) => void`              | Runs as the user drags the element, with the drag's phase, position, and velocity.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `dragdistance`        | `number`                                 | The distance in points the finger must move before a drag starts. Defaults to 10.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `onmagnify`           | `(magnify: MagnifyEvent) => void`        | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `onrotate`            | `(rotate: RotateEvent) => void`          | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `onhover`             | `(event: HoverEvent) => void`            | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`.                                                                                                                                                                                                                                                                                                         |
+| `onscrollvisibility`  | `(event: { visible: boolean; }) => void` | Runs when the element scrolls into or out of view in its `scrollview` or `list`, with `visible`.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `visibilitythreshold` | `number`                                 | The share of the element that must be on screen to count as visible, from 0 to 1. Defaults to 0, which counts any part of the element.                                                                                                                                                                                                                                                                                                                                                                    |
+| `allowshittesting`    | `boolean`                                | Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind.                                                                                                                                                                                                                                                                                                                                                                            |
+| `pressed`             | `ButtonFeedback`                         | The look of this element while the `btn` around it is pressed. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. |
+| `hovered`             | `ButtonFeedback`                         | The look of this element while the pointer is over the `btn` around it. It takes the same values as `pressed`, and `pressed` wins while both apply.                                                                                                                                                                                                                                                                                                                                                       |
 
 ```svelte
 <script lang="ts">
@@ -2924,6 +2960,17 @@ Every element takes these attributes, except the few whose entries say they don'
     </hstack>
   </scrollview>
   <txt font="caption" color="secondary">Last chip seen: {shown}</txt>
+  <btn pressed={{ scale: 0.95 }} hovered={{ opacity: 0.8 }}>
+    <txt
+      padding
+      background="blue"
+      color="white"
+      radius={8}
+      pressed={{ color: "yellow" }}
+    >
+      Press or hover
+    </txt>
+  </btn>
 </vstack>
 ```
 
@@ -3358,7 +3405,7 @@ type BlendMode =
 ### `ButtonFeedback`
 
 ```ts
-type ButtonFeedback = Modifiers;
+type ButtonFeedback = Omit<Modifiers, "pressed" | "hovered">;
 ```
 
 ### `ClipShape`

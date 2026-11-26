@@ -24,11 +24,22 @@
   </hstack>
   <hstack spacing={16}>
     <txt padding background="orange" radius={8} brightness={0.3}>Brighter</txt>
+    <txt padding background="orange" radius={8} lighten={0.125}>Lightened</txt>
     <txt padding background="orange" radius={8} colormultiply="blue">Tinted</txt
     >
     <txt padding background="white" radius={8} blendmode="multiply" color="red"
       >Multiplied</txt
     >
+  </hstack>
+  <hstack
+    spacing={16}
+    padding
+    background="white"
+    radius={12}
+    hovered={{ lighten: 0.125 }}
+  >
+    <txt>Lightened on hover</txt>
+    <rectangle background="clear" radius={12} insetshadow />
   </hstack>
   <txt compositinggroup opacity={0.5}>
     <span color="red">Grouped</span> <span color="blue">spans</span>
