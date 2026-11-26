@@ -3,3 +3,4 @@ ios/build
 ios/__APP_NAME__/JavaScript/app.js
 ios/__APP_NAME__/JavaScript/app.js.map
 xcuserdata
+.swiftui-svelte

@@ -56,6 +56,14 @@
       "types": "./dist/app.d.ts",
       "default": "./dist/app.js"
     },
+    "./kit": {
+      "types": "./dist/kit/index.d.ts",
+      "default": "./dist/kit/index.js"
+    },
+    "./kit/*": {
+      "types": "./dist/kit/*.d.ts",
+      "default": "./dist/kit/*.js"
+    },
     "./env": {
       "types": "./dist/env.d.ts",
       "default": "./dist/env.js"
@@ -71,6 +79,10 @@
     "./vite": {
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "default": "./dist/routes.js"
     },
     "./tailwind": {
       "types": "./dist/tailwind/vite.d.ts",
@@ -97,7 +109,7 @@
     "package": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json && publint --strict && attw --pack --profile esm-only --exclude-entrypoints ./components ./sonner ./mode-watcher ./tailwind/theme.css",
     "prepack": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json",
     "ios:project": "xcodegen generate --spec example/ios/project.yml",
-    "check": "pnpm run compile-paraglide && svelte-check --tsconfig ./tsconfig.json",
+    "check": "pnpm run compile-paraglide && node scripts/routes.ts && svelte-check --tsconfig ./tsconfig.json",
     "compile-paraglide": "paraglide-js compile --project ./example/project.inlang --outdir ./example/src/paraglide --strategy preferredLanguage baseLocale --silent",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

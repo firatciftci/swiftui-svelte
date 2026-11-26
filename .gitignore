@@ -11,3 +11,4 @@ example/ios/Local.xcconfig
 /build
 /coverage
 .svelte-kit
+.swiftui-svelte

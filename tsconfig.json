@@ -13,13 +13,23 @@
     "checkJs": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "rootDirs": [".", "./.swiftui-svelte/types"],
     "paths": {
       "swiftui-svelte": ["./src/index.ts"],
+      "swiftui-svelte/kit": ["./src/kit/index.ts"],
       "swiftui-svelte/components": ["./src/components/index.ts"],
       "swiftui-svelte/sonner": ["./src/sonner/index.ts"],
       "swiftui-svelte/mode-watcher": ["./src/mode-watcher/index.ts"],
       "swiftui-svelte/*": ["./src/*.ts"]
     }
   },
-  "include": ["src", "example/src", "test", "scripts", "*.ts", "*.js"]
+  "include": [
+    "src",
+    "example/src",
+    "test",
+    "scripts",
+    ".swiftui-svelte/types",
+    "*.ts",
+    "*.js"
+  ]
 }
