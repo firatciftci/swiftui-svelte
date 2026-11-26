@@ -13,6 +13,7 @@ const config: KnipConfig = {
     "template/**",
     "changelogithub.config.ts",
     "Tests/SvelteSwiftUITests/Fixtures/**",
+    "example/src/app.css",
   ],
   ignoreIssues: {
     ".github/**/*.yml": ["binaries"],

@@ -311,4 +311,5 @@ export const modifierGroups: Array<{
     title: "Search suggestions",
     modifiers: ["completion"],
   },
+  { name: "tailwind", title: "Tailwind CSS", modifiers: ["class"] },
 ];

@@ -16,7 +16,7 @@ Every element also takes the [modifiers](#modifiers), unless its entry says it d
 - [Pickers](#pickers): [`picker`](#picker), [`choice`](#choice), [`datepicker`](#datepicker), [`multidatepicker`](#multidatepicker), [`colorpicker`](#colorpicker)
 - [Shapes](#shapes): [`rectangle`](#rectangle), [`roundedrectangle`](#roundedrectangle), [`unevenroundedrectangle`](#unevenroundedrectangle), [`circleshape`](#circleshape), [`ellipseshape`](#ellipseshape), [`capsule`](#capsule), [`pathshape`](#pathshape)
 - [Layers and Liquid Glass](#layers-and-liquid-glass): [`background`](#background), [`overlay`](#overlay), [`maskview`](#maskview), [`glasseffectcontainer`](#glasseffectcontainer)
-- [Modifiers](#modifiers): [typography](#typography), [color and style](#color-and-style), [frame and layout](#frame-and-layout), [transforms and shapes](#transforms-and-shapes), [animation and transitions](#animation-and-transitions), [gestures](#gestures), [appearing, tasks, and size](#appearing-tasks-and-size), [accessibility](#accessibility), [grid cells](#grid-cells), [list rows](#list-rows), [environment and feedback](#environment-and-feedback), [liquid glass](#liquid-glass), [search suggestions](#search-suggestions)
+- [Modifiers](#modifiers): [typography](#typography), [color and style](#color-and-style), [frame and layout](#frame-and-layout), [transforms and shapes](#transforms-and-shapes), [animation and transitions](#animation-and-transitions), [gestures](#gestures), [appearing, tasks, and size](#appearing-tasks-and-size), [accessibility](#accessibility), [grid cells](#grid-cells), [list rows](#list-rows), [environment and feedback](#environment-and-feedback), [liquid glass](#liquid-glass), [search suggestions](#search-suggestions), [tailwind css](#tailwind-css)
 - [Value types](#value-types)
 
 ## Navigation
@@ -3409,6 +3409,39 @@ Every element takes these attributes, except the few whose entries say they don'
     <labelview title={city} symbol="building.2" completion={city} />
   {/each}
 </searchable>
+```
+
+### Tailwind CSS
+
+| Attribute | Type     | Description                                                                                                                                                                                                                                                                                           |
+| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`   | `string` | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md). |
+
+```svelte
+<hstack class="items-center gap-2">
+  <btn
+    class="cursor-pointer p-2 text-neutral-800 opacity-80 transition-opacity hover:opacity-100 active:opacity-100 dark:text-neutral-50"
+    onclick={() => {}}
+  >
+    <sfsymbol
+      name="plus.diamond"
+      size={20}
+      weight="semibold"
+      label="yeni sözcük öner"
+    />
+  </btn>
+  <btn
+    class="cursor-pointer p-2 text-neutral-800 opacity-80 transition-opacity hover:opacity-100 active:opacity-100 dark:text-neutral-50"
+    onclick={() => {}}
+  >
+    <sfsymbol
+      name="envelope"
+      size={20}
+      weight="semibold"
+      label="iletişime geç"
+    />
+  </btn>
+</hstack>
 ```
 
 ## Value types

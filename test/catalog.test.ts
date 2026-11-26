@@ -1,8 +1,10 @@
 import type { Component } from "svelte";
 import { flushSync } from "svelte";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { registerClasses } from "swiftui-svelte/renderer";
 import Catalog from "../example/src/Catalog.svelte";
 import { modifierGroups, sections } from "../example/src/catalog/sections.ts";
+import { buildClassTable } from "../src/tailwind/build.ts";
 import { dispatch, find, mountComponent, reset, settle } from "./bridge.ts";
 
 const examples = import.meta.glob<Component>(
@@ -29,6 +31,16 @@ async function render(component: Component | undefined): Promise<void> {
 }
 
 describe("catalog", () => {
+  beforeAll(async () => {
+    const { table } = await buildClassTable({
+      root: process.cwd(),
+      css: "example/src/app.css",
+      sources: ["example/src"],
+      fonts: {},
+    });
+    registerClasses(table);
+  });
+
   it.each(sections.flatMap((section) => section.elements))(
     "renders the %s example with known attributes only",
     async (name) => {
