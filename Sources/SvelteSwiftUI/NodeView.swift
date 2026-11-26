@@ -300,7 +300,11 @@ private struct AnimatedChildren: ViewModifier {
     func body(content: Content) -> some View {
         let attributes = node.attributes
         let animation = (MotionCurve(attributes["animation"]) ?? MotionCurve()).animation
-        content.ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) { $0.animation(animation, value: $1) }
+        content
+            .ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) { $0.animation(animation, value: $1) }
+            .gated(attributes["disablesanimations"]?.isTrue == true) { view in
+                view.transaction { $0.disablesAnimations = true }
+            }
     }
 }
 

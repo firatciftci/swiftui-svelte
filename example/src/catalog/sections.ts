@@ -198,7 +198,14 @@ export const modifierGroups: Array<{
   {
     name: "animation",
     title: "Animation and transitions",
-    modifiers: ["animated", "animation", "transition", "in", "out"],
+    modifiers: [
+      "animated",
+      "animation",
+      "disablesanimations",
+      "transition",
+      "in",
+      "out",
+    ],
   },
   {
     name: "gestures",

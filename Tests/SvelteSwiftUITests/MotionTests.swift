@@ -61,4 +61,23 @@ struct MotionTests {
         #expect(curve.speed == 1)
         #expect(curve.repeatCount == nil)
     }
+
+    @Test func readsTimingCurvesFromControlPoints() throws {
+        let curve = try #require(
+            MotionCurve(
+                .object([
+                    "type": .string("timingCurve"),
+                    "curve": .array([.number(0.4), .number(0), .number(0.2), .number(1)]), "duration": .number(300),
+                ])))
+        #expect(curve.kind == .timingCurve)
+        #expect(curve.bezier == CubicBezier(x1: 0.4, y1: 0, x2: 0.2, y2: 1))
+        #expect(curve.animation == Animation.timingCurve(0.4, 0, 0.2, 1, duration: 0.3))
+        #expect(MotionCurve(.object(["type": .string("timingCurve")])) == nil)
+        #expect(MotionCurve(.object(["type": .string("timingCurve"), "curve": .array([.number(0.4)])])) == nil)
+        #expect(MotionCurve(.string("timingCurve")) == nil)
+    }
+
+    @Test func disablingAnimationsUsesTheAnimatedGroup() {
+        #expect(ModifierSet(attribute: "disablesanimations", value: .bool(true)) == .animated)
+    }
 }

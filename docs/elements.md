@@ -246,6 +246,8 @@ Svelte's `transition:`, `in:`, and `out:` directives need the DOM, so the compil
 - `animation` sets the curve: `default`, `linear`, `easeIn`, `easeOut`, `easeInOut`, `spring`, `smooth`, `snappy`, or `bouncy`. For more control, pass an object. Its `type` is the curve, `duration` and `delay` are in milliseconds, and `bounce` goes from -1 to 1 for the spring curves. It also takes `speed`, `repeat` (a count, or `true` to repeat forever), and `autoreverses`.
 - `animation` also sets the curve that `animated` uses when a container's children change.
 
+To set your own easing, use `type: "timingCurve"` with `curve`, which takes the four control points of a cubic Bézier, as in CSS. `curve: [0.4, 0, 0.2, 1]` is the standard ease-in-out curve. The same object works for `animation`, `in`, `out`, and `withAnimation`. Set `disablesanimations` on an element to stop its changes from animating, including changes that a surrounding `withAnimation` makes.
+
 ### Animating a state change
 
 To animate everything that one state change does to the screen, wrap the change in `withAnimation`, the way you would in SwiftUI:

@@ -46,7 +46,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "sensoryfeedback",
             ],
             .availability: ["disabled", "hidden", "ignoressafearea"],
-            .animated: ["animated", "animation"],
+            .animated: ["animated", "animation", "disablesanimations"],
             .rowTraits: [
                 "transition", "in", "out", "zindex", "deletedisabled", "movedisabled", "rowbackground", "rowinsets", "rowseparator",
                 "rowseparatortint", "tag",

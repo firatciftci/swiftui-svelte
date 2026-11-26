@@ -180,7 +180,8 @@ type Curve =
   | "spring"
   | "bouncy"
   | "smooth"
-  | "snappy";
+  | "snappy"
+  | "timingCurve";
 /** An animation: a curve name, or an object that sets the curve and its timing. */
 export type AnimationOptions =
   | boolean
@@ -200,6 +201,8 @@ export type AnimationOptions =
       repeat?: boolean | number;
       /** Whether the animation reverses on each repeat. */
       autoreverses?: boolean;
+      /** The control points of a `timingCurve`, given as `[x1, y1, x2, y2]`, the same as a CSS `cubic-bezier`. Required with `type: "timingCurve"`. */
+      curve?: [number, number, number, number];
     };
 type LayerAlignment =
   | "center"
@@ -689,6 +692,8 @@ type Modifiers = {
   animated?: boolean;
   /** The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. */
   animation?: AnimationOptions;
+  /** Turns off animations for the element and everything inside it, so its changes happen at once. */
+  disablesanimations?: boolean;
   /** The transition that plays when the element is added and removed, such as `scale opacity` or `move-top`. */
   transition?: Transition;
   /** The transition that plays only when the element is added. */

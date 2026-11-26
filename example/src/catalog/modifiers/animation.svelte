@@ -3,6 +3,7 @@
 
   const items = $state([1, 2, 3]);
   let saved = $state(false);
+  let shifted = $state(false);
   let next = 4;
 </script>
 
@@ -29,6 +30,36 @@
   >
     Save
   </btn>
+  <btn
+    variant="bordered"
+    onclick={() =>
+      withAnimation(() => (shifted = !shifted), {
+        type: "timingCurve",
+        curve: [0.4, 0, 0.2, 1],
+        duration: 400,
+      })}
+  >
+    Curved
+  </btn>
+  <hstack spacing={16}>
+    <txt
+      width={96}
+      height={40}
+      color="white"
+      background="teal"
+      radius={8}
+      offset={{ x: shifted ? 120 : 0 }}>Curved</txt
+    >
+    <txt
+      disablesanimations
+      width={96}
+      height={40}
+      color="white"
+      background="orange"
+      radius={8}
+      offset={{ x: shifted ? 120 : 0 }}>Instant</txt
+    >
+  </hstack>
   {#if saved}
     <txt
       in="move-top"

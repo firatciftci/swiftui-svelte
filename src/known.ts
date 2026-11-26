@@ -30,6 +30,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "design",
   "dir",
   "disabled",
+  "disablesanimations",
   "dragdistance",
   "dynamictypesize",
   "feedbacktrigger",

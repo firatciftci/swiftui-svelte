@@ -2529,13 +2529,14 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Animation and transitions
 
-| Attribute    | Type               | Description                                                                                                                                                        |
-| ------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `animated`   | `boolean`          | Animates the element's children as they're added, removed, or reordered, using the curve from `animation`.                                                         |
-| `animation`  | `AnimationOptions` | The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. |
-| `transition` | `Transition`       | The transition that plays when the element is added and removed, such as `scale opacity` or `move-top`.                                                            |
-| `in`         | `Transition`       | The transition that plays only when the element is added.                                                                                                          |
-| `out`        | `Transition`       | The transition that plays only when the element is removed.                                                                                                        |
+| Attribute            | Type               | Description                                                                                                                                                        |
+| -------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `animated`           | `boolean`          | Animates the element's children as they're added, removed, or reordered, using the curve from `animation`.                                                         |
+| `animation`          | `AnimationOptions` | The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. |
+| `disablesanimations` | `boolean`          | Turns off animations for the element and everything inside it, so its changes happen at once.                                                                      |
+| `transition`         | `Transition`       | The transition that plays when the element is added and removed, such as `scale opacity` or `move-top`.                                                            |
+| `in`                 | `Transition`       | The transition that plays only when the element is added.                                                                                                          |
+| `out`                | `Transition`       | The transition that plays only when the element is removed.                                                                                                        |
 
 ```svelte
 <script lang="ts">
@@ -2543,6 +2544,7 @@ Every element takes these attributes, except the few whose entries say they don'
 
   const items = $state([1, 2, 3]);
   let saved = $state(false);
+  let shifted = $state(false);
   let next = 4;
 </script>
 
@@ -2569,6 +2571,36 @@ Every element takes these attributes, except the few whose entries say they don'
   >
     Save
   </btn>
+  <btn
+    variant="bordered"
+    onclick={() =>
+      withAnimation(() => (shifted = !shifted), {
+        type: "timingCurve",
+        curve: [0.4, 0, 0.2, 1],
+        duration: 400,
+      })}
+  >
+    Curved
+  </btn>
+  <hstack spacing={16}>
+    <txt
+      width={96}
+      height={40}
+      color="white"
+      background="teal"
+      radius={8}
+      offset={{ x: shifted ? 120 : 0 }}>Curved</txt
+    >
+    <txt
+      disablesanimations
+      width={96}
+      height={40}
+      color="white"
+      background="orange"
+      radius={8}
+      offset={{ x: shifted ? 120 : 0 }}>Instant</txt
+    >
+  </hstack>
   {#if saved}
     <txt
       in="move-top"
@@ -3046,25 +3078,7 @@ type AccessibilityTrait =
 An animation: a curve name, or an object that sets the curve and its timing.
 
 ```ts
-type AnimationOptions =
-  | boolean
-  | Curve
-  | {
-      /** The animation curve. */
-      type?: Curve;
-      /** The length of the animation in milliseconds. */
-      duration?: number;
-      /** The bounce of a spring curve, from -1 to 1. */
-      bounce?: number;
-      /** The delay before the animation starts, in milliseconds. */
-      delay?: number;
-      /** The speed multiplier of the animation. */
-      speed?: number;
-      /** A number of times to repeat the animation, or `true` to repeat it forever. */
-      repeat?: boolean | number;
-      /** Whether the animation reverses on each repeat. */
-      autoreverses?: boolean;
-    };
+type AnimationOptions = AnimationOptions;
 ```
 
 ### `BarVisibility`
@@ -3134,7 +3148,8 @@ type Curve =
   | "spring"
   | "bouncy"
   | "smooth"
-  | "snappy";
+  | "snappy"
+  | "timingCurve";
 ```
 
 ### `Detent`

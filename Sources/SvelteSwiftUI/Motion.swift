@@ -2,10 +2,11 @@ import SwiftUI
 
 struct MotionCurve: Equatable {
     enum Kind: String {
-        case `default`, linear, easeIn, easeOut, easeInOut, spring, bouncy, smooth, snappy
+        case `default`, linear, easeIn, easeOut, easeInOut, spring, bouncy, smooth, snappy, timingCurve
     }
 
     var kind = Kind.default
+    var bezier: CubicBezier?
     var duration: Double?
     var bounce: Double?
     var delay = 0.0
@@ -18,13 +19,19 @@ struct MotionCurve: Equatable {
     init?(_ value: JSONValue?) {
         switch value {
         case let .string(name):
-            guard let kind = Kind(rawValue: name) else { return nil }
+            guard let kind = Kind(rawValue: name), kind != .timingCurve else { return nil }
             self.kind = kind
         case let .object(options):
             if let name = options["type"]?.string {
                 guard let kind = Kind(rawValue: name) else { return nil }
                 self.kind = kind
             }
+            if case let .array(values)? = options["curve"] {
+                let points = values.compactMap(\.number)
+                guard points.count == 4 else { return nil }
+                bezier = CubicBezier(x1: points[0], y1: points[1], x2: points[2], y2: points[3])
+            }
+            guard kind != .timingCurve || bezier != nil else { return nil }
             duration = options["duration"]?.number.map { max($0, 0) / 1000 }
             bounce = options["bounce"]?.number.map { min(max($0, -1), 1) }
             delay = max(options["delay"]?.number ?? 0, 0) / 1000
@@ -53,6 +60,8 @@ struct MotionCurve: Equatable {
             case .spring, .smooth: .spring(duration: duration ?? 0.5, bounce: bounce ?? 0)
             case .bouncy: .spring(duration: duration ?? 0.5, bounce: bounce ?? 0.3)
             case .snappy: .spring(duration: duration ?? 0.5, bounce: bounce ?? 0.15)
+            case .timingCurve:
+                bezier.map { Animation.timingCurve($0.x1, $0.y1, $0.x2, $0.y2, duration: duration ?? 0.35) } ?? .default
             }
         if delay > 0 { animation = animation.delay(delay) }
         if speed != 1 { animation = animation.speed(speed) }
@@ -63,6 +72,13 @@ struct MotionCurve: Equatable {
         }
         return animation
     }
+}
+
+struct CubicBezier: Equatable {
+    let x1: Double
+    let y1: Double
+    let x2: Double
+    let y2: Double
 }
 
 struct MotionTransition: Equatable {
