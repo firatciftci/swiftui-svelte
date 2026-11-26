@@ -4,7 +4,7 @@ This document specifies what a host must implement to run a swiftui-svelte app. 
 
 The words "must," "must not," "should," and "may" are normative. Where a statement describes SwiftUI behavior, a Compose host must emulate the observable effect or document why it cannot.
 
-This is protocol version 2. Section 10 explains what the version means and when it changes.
+This is protocol version 3. Section 10 explains what the version means and when it changes.
 
 ## 1. Overview
 
@@ -209,11 +209,7 @@ If a handler throws or rejects, the bundle reports the error and continues. The 
 
 ### 3.7 Malformed batches and recovery
 
-A host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle, and it must then tear down and remount the app.
-
-On any of the following, the host must stop applying the batch, log the error, and remount the app from its last good state: an unknown opcode, a JSON syntax error, an unknown name index, an insert into an unknown parent, or a text record that does not match its node. A remount means a new engine instance, which resets the name table (Section 3.3).
-
-The host should show the error in its development UI. In release builds it should log the error and keep running the last good tree.
+A host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle. On any of the following, the host must stop applying the batch and log the error: an unknown opcode, a JSON syntax error, an unknown name index, an insert into an unknown parent, or a text record that does not match its node. The host must then remount the app once, as a new engine instance, which resets the name table (Section 3.3). If the remounted app fails the same way, the host must stop the engine, keep showing the error, and not apply further batches until the app restarts or the bundle changes. The host should show the error in its development UI, and it should log it in release builds.
 
 ### 3.8 Mounts
 
@@ -296,7 +292,7 @@ The bundle never sends an invocation to a node that is not yet native. An invoca
 
 ### 4.4 Measuring
 
-`measure` reports the node's frame in points, relative to the top-left of the mounted app's root container, as `{ "x", "y", "width", "height" }`. If the node is not laid out yet, the host must wait until it is, and it must not reply early with a zero frame. If the node is removed before it is laid out, or it never becomes visible, the host must reply `null` no later than when it removes the node.
+`measure` reports the node's frame in points, relative to the top-left of the mounted app's root container, as `{ "x", "y", "width", "height" }`. If the node is not laid out yet, the host must wait until it is. A frame with a zero width or a zero height counts as no frame, and the host must reply `null` for it. If the node is removed before it is laid out, or it never becomes visible, the host must reply `null` no later than when it removes the node.
 
 The bundle waits for the reply, so a host must not leave a `measure` request without a reply. The host delivers each reply by calling `__svelteReply(request, rect)` on the engine queue.
 
@@ -360,10 +356,11 @@ The host must reply to every call, including calls to unknown modules and unknow
 
 | Code               | Meaning                                                                                                            |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `invalidArguments` | The argument list did not match the method.                                                                        |
+| `invalidArguments` | The argument list did not match the method, or a URL used a scheme that `links` does not allow.                    |
 | `invalidPath`      | A file path was empty or outside the app's file root.                                                              |
 | `keychain`         | A secure storage operation failed.                                                                                 |
-| `unknownFunction`  | The module or the method is not registered.                                                                        |
+| `unknownModule`    | The module is not registered.                                                                                      |
+| `unknownFunction`  | The module is registered, but the method is not.                                                                   |
 | `native`           | Any other failure. This is the default.                                                                            |
 | `unavailable`      | The bundle has no host (`__nativeCall` is missing). The bundle produces this itself. The host must not produce it. |
 
@@ -399,9 +396,9 @@ The host must provide these modules and methods. Argument order matches the bund
 | `files`         | `writeText`    | path, text                                                                                | `null`                |
 | `files`         | `delete`       | path                                                                                      | `null`                |
 | `files`         | `exists`       | path                                                                                      | boolean               |
-| `files`         | `list`         | path (default `""`)                                                                       | array of strings      |
+| `files`         | `list`         | path (optional; empty or absent lists the file root)                                      | array of strings      |
 
-The `haptics` styles and notification types are named after UIKit feedback generators. A host that cannot produce a given style should use the nearest feedback it has. File paths are relative to the app's own file root. A host must reject an empty path, and any path that leaves that root, with `invalidPath`. `links.open` must refuse schemes other than web, mail, and telephone links, and it should refuse `file:` URLs. `share` must report `completed` as `true` only when the user finished the share. A host that cannot tell whether the user finished must say so in its documentation.
+The `haptics` styles and notification types are named after UIKit feedback generators. A host that cannot produce a given style should use the nearest feedback it has. File paths are relative to the app's own file root. A host must reject any path that leaves that root, and an empty path given to a method that needs a file, with `invalidPath`. Listing with an empty or absent path lists the file root. `links.open` and `links.canOpen` must allow only `http`, `https`, `mailto`, and `tel` URLs, compared case-insensitively on the scheme. Any other URL, including `file:` URLs, must be refused with `invalidArguments`. `share` must report `completed` as `true` only when the user finished the share. A host that cannot tell whether the user finished must say so in its documentation.
 
 #### 6.3.2 Custom native modules
 
@@ -426,38 +423,38 @@ Reserved names: `listens` is owned by the bundle, so a component must not define
 
 The host sends environment values as a JSON object with some or all of these fields. Each field has the type and units below. A field that is missing keeps its previous value, or the bundle's default if the host has never sent it. Values are in points when the field refers to a length.
 
-| Field                       | Type                                         | Units or values                                         | Notes                                                          |
-| --------------------------- | -------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
-| `colorScheme`               | `"light" \| "dark"`                          |                                                         | Effective app appearance.                                      |
-| `systemColorScheme`         | `"light" \| "dark"`                          |                                                         | System appearance.                                             |
-| `liquidGlass`               | boolean                                      |                                                         | Whether the host renders the glass material. iOS 26 and later. |
-| `reduceMotion`              | boolean                                      |                                                         |                                                                |
-| `reduceTransparency`        | boolean                                      |                                                         |                                                                |
-| `increaseContrast`          | boolean                                      |                                                         |                                                                |
-| `voiceOver`                 | boolean                                      |                                                         |                                                                |
-| `switchControl`             | boolean                                      |                                                         |                                                                |
-| `differentiateWithoutColor` | boolean                                      |                                                         |                                                                |
-| `invertColors`              | boolean                                      |                                                         |                                                                |
-| `boldText`                  | boolean                                      |                                                         |                                                                |
-| `buttonShapes`              | boolean                                      |                                                         | iOS accessibility setting.                                     |
-| `dynamicTypeSize`           | string                                       | `xSmall` through `accessibility5`                       | Unknown values map to `large`.                                 |
-| `locale`                    | string                                       | BCP 47 tag                                              |                                                                |
-| `languages`                 | array of strings                             | BCP 47 tags, most preferred first                       |                                                                |
-| `timeZone`                  | string                                       | IANA identifier                                         |                                                                |
-| `layoutDirection`           | `"leftToRight" \| "rightToLeft"`             |                                                         |                                                                |
-| `horizontalSizeClass`       | `"compact" \| "regular" \| null`             |                                                         | `null` on platforms that have no size classes.                 |
-| `verticalSizeClass`         | `"compact" \| "regular" \| null`             |                                                         | Same as above.                                                 |
-| `scenePhase`                | `"active" \| "inactive" \| "background"`     |                                                         |                                                                |
-| `safeAreaInsets`            | `{ "top", "leading", "bottom", "trailing" }` | points                                                  |                                                                |
-| `keyboardHeight`            | number                                       | points                                                  | `0` when the keyboard is hidden.                               |
-| `viewportWidth`             | number                                       | points                                                  | Usable width of the app's root container.                      |
-| `viewportHeight`            | number                                       | points                                                  | Usable height of the app's root container.                     |
-| `pixelRatio`                | number                                       | device pixels per point                                 |                                                                |
-| `fontScale`                 | number                                       | multiplier, `1` at the default text size                |                                                                |
-| `platform`                  | string                                       | `"ios"`, `"android"`, or another stable host name       | Used by class conditions.                                      |
-| `idiom`                     | string                                       | `"phone"`, `"pad"`, `"tv"`, or another stable host name |                                                                |
-| `onLine`                    | boolean                                      |                                                         | Network reachability.                                          |
-| `userAgent`                 | string                                       | free text                                               |                                                                |
+| Field                       | Type                                         | Units or values                                              | Notes                                                          |
+| --------------------------- | -------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------- |
+| `colorScheme`               | `"light" \| "dark"`                          |                                                              | Effective app appearance.                                      |
+| `systemColorScheme`         | `"light" \| "dark"`                          |                                                              | System appearance.                                             |
+| `liquidGlass`               | boolean                                      |                                                              | Whether the host renders the glass material. iOS 26 and later. |
+| `reduceMotion`              | boolean                                      |                                                              |                                                                |
+| `reduceTransparency`        | boolean                                      |                                                              |                                                                |
+| `increaseContrast`          | boolean                                      |                                                              |                                                                |
+| `voiceOver`                 | boolean                                      |                                                              |                                                                |
+| `switchControl`             | boolean                                      |                                                              |                                                                |
+| `differentiateWithoutColor` | boolean                                      |                                                              |                                                                |
+| `invertColors`              | boolean                                      |                                                              |                                                                |
+| `boldText`                  | boolean                                      |                                                              |                                                                |
+| `buttonShapes`              | boolean                                      |                                                              | iOS accessibility setting.                                     |
+| `dynamicTypeSize`           | string                                       | `xSmall` through `accessibility5`                            | Unknown values map to `large`.                                 |
+| `locale`                    | string                                       | BCP 47 tag                                                   |                                                                |
+| `languages`                 | array of strings                             | BCP 47 tags, most preferred first                            |                                                                |
+| `timeZone`                  | string                                       | IANA identifier                                              |                                                                |
+| `layoutDirection`           | `"leftToRight" \| "rightToLeft"`             |                                                              |                                                                |
+| `horizontalSizeClass`       | `"compact" \| "regular" \| null`             |                                                              | `null` on platforms that have no size classes.                 |
+| `verticalSizeClass`         | `"compact" \| "regular" \| null`             |                                                              | Same as above.                                                 |
+| `scenePhase`                | `"active" \| "inactive" \| "background"`     |                                                              |                                                                |
+| `safeAreaInsets`            | `{ "top", "leading", "bottom", "trailing" }` | points                                                       |                                                                |
+| `keyboardHeight`            | number                                       | points                                                       | `0` when the keyboard is hidden.                               |
+| `viewportWidth`             | number                                       | points                                                       | Usable width of the app's root container.                      |
+| `viewportHeight`            | number                                       | points                                                       | Usable height of the app's root container.                     |
+| `pixelRatio`                | number                                       | device pixels per point                                      |                                                                |
+| `fontScale`                 | number                                       | multiplier, `1` at the default text size                     |                                                                |
+| `platform`                  | string                                       | `"ios"`, `"macos"`, `"android"`, or another stable host name | Used by class conditions.                                      |
+| `idiom`                     | string                                       | `"phone"`, `"pad"`, `"tv"`, or another stable host name      |                                                                |
+| `onLine`                    | boolean                                      |                                                              | Network reachability.                                          |
+| `userAgent`                 | string                                       | free text                                                    |                                                                |
 
 The bundle's defaults are `colorScheme` `"light"`, `scenePhase` `"active"`, `dynamicTypeSize` `"large"`, `pixelRatio` `1`, `fontScale` `1`, and `onLine` `true`. Viewport sizes default to `0` until the host reports them.
 
@@ -535,7 +532,7 @@ __nativeWebSocketClose(id, code, reason)
 - `protocolsJSON` is a JSON array of subprotocol names.
 - `handlers` is an object of functions that the host calls back: `open(protocol)`, `message(data)`, `sent(byteCount)`, `close(code, reason, wasClean)`, and `error(message)`.
 - `data` in the send call is a UTF-8 string for a text frame, or a `Uint8Array` for a binary frame.
-- `code` is a close code. The bundle accepts `1000` or a number from `3000` to `4999`, and it sends `1000` when the caller gives no code.
+  `__nativeWebSocketClose(id, code, reason)` takes `code` as a close code or `null`. The bundle accepts `1000` or a number from `3000` to `4999`. When the caller gives no code, the bundle sends `null`, and the host must send close status `1000` on the wire. When the peer sends no status code, the host must report `1005` in the `close` callback. A host that cannot send a code from `3000` to `4999` must send `1000` instead. If the bundle closes a socket that is still connecting, the host must abandon the connection. The bundle then reports the failure itself with `error` and `close` with code `1006`.
 
 The host must call `open` once the socket is connected, with the negotiated subprotocol or an empty string. It must call `message` for each received frame, `sent` after each send completes, and `close` once when the socket closes, with `wasClean` set as the WebSocket specification defines. A failed connection is reported through `error` and then `close` with code `1006`.
 
@@ -550,7 +547,7 @@ EventSource runs on the fetch call, with `Accept: text/event-stream` and `Cache-
 - `__nativeRandomFill(bytes)` fills a `Uint8Array` in place with cryptographically secure random bytes. It must fill at most 65,536 bytes per call. If the platform's random source fails, the host must report the failure as an error, not fill zeros. The bundle's `crypto.getRandomValues` then throws.
 - `__nativeDigest(algorithm, bytes)` returns a `Uint8Array` digest for `"SHA-1"`, `"SHA-256"`, `"SHA-384"`, or `"SHA-512"`. Any other algorithm must throw.
 
-The bundle installs `crypto` only when `__nativeRandomFill` is present. `crypto.subtle` exposes `digest` only.
+The bundle installs `crypto` only when both `__nativeRandomFill` and `__nativeDigest` are present. `crypto.subtle` exposes `digest` only. The bundle throws a `TypeError` for input that is not a typed array.
 
 ### 8.6 Storage
 
@@ -562,6 +559,8 @@ The bundle installs `crypto` only when `__nativeRandomFill` is present. `crypto.
 The host must store the map durably, in a location the app can read on its next launch. The bundle sends the complete map on every save, so the host must not drop entries that the bundle did not load. The host must not share storage between apps.
 
 `sessionStorage` is in memory only, and it starts empty at each engine start.
+
+A value that is not valid JSON, or that is not a JSON object of strings, is treated as empty.
 
 App state restoration uses `localStorage`. Each restorable value is stored under the key prefix `swiftui-svelte.restorable.`, as JSON. A host gets no separate restoration call.
 
@@ -601,7 +600,7 @@ A host may omit the following, but it must not crash on them, and it must report
 - **Flexible size** is the string `"infinity"`. A host must treat it as "fill the available space" for the axis that the attribute names.
 - **Opacity, visibility threshold, sensory intensity, gradient location, and symbol value** are unitless numbers. Opacity and locations are between 0 and 1.
 - **Angles** are numbers in degrees.
-- **Durations** for animation, delays, and debounce are numbers in milliseconds. The one exception is `longpressduration`, which is in seconds. Hosts must use these units exactly.
+- **Durations** for animation, delays, debounce, and long press are numbers in milliseconds. Hosts must use these units exactly.
 - **Percentages** are not sent as a unit. A number is a fraction. For example, `0.5` means fifty percent.
 - **Detent heights** are numbers. A value of `1` or less is a fraction of the screen height, and a value above `1` is points.
 
@@ -662,12 +661,13 @@ Each of these must be a documented no-op or fallback, not a failure.
 - Two-way bound attributes are written back by the host through events. A toggle sends its `change` event, and the bundle writes the new `checked` value back as an attribute. Tab views, lists, searchable fields, and split views follow the same pattern with their own event names.
 - `ref` is not an attribute. It is a bundle-side handle that uses invocations (Section 4).
 - `format` on a text field selects a number field, and `multiple` on a picker selects the multiple-selection style. The host must honor both.
+- `animation` accepts a curve name, an object, `true`, or `false`. `true` uses the default curve, and `false` turns the animation off. When the attribute is absent, `animated` and `transition` use the default curve, and images apply no animation.
 
 ## 10. Versioning
 
 ### 10.1 What `protocol` means
 
-`protocol` is an integer that names the wire format of the render protocol (Section 3) and the `__native*` and `__svelte*` globals that carry it. It is defined in `src/renderer.ts` and is sent in each `root` record. The current value is `2`.
+`protocol` is an integer that names the wire format of the render protocol (Section 3) and the `__native*` and `__svelte*` globals that carry it. It is sent in each `root` record. The `protocol` value in `src/renderer.ts` is `3`.
 
 `protocol` does not describe the npm package version or the Swift package version. Those are separate, and a release may change one without changing the other.
 
@@ -695,7 +695,7 @@ When a change is additive and an older host would otherwise fail, the change is 
 
 The host checks `protocol` in the `root` record. A host must refuse to render a mount whose protocol it does not implement, show the user an error that names both versions, and log the error. The iOS host detects this mismatch and shows that error.
 
-The bundle does not check the host's version. A bundle built against a newer protocol than the host implements will send operations that the host rejects or misreads. Protocol 2 has no handshake that prevents this. Section 11 lists the planned handshake.
+The bundle does not check the host's version. A bundle built against a newer protocol than the host implements will send operations that the host rejects or misreads. Protocol 3 has no handshake that prevents this. Section 11 lists the planned handshake.
 
 ### 10.4 Compatibility
 
@@ -703,7 +703,7 @@ A host implements exactly one protocol version. A release of the bundle is compa
 
 ## 11. Planned changes
 
-These are known gaps in protocol 2. They are not part of the normative behavior above, and a host must not depend on them.
+These are known gaps in protocol 3. They are not part of the normative behavior above, and a host must not depend on them.
 
 - A handshake that lets the bundle read the host's protocol versions before it mounts.
 - A standard way for a host to report unsupported values to the bundle, in addition to logs.
@@ -712,13 +712,13 @@ These are known gaps in protocol 2. They are not part of the normative behavior 
 
 ## 12. Conformance checklist
 
-A host conforms to protocol 2 when it does all of these:
+A host conforms to protocol 3 when it does all of these:
 
 1. It checks the `root` protocol version before it applies any other operation, and it refuses mismatches.
 2. It keeps the name table for the life of the engine instance, and it resets it when the engine restarts.
 3. It stores text nodes under their positive IDs, whatever sign the insert record uses.
 4. It treats `null` attribute values as absence, the same as `unattr`.
-5. It applies each batch as one transaction, and it rejects a malformed batch as a whole.
+5. It applies each batch as one transaction, and it rejects a malformed batch as a whole. It remounts once after a malformed batch, and it stops if the remounted app fails the same way.
 6. It frees a subtree on `remove`, and it ignores removes of unknown IDs.
 7. It keeps native state across `move`, including across parents.
 8. It sends events only for types in `listens`, except the exceptions in Section 3.6.1.

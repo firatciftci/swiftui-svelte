@@ -203,7 +203,7 @@ type Curve =
   | "smooth"
   | "snappy"
   | "timingCurve";
-/** An animation: a curve name, or an object that sets the curve and its timing. */
+/** An animation: a curve name, or an object that sets the curve and its timing. `true` uses the default curve, and `false` turns the animation off. */
 export type AnimationOptions =
   | boolean
   | Curve
@@ -785,7 +785,7 @@ type Modifiers = {
   ignoressafearea?: SafeAreaIgnoring;
   /** Animates the element's children as they're added, removed, or reordered, using the curve from `animation`. */
   animated?: boolean;
-  /** The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. */
+  /** The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. `true` uses the default curve, and `false` turns the animation off. */
   animation?: AnimationOptions;
   /** Turns off animations for the element and everything inside it, so its changes happen at once. */
   disablesanimations?: boolean;
@@ -857,9 +857,9 @@ type Modifiers = {
   ontap?: (location: GesturePoint) => void;
   /** The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap. */
   tapcount?: number;
-  /** Runs when the user holds a finger down on the element for `longpressduration` seconds. */
+  /** Runs when the user holds a finger down on the element for `longpressduration` milliseconds. */
   onlongpress?: () => void;
-  /** How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5. */
+  /** How long the user must hold a finger down, in milliseconds, before `onlongpress` runs. Defaults to 500. */
   longpressduration?: number;
   /** Runs as the user drags the element, with the drag's phase, position, and velocity. */
   ondrag?: (drag: DragEvent) => void;
@@ -1792,7 +1792,7 @@ declare global {
   ): void;
   function __nativeWebSocketClose(
     id: number,
-    code: number,
+    code: number | null,
     reason: string,
   ): void;
 }

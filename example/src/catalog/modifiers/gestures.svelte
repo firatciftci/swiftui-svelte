@@ -50,7 +50,7 @@
       padding
       background="orange"
       radius={8}
-      longpressduration={1}
+      longpressduration={1000}
       onlongpress={() => (last = "Long press")}>Hold me</txt
     >
   </hstack>
