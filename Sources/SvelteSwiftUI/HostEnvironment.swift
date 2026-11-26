@@ -77,7 +77,9 @@ struct EnvironmentSnapshot: Equatable {
     var fontScale: CGFloat = 1
 
     static var supportsLiquidGlass: Bool {
-        if #available(iOS 26, macOS 26, visionOS 26, *) { true } else { false }
+        guard Bundle.main.object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool != true else { return false }
+        if #available(iOS 26, macOS 26, visionOS 26, *) { return true }
+        return false
     }
 
     var dictionary: [String: Any] {

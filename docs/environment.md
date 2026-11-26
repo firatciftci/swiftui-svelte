@@ -18,7 +18,9 @@
 
 | Property                                                                                              | Value                                                                                                                         |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `colorScheme`                                                                                         | `"light"` or `"dark"`                                                                                                         |
+| `colorScheme` | `"light"` or `"dark"`: the scheme the app displays, including an override set through `mode-watcher` |
+| `systemColorScheme` | The device's own setting, `"light"` or `"dark"`, even while the app overrides it. On iOS it updates when the app becomes active |
+| `liquidGlass` | Whether the system draws Liquid Glass: `true` on iOS 26, macOS 26, visionOS 26, and later, unless the app's Info.plist sets `UIDesignRequiresCompatibility` |
 | `dynamicTypeSize`                                                                                     | SwiftUI's `DynamicTypeSize` case name, from `"xSmall"` through `"xxxLarge"` and `"accessibility1"` through `"accessibility5"` |
 | `locale`                                                                                              | The BCP 47 identifier of SwiftUI's locale, such as `"en-US"`                                                                  |
 | `languages`                                                                                           | The user's preferred languages, in order                                                                                      |
