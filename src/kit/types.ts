@@ -88,7 +88,7 @@ export type Navigation = {
 
 export type BeforeNavigate = {
   from: NavigationTarget | null;
-  to: NavigationTarget;
+  to: NavigationTarget | null;
   type: NavigationType;
   willUnload: boolean;
   cancel: () => void;
@@ -96,7 +96,7 @@ export type BeforeNavigate = {
 
 export type AfterNavigate = {
   from: NavigationTarget | null;
-  to: NavigationTarget;
+  to: NavigationTarget | null;
   type: NavigationType;
   willUnload: boolean;
 };

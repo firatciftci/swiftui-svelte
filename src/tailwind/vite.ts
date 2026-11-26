@@ -41,7 +41,7 @@ export function tailwind({
       if (
         id.includes("\0") ||
         id.endsWith(".svelte") ||
-        !/\bmountApp\s*\(/.test(code)
+        !/\bimport\s*\{[^}]*\bmountApp\b[^}]*\}\s*from\b/.test(code)
       )
         return null;
       return { code: `import "${ID}";\n${code}`, map: null };

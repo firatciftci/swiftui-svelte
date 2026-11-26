@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { build } from "vite";
@@ -27,6 +27,7 @@ export function swiftui({
   const slash = outFile.lastIndexOf("/");
   const name = outFile.slice(slash + 1);
   let root = process.cwd();
+  let entryId = "";
   const version = String(Date.now());
   const source = (): string => path.resolve(root, path.dirname(entry));
   return {
@@ -67,7 +68,14 @@ export function swiftui({
         },
       };
     },
-    transform: (code, id) => fixSvelte(code, id),
+    transform(code, id) {
+      if (id.split("?", 1)[0] === entryId)
+        return {
+          code: `import "swiftui-svelte/renderer";\n${code}`,
+          map: null,
+        };
+      return fixSvelte(code, id);
+    },
     resolveId: (id) =>
       id === routesModuleId ? `\0${routesModuleId}` : undefined,
     load(id) {
@@ -85,6 +93,7 @@ export function swiftui({
           `swiftui(): there's no entry file at ${entry}. Pass the file that calls mountApp, such as swiftui({ entry: "src/main.ts", outFile }).`,
         );
       }
+      entryId = realpathSync(path.resolve(root, entry));
     },
     async configureServer(server) {
       const file = path.resolve(root, outFile);

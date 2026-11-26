@@ -1,4 +1,4 @@
-import { installWebAPIs } from "./web/index.ts";
+import "./web/install.ts";
 import "./app.ts";
 
 const resolved = Promise.resolve();
@@ -37,5 +37,3 @@ if (typeof __nativeLog === "function") {
       __nativeLog(level, args.map((arg) => format(arg)).join(" "));
   }
 }
-
-installWebAPIs();

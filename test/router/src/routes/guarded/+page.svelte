@@ -6,7 +6,7 @@
   screen.title = "Guarded";
 
   beforeNavigate((navigation) => {
-    if (navigation.to.url.pathname === "/items/1") navigation.cancel();
+    if (navigation.to?.url.pathname === "/items/1") navigation.cancel();
   });
 </script>
 

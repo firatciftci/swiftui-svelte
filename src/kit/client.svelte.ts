@@ -451,7 +451,7 @@ export function resolveHref(href: string | URL): URL {
   return new SvelteURL(href, router.top?.url ?? origin);
 }
 
-export function start(): void {
+export function start(hosts: () => ReadonlyArray<string> = () => []): void {
   if (lifecycle.started) return;
   lifecycle.started = true;
   const paths = [...saved.value];
@@ -463,10 +463,15 @@ export function start(): void {
       }
     })
     .then(() => ready.resolve());
+  onOpenURL((url) => {
+    const isWeb = url.protocol === "http:" || url.protocol === "https:";
+    if (isWeb && !hosts().includes(url.host)) return;
+    void ready.promise.then(async () =>
+      navigate(
+        new SvelteURL(routePath(url) + url.search, origin),
+        "goto",
+        false,
+      ),
+    );
+  });
 }
-
-onOpenURL((url) => {
-  void ready.promise.then(async () =>
-    navigate(new SvelteURL(routePath(url) + url.search, origin), "goto", false),
-  );
-});

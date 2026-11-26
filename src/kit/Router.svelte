@@ -1,10 +1,12 @@
 <script lang="ts">
   import { root } from "virtual:swiftui-svelte/routes";
   import Sheet from "../components/Sheet.svelte";
+  import { router, start } from "./client.svelte.ts";
   import EntryView from "./EntryView.svelte";
-  import { router, start } from "./router.svelte.ts";
 
-  start();
+  const { hosts = [] }: { hosts?: Array<string> } = $props();
+
+  start(() => hosts);
 
   const RootLayout = root.layout;
 </script>

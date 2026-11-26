@@ -1,6 +1,6 @@
 <script lang="ts">
   import { setContext, untrack } from "svelte";
-  import type { Entry } from "./router.svelte.ts";
+  import type { Entry } from "./client.svelte.ts";
   import Layer from "./Layer.svelte";
   import { screenKey } from "./screen.ts";
 

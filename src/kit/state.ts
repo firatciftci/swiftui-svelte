@@ -1,5 +1,5 @@
 import type { Data, Navigation, NavigationTarget, Page } from "./types.ts";
-import { router } from "./router.svelte.ts";
+import { router } from "./client.svelte.ts";
 
 const home = new URL("http://localhost/");
 

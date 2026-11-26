@@ -7,7 +7,7 @@ import {
   navigate,
   resolveHref,
   router,
-} from "./router.svelte.ts";
+} from "./client.svelte.ts";
 
 export async function goto(
   href: string | URL,

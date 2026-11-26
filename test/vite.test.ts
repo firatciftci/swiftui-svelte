@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 import { buildClassTable } from "../src/tailwind/build.ts";
+import { tailwind } from "../src/tailwind/vite.ts";
 
 const budget = { minified: 188_000, gzipped: 59_000 };
 
@@ -110,6 +111,37 @@ describe("the Vite plugin", () => {
     const development = await bundle({ entry, mode: "development" });
     expect(development.code).not.toContain("process.env");
     expect(development.code).toMatch(/["'`]development["'`]/);
+  });
+
+  it("injects the class table only into modules that import mountApp", () => {
+    const { transform } = tailwind({ css: "app.css" });
+    if (typeof transform !== "function")
+      throw new TypeError("Expected a transform hook");
+    const inject = (code: string): unknown =>
+      Reflect.apply(transform, {}, [code, "/app/src/main.ts"]);
+    expect(
+      inject('import { mountApp } from "swiftui-svelte";\nmountApp(App);\n'),
+    ).not.toBeNull();
+    expect(
+      inject(
+        "export function mountApp(root) {}\nthrow new Error(`Pass it to mountApp().`);\n",
+      ),
+    ).toBeNull();
+  });
+
+  it("installs the web APIs before any module of the app runs", async () => {
+    const entry = path.join(
+      mkdtempSync(path.join(tmpdir(), "entry-order-")),
+      "main.ts",
+    );
+    writeFileSync(
+      entry,
+      'import { SvelteURLSearchParams } from "svelte/reactivity";\nexport const Params = SvelteURLSearchParams;\n',
+    );
+    const { code } = await bundle({ entry, mode: "development" });
+    const install = code.indexOf("installWebAPIs();");
+    expect(install).toBeGreaterThan(-1);
+    expect(install).toBeLessThan(code.indexOf("extends URLSearchParams"));
   });
 
   it("bundles the linear keyed each fix into Svelte's each block", async () => {

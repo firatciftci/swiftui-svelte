@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Layer as LayerNode } from "./router.svelte.ts";
+  import type { Layer as LayerNode } from "./client.svelte.ts";
   import Layer from "./Layer.svelte";
 
   const { chain, index = 0 }: { chain: Array<LayerNode>; index?: number } =
