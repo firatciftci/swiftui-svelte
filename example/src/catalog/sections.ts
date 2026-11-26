@@ -165,6 +165,7 @@ export const modifierGroups: Array<{
       "shadow",
       "blur",
       "radius",
+      "cornerstyle",
       "controlsize",
     ],
   },
@@ -315,6 +316,6 @@ export const modifierGroups: Array<{
   {
     name: "tailwind-native",
     title: "Tailwind native utilities",
-    modifiers: ["class"],
+    modifiers: [],
   },
 ];
