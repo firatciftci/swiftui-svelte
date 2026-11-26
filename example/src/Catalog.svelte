@@ -52,7 +52,12 @@
     },
   ];
 
-  let stack: Array<Entry> = $state.raw([]);
+  const { initial }: { initial?: string } = $props();
+  const initialEntry = groups
+    .flatMap((group) => group.entries)
+    .find((item) => item.key === initial);
+
+  let stack: Array<Entry> = $state.raw(initialEntry == null ? [] : [initialEntry]);
   let cover: Entry | null = $state.raw(null);
 </script>
 

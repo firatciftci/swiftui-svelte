@@ -25,6 +25,16 @@ struct SvelteHostApp: App {
         #endif
     }
 
+    private static var props: [String: Any] {
+        #if DEBUG
+            let arguments = ProcessInfo.processInfo.arguments
+            if let index = arguments.firstIndex(of: "-catalog"), arguments.indices.contains(index + 1) {
+                return ["catalog": arguments[index + 1]]
+            }
+        #endif
+        return [:]
+    }
+
     private static var reloadsOnChange: Bool {
         #if DEBUG
             true
@@ -39,8 +49,8 @@ struct SvelteHostApp: App {
                 NativeBench()
             } else {
                 SvelteView(
-                    source: Self.source, reloadsOnChange: Self.reloadsOnChange, modules: Self.modules,
-                    components: Self.components)
+                    source: Self.source, props: Self.props, reloadsOnChange: Self.reloadsOnChange,
+                    modules: Self.modules, components: Self.components)
             }
         }
     }

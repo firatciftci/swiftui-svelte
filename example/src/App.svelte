@@ -9,7 +9,13 @@
   import TodoList from "./TodoList.svelte";
   import { todos } from "./todos.svelte";
 
+  const { catalog }: { catalog?: string } = $props();
+
   const tab = restorable("app.tab", "todos");
+
+  $effect.pre(() => {
+    if (catalog != null) tab.value = "catalog";
+  });
   const remaining = $derived(todos.filter((todo) => !todo.done).length);
 
   $effect(() =>
@@ -30,7 +36,7 @@
   </tab>
   <tabsection title={m.tab_section_examples()}>
     <tab title={m.tab_catalog()} symbol="square.grid.2x2" value="catalog">
-      <Catalog />
+      <Catalog initial={catalog} />
     </tab>
     <tab title={m.tab_playground()} symbol="sparkles" value="playground">
       <Playground />
