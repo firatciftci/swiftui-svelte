@@ -59,6 +59,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "lang",
   "layoutpriority",
   "lighten",
+  "linebox",
   "longpressduration",
   "matchedid",
   "maxheight",

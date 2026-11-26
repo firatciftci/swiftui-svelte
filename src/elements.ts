@@ -689,6 +689,8 @@ type Modifiers = {
   width?: number;
   /** A fixed height in points. */
   height?: number;
+  /** The height in points of one line of text, as CSS `line-height` sets it on the web. Text that fits on one line gets exactly this height, centered in it, and text that wraps gets its own height, or this one if that's taller. Within a point of its ideal width, the text keeps its ideal width, so that pixel rounding at fractional font sizes doesn't push its last letter onto a second line. */
+  linebox?: number;
   /** The minimum width in points, or `infinity` to fill the available width. */
   minwidth?: Length;
   /** The ideal width in points, or `infinity`, used as the preferred size in a flexible frame. */

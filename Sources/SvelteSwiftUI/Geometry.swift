@@ -82,6 +82,7 @@ struct Framing: ViewModifier {
             default: ratio == nil ? nil : .fit
             }
         content
+            .ifLet(attributes["linebox"]?.number) { view, height in LineBoxLayout(height: CGFloat(max(height, 0))) { view } }
             .ifLet(mode) { $0.aspectRatio(ratio, contentMode: $1) }
             .ifLet(width != nil || height != nil ? alignment : nil) { $0.frame(width: width, height: height, alignment: $1) }
             .ifLet(bounds.contains { $0 != nil } ? alignment : nil) {

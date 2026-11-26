@@ -6,6 +6,7 @@
   <rectangle fill="secondarySystemBackground" ignoressafearea />
   <vstack spacing={12} padding={{ horizontal: 20, vertical: 12 }}>
     <txt width={200} height={44} background="mint">200 by 44 points</txt>
+    <txt linebox={32} background="yellow">One line, 32 points tall</txt>
     <txt fixedsize layoutpriority={1} background="green"
       >Keeps its ideal size</txt
     >

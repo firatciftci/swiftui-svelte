@@ -140,3 +140,28 @@ struct ReflowElement: View {
         return UnitPoint(x: x, y: y)
     }
 }
+
+struct LineBoxLayout: SwiftUI.Layout {
+    var height: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout ()) -> CGSize {
+        guard let subview = subviews.first else { return .zero }
+        let ideal = subview.sizeThatFits(.unspecified)
+        let width = proposal.width.map { $0 + 1 >= ideal.width ? ideal.width : $0 }
+        let fitted = subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(
+            width: min(fitted.width, proposal.width ?? .infinity),
+            height: fitted.height > ideal.height + 0.5 ? max(height, fitted.height) : height
+        )
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout ()) {
+        guard let subview = subviews.first else { return }
+        let ideal = subview.sizeThatFits(.unspecified).width
+        subview.place(
+            at: CGPoint(x: bounds.minX, y: bounds.midY),
+            anchor: .leading,
+            proposal: ProposedViewSize(width: bounds.width + 1 >= ideal ? ideal : bounds.width, height: nil)
+        )
+    }
+}

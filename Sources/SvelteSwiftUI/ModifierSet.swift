@@ -29,8 +29,8 @@ struct ModifierSet: OptionSet, Hashable {
     static let byAttribute: [String: Self] = {
         let groups: [Self: Array<String>] = [
             .framing: [
-                "framealignment", "width", "height", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight", "maxheight",
-                "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
+                "framealignment", "width", "height", "linebox", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight",
+                "maxheight", "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
             ],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
             .appearance: [

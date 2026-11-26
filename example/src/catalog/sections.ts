@@ -175,6 +175,7 @@ export const modifierGroups: Array<{
       "padding",
       "width",
       "height",
+      "linebox",
       "minwidth",
       "idealwidth",
       "maxwidth",
