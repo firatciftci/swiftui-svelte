@@ -121,6 +121,7 @@ To add swiftui-svelte to an app you already have, follow [Getting started](docs/
 - [Forms](docs/forms.md): settings screens and sign-up forms, with text fields, keyboards, focus, and validation.
 - [Loading data](docs/loading-data.md): requests with loading and error states, pull to refresh, paging, saved data, and WebSockets.
 - [Device environment, lifecycle, and localization](docs/environment.md): the device's settings, app lifecycle events, deep links, restoring state, and translations.
+- [Libraries](docs/libraries.md): TanStack Query, tRPC, oRPC, and Better Auth, and the setup each one needs in the app.
 - [Web APIs](docs/web-apis.md): `fetch`, `WebSocket`, `localStorage`, and the other browser APIs that the app provides.
 - [Native modules and components](docs/native-modules.md): calling Swift from JavaScript, the built-in modules, and SwiftUI views as new elements.
 - [Embedding in a Swift app](docs/embedding.md): props, actions, several components in one bundle, and views that share one runtime.

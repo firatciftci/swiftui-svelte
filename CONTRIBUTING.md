@@ -88,7 +88,7 @@ An element touches both sides of the bridge:
 
 ## Versioning
 
-swiftui-svelte follows [semantic versioning](https://semver.org). The public API is what the package exports (`swiftui-svelte`, `/app`, `/components`, `/env`, `/native`, `/renderer`, `/vite`, and the element types in `/elements`) and the Swift package's public types, such as `SvelteView`, `SvelteRuntime`, `NativeModule`, and `NativeComponent`.
+swiftui-svelte follows [semantic versioning](https://semver.org). The public API is what the package exports (`swiftui-svelte`, `/app`, `/components`, `/env`, `/native`, `/query`, `/renderer`, `/vite`, and the element types in `/elements`) and the Swift package's public types, such as `SvelteView`, `SvelteRuntime`, `NativeModule`, and `NativeComponent`.
 
 - **Patch releases** fix bugs and don't change the public API.
 - **Minor releases** add elements, attributes, components, and Swift API. They can widen the supported Svelte range.
