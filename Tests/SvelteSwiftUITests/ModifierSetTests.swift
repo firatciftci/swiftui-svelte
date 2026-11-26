@@ -71,6 +71,15 @@ struct ModifierSetTests {
         }
     }
 
+    @Test func fadesAttachmentsWithTheElementByApplyingLayersBeforeCompositing() throws {
+        let shaping = try #require(Self.body(of: "Shaping", in: try Self.source()))
+        let layers = try #require(shaping.range(of: "Layers(node: node)"))
+        let transforms = try #require(shaping.range(of: "Transforms(attributes: attributes)"))
+        let compositing = try #require(shaping.range(of: "Compositing(attributes: attributes)"))
+        #expect(layers.lowerBound < transforms.lowerBound)
+        #expect(transforms.lowerBound < compositing.lowerBound)
+    }
+
     @Test func coversEveryGatedModifier() {
         #expect(Set(Self.modifiers) == Set(Self.groups.keys))
     }
