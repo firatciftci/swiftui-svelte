@@ -64,6 +64,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "onappear",
   "ondisappear",
   "ondrag",
+  "onhover",
   "onlongpress",
   "onmagnify",
   "onresize",

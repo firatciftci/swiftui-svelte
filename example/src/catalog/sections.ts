@@ -219,6 +219,7 @@ export const modifierGroups: Array<{
       "dragdistance",
       "onmagnify",
       "onrotate",
+      "onhover",
     ],
   },
   {

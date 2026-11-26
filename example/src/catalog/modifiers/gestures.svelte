@@ -3,10 +3,23 @@
   let drag = $state({ x: 0, y: 0 });
   let zoom = $state(1);
   let angle = $state(0);
+  let hovered = $state("Move the pointer over the box");
 </script>
 
 <vstack spacing={20} padding>
   <txt font="headline">{last}</txt>
+  <txt
+    padding
+    width={240}
+    background="quaternarySystemFill"
+    radius={8}
+    onhover={(event) =>
+      (hovered =
+        event.phase === "exit"
+          ? "Left the box"
+          : `${event.phase} at ${Math.round(event.location?.x ?? 0)}, ${Math.round(event.location?.y ?? 0)}`)}
+    >{hovered}</txt
+  >
   <hstack spacing={12}>
     <txt
       padding

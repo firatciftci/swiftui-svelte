@@ -24,6 +24,11 @@ enum Gestures {
         ]
     }
 
+    static func hover(_ phase: String, _ location: CGPoint?) -> [String: Any] {
+        guard let location else { return ["phase": phase] }
+        return ["phase": phase, "location": point(location)]
+    }
+
     static func magnify(_ value: MagnifyGesture.Value, phase: String) -> [String: Any] {
         ["phase": phase, "magnification": rounded(value.magnification), "velocity": rounded(value.velocity)]
     }
@@ -77,6 +82,27 @@ private struct Drags: ViewModifier {
                     .onChanged { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "changed"), waits: false) }
                     .onEnded { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "ended"), waits: false) }
             )
+        }
+    }
+}
+
+struct PointerEvents: ViewModifier {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+    @State private var isInside = false
+
+    func body(content: Content) -> some View {
+        content.ifLet(node.listens(to: "hover") ? node.id : nil) { view, id in
+            view.onContinuousHover { phase in
+                switch phase {
+                case let .active(location):
+                    runtime.dispatch(id, "hover", Gestures.hover(isInside ? "move" : "enter", location), waits: false)
+                    isInside = true
+                case .ended:
+                    runtime.dispatch(id, "hover", Gestures.hover("exit", nil), waits: false)
+                    isInside = false
+                }
+            }
         }
     }
 }

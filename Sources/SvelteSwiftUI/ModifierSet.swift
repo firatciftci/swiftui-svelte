@@ -21,6 +21,7 @@ struct ModifierSet: OptionSet, Hashable {
     static let attachments = Self(rawValue: 1 << 17)
     static let rowTraits = Self(rawValue: 1 << 18)
     static let safeArea = Self(rawValue: 1 << 19)
+    static let pointer = Self(rawValue: 1 << 20)
 
     static let byAttribute: [String: Self] = {
         let groups: [Self: Array<String>] = [
@@ -63,6 +64,7 @@ struct ModifierSet: OptionSet, Hashable {
         "a11yactivate": .accessible, "a11yadjust": .accessible, "a11yescape": .accessible, "a11ymagictap": .accessible,
         "appear": .lifecycle, "disappear": .lifecycle, "task": .lifecycle,
         "longpress": .gestures, "tap": .gestures, "drag": .gestures, "magnify": .gestures, "rotate": .gestures,
+        "hover": .pointer,
         "resize": .resizing,
     ]
 

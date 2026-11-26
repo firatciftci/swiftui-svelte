@@ -420,6 +420,7 @@ const observedEvents = new Set([
   "delete",
   "disappear",
   "drag",
+  "hover",
   "longpress",
   "magnify",
   "move",

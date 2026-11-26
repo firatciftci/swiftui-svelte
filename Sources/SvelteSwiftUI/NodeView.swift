@@ -272,6 +272,7 @@ private struct Behaving: ViewModifier {
             .gated(modifiers.contains(.accessible)) { $0.modifier(Accessible(node: node)) }
             .gated(modifiers.contains(.lifecycle)) { $0.modifier(Lifecycle(node: node)) }
             .gated(modifiers.contains(.gestures)) { $0.modifier(GestureHandlers(node: node)) }
+            .gated(modifiers.contains(.pointer)) { $0.modifier(PointerEvents(node: node)) }
             .gated(modifiers.contains(.measured)) { $0.modifier(Measured(node: node)) }
             .gated(modifiers.contains(.gridCell)) { $0.modifier(GridCell(attributes: attributes)) }
             .gated(modifiers.contains(.resizing)) { $0.modifier(Resizing(node: node)) }

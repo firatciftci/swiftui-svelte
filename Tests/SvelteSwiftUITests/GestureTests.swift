@@ -9,4 +9,13 @@ struct GestureTests {
         #expect(Gestures.vector(CGSize(width: 10, height: 0.005)) == ["x": 10, "y": 0.01])
         #expect(Gestures.rounded(3.14159) == 3.14)
     }
+
+    @Test func reportsHoverPhasesWithAndWithoutALocation() {
+        let enter = Gestures.hover("enter", CGPoint(x: 4.5, y: 2))
+        #expect(enter["phase"] as? String == "enter")
+        #expect(enter["location"] as? [String: Double] == ["x": 4.5, "y": 2])
+        let exit = Gestures.hover("exit", nil)
+        #expect(exit["phase"] as? String == "exit")
+        #expect(exit["location"] == nil)
+    }
 }

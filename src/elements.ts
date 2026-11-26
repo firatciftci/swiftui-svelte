@@ -577,6 +577,13 @@ type SensoryFeedback =
     };
 type GesturePoint = { x: number; y: number };
 type GesturePhase = "changed" | "ended";
+/** The payload of `onhover`: the pointer's phase, and its position in points unless the phase is `exit`. */
+export type HoverEvent = {
+  /** `enter` when the pointer arrives, `move` while it moves over the element, and `exit` when it leaves. */
+  phase: "enter" | "move" | "exit";
+  /** The pointer's `{ x, y }` in the element's coordinates. */
+  location?: GesturePoint;
+};
 /** The payload of `ondrag`: the drag's phase, positions in points, and velocity in points per second. */
 export type DragEvent = {
   /** `changed` while the finger moves, and `ended` when it lifts. */
@@ -786,6 +793,8 @@ type Modifiers = {
   ondrag?: (drag: DragEvent) => void;
   /** The distance in points the finger must move before a drag starts. Defaults to 10. */
   dragdistance?: number;
+  /** Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. */
+  onhover?: (event: HoverEvent) => void;
   /** Runs during a pinch gesture, with the pinch's phase, magnification, and velocity. */
   onmagnify?: (magnify: MagnifyEvent) => void;
   /** Runs during a two-finger rotation, with the rotation's phase, angle, and velocity. */

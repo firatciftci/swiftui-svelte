@@ -2638,16 +2638,17 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Gestures
 
-| Attribute           | Type                               | Description                                                                                        |
-| ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `ontap`             | `(location: GesturePoint) => void` | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.  |
-| `tapcount`          | `number`                           | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                   |
-| `onlongpress`       | `() => void`                       | Runs when the user holds a finger down on the element for `longpressduration` seconds.             |
-| `longpressduration` | `number`                           | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5. |
-| `ondrag`            | `(drag: DragEvent) => void`        | Runs as the user drags the element, with the drag's phase, position, and velocity.                 |
-| `dragdistance`      | `number`                           | The distance in points the finger must move before a drag starts. Defaults to 10.                  |
-| `onmagnify`         | `(magnify: MagnifyEvent) => void`  | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                  |
-| `onrotate`          | `(rotate: RotateEvent) => void`    | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                 |
+| Attribute           | Type                               | Description                                                                                                                                                                                       |
+| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ontap`             | `(location: GesturePoint) => void` | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.                                                                                                 |
+| `tapcount`          | `number`                           | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                                                                                                                  |
+| `onlongpress`       | `() => void`                       | Runs when the user holds a finger down on the element for `longpressduration` seconds.                                                                                                            |
+| `longpressduration` | `number`                           | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5.                                                                                                |
+| `ondrag`            | `(drag: DragEvent) => void`        | Runs as the user drags the element, with the drag's phase, position, and velocity.                                                                                                                |
+| `dragdistance`      | `number`                           | The distance in points the finger must move before a drag starts. Defaults to 10.                                                                                                                 |
+| `onmagnify`         | `(magnify: MagnifyEvent) => void`  | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                 |
+| `onrotate`          | `(rotate: RotateEvent) => void`    | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                |
+| `onhover`           | `(event: HoverEvent) => void`      | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. |
 
 ```svelte
 <script lang="ts">
@@ -2655,10 +2656,23 @@ Every element takes these attributes, except the few whose entries say they don'
   let drag = $state({ x: 0, y: 0 });
   let zoom = $state(1);
   let angle = $state(0);
+  let hovered = $state("Move the pointer over the box");
 </script>
 
 <vstack spacing={20} padding>
   <txt font="headline">{last}</txt>
+  <txt
+    padding
+    width={240}
+    background="quaternarySystemFill"
+    radius={8}
+    onhover={(event) =>
+      (hovered =
+        event.phase === "exit"
+          ? "Left the box"
+          : `${event.phase} at ${Math.round(event.location?.x ?? 0)}, ${Math.round(event.location?.y ?? 0)}`)}
+    >{hovered}</txt
+  >
   <hstack spacing={12}>
     <txt
       padding
@@ -3329,6 +3343,19 @@ type HorizontalAlignment =
   | "trailing"
   | "listRowSeparatorLeading"
   | "listRowSeparatorTrailing";
+```
+
+### `HoverEvent`
+
+The payload of `onhover`: the pointer's phase, and its position in points unless the phase is `exit`.
+
+```ts
+type HoverEvent = {
+  /** `enter` when the pointer arrives, `move` while it moves over the element, and `exit` when it leaves. */
+  phase: "enter" | "move" | "exit";
+  /** The pointer's `{ x, y }` in the element's coordinates. */
+  location?: GesturePoint;
+};
 ```
 
 ### `Inset`
