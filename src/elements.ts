@@ -1327,6 +1327,8 @@ declare module "svelte/elements" {
       fit?: "fit" | "fill" | "stretch" | "tile";
       /** `template` draws the image in the foreground color, and `original` draws it as it is. */
       renderingmode?: "original" | "template";
+      /** How smoothly the image is scaled: `none`, `low`, `medium`, or `high`. Use `high` for logos and other raster art drawn much smaller than its pixel size. */
+      interpolation?: "none" | "low" | "medium" | "high";
       /** The accessibility label that VoiceOver reads. Without it, VoiceOver reads the name of an asset-catalog image. */
       label?: string;
       /** Hides the image from VoiceOver. */
@@ -1455,7 +1457,11 @@ declare module "svelte/elements" {
         variant?: FieldVariant;
       };
     /** A `TextEditor`: an editable area for many lines of text that scrolls. Give it a `height`. */
-    texteditor: Omit<TextInput, "placeholder"> & TextValue;
+    texteditor: Omit<TextInput, "placeholder"> &
+      TextValue & {
+        /** `hidden` removes the editor's system background so the element's own background shows through, like SwiftUI's `scrollContentBackground(.hidden)`. */
+        scrollcontentbackground?: "hidden" | "visible";
+      };
     /** A `Toggle`: an on-off control, drawn as a switch, a checkbox, or a button. */
     toggle: Modifiers & {
       /** Whether the toggle is on. Use `bind:checked` with the `Toggle` component to bind it. */

@@ -338,6 +338,9 @@ private struct Typography: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(Styles.font(attributes)) { $0.font($1) }
+            .gated(TextBase.keys.contains { (attributes[$0] ?? .null) != .null }) { view in
+                view.transformEnvironment(\.textBase) { $0 = $0.merged(attributes) }
+            }
             .gated(attributes["italic"]?.isTrue == true) { $0.italic() }
             .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
             .ifLet(Styles.weight(attributes["weight"]?.string)) { $0.fontWeight($1) }

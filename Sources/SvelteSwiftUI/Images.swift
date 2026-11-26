@@ -149,9 +149,13 @@ struct ImageElement: View {
             } else {
                 Image(systemName: "photo")
             }
-        Self.sized(image.renderingMode(Self.renderingMode(attributes["renderingmode"]?.string)), fit: attributes["fit"]?.string)
-            .ifLet(attributes["label"]?.string) { $0.accessibilityLabel($1) }
-            .accessibilityHidden(isDecorative)
+        let rendered = image.renderingMode(Self.renderingMode(attributes["renderingmode"]?.string))
+        Self.sized(
+            Self.interpolation(attributes["interpolation"]?.string).map { rendered.interpolation($0) } ?? rendered,
+            fit: attributes["fit"]?.string
+        )
+        .ifLet(attributes["label"]?.string) { $0.accessibilityLabel($1) }
+        .accessibilityHidden(isDecorative)
     }
 
     @ViewBuilder static func sized(_ image: Image, fit: String?) -> some View {
@@ -161,6 +165,16 @@ struct ImageElement: View {
         case "stretch": image.resizable()
         case "tile": image.resizable(resizingMode: .tile)
         default: image
+        }
+    }
+
+    static func interpolation(_ name: String?) -> Image.Interpolation? {
+        switch name {
+        case "none": Image.Interpolation.none
+        case "low": .low
+        case "medium": .medium
+        case "high": .high
+        default: nil
         }
     }
 

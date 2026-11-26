@@ -233,6 +233,7 @@ struct TextInputControl: View {
         switch node.name {
         case "texteditor":
             TextEditor(text: $text)
+                .gated(attributes["scrollcontentbackground"]?.string == "hidden") { $0.scrollContentBackground(.hidden) }
         case "securefield":
             SecureField(placeholder, text: $text).modifier(FieldStyle(variant: attributes["variant"]?.string))
         default:

@@ -1,5 +1,34 @@
 import SwiftUI
 
+struct TextBase: Equatable {
+    var font: String?
+    var fontName: String?
+    var fontFallbacks: Array<String> = []
+    var size: Double?
+    var design: Font.Design?
+
+    static let keys = ["font", "fontname", "fontfallbacks", "size", "design"]
+
+    func merged(_ attributes: [String: JSONValue]) -> Self {
+        var base = self
+        let font = attributes["font"]?.string
+        let size = attributes["size"]?.number
+        if font != nil || size != nil {
+            base.font = font ?? base.font
+            base.size = size
+        }
+        base.fontName = attributes["fontname"]?.string ?? base.fontName
+        let fallbacks = Styles.names(attributes["fontfallbacks"])
+        if !fallbacks.isEmpty { base.fontFallbacks = fallbacks }
+        base.design = Styles.design(attributes["design"]?.string) ?? base.design
+        return base
+    }
+}
+
+extension EnvironmentValues {
+    @Entry var textBase = TextBase()
+}
+
 struct Span {
     var font: String?
     var fontName: String?
@@ -21,12 +50,13 @@ struct Span {
     var tracking: Double?
     var link: URL?
 
-    init(root attributes: [String: JSONValue]) {
-        font = attributes["font"]?.string
-        fontName = attributes["fontname"]?.string
-        fontFallbacks = Styles.names(attributes["fontfallbacks"])
-        size = attributes["size"]?.number
-        design = Styles.design(attributes["design"]?.string)
+    init(root attributes: [String: JSONValue], base: TextBase = TextBase()) {
+        let inherited = base.merged(attributes)
+        font = inherited.font
+        fontName = inherited.fontName
+        fontFallbacks = inherited.fontFallbacks
+        size = inherited.size
+        design = inherited.design
         kerning = attributes["kerning"]?.number
         tracking = attributes["tracking"]?.number
         apply(decorations: attributes)
@@ -114,10 +144,11 @@ struct Span {
 
 struct TextView: View {
     let node: Node
+    @Environment(\.textBase) private var base
 
     var body: some View {
         let attributes = node.attributes
-        Styles.text(node)
+        Styles.text(node, base: base)
             .gated(attributes["monospaceddigit"]?.isTrue == true) { $0.monospacedDigit() }
             .lineLimit(attributes["lines"]?.number.map { Int($0) })
             .multilineTextAlignment(Self.alignment(attributes["align"]?.string))
@@ -142,9 +173,9 @@ extension Styles {
         "strikethrough", "href",
     ]
 
-    static func text(_ node: Node) -> Text {
+    static func text(_ node: Node, base: TextBase = TextBase()) -> Text {
         if let plain = plainText(node) { return Text(plain) }
-        return Text(attributedString(node))
+        return Text(attributedString(node, base: base))
     }
 
     private static func plainText(_ node: Node) -> String? {
@@ -164,8 +195,8 @@ extension Styles {
         return result
     }
 
-    static func attributedString(_ node: Node) -> AttributedString {
-        let span = Span(root: node.attributes)
+    static func attributedString(_ node: Node, base: TextBase = TextBase()) -> AttributedString {
+        let span = Span(root: node.attributes, base: base)
         let whitespace = Whitespace(node.attributes["whitespace"]?.string)
         guard let source = markdown(node) else {
             var isAfterSpace = true
