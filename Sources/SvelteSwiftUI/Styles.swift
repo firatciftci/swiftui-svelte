@@ -37,8 +37,8 @@ enum Styles {
 
     static func padding(_ value: JSONValue?) -> CGFloat {
         switch value {
-        case let .number(length): max(length, 0)
-        case let .string(text): Double(text).map { max($0, 0) } ?? (value?.isTrue == true ? 16 : 0)
+        case let .number(length): length
+        case let .string(text): Double(text) ?? (value?.isTrue == true ? 16 : 0)
         case .bool(true): 16
         default: 0
         }

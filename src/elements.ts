@@ -650,7 +650,7 @@ export type RotateEvent = {
 };
 /** The attributes that every element accepts, mapped to SwiftUI view modifiers. */
 type Modifiers = {
-  /** Pads the element. A number pads every edge by that many points, an object such as `{ horizontal: 20, top: 4 }` pads each edge separately, and a bare `padding` adds 16 points. */
+  /** Pads the element. A number pads every edge by that many points, an object such as `{ horizontal: 20, top: 4 }` pads each edge separately, and a bare `padding` adds 16 points. A negative value works as it does in SwiftUI: the element's frame shrinks by that much, and content that fills the space it's offered, such as a shape, draws that far past the frame. Use it for shadows and backgrounds that spread beyond their element. */
   padding?: Insets;
   /** The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element. */
   font?: Font;

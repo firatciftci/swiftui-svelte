@@ -7,7 +7,7 @@ struct GeometryTests {
     @Test func readsInsetsForEachEdge() {
         #expect(Geometry.insets(.number(8)) == EdgeInsets(top: 8, leading: 8, bottom: 8, trailing: 8))
         #expect(Geometry.insets(.bool(true)) == EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
-        #expect(Geometry.insets(.number(-4)) == EdgeInsets())
+        #expect(Geometry.insets(.number(-4)) == EdgeInsets(top: -4, leading: -4, bottom: -4, trailing: -4))
         let edges = Geometry.insets(.object(["horizontal": .number(20), "top": .number(4), "vertical": .number(2)]))
         #expect(edges == EdgeInsets(top: 4, leading: 20, bottom: 2, trailing: 20))
         #expect(Geometry.insets(.object(["leading": .number(12), "horizontal": .number(20)]))?.leading == 12)

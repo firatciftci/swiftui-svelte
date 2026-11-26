@@ -63,7 +63,7 @@ struct LayoutTests {
         #expect(Styles.padding(.string("12")) == 12)
         #expect(Styles.padding(.string("false")) == 0)
         #expect(Styles.padding(.bool(false)) == 0)
-        #expect(Styles.padding(.number(-4)) == 0)
+        #expect(Styles.padding(.number(-4)) == -4)
         #expect(Styles.padding(nil) == 0)
     }
 }
