@@ -1,6 +1,6 @@
 # Navigation
 
-Svelte owns the navigation stack. The first `screen` in a `navstack` is the root, and every `screen` after it is pushed on top, so you push a screen by rendering another one, usually from an `{#each}` over a state array. When the user taps the back button or swipes back, `onpop` receives the number of pushed screens that are left, and your app trims its array to match:
+Routes that are files, described in [Routing](routing.md), build the navigation stack for you. When you need to control the stack yourself, render a `navstack` directly. The first `screen` in a `navstack` is the root, and every `screen` after it is pushed on top, so you push a screen by rendering another one, usually from an `{#each}` over a state array. When the user taps the back button or swipes back, `onpop` receives the number of pushed screens that are left, and your app trims its array to match:
 
 ```svelte
 <script lang="ts">
@@ -13,12 +13,14 @@ Svelte owns the navigation stack. The first `screen` in a `navstack` is the root
   </screen>
 
   {#each stack as id, depth (depth)}
-    <TodoDetail {id} onclose={() => (stack.length = depth)} />
+    <screen title={`To-do ${id}`}>
+      <!-- the detail for todo id -->
+    </screen>
   {/each}
 </navstack>
 ```
 
-Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation. In the example app, the to-do list and its detail screens share state through [`todos.svelte.ts`](../example/src/todos.svelte.ts).
+Each pushed screen is a regular component, so it's mounted when it's pushed and destroyed when it's popped. Removing a screen from the array pops it with the usual animation.
 
 ## Search
 

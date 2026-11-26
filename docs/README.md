@@ -3,6 +3,7 @@
 - [Getting started](getting-started.md): create an app from the template, or add swiftui-svelte to an app you already have.
 - [Element reference](reference.md): every element and modifier, with the type of each attribute and an example.
 - [Elements](elements.md): how the elements behave, from rich text, colors, and shapes to bindable components, refs and focus, transitions, presentations, and accessibility.
+- [Routing](routing.md): file-based routes, load functions, errors, redirects, and deep links.
 - [Navigation](navigation.md): navigation stacks and search.
 - [Forms](forms.md): settings screens and sign-up forms, with text fields, keyboards, focus, and validation.
 - [Loading data](loading-data.md): requests with loading and error states, pull to refresh, paging, saved data, and WebSockets.
