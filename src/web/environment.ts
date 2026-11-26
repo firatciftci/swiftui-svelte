@@ -41,6 +41,11 @@ export type HostEnvironment = {
   }>;
   keyboardHeight: number;
   viewportWidth: number;
+  viewportHeight: number;
+  pixelRatio: number;
+  fontScale: number;
+  platform: string;
+  idiom: string;
   onLine: boolean;
   userAgent: string;
 };
@@ -67,6 +72,11 @@ export const environment: HostEnvironment = {
   safeAreaInsets: { top: 0, leading: 0, bottom: 0, trailing: 0 },
   keyboardHeight: 0,
   viewportWidth: 0,
+  viewportHeight: 0,
+  pixelRatio: 1,
+  fontScale: 1,
+  platform: "unknown",
+  idiom: "phone",
   onLine: true,
   userAgent: "swiftui-svelte",
 };

@@ -90,6 +90,21 @@ export const env: Readonly<HostEnvironment> = {
   get viewportWidth() {
     return read("viewportWidth");
   },
+  get viewportHeight() {
+    return read("viewportHeight");
+  },
+  get pixelRatio() {
+    return read("pixelRatio");
+  },
+  get fontScale() {
+    return read("fontScale");
+  },
+  get platform() {
+    return read("platform");
+  },
+  get idiom() {
+    return read("idiom");
+  },
   get onLine() {
     return read("onLine");
   },

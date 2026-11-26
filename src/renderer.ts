@@ -9,6 +9,7 @@ import type {
   State as ClassState,
   Resolution,
 } from "./tailwind/runtime.ts";
+import type { HostEnvironment } from "./web/environment.ts";
 import { checkAttribute, checkElement, warnOnce } from "./dev.ts";
 import { resolveWith } from "./tailwind/runtime.ts";
 import { environment, observeEnvironment } from "./web/environment.ts";
@@ -503,13 +504,41 @@ const noClasses: Resolution = {
 
 function classState(element: ElementNode): ClassState {
   const disabled = element.attributes.get("disabled");
+  const isRtl = environment.layoutDirection === "rightToLeft";
+  const { top, bottom, leading, trailing } = environment.safeAreaInsets;
   return {
     dark: environment.colorScheme === "dark",
     width: environment.viewportWidth,
+    height: environment.viewportHeight,
     reduceMotion: environment.reduceMotion,
-    rtl: environment.layoutDirection === "rightToLeft",
+    rtl: isRtl,
     disabled: disabled != null && disabled !== false,
+    platform: environment.platform,
+    idiom: environment.idiom,
+    increaseContrast: environment.increaseContrast,
+    insets: {
+      top,
+      bottom,
+      left: isRtl ? trailing : leading,
+      right: isRtl ? leading : trailing,
+    },
+    pixelRatio: environment.pixelRatio,
+    fontScale: environment.fontScale,
   };
+}
+
+function classInputs(value: HostEnvironment): string {
+  return JSON.stringify([
+    value.colorScheme,
+    value.viewportWidth,
+    value.viewportHeight,
+    value.reduceMotion,
+    value.layoutDirection,
+    value.increaseContrast,
+    value.safeAreaInsets,
+    value.pixelRatio,
+    value.fontScale,
+  ]);
 }
 
 function reportClass(tag: string, resolution: Resolution): void {
@@ -562,14 +591,7 @@ function updateDerived(element: ElementNode, attrs: Attributes): void {
 }
 
 observeEnvironment((previous) => {
-  if (
-    previous.colorScheme === environment.colorScheme &&
-    previous.viewportWidth === environment.viewportWidth &&
-    previous.reduceMotion === environment.reduceMotion &&
-    previous.layoutDirection === environment.layoutDirection
-  ) {
-    return;
-  }
+  if (classInputs(previous) === classInputs(environment)) return;
   for (const [id, reference] of reactiveElements) {
     const element = reference.deref();
     if (!element?.reactive) reactiveElements.delete(id);

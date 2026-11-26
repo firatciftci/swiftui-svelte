@@ -988,3 +988,109 @@ describe("tailwind classes", () => {
     expect(find("vstack")?.attributes.get("background")).toBe("#000000");
   });
 });
+
+const insets = (top: number) => ({ top, leading: 0, bottom: 0, trailing: 0 });
+
+describe("tailwind native conditions", () => {
+  const table = {
+    tokens: {
+      "ios:p-1": [
+        {
+          order: 1,
+          when: ["platform:ios"],
+          attrs: { padding: { top: 4, leading: 4, bottom: 4, trailing: 4 } },
+        },
+      ],
+      "android:p-2": [
+        {
+          order: 2,
+          when: ["platform:android"],
+          attrs: { padding: { top: 8, leading: 8, bottom: 8, trailing: 8 } },
+        },
+      ],
+      "web:p-3": [{ order: 3, when: ["web"], attrs: { padding: 12 } }],
+      "landscape:h-1": [
+        {
+          order: 4,
+          when: ["orientation:landscape"],
+          attrs: { border: { width: 1 } },
+        },
+      ],
+      "pt-safe": [
+        {
+          order: 5,
+          dynamic: true,
+          attrs: { padding: { top: { inset: "top", plus: 8 } } },
+        },
+      ],
+      hairline: [
+        {
+          order: 6,
+          dynamic: true,
+          attrs: { $borderWidth: { device: "hairline" } },
+        },
+      ],
+    },
+    statics: {},
+    breakpoints: [],
+  };
+
+  beforeEach(() => registerClasses(table));
+  afterEach(() => {
+    registerClasses({ tokens: {}, statics: {}, breakpoints: [] });
+    __svelteEnvironment(
+      JSON.stringify({
+        platform: "unknown",
+        viewportWidth: 0,
+        viewportHeight: 0,
+        pixelRatio: 1,
+        safeAreaInsets: insets(0),
+      }),
+    );
+  });
+
+  it("applies a platform's rules only on that platform, and never on the web", async () => {
+    __svelteEnvironment(JSON.stringify({ platform: "ios" }));
+    await render(Classes, { className: "ios:p-1 android:p-2 web:p-3" });
+    expect(find("vstack")?.attributes.get("padding")).toEqual({
+      top: 4,
+      leading: 4,
+      bottom: 4,
+      trailing: 4,
+    });
+  });
+
+  it("flips the Android rules when the host reports Android", async () => {
+    __svelteEnvironment(JSON.stringify({ platform: "android" }));
+    await render(Classes, { className: "ios:p-1 android:p-2 web:p-3" });
+    expect(find("vstack")?.attributes.get("padding")).toEqual({
+      top: 8,
+      leading: 8,
+      bottom: 8,
+      trailing: 8,
+    });
+  });
+
+  it("applies orientation from the viewport size the host reports", async () => {
+    __svelteEnvironment(
+      JSON.stringify({ viewportWidth: 800, viewportHeight: 400 }),
+    );
+    await render(Classes, { className: "landscape:h-1" });
+    expect(find("vstack")?.attributes.get("border")).toEqual({ width: 1 });
+  });
+
+  it("measures safe-area offsets and re-resolves them when the insets change", async () => {
+    __svelteEnvironment(JSON.stringify({ safeAreaInsets: insets(47) }));
+    await render(Classes, { className: "pt-safe" });
+    expect(find("vstack")?.attributes.get("padding")).toEqual({ top: 55 });
+    __svelteEnvironment(JSON.stringify({ safeAreaInsets: insets(59) }));
+    await settle();
+    expect(find("vstack")?.attributes.get("padding")).toEqual({ top: 67 });
+  });
+
+  it("measures hairlines from the host's pixel ratio", async () => {
+    __svelteEnvironment(JSON.stringify({ pixelRatio: 3 }));
+    await render(Classes, { className: "hairline" });
+    expect(find("vstack")?.attributes.get("border")).toEqual({ width: 1 / 3 });
+  });
+});
