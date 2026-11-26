@@ -70,6 +70,7 @@ struct EnvironmentSnapshot: Equatable {
     var scenePhase = ScenePhase.active
     var safeAreaInsets = EdgeInsets()
     var keyboardHeight = 0.0
+    var viewportWidth: CGFloat = 0
 
     var dictionary: [String: Any] {
         [
@@ -97,6 +98,7 @@ struct EnvironmentSnapshot: Equatable {
                 "trailing": Self.points(safeAreaInsets.trailing),
             ],
             "keyboardHeight": Self.points(keyboardHeight),
+            "viewportWidth": Self.points(viewportWidth),
         ]
     }
 
