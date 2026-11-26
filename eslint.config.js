@@ -13,6 +13,7 @@ export default antfu({
     "test/web/wpt/**",
     "example/src/paraglide/**",
     "example/src/app.css",
+    "src/tailwind/theme.css",
     "template/**",
   ],
   stylistic: false,

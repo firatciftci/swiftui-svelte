@@ -1,6 +1,9 @@
 import type { Attributes } from "./runtime.ts";
-import type { Lookup, Quantity, Rgba } from "./values.ts";
+import type { Length, Lookup, Quantity, Rgba } from "./values.ts";
+import { SYSTEM_COLORS } from "./system-colors.ts";
 import {
+  compact,
+  dynamicOf,
   format,
   numberOf,
   parseColor,
@@ -18,7 +21,11 @@ export type Declaration = {
   value: string;
   important: boolean;
 };
-export type Patch = { attrs: Attributes; only?: Array<string> };
+export type Patch = {
+  attrs: Attributes;
+  only?: Array<string>;
+  when?: Array<string>;
+};
 export type Mapping = { patches: Array<Patch>; problems: Array<string> };
 
 type Context = {
@@ -26,7 +33,7 @@ type Context = {
   lookup: Lookup;
   fontSize: number;
   fonts: ReadonlyMap<string, string>;
-  corners: Record<string, number>;
+  corners: Record<string, Length>;
 };
 
 const VERTICAL = ["vstack", "lazyvstack"];
@@ -220,11 +227,29 @@ function resolved(value: string, { lookup, fontSize }: Context): string {
   return reduceMath(substitute(value, lookup), fontSize);
 }
 
-function points(value: string, context: Context): number {
-  return pixels(resolved(value, context), context.fontSize);
+function points(value: string, context: Context): Length {
+  const text = substitute(value, context.lookup).trim();
+  return (
+    dynamicOf(text, context.fontSize) ??
+    pixels(reduceMath(text, context.fontSize), context.fontSize)
+  );
+}
+
+const PLATFORM_COLOR = /^platformColor\((.+)\)$/;
+
+function systemColorOf(name: string): string {
+  if (!SYSTEM_COLORS.has(name))
+    throw new Unsupported(
+      `platformColor(${name}) isn't a system color this library supports`,
+    );
+  return name;
 }
 
 function colorOf(value: string, context: Context): string | null {
+  const platform = PLATFORM_COLOR.exec(
+    substitute(value, context.lookup).trim(),
+  );
+  if (platform != null) return systemColorOf(platform[1]?.trim() ?? "");
   const parsed = parseColor(resolved(value, context));
   return parsed === "currentcolor" ? null : toHex(parsed);
 }
@@ -649,6 +674,42 @@ const HANDLERS = new Map<string, Handler>([
       return objectFit(raw);
     },
   ],
+  ["tint", (value, context) => [{ attrs: { tint: colorOf(value, context) } }]],
+  [
+    "elevation",
+    (value, context) => [
+      {
+        attrs: { elevation: numberOf(resolved(value, context)) },
+        when: ["platform:android"],
+      },
+    ],
+  ],
+  [
+    "ripple-color",
+    (value, context) => [
+      {
+        attrs: { ripple: { color: colorOf(value, context) } },
+        when: ["platform:android"],
+      },
+    ],
+  ],
+  [
+    "ripple-layer",
+    (value) => [
+      {
+        attrs: { ripple: { layer: value.trim() } },
+        when: ["platform:android"],
+      },
+    ],
+  ],
+  [
+    "corner-shape",
+    (_value, _context, raw) => {
+      if (raw === "squircle") return [{ attrs: { cornerstyle: "continuous" } }];
+      if (raw === "round") return [{ attrs: { cornerstyle: "circular" } }];
+      return null;
+    },
+  ],
 ]);
 
 function mapDeclaration(
@@ -789,6 +850,9 @@ function objectFit(raw: string): Array<Patch> | null {
     : [{ attrs: { fit }, only: ["imageview", "asyncimage"] }];
 }
 
+const SCREEN_SAFE =
+  /^calc\(100[dsl]?vh - \(env\(safe-area-inset-top\) \+ env\(safe-area-inset-bottom\)\)\)$/;
+
 function sizing(property: string, raw: string, context: Context): Array<Patch> {
   const axis = property.endsWith("width") ? "width" : "height";
   const prefix = property.startsWith("min-")
@@ -800,7 +864,12 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
   if (raw === "auto" && prefix === "") return [{ attrs: { [key]: null } }];
   if (raw === "none" && prefix === "max")
     return [{ attrs: { [key]: "infinity" } }];
-  if (raw === "100%" || /^100[dsl]?v[hw]$/.test(raw))
+  const value = compact(raw);
+  if (
+    value === "100%" ||
+    /^100[dsl]?v[hw]$/.test(value) ||
+    SCREEN_SAFE.test(value)
+  )
     return [{ attrs: { [key]: "infinity" } }];
   const quantity: Quantity = quantityOf(
     resolved(raw, context),

@@ -1,4 +1,7 @@
+import type { Dynamic, Edge } from "./runtime.ts";
+
 export type Lookup = (name: string) => string | undefined;
+export type Length = number | Dynamic;
 export type Rgba = { r: number; g: number; b: number; a: number };
 export type Quantity = { value: number; unit: "" | "px" | "%" | "deg" };
 
@@ -273,6 +276,51 @@ function combine(name: string, args: Array<Quantity>): Quantity {
   if (name === "calc" && args.length === 1)
     return args[0] ?? { value: 0, unit: "" };
   throw new Unsupported(`${name}() has the wrong number of arguments`);
+}
+
+const EDGES: ReadonlyArray<Edge> = ["top", "right", "bottom", "left"];
+
+function edgeOf(name: string | undefined): Edge {
+  const edge = EDGES.find((candidate) => candidate === name);
+  if (edge == null)
+    throw new Unsupported(`safe-area-inset-${name} isn't supported`);
+  return edge;
+}
+
+export function compact(text: string): string {
+  return text
+    .replaceAll(/\(\s+/g, "(")
+    .replaceAll(/\s+\)/g, ")")
+    .replaceAll(/\s+/g, " ")
+    .trim();
+}
+
+export function dynamicOf(text: string, fontSize: number): Dynamic | null {
+  const value = compact(text);
+  const inset = /^env\(safe-area-inset-(\w+)\)$/.exec(value);
+  if (inset != null) return { inset: edgeOf(inset[1]) };
+  const offset = /^calc\(env\(safe-area-inset-(\w+)\) \+ (.+)\)$/.exec(value);
+  if (offset != null)
+    return {
+      inset: edgeOf(offset[1]),
+      plus: pixels(reduceMath(offset[2] ?? "", fontSize), fontSize),
+    };
+  const floor = /^max\(env\(safe-area-inset-(\w+)\), (.+)\)$/.exec(value);
+  if (floor != null)
+    return {
+      inset: edgeOf(floor[1]),
+      atLeast: pixels(reduceMath(floor[2] ?? "", fontSize), fontSize),
+    };
+  const rounded = /^roundToNearestPixel\((.+)\)$/.exec(value);
+  if (rounded != null)
+    return {
+      device: "rounded",
+      value: pixels(reduceMath(rounded[1] ?? "", fontSize), fontSize),
+    };
+  if (value === "hairlineWidth()") return { device: "hairline" };
+  if (value === "pixelRatio()") return { device: "pixelRatio" };
+  if (value === "fontScale()") return { device: "fontScale" };
+  return null;
 }
 
 export function pixels(text: string, fontSize: number): number {

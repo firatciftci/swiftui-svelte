@@ -1,8 +1,14 @@
 export type Attributes = Record<string, unknown>;
+export type Edge = "top" | "right" | "bottom" | "left";
+export type Dynamic =
+  | { inset: Edge; plus?: number; atLeast?: number }
+  | { device: "hairline" | "pixelRatio" | "fontScale" }
+  | { device: "rounded"; value: number };
 export type Rule = {
   when?: Array<string>;
   only?: Array<string>;
   important?: boolean;
+  dynamic?: boolean;
   order: number;
   attrs: Attributes;
 };
@@ -14,9 +20,16 @@ export type ClassTable = {
 export type State = {
   dark: boolean;
   width: number;
+  height: number;
   reduceMotion: boolean;
   rtl: boolean;
   disabled: boolean;
+  platform: string;
+  idiom: string;
+  increaseContrast: boolean;
+  insets: Record<Edge, number>;
+  pixelRatio: number;
+  fontScale: number;
 };
 export type Resolution = {
   attrs: Attributes;
@@ -37,17 +50,65 @@ export function classKey(tag: string, value: string): string {
   return `${tag} ${value}`;
 }
 
+const NAMED: Record<string, (state: State) => boolean> = {
+  dark: (state) => state.dark,
+  "reduce-motion": (state) => state.reduceMotion,
+  motion: (state) => !state.reduceMotion,
+  rtl: (state) => state.rtl,
+  ltr: (state) => !state.rtl,
+  disabled: (state) => state.disabled,
+  native: () => true,
+  web: () => false,
+  "contrast:more": (state) => state.increaseContrast,
+  "contrast:less": () => false,
+  "orientation:landscape": (state) => state.width > state.height,
+  "orientation:portrait": (state) => state.width <= state.height,
+};
+
 function isSatisfied(condition: string, state: State): boolean {
-  if (condition === "dark") return state.dark;
-  if (condition === "reduce-motion") return state.reduceMotion;
-  if (condition === "motion") return !state.reduceMotion;
-  if (condition === "rtl") return state.rtl;
-  if (condition === "ltr") return !state.rtl;
-  if (condition === "disabled") return state.disabled;
-  const threshold = Number(condition.slice(2));
-  return condition.startsWith(">=")
-    ? state.width >= threshold
-    : state.width < threshold;
+  if (condition.startsWith("platform:"))
+    return state.platform === condition.slice("platform:".length);
+  if (condition.startsWith("idiom:"))
+    return state.idiom === condition.slice("idiom:".length);
+  if (condition.startsWith(">="))
+    return state.width >= Number(condition.slice(2));
+  if (condition.startsWith("<"))
+    return state.width < Number(condition.slice(1));
+  return NAMED[condition]?.(state) ?? false;
+}
+
+function isDynamic(value: unknown): value is Dynamic {
+  return isPlain(value) && ("inset" in value || "device" in value);
+}
+
+function measure(dynamic: Dynamic, state: State): number {
+  if ("inset" in dynamic) {
+    const inset = state.insets[dynamic.inset];
+    return dynamic.atLeast != null
+      ? Math.max(inset, dynamic.atLeast)
+      : inset + (dynamic.plus ?? 0);
+  }
+  if (dynamic.device === "rounded")
+    return Math.round(dynamic.value * state.pixelRatio) / state.pixelRatio;
+  if (dynamic.device === "hairline") return 1 / state.pixelRatio;
+  if (dynamic.device === "pixelRatio") return state.pixelRatio;
+  return state.fontScale;
+}
+
+function settle(value: unknown, state: State): unknown {
+  if (isDynamic(value)) return measure(value, state);
+  if (Array.isArray(value)) return value.map((item) => settle(item, state));
+  if (isPlain(value))
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, settle(item, state)]),
+    );
+  return value;
+}
+
+function settleAll(attrs: Attributes, state: State): Attributes {
+  return Object.fromEntries(
+    Object.entries(attrs).map(([key, value]) => [key, settle(value, state)]),
+  );
 }
 
 function isPlain(value: unknown): value is Attributes {
@@ -116,7 +177,7 @@ function finish(output: Attributes): Attributes {
     ...rest
   } = output;
   const result: Attributes = rest;
-  if (typeof $borderWidth === "number") {
+  if ($borderWidth != null) {
     const border: Attributes = { width: $borderWidth };
     if (typeof $borderColor === "string") border.color = $borderColor;
     result.border = $borderWidth === 0 ? null : border;
@@ -155,7 +216,9 @@ export function resolveClasses(
       (rule) => rule.only == null || rule.only.includes(tag),
     );
     if (applicable.length === 0) misplaced.push(token);
-    isReactive ||= applicable.some((rule) => rule.when != null);
+    isReactive ||= applicable.some(
+      (rule) => rule.when != null || rule.dynamic === true,
+    );
     active.push(
       ...applicable.filter(
         (rule) =>
@@ -171,7 +234,11 @@ export function resolveClasses(
   );
   const output: Attributes = {};
   for (const rule of active) apply(output, rule.attrs);
-  return { attrs: finish(output), reactive: isReactive, unmatched, misplaced };
+  const attrs = finish(output);
+  const settled = active.some((rule) => rule.dynamic === true)
+    ? settleAll(attrs, state)
+    : attrs;
+  return { attrs: settled, reactive: isReactive, unmatched, misplaced };
 }
 
 export function resolveWith(

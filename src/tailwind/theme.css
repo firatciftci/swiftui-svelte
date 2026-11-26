@@ -1,0 +1,448 @@
+@custom-variant ios (@media ios);
+@custom-variant android (@media android);
+@custom-variant native (@media native);
+@custom-variant tv (@media (display-mode: tv));
+@custom-variant web (@supports selector(div > div));
+
+@theme {
+  --elevation-xs: 1;
+  --elevation-sm: 3;
+  --elevation-md: 6;
+  --elevation-lg: 8;
+  --elevation-xl: 13;
+  --elevation-2xl: 24;
+  --elevation-none: 0;
+}
+
+@utility color-* {
+  color: --value(--color-*);
+}
+
+@utility tint-* {
+  tint: --value(--color-*);
+}
+
+@utility elevation-* {
+  elevation: --value(--elevation-*);
+}
+
+@utility ripple-* {
+  ripple-color: --value(--color-*);
+}
+
+@utility ripple-foreground {
+  ripple-layer: foreground;
+}
+
+@utility corner-squircle {
+  corner-shape: squircle;
+}
+
+@utility corner-rounded {
+  corner-shape: round;
+}
+
+@utility p-safe {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+@utility m-safe {
+  margin: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+@utility px-safe {
+  padding-right: env(safe-area-inset-right);
+  padding-left: env(safe-area-inset-left);
+}
+
+@utility py-safe {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+
+@utility mx-safe {
+  margin-right: env(safe-area-inset-right);
+  margin-left: env(safe-area-inset-left);
+}
+
+@utility my-safe {
+  margin-top: env(safe-area-inset-top);
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+@utility mt-safe {
+  margin-top: env(safe-area-inset-top);
+}
+
+@utility mr-safe {
+  margin-right: env(safe-area-inset-right);
+}
+
+@utility mb-safe {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+@utility ml-safe {
+  margin-left: env(safe-area-inset-left);
+}
+
+@utility p-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+  padding-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+  padding-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+  padding-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility p-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --value([length]));
+  padding-right: calc(env(safe-area-inset-right) + --value([length]));
+  padding-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+  padding-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility p-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+  padding-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+  padding-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+  padding-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility p-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --value([length]));
+  padding-right: max(env(safe-area-inset-right), --value([length]));
+  padding-bottom: max(env(safe-area-inset-bottom), --value([length]));
+  padding-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility px-safe-offset-* {
+  padding-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+  padding-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility px-safe-offset-* {
+  padding-right: calc(env(safe-area-inset-right) + --value([length]));
+  padding-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility px-safe-or-* {
+  padding-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+  padding-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility px-safe-or-* {
+  padding-right: max(env(safe-area-inset-right), --value([length]));
+  padding-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility py-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+  padding-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+}
+
+@utility py-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --value([length]));
+  padding-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+}
+
+@utility py-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+  padding-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+}
+
+@utility py-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --value([length]));
+  padding-bottom: max(env(safe-area-inset-bottom), --value([length]));
+}
+
+@utility pt-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+}
+
+@utility pt-safe-offset-* {
+  padding-top: calc(env(safe-area-inset-top) + --value([length]));
+}
+
+@utility pt-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+}
+
+@utility pt-safe-or-* {
+  padding-top: max(env(safe-area-inset-top), --value([length]));
+}
+
+@utility pr-safe-offset-* {
+  padding-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+}
+
+@utility pr-safe-offset-* {
+  padding-right: calc(env(safe-area-inset-right) + --value([length]));
+}
+
+@utility pr-safe-or-* {
+  padding-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+}
+
+@utility pr-safe-or-* {
+  padding-right: max(env(safe-area-inset-right), --value([length]));
+}
+
+@utility pb-safe-offset-* {
+  padding-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+}
+
+@utility pb-safe-offset-* {
+  padding-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+}
+
+@utility pb-safe-or-* {
+  padding-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+}
+
+@utility pb-safe-or-* {
+  padding-bottom: max(env(safe-area-inset-bottom), --value([length]));
+}
+
+@utility pl-safe-offset-* {
+  padding-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility pl-safe-offset-* {
+  padding-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility pl-safe-or-* {
+  padding-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility pl-safe-or-* {
+  padding-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility m-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+  margin-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+  margin-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+  margin-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility m-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --value([length]));
+  margin-right: calc(env(safe-area-inset-right) + --value([length]));
+  margin-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+  margin-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility m-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+  margin-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+  margin-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+  margin-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility m-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --value([length]));
+  margin-right: max(env(safe-area-inset-right), --value([length]));
+  margin-bottom: max(env(safe-area-inset-bottom), --value([length]));
+  margin-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility mx-safe-offset-* {
+  margin-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+  margin-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility mx-safe-offset-* {
+  margin-right: calc(env(safe-area-inset-right) + --value([length]));
+  margin-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility mx-safe-or-* {
+  margin-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+  margin-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility mx-safe-or-* {
+  margin-right: max(env(safe-area-inset-right), --value([length]));
+  margin-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility my-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+  margin-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+}
+
+@utility my-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --value([length]));
+  margin-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+}
+
+@utility my-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+  margin-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+}
+
+@utility my-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --value([length]));
+  margin-bottom: max(env(safe-area-inset-bottom), --value([length]));
+}
+
+@utility mt-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --spacing(--value(integer)));
+}
+
+@utility mt-safe-offset-* {
+  margin-top: calc(env(safe-area-inset-top) + --value([length]));
+}
+
+@utility mt-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --spacing(--value(integer)));
+}
+
+@utility mt-safe-or-* {
+  margin-top: max(env(safe-area-inset-top), --value([length]));
+}
+
+@utility mr-safe-offset-* {
+  margin-right: calc(env(safe-area-inset-right) + --spacing(--value(integer)));
+}
+
+@utility mr-safe-offset-* {
+  margin-right: calc(env(safe-area-inset-right) + --value([length]));
+}
+
+@utility mr-safe-or-* {
+  margin-right: max(env(safe-area-inset-right), --spacing(--value(integer)));
+}
+
+@utility mr-safe-or-* {
+  margin-right: max(env(safe-area-inset-right), --value([length]));
+}
+
+@utility mb-safe-offset-* {
+  margin-bottom: calc(
+    env(safe-area-inset-bottom) + --spacing(--value(integer))
+  );
+}
+
+@utility mb-safe-offset-* {
+  margin-bottom: calc(env(safe-area-inset-bottom) + --value([length]));
+}
+
+@utility mb-safe-or-* {
+  margin-bottom: max(env(safe-area-inset-bottom), --spacing(--value(integer)));
+}
+
+@utility mb-safe-or-* {
+  margin-bottom: max(env(safe-area-inset-bottom), --value([length]));
+}
+
+@utility ml-safe-offset-* {
+  margin-left: calc(env(safe-area-inset-left) + --spacing(--value(integer)));
+}
+
+@utility ml-safe-offset-* {
+  margin-left: calc(env(safe-area-inset-left) + --value([length]));
+}
+
+@utility ml-safe-or-* {
+  margin-left: max(env(safe-area-inset-left), --spacing(--value(integer)));
+}
+
+@utility ml-safe-or-* {
+  margin-left: max(env(safe-area-inset-left), --value([length]));
+}
+
+@utility h-screen-safe {
+  height: calc(
+    100vh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))
+  );
+}
+
+@utility min-h-screen-safe {
+  min-height: calc(
+    100vh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))
+  );
+}
+
+@utility max-h-screen-safe {
+  max-height: calc(
+    100vh - (env(safe-area-inset-top) + env(safe-area-inset-bottom))
+  );
+}
+
+@utility inset-safe {
+  top: env(safe-area-inset-top);
+  right: env(safe-area-inset-right);
+  bottom: env(safe-area-inset-bottom);
+  left: env(safe-area-inset-left);
+}
+
+@utility inset-x-safe {
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
+}
+
+@utility inset-y-safe {
+  top: env(safe-area-inset-top);
+  bottom: env(safe-area-inset-bottom);
+}
+
+@utility top-safe {
+  top: env(safe-area-inset-top);
+}
+
+@utility right-safe {
+  right: env(safe-area-inset-right);
+}
+
+@utility bottom-safe {
+  bottom: env(safe-area-inset-bottom);
+}
+
+@utility left-safe {
+  left: env(safe-area-inset-left);
+}
+
+@utility ps-safe {
+  padding-inline-start: env(safe-area-inset-left);
+}
+
+@utility pe-safe {
+  padding-inline-end: env(safe-area-inset-right);
+}
+
+@utility ms-safe {
+  margin-inline-start: env(safe-area-inset-left);
+}
+
+@utility me-safe {
+  margin-inline-end: env(safe-area-inset-right);
+}

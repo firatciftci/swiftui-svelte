@@ -66,6 +66,7 @@
       "types": "./dist/tailwind/vite.d.ts",
       "default": "./dist/tailwind/vite.js"
     },
+    "./tailwind/theme.css": "./dist/tailwind/theme.css",
     "./eslint": {
       "types": "./dist/eslint.d.ts",
       "default": "./dist/eslint.js"

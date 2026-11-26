@@ -68,9 +68,16 @@ const PSEUDO_ALLOWED = new Set([
 const NEUTRAL: State = {
   dark: false,
   width: 0,
+  height: 0,
   reduceMotion: false,
   rtl: false,
   disabled: false,
+  platform: "unknown",
+  idiom: "phone",
+  increaseContrast: false,
+  insets: { top: 0, right: 0, bottom: 0, left: 0 },
+  pixelRatio: 1,
+  fontScale: 1,
 };
 
 function sourceFiles(directories: Array<string>): Array<string> {
@@ -156,6 +163,17 @@ function stylesheetPath(requireFrom: NodeJS.Require, id: string): string {
   return requireFrom.resolve(`${id}/index.css`);
 }
 
+function environmentOf(content: string): { when: string } | null {
+  const contrast = /^prefers-contrast:\s*(more|less)$/.exec(content);
+  if (contrast != null) return { when: `contrast:${contrast[1]}` };
+  const orientation = /^orientation:\s*(portrait|landscape)$/.exec(content);
+  if (orientation != null) return { when: `orientation:${orientation[1]}` };
+  if (/^(?:ios|android)$/.test(content)) return { when: `platform:${content}` };
+  if (content === "native") return { when: "native" };
+  if (/^display-mode:\s*tv$/.test(content)) return { when: "idiom:tv" };
+  return null;
+}
+
 function conditionOf(
   content: string,
   isNegated: boolean,
@@ -170,6 +188,10 @@ function conditionOf(
     };
   if (!isNegated && /^prefers-color-scheme:\s*dark$/.test(content))
     return { when: "dark" };
+  if (!isNegated) {
+    const environment = environmentOf(content);
+    if (environment != null) return environment;
+  }
   const minimum = /^(?:width\s*>=|min-width:)\s*([\d.]+(?:rem|px|em))$/.exec(
     content,
   );
@@ -220,7 +242,11 @@ function conditionsOf(wraps: Array<AtRule>): {
   const thresholds: Array<number> = [];
   for (const wrap of wraps) {
     const name = wrap.name.toLowerCase();
-    if (name === "layer" || name === "supports") continue;
+    if (name === "supports") {
+      if (wrap.params.trim() === "selector(div > div)") when.push("web");
+      continue;
+    }
+    if (name === "layer") continue;
     if (name !== "media" && name !== "container")
       return { when, thresholds, problem: `@${name} isn't supported` };
     const found = wrapConditions(wrap);
@@ -249,8 +275,14 @@ function stateOf(selector: string): {
   else if (/:active\b/.test(selector)) target = "pressed";
   if (/:disabled\b/.test(selector)) when.push("disabled");
   if (/\.dark\s+\*/.test(selector)) when.push("dark");
+  const direction = /:dir\((rtl|ltr)\)|\[dir=["']?(rtl|ltr)["']?\]/.exec(
+    selector,
+  );
+  const found = direction?.[1] ?? direction?.[2];
+  if (found != null) when.push(found);
   const bare = selector
     .replaceAll(/\\./g, "")
+    .replaceAll(/:dir\((?:rtl|ltr)\)|\[dir=["']?(?:rtl|ltr)["']?\]/g, "")
     .replaceAll(":not(:last-child)", "");
   if (bare.includes("::"))
     problems.push("pseudo-elements don't exist in SwiftUI");
@@ -361,10 +393,22 @@ function tableRules(group: Group, patch: Patch, sink: Array<TableRule>): void {
     attrs = { [group.target]: attrs };
   }
   const rule: TableRule = { order: group.order, attrs };
-  if (group.when.length > 0) rule.when = group.when;
+  const when = [...group.when, ...(patch.when ?? [])];
+  if (when.length > 0) rule.when = when;
+  if (hasDynamic(attrs)) rule.dynamic = true;
   if (patch.only != null) rule.only = patch.only;
   if (group.important) rule.important = true;
   sink.push(rule);
+}
+
+function hasDynamic(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some((item) => hasDynamic(item));
+  if (typeof value !== "object" || value == null) return false;
+  return (
+    "inset" in value ||
+    "device" in value ||
+    Object.values(value).some((item) => hasDynamic(item))
+  );
 }
 
 type StateInfo = ReturnType<typeof stateOf>;

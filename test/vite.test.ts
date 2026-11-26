@@ -207,3 +207,98 @@ describe("tailwind class table", () => {
     ]);
   }, 60_000);
 });
+
+describe("native Tailwind utilities", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-native-"));
+  writeFileSync(
+    path.join(dir, "app.css"),
+    `@import "tailwindcss";
+@import "${path.resolve("src/tailwind/theme.css")}";
+@utility hairline {
+  border-width: hairlineWidth();
+}
+@utility system-label {
+  color: platformColor(label);
+}
+@utility bad-system-color {
+  color: platformColor(systemBlue);
+}
+`,
+  );
+  writeFileSync(
+    path.join(dir, "Native.svelte"),
+    '<vstack class="web:p-4 ios:p-2 android:p-6 native:gap-2 tv:p-8 contrast-more:p-1 portrait:p-3 landscape:p-5 rtl:p-7 ltr:p-9 pb-safe-offset-4 pt-safe pb-safe-or-[2px] h-screen-safe hairline corner-rounded tint-red-500 elevation-md ripple-blue-500 system-label bad-system-color"></vstack>\n',
+  );
+  const built = buildClassTable({
+    root: process.cwd(),
+    css: path.join(dir, "app.css"),
+    sources: [dir],
+    fonts: {},
+  });
+
+  it("reads platform, idiom, contrast, orientation, and direction conditions", async () => {
+    const { table } = await built;
+    expect(table.tokens["web:p-4"]?.[0]?.when).toEqual(["web"]);
+    expect(table.tokens["ios:p-2"]?.[0]?.when).toEqual(["platform:ios"]);
+    expect(table.tokens["android:p-6"]?.[0]?.when).toEqual([
+      "platform:android",
+    ]);
+    expect(table.tokens["native:gap-2"]?.[0]?.when).toEqual(["native"]);
+    expect(table.tokens["tv:p-8"]?.[0]?.when).toEqual(["idiom:tv"]);
+    expect(table.tokens["contrast-more:p-1"]?.[0]?.when).toEqual([
+      "contrast:more",
+    ]);
+    expect(table.tokens["portrait:p-3"]?.[0]?.when).toEqual([
+      "orientation:portrait",
+    ]);
+    expect(table.tokens["landscape:p-5"]?.[0]?.when).toEqual([
+      "orientation:landscape",
+    ]);
+    expect(table.tokens["rtl:p-7"]?.[0]?.when).toEqual(["rtl"]);
+    expect(table.tokens["ltr:p-9"]?.[0]?.when).toEqual(["ltr"]);
+  }, 60_000);
+
+  it("keeps device-dependent values for the host to measure", async () => {
+    const { table } = await built;
+    expect(table.tokens["pb-safe-offset-4"]?.[0]).toMatchObject({
+      dynamic: true,
+      attrs: { padding: { bottom: { inset: "bottom", plus: 16 } } },
+    });
+    expect(table.tokens["pb-safe-or-[2px]"]?.[0]).toMatchObject({
+      attrs: { padding: { bottom: { inset: "bottom", atLeast: 2 } } },
+    });
+    expect(table.tokens["pt-safe"]?.[0]).toMatchObject({
+      attrs: { padding: { top: { inset: "top" } } },
+    });
+    expect(table.tokens["h-screen-safe"]?.[0]?.attrs).toEqual({
+      height: "infinity",
+    });
+    expect(table.tokens.hairline?.[0]).toMatchObject({
+      dynamic: true,
+      attrs: { $borderWidth: { device: "hairline" } },
+    });
+  }, 60_000);
+
+  it("maps corners, tint, and Android-only attributes", async () => {
+    const { table, warnings } = await built;
+    expect(table.tokens["corner-rounded"]?.[0]?.attrs).toEqual({
+      cornerstyle: "circular",
+    });
+    expect(table.tokens["tint-red-500"]?.[0]?.attrs).toEqual({
+      tint: "#fb2c36",
+    });
+    expect(table.tokens["elevation-md"]?.[0]).toMatchObject({
+      when: ["platform:android"],
+      attrs: { elevation: 6 },
+    });
+    expect(table.tokens["ripple-blue-500"]?.[0]).toMatchObject({
+      when: ["platform:android"],
+      attrs: { ripple: { color: "#2b7fff" } },
+    });
+    expect(warnings).toEqual([
+      expect.stringMatching(
+        /^Tailwind class "bad-system-color" in .*Native\.svelte isn't supported by swiftui-svelte: platformColor\(systemBlue\) isn't a system color this library supports\.$/,
+      ),
+    ]);
+  }, 60_000);
+});
