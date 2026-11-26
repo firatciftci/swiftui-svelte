@@ -128,14 +128,6 @@ private struct PositionTracking: ViewModifier {
     }
 }
 
-struct Slot: View {
-    let node: Node
-
-    var body: some View {
-        ForEach(node.renderedChildren) { NodeView(node: $0) }
-    }
-}
-
 struct Layers: ViewModifier {
     let node: Node
 
@@ -144,10 +136,10 @@ struct Layers: ViewModifier {
         let overlay = node.attachment("overlay")
         content
             .background(alignment: Styles.alignment(background?.attributes["alignment"]?.string)) {
-                if let background { Slot(node: background) }
+                if let background { Children(node: background) }
             }
             .overlay(alignment: Styles.alignment(overlay?.attributes["alignment"]?.string)) {
-                if let overlay { Slot(node: overlay) }
+                if let overlay { Children(node: overlay) }
             }
     }
 }

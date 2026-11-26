@@ -59,23 +59,23 @@ struct Container: View {
         let pinned = Layout.pinnedViews(attributes["pinned"])
         switch node.name {
         case "lazyvstack":
-            LazyVStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { rows }
+            LazyVStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { children }
         case "lazyhstack":
-            LazyHStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { rows }
+            LazyHStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing, pinnedViews: pinned) { children }
         case "lazyvgrid":
             LazyVGrid(
                 columns: Layout.gridItems(attributes["columns"]),
                 alignment: Styles.horizontalAlignment(alignment),
                 spacing: spacing,
                 pinnedViews: pinned
-            ) { rows }
+            ) { children }
         case "lazyhgrid":
             LazyHGrid(
                 rows: Layout.gridItems(attributes["rows"]),
                 alignment: Styles.verticalAlignment(alignment),
                 spacing: spacing,
                 pinnedViews: pinned
-            ) { rows }
+            ) { children }
         case "grid":
             Grid(
                 alignment: Styles.alignment(alignment),
@@ -104,15 +104,7 @@ struct Container: View {
     }
 
     private var children: some View {
-        ForEach(node.renderedChildren) { NodeView(node: $0) }
-    }
-
-    @ViewBuilder private var rows: some View {
-        if RowView.wraps(node.renderedChildren) {
-            ForEach(node.renderedChildren) { RowView(node: $0) }
-        } else {
-            children
-        }
+        Children(node: node)
     }
 }
 
@@ -121,7 +113,7 @@ struct Title: View {
 
     var body: some View {
         if let label = node.attachment("label") {
-            Slot(node: label)
+            Children(node: label)
         } else if let title = node.attributes["title"]?.string {
             Text(title)
         }
@@ -140,7 +132,7 @@ private struct DisclosureControl: View {
                 runtime.edit(node, "expanded", to: .bool(value), event: "toggle", payload: value)
             }
         ) {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            Children(node: node)
         } label: {
             Title(node: node)
         }

@@ -131,7 +131,7 @@ struct ButtonElement: View {
             Button(role: Inputs.role(attributes["role"]?.string)) {
                 runtime.dispatch(node.id, "click", waits: false)
             } label: {
-                ForEach(node.renderedChildren) { NodeView(node: $0) }
+                Children(node: node)
             },
             pressed: ButtonFeedback(attributes["pressed"]),
             hovered: ButtonFeedback(attributes["hovered"])
@@ -179,7 +179,7 @@ struct ToggleElement: View {
                 runtime.edit(node, "checked", to: .bool(value), event: "change", payload: value)
             }
         ) {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            Children(node: node)
         }
         switch node.attributes["variant"]?.string {
         case "switch": toggle.toggleStyle(.switch)

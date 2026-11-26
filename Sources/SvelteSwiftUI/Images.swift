@@ -203,7 +203,7 @@ struct RemoteImage: View {
             case let .failure(error):
                 Group {
                     if let failure = node.attachment("failure") {
-                        Slot(node: failure)
+                        Children(node: failure)
                     } else {
                         Image(systemName: "photo").foregroundStyle(.tertiary)
                     }
@@ -211,7 +211,7 @@ struct RemoteImage: View {
                 .onAppear { runtime.dispatch(node.id, "error", error.localizedDescription, waits: false) }
             case .empty:
                 if let placeholder = node.attachment("placeholder") {
-                    Slot(node: placeholder)
+                    Children(node: placeholder)
                 } else {
                     ProgressView()
                 }
@@ -231,11 +231,11 @@ struct LabelElement: View {
             if let title = attributes["title"]?.string {
                 Text(title)
             } else {
-                Slot(node: node)
+                Children(node: node)
             }
         } icon: {
             if let icon = node.attachment("icon") {
-                Slot(node: icon)
+                Children(node: icon)
             } else if let symbol = attributes["symbol"]?.string {
                 Image(systemName: symbol)
             } else if let name = attributes["image"]?.string {
@@ -258,12 +258,12 @@ struct LinkElement: View {
         let title = node.attributes["title"]?.string
         if let url = node.attributes["href"]?.string.flatMap(URL.init(string:)) {
             Link(destination: url) {
-                if let title { Text(title) } else { Slot(node: node) }
+                if let title { Text(title) } else { Children(node: node) }
             }
         } else if let title {
             Text(title)
         } else {
-            Slot(node: node)
+            Children(node: node)
         }
     }
 }
@@ -294,7 +294,7 @@ struct ShareElement: View {
         if let title = node.attributes["title"]?.string {
             Label(title, systemImage: "square.and.arrow.up")
         } else {
-            Slot(node: node)
+            Children(node: node)
         }
     }
 }

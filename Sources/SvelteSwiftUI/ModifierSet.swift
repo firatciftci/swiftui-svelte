@@ -24,6 +24,7 @@ struct ModifierSet: OptionSet, Hashable {
     static let pointer = Self(rawValue: 1 << 20)
     static let scrolling = Self(rawValue: 1 << 21)
     static let shared = Self(rawValue: 1 << 22)
+    static let traits: Self = [.gridCell, .rowTraits]
 
     static let byAttribute: [String: Self] = {
         let groups: [Self: Array<String>] = [

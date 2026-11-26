@@ -6,54 +6,172 @@ struct NodeView: View {
     static let multiple: Set<String> = [
         "sheet", "fullscreencover", "popover", "inspector", "swipeactions", "tab", "toolbar", "sectionview", "group",
     ]
+    static let multiView = multiple.union(["disclosuregroup", "gridrow"])
 
-    var body: some View {
-        NodeContent(node: node, element: ElementView(node: node), isRow: false)
+    var body: AnyView {
+        AnyView(NodeShape.view(of: node))
     }
 }
 
-struct RowView: View {
+struct SingleNodeView: View {
     let node: Node
 
-    static func wraps(_ children: Array<Node>) -> Bool {
-        children.allSatisfy { $0.kind != .element || !(NodeView.multiple.contains($0.name) || $0.name == "disclosuregroup") }
+    var body: AnyView {
+        AnyView(NodeShape.view(of: node))
     }
 
+    nonisolated static func _viewListCount(inputs _: _ViewListCountInputs) -> Int? { 1 }
+}
+
+struct Children: View {
+    let node: Node
+
     var body: some View {
-        ZStack { NodeContent(node: node, element: SingleElement(node: node), isRow: true) }
-            .modifier(RowTraits(node: node))
+        if node.hasMultiViewChild {
+            ForEach(node.renderedChildren) { NodeView(node: $0) }
+        } else {
+            ForEach(node.renderedChildren) { SingleNodeView(node: $0) }
+        }
     }
 }
 
-private struct NodeContent<Element: View>: View {
-    let node: Node
-    let element: Element
-    let isRow: Bool
-
-    var body: some View {
+enum NodeShape {
+    static func view(of node: Node) -> any View {
         switch node.kind {
         case .text:
             Text(Whitespace.normal.collapsed(node.text))
-        case .element:
-            element.modifier(NodeModifiers(node: node, isRow: isRow))
-                .gated(node.name == "spacer") { $0.layoutPriority(-1) }
-                .gated(node.ownsButtonFeedback) { $0.modifier(StateFeedback(node: node)) }
         case .fragment:
-            VStack(spacing: 0) { ForEach(node.renderedChildren) { NodeView(node: $0) } }
-                .modifier(Presentations(node: node))
+            VStack(spacing: 0) { Children(node: node) }.modifier(Presentations(node: node))
+        case .element:
+            traits(of: node, modified(element(of: node), node))
+        }
+    }
+
+    private static func modified(_ element: any View, _ node: Node) -> any View {
+        let modifiers = node.modifiers.subtracting(.traits)
+        return hosted(behaved(shaped(element, node, modifiers), node, modifiers), node, modifiers)
+    }
+
+    private static func shaped(_ element: any View, _ node: Node, _ modifiers: ModifierSet) -> any View {
+        let attributes = node.attributes
+        var view = element
+        if modifiers.contains(.safeArea) { view = view.applying(SafeAreaInsets(node: node)) }
+        if modifiers.contains(.framing) { view = view.applying(Framing(attributes: attributes)).applying(Sizing(attributes: attributes)) }
+        if modifiers.contains(.typography) { view = view.applying(Typography(attributes: attributes)) }
+        if modifiers.contains(.appearance) { view = view.applying(Appearance(attributes: attributes)) }
+        if modifiers.contains(.decorations) { view = view.applying(Decorations(node: node)) }
+        if modifiers.contains(.glass) { view = view.applying(GlassSurface(attributes: attributes)) }
+        if modifiers.contains(.layers) { view = view.applying(Layers(node: node)) }
+        if modifiers.contains(.transforms) { view = view.applying(Transforms(attributes: attributes)) }
+        if modifiers.contains(.appearance) { view = view.applying(Compositing(attributes: attributes)) }
+        return view
+    }
+
+    private static func behaved(_ shaped: any View, _ node: Node, _ modifiers: ModifierSet) -> any View {
+        let attributes = node.attributes
+        var view = shaped
+        if modifiers.contains(.accessible) { view = view.applying(Accessible(node: node)) }
+        if modifiers.contains(.lifecycle) { view = view.applying(Lifecycle(node: node)) }
+        if modifiers.contains(.gestures) { view = view.applying(GestureHandlers(node: node)) }
+        if modifiers.contains(.pointer) { view = view.applying(PointerEvents(node: node)) }
+        if modifiers.contains(.scrolling) { view = view.applying(ScrollVisibility(node: node)) }
+        if modifiers.contains(.shared) { view = view.applying(SharedNamespace(node: node)).applying(MatchedGeometry(node: node)) }
+        if modifiers.contains(.measured) { view = view.applying(Measured(node: node)) }
+        if modifiers.contains(.resizing) { view = view.applying(Resizing(node: node)) }
+        if modifiers.contains(.localized) { view = view.applying(Localized(attributes: attributes)) }
+        if modifiers.contains(.preferences) { view = view.applying(Preferences(attributes: attributes)) }
+        if modifiers.contains(.availability) { view = view.applying(Availability(node: node)) }
+        return view
+    }
+
+    private static func hosted(_ behaved: any View, _ node: Node, _ modifiers: ModifierSet) -> any View {
+        var view = behaved
+        if node.hostsPresentations { view = view.applying(Presentations(node: node)) }
+        if modifiers.contains(.animated) { view = view.applying(AnimatedChildren(node: node)) }
+        if modifiers.contains(.attachments) { view = view.applying(Attachments(node: node)) }
+        if node.ownsButtonFeedback { view = view.applying(StateFeedback(node: node)) }
+        return view
+    }
+
+    private static func traits(of node: Node, _ content: any View) -> any View {
+        var view = content
+        if node.name == "spacer" { view = view.applying(SpacerPriority()) }
+        if node.modifiers.contains(.framing) { view = view.applying(LayoutPriority(attributes: node.attributes)) }
+        if node.modifiers.contains(.gridCell) { view = view.applying(GridCell(attributes: node.attributes)) }
+        if node.modifiers.contains(.rowTraits) { view = view.applying(RowTraits(node: node)) }
+        return view
+    }
+
+    private static func element(of node: Node) -> any View {
+        if NodeView.multiple.contains(node.name) { return MultipleElement(node: node) }
+        let attributes = node.attributes
+        let alignment = attributes["alignment"]?.string
+        let spacing = attributes["spacing"]?.number.map { CGFloat($0) }
+        switch node.name {
+        case "navstack": return NavStack(node: node)
+        case "screen": return Screen(node: node)
+        case "tabview": return Tabs(node: node)
+        case "navsplitview": return SplitView(node: node)
+        case "vstack": return VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { Children(node: node) }
+        case "hstack": return HStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing) { Children(node: node) }
+        case "zstack": return ZStack(alignment: Styles.alignment(alignment)) { Children(node: node) }
+        case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "groupbox",
+            "controlgroup", "disclosuregroup":
+            return Container(node: node)
+        case "rectangle", "roundedrectangle", "unevenroundedrectangle", "circleshape", "ellipseshape", "capsule", "pathshape":
+            return ShapeElement(node: node)
+        case "flowstack": return FlowElement(node: node)
+        case "scrollview": return ScrollElement(node: node)
+        case "list": return ListElement(node: node)
+        case "glasseffectcontainer": return GlassContainer(node: node)
+        case "formview": return Form { Children(node: node) }
+        case "spacer": return Spacer(minLength: attributes["minlength"]?.number.map { CGFloat($0) })
+        case "divider": return Divider()
+        case "txt": return TextView(node: node)
+        case "asyncimage": return RemoteImage(node: node)
+        case "imageview": return ImageElement(node: node)
+        case "labelview": return LabelElement(node: node)
+        case "linkview": return LinkElement(node: node)
+        case "sharelink": return ShareElement(node: node)
+        case "sfsymbol": return Symbol(node: node)
+        case "btn": return ButtonElement(node: node)
+        case "textfield" where attributes["format"] != nil: return NumberFieldControl(node: node)
+        case "textfield", "securefield", "texteditor": return TextInputControl(node: node)
+        case "toggle": return ToggleElement(node: node)
+        case "picker" where attributes["multiple"]?.isTrue == true: return MultiPickerControl(node: node)
+        case "picker": return PickerControl(node: node)
+        case "multidatepicker": return MultiDatePickerControl(node: node)
+        case "colorpicker": return ColorPickerControl(node: node)
+        case "gauge": return GaugeElement(node: node)
+        case "labeledcontent": return LabeledContentElement(node: node)
+        case "contentunavailableview": return UnavailableElement(node: node)
+        case "menuview": return MenuElement(node: node)
+        case "slider": return SliderControl(node: node)
+        case "stepper": return StepperControl(node: node)
+        case "datepicker": return DatePickerControl(node: node)
+        case "progressview": return ProgressControl(node: node)
+        default: return CustomElement(node: node)
         }
     }
 }
 
-private struct ElementView: View {
-    let node: Node
+extension View {
+    func applying(_ modifier: some ViewModifier) -> any View {
+        self.modifier(modifier)
+    }
+}
 
-    var body: some View {
-        if NodeView.multiple.contains(node.name) {
-            MultipleElement(node: node)
-        } else {
-            SingleElement(node: node)
-        }
+private struct SpacerPriority: ViewModifier {
+    func body(content: Content) -> some View {
+        content.layoutPriority(-1)
+    }
+}
+
+private struct LayoutPriority: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content.ifLet(attributes["layoutpriority"]?.number) { $0.layoutPriority($1) }
     }
 }
 
@@ -66,131 +184,37 @@ private struct MultipleElement: View {
                 Rows(node: node)
             } header: {
                 if let header = node.attachment("header") {
-                    Slot(node: header)
+                    Children(node: header)
                 } else if let header = node.attributes["header"]?.string {
                     Text(header)
                 }
             } footer: {
                 if let footer = node.attachment("footer") {
-                    Slot(node: footer)
+                    Children(node: footer)
                 } else if let footer = node.attributes["footer"]?.string {
                     Text(footer)
                 }
             }
             .modifier(SectionIndexLabel(label: node.attributes["indexlabel"]?.string))
         } else {
-            Group { ForEach(node.renderedChildren) { NodeView(node: $0) } }
+            Group { Children(node: node) }
         }
     }
 }
 
-private struct SingleElement: View {
+private struct ScrollElement: View {
     let node: Node
 
     var body: some View {
-        element
-    }
-
-    private var children: some View {
-        ForEach(node.renderedChildren) { NodeView(node: $0) }
-    }
-
-    @ViewBuilder private var element: some View {
-        switch node.name {
-        case "navstack":
-            NavStack(node: node)
-        case "screen":
-            Screen(node: node)
-        case "tabview":
-            Tabs(node: node)
-        case "navsplitview":
-            SplitView(node: node)
-        case "vstack":
-            VStack(alignment: Styles.horizontalAlignment(alignment), spacing: spacing) { children }
-        case "hstack":
-            HStack(alignment: Styles.verticalAlignment(alignment), spacing: spacing) { children }
-        case "lazyvstack", "lazyhstack", "lazyvgrid", "lazyhgrid", "grid", "gridrow", "viewthatfits", "groupbox",
-            "controlgroup", "disclosuregroup":
-            Container(node: node)
-        case "rectangle", "roundedrectangle", "unevenroundedrectangle", "circleshape", "ellipseshape", "capsule", "pathshape":
-            ShapeElement(node: node)
-        case "zstack":
-            ZStack(alignment: Styles.alignment(alignment)) { children }
-        case "flowstack":
-            FlowElement(node: node)
-        case "scrollview":
-            ScrollView(Self.axes(node.attributes["axes"]?.string)) {
-                if node.attributes["snap"]?.string == "view" {
-                    children.scrollTargetLayout()
-                } else {
-                    children
-                }
+        ScrollView(Self.axes(node.attributes["axes"]?.string)) {
+            if node.attributes["snap"]?.string == "view" {
+                Children(node: node).scrollTargetLayout()
+            } else {
+                Children(node: node)
             }
-            .modifier(Scrollable(node: node))
-            .modifier(ScrollOptions(node: node))
-        case "list":
-            ListElement(node: node)
-        case "glasseffectcontainer":
-            GlassContainer(node: node)
-        case "formview":
-            Form { children }
-        case "spacer":
-            Spacer(minLength: node.attributes["minlength"]?.number.map { CGFloat($0) })
-        case "divider":
-            Divider()
-        case "txt":
-            TextView(node: node)
-        case "asyncimage":
-            RemoteImage(node: node)
-        case "imageview":
-            ImageElement(node: node)
-        case "labelview":
-            LabelElement(node: node)
-        case "linkview":
-            LinkElement(node: node)
-        case "sharelink":
-            ShareElement(node: node)
-        case "sfsymbol":
-            Symbol(node: node)
-        case "btn":
-            ButtonElement(node: node)
-        case "textfield" where node.attributes["format"] != nil:
-            NumberFieldControl(node: node)
-        case "textfield", "securefield", "texteditor":
-            TextInputControl(node: node)
-        case "toggle":
-            ToggleElement(node: node)
-        case "picker" where node.attributes["multiple"]?.isTrue == true:
-            MultiPickerControl(node: node)
-        case "picker":
-            PickerControl(node: node)
-        case "multidatepicker":
-            MultiDatePickerControl(node: node)
-        case "colorpicker":
-            ColorPickerControl(node: node)
-        case "gauge":
-            GaugeElement(node: node)
-        case "labeledcontent":
-            LabeledContentElement(node: node)
-        case "contentunavailableview":
-            UnavailableElement(node: node)
-        case "menuview":
-            MenuElement(node: node)
-        case "slider":
-            SliderControl(node: node)
-        case "stepper":
-            StepperControl(node: node)
-        case "datepicker":
-            DatePickerControl(node: node)
-        case "progressview":
-            ProgressControl(node: node)
-        default:
-            CustomElement(node: node)
         }
-    }
-
-    private var spacing: CGFloat? {
-        node.attributes["spacing"]?.number.map { CGFloat($0) }
+        .modifier(Scrollable(node: node))
+        .modifier(ScrollOptions(node: node))
     }
 
     private static func axes(_ name: String?) -> Axis.Set {
@@ -199,10 +223,6 @@ private struct SingleElement: View {
         case "both": [.horizontal, .vertical]
         default: .vertical
         }
-    }
-
-    private var alignment: String? {
-        node.attributes["alignment"]?.string
     }
 }
 
@@ -227,78 +247,6 @@ private struct NavStack: View {
                 if let screen = runtime.store.node(id) { NodeView(node: screen) }
             }
         }
-    }
-}
-
-private struct NodeModifiers: ViewModifier {
-    let node: Node
-    let isRow: Bool
-
-    func body(content: Content) -> some View {
-        let modifiers = isRow ? node.modifiers.subtracting(.rowTraits) : node.modifiers
-        if modifiers.isEmpty, !node.hostsPresentations {
-            content
-        } else {
-            content
-                .modifier(Shaping(node: node, modifiers: modifiers))
-                .modifier(Behaving(node: node, modifiers: modifiers))
-                .modifier(Hosting(node: node, modifiers: modifiers))
-        }
-    }
-}
-
-private struct Shaping: ViewModifier {
-    let node: Node
-    let modifiers: ModifierSet
-
-    func body(content: Content) -> some View {
-        let attributes = node.attributes
-        content
-            .gated(modifiers.contains(.safeArea)) { $0.modifier(SafeAreaInsets(node: node)) }
-            .gated(modifiers.contains(.framing)) { $0.modifier(Framing(attributes: attributes)) }
-            .gated(modifiers.contains(.framing)) { $0.modifier(Sizing(attributes: attributes)) }
-            .gated(modifiers.contains(.typography)) { $0.modifier(Typography(attributes: attributes)) }
-            .gated(modifiers.contains(.appearance)) { $0.modifier(Appearance(attributes: attributes)) }
-            .gated(modifiers.contains(.decorations)) { $0.modifier(Decorations(node: node)) }
-            .gated(modifiers.contains(.glass)) { $0.modifier(GlassSurface(attributes: attributes)) }
-            .gated(modifiers.contains(.layers)) { $0.modifier(Layers(node: node)) }
-            .gated(modifiers.contains(.transforms)) { $0.modifier(Transforms(attributes: attributes)) }
-            .gated(modifiers.contains(.appearance)) { $0.modifier(Compositing(attributes: attributes)) }
-    }
-}
-
-private struct Behaving: ViewModifier {
-    let node: Node
-    let modifiers: ModifierSet
-
-    func body(content: Content) -> some View {
-        let attributes = node.attributes
-        content
-            .gated(modifiers.contains(.accessible)) { $0.modifier(Accessible(node: node)) }
-            .gated(modifiers.contains(.lifecycle)) { $0.modifier(Lifecycle(node: node)) }
-            .gated(modifiers.contains(.gestures)) { $0.modifier(GestureHandlers(node: node)) }
-            .gated(modifiers.contains(.pointer)) { $0.modifier(PointerEvents(node: node)) }
-            .gated(modifiers.contains(.scrolling)) { $0.modifier(ScrollVisibility(node: node)) }
-            .gated(modifiers.contains(.shared)) { $0.modifier(SharedNamespace(node: node)).modifier(MatchedGeometry(node: node)) }
-            .gated(modifiers.contains(.measured)) { $0.modifier(Measured(node: node)) }
-            .gated(modifiers.contains(.gridCell)) { $0.modifier(GridCell(attributes: attributes)) }
-            .gated(modifiers.contains(.resizing)) { $0.modifier(Resizing(node: node)) }
-            .gated(modifiers.contains(.localized)) { $0.modifier(Localized(attributes: attributes)) }
-            .gated(modifiers.contains(.preferences)) { $0.modifier(Preferences(attributes: attributes)) }
-            .gated(modifiers.contains(.availability)) { $0.modifier(Availability(node: node)) }
-    }
-}
-
-private struct Hosting: ViewModifier {
-    let node: Node
-    let modifiers: ModifierSet
-
-    func body(content: Content) -> some View {
-        content
-            .gated(node.hostsPresentations) { $0.modifier(Presentations(node: node)) }
-            .gated(modifiers.contains(.animated)) { $0.modifier(AnimatedChildren(node: node)) }
-            .gated(modifiers.contains(.attachments)) { $0.modifier(Attachments(node: node)) }
-            .gated(modifiers.contains(.rowTraits)) { $0.modifier(RowTraits(node: node)) }
     }
 }
 

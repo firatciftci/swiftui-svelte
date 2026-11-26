@@ -11,11 +11,11 @@ struct GlassContainer: View {
     var body: some View {
         if #available(iOS 26, macOS 26, visionOS 26, *) {
             GlassEffectContainer(spacing: node.attributes["spacing"]?.number.map { CGFloat($0) }) {
-                ForEach(node.renderedChildren) { NodeView(node: $0) }
+                Children(node: node)
             }
             .environment(\.glassNamespace, namespace)
         } else {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            Children(node: node)
         }
     }
 }

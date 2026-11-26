@@ -64,7 +64,7 @@ struct FlowElement: View {
             lineSpacing: CGFloat(attributes["linespacing"]?.number ?? Double(spacing)),
             fraction: Self.fraction(attributes["alignment"]?.string)
         ) {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            Children(node: node)
         }
     }
 

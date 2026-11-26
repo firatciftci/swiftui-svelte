@@ -57,7 +57,7 @@ struct Screen: View {
     var body: some View {
         let attributes = node.attributes
         Group {
-            Slot(node: node)
+            Children(node: node)
         }
         .navigationTitle(attributes["title"]?.string ?? "")
         .modifier(Subtitle(text: attributes["subtitle"]?.string))

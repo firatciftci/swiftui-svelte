@@ -166,7 +166,7 @@ struct Decorations: ViewModifier {
             .ifLet(Effects.shadow(attributes["shadow"])) { $0.shadow(color: $1.color, radius: $1.radius, x: $1.x, y: $1.y) }
             .ifLet(attributes["blur"]?.number) { $0.blur(radius: max($1, 0)) }
             .ifLet(node.attachment("maskview")) { view, mask in
-                view.mask(alignment: Styles.alignment(mask.attributes["alignment"]?.string)) { Slot(node: mask) }
+                view.mask(alignment: Styles.alignment(mask.attributes["alignment"]?.string)) { Children(node: mask) }
             }
             .ifLet(Effects.shape(attributes["contentshape"])) { $0.contentShape($1) }
     }
@@ -195,16 +195,16 @@ struct SafeAreaInsets: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(inset("top")) { view, inset in
-                view.safeAreaInset(edge: .top, alignment: horizontal(inset), spacing: spacing(inset)) { Slot(node: inset) }
+                view.safeAreaInset(edge: .top, alignment: horizontal(inset), spacing: spacing(inset)) { Children(node: inset) }
             }
             .ifLet(inset("bottom")) { view, inset in
-                view.safeAreaInset(edge: .bottom, alignment: horizontal(inset), spacing: spacing(inset)) { Slot(node: inset) }
+                view.safeAreaInset(edge: .bottom, alignment: horizontal(inset), spacing: spacing(inset)) { Children(node: inset) }
             }
             .ifLet(inset("leading")) { view, inset in
-                view.safeAreaInset(edge: .leading, alignment: vertical(inset), spacing: spacing(inset)) { Slot(node: inset) }
+                view.safeAreaInset(edge: .leading, alignment: vertical(inset), spacing: spacing(inset)) { Children(node: inset) }
             }
             .ifLet(inset("trailing")) { view, inset in
-                view.safeAreaInset(edge: .trailing, alignment: vertical(inset), spacing: spacing(inset)) { Slot(node: inset) }
+                view.safeAreaInset(edge: .trailing, alignment: vertical(inset), spacing: spacing(inset)) { Children(node: inset) }
             }
     }
 

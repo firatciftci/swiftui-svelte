@@ -174,6 +174,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] Upstream fix for reversing keyed `{#each}` (sveltejs/svelte#19440)
 - [x] Benchmarks in CI (create, update, swap, reverse, and clear 1,000 and 10,000 rows) with budgets that fail the build on a regression
 - [x] Fine-grained observation: an attribute change invalidates only the node's own view, not its parent's
+- [x] Each element builds only the modifiers it uses behind one type-erased view, and children that are single views tell SwiftUI so up front, which keeps a page of 300 entries within about 20% of plain SwiftUI
 - [x] Lazy containers keep memory flat while scrolling 10,000 rows
 - [ ] Main-thread time for 1,000 new rows under 16ms on an iPhone 15-class device _(maintainer)_
 - [x] A bundle size budget for the renderer and the host polyfills

@@ -17,7 +17,7 @@ struct PickerControl: View {
             }
         } label: {
             if let label = node.attachment("label") {
-                Slot(node: label)
+                Children(node: label)
             } else {
                 Text(node.attributes["label"]?.string ?? "")
             }
@@ -48,9 +48,9 @@ struct SliderControl: View {
             runtime.edit(node, "value", to: .number(value), event: "input", payload: value)
         }
         if let step = node.attributes["step"]?.number {
-            Slider(value: value, in: bounds, step: step, label: { Slot(node: node) }, onEditingChanged: editingChanged)
+            Slider(value: value, in: bounds, step: step, label: { Children(node: node) }, onEditingChanged: editingChanged)
         } else {
-            Slider(value: value, in: bounds, label: { Slot(node: node) }, onEditingChanged: editingChanged)
+            Slider(value: value, in: bounds, label: { Children(node: node) }, onEditingChanged: editingChanged)
         }
     }
 
@@ -76,7 +76,7 @@ struct StepperControl: View {
             in: lower...max(lower, node.attributes["max"]?.number ?? .infinity),
             step: node.attributes["step"]?.number ?? 1
         ) {
-            Slot(node: node)
+            Children(node: node)
         }
     }
 }
@@ -97,7 +97,7 @@ struct DatePickerControl: View {
             in: lower...max(lower, node.attributes["max"]?.date ?? .distantFuture),
             displayedComponents: components
         ) {
-            Slot(node: node)
+            Children(node: node)
         }
         switch node.attributes["variant"]?.string {
         case "compact": picker.datePickerStyle(.compact)
@@ -127,12 +127,12 @@ struct ProgressControl: View {
             if node.renderedChildren.isEmpty {
                 ProgressView(value: min(value, total), total: total)
             } else {
-                ProgressView(value: min(value, total), total: total) { Slot(node: node) }
+                ProgressView(value: min(value, total), total: total) { Children(node: node) }
             }
         } else if node.renderedChildren.isEmpty {
             ProgressView()
         } else {
-            ProgressView { Slot(node: node) }
+            ProgressView { Children(node: node) }
         }
     }
 }
@@ -213,7 +213,7 @@ struct MultiPickerControl: View {
 
     @ViewBuilder private var label: some View {
         if let label = node.attachment("label") {
-            Slot(node: label)
+            Children(node: label)
         } else {
             Text(node.attributes["label"]?.string ?? "")
         }
@@ -315,13 +315,13 @@ struct MultiDatePickerControl: View {
             }
             switch (lower, upper) {
             case let (lower?, upper?):
-                MultiDatePicker(selection: selection, in: lower..<max(lower, upper)) { Slot(node: node) }
+                MultiDatePicker(selection: selection, in: lower..<max(lower, upper)) { Children(node: node) }
             case let (lower?, nil):
-                MultiDatePicker(selection: selection, in: lower...) { Slot(node: node) }
+                MultiDatePicker(selection: selection, in: lower...) { Children(node: node) }
             case let (nil, upper?):
-                MultiDatePicker(selection: selection, in: ..<upper) { Slot(node: node) }
+                MultiDatePicker(selection: selection, in: ..<upper) { Children(node: node) }
             case (nil, nil):
-                MultiDatePicker(selection: selection) { Slot(node: node) }
+                MultiDatePicker(selection: selection) { Children(node: node) }
             }
         #endif
     }
@@ -343,7 +343,7 @@ struct ColorPickerControl: View {
             },
             supportsOpacity: node.attributes["supportsopacity"]?.isTrue ?? true
         ) {
-            Slot(node: node)
+            Children(node: node)
         }
     }
 }

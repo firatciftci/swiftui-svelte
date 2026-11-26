@@ -55,6 +55,9 @@ final class Node: Identifiable {
             if !hostsPresentations, children.contains(where: { $0.kind == .element && Presenting.anchored.contains($0.name) }) {
                 hostsPresentations = true
             }
+            if !hasMultiViewChild, renderedChildren.contains(where: { $0.kind == .element && NodeView.multiView.contains($0.name) }) {
+                hasMultiViewChild = true
+            }
         }
     }
     var presented: Array<Node> = [] {
@@ -63,6 +66,7 @@ final class Node: Identifiable {
         }
     }
     var hostsPresentations: Bool
+    private(set) var hasMultiViewChild = false
     var hostsInspector: Bool
     var focusRequest = FocusRequest()
     var isMeasured = false {

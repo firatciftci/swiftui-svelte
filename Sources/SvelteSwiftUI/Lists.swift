@@ -71,10 +71,10 @@ struct Rows: View {
     @Environment(SvelteRuntime.self) private var runtime
 
     var body: some View {
-        if RowView.wraps(node.renderedChildren) {
-            editable(ForEach(node.renderedChildren) { RowView(node: $0) })
-        } else {
+        if node.hasMultiViewChild {
             editable(ForEach(node.renderedChildren) { NodeView(node: $0) })
+        } else {
+            editable(ForEach(node.renderedChildren) { SingleNodeView(node: $0) })
         }
     }
 

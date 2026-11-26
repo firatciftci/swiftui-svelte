@@ -9,7 +9,7 @@ struct GaugeElement: View {
         let upper = max(lower, attributes["max"]?.number ?? 1)
         let value = min(max(attributes["value"]?.number ?? lower, lower), upper)
         let gauge = Gauge(value: value, in: lower...upper) {
-            Slot(node: node)
+            Children(node: node)
         } currentValueLabel: {
             if let current = attributes["current"]?.string { Text(current) }
         } minimumValueLabel: {
@@ -39,7 +39,7 @@ struct LabeledContentElement: View {
             }
         } else {
             LabeledContent {
-                ForEach(node.renderedChildren) { NodeView(node: $0) }
+                Children(node: node)
             } label: {
                 Title(node: node)
             }
@@ -61,7 +61,7 @@ struct UnavailableElement: View {
         } else {
             ContentUnavailableView {
                 if let label = node.attachment("label") {
-                    Slot(node: label)
+                    Children(node: label)
                 } else if let symbol = attributes["symbol"]?.string {
                     Label(attributes["title"]?.string ?? "", systemImage: symbol)
                 } else {
@@ -70,7 +70,7 @@ struct UnavailableElement: View {
             } description: {
                 if let description = attributes["description"]?.string { Text(description) }
             } actions: {
-                ForEach(node.renderedChildren) { NodeView(node: $0) }
+                Children(node: node)
             }
         }
     }
@@ -118,7 +118,7 @@ struct MenuElement: View {
     @ViewBuilder private var label: some View {
         let attributes = node.attributes
         if let label = node.attachment("label") {
-            Slot(node: label)
+            Children(node: label)
         } else if let symbol = attributes["symbol"]?.string {
             Label(attributes["title"]?.string ?? "", systemImage: symbol)
         } else {
@@ -168,7 +168,7 @@ struct ContextMenu: ViewModifier {
             content.contextMenu {
                 items
             } preview: {
-                Slot(node: preview).environment(runtime)
+                Children(node: preview).environment(runtime)
             }
         } else {
             content.contextMenu { items }

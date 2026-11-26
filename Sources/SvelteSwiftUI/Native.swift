@@ -175,7 +175,7 @@ public struct NativeElement {
     }
 
     public func slot(_ name: String) -> AnyView? {
-        node.attachment(name).map { AnyView(Slot(node: $0)) }
+        node.attachment(name).map { AnyView(Children(node: $0)) }
     }
 
     public func send(_ event: String) {

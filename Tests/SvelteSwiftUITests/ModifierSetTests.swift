@@ -12,13 +12,13 @@ struct ModifierSetTests {
         "Resizing": .resizing, "Localized": .localized, "Preferences": .preferences, "Availability": .availability,
         "AnimatedChildren": .animated, "Attachments": .attachments, "RowTraits": .rowTraits, "RowOptions": .rowTraits,
         "SafeAreaInsets": .safeArea, "PointerEvents": .pointer, "ScrollVisibility": .scrolling, "SharedNamespace": .shared,
-        "MatchedGeometry": .shared, "Sizing": .framing,
+        "MatchedGeometry": .shared, "Sizing": .framing, "LayoutPriority": .framing,
     ]
     nonisolated private static let modifiers = [
         "Framing", "Typography", "Appearance", "Compositing", "Decorations", "GlassSurface", "Transforms", "Layers", "Accessible",
         "AccessibleDescription", "AccessibleActions", "Lifecycle", "GestureHandlers", "Taps", "Drags", "Pinches", "GridCell",
         "Resizing", "Localized", "Preferences", "Availability", "AnimatedChildren", "Attachments", "RowTraits", "RowOptions",
-        "SafeAreaInsets", "PointerEvents", "ScrollVisibility", "SharedNamespace", "MatchedGeometry", "Sizing",
+        "SafeAreaInsets", "PointerEvents", "ScrollVisibility", "SharedNamespace", "MatchedGeometry", "Sizing", "LayoutPriority",
     ]
 
     private static func source() throws -> String {
@@ -72,7 +72,8 @@ struct ModifierSetTests {
     }
 
     @Test func fadesAttachmentsWithTheElementByApplyingLayersBeforeCompositing() throws {
-        let shaping = try #require(Self.body(of: "Shaping", in: try Self.source()))
+        let source = try Self.source()
+        let shaping = try #require(source.range(of: "enum NodeShape {").map { source[$0.lowerBound...] })
         let layers = try #require(shaping.range(of: "Layers(node: node)"))
         let transforms = try #require(shaping.range(of: "Transforms(attributes: attributes)"))
         let compositing = try #require(shaping.range(of: "Compositing(attributes: attributes)"))

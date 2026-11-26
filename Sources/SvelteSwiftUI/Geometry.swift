@@ -52,7 +52,6 @@ struct Sizing: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(Self.fixedAxes(attributes["fixedsize"])) { $0.fixedSize(horizontal: $1.horizontal, vertical: $1.vertical) }
-            .ifLet(attributes["layoutpriority"]?.number) { $0.layoutPriority($1) }
     }
 
     private static func fixedAxes(_ value: JSONValue?) -> (horizontal: Bool, vertical: Bool)? {
