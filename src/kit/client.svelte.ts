@@ -1,6 +1,7 @@
 import type { Component } from "svelte";
 import { SvelteSet, SvelteURL } from "svelte/reactivity";
 import { matchers, root, routes } from "virtual:swiftui-svelte/routes";
+import type { AnimationOptions } from "../elements.ts";
 import type { Params } from "./match.ts";
 import type {
   AfterNavigate,
@@ -103,11 +104,26 @@ class Router {
   rootData: Data = $state.raw({});
   navigating: Navigation | null = $state.raw(null);
   rootDeps = new SvelteSet<string>();
+  animation: AnimationOptions = true;
 
   #save(): void {
     saved.value = this.stack
       .slice(1)
       .map((entry) => entry.url.pathname + entry.url.search);
+  }
+
+  #popTo(depth: number): void {
+    if (depth < 0 || depth >= this.stack.length - 1) return;
+    const from = this.target(this.top);
+    withAnimation(() => {
+      this.stack = this.stack.slice(0, depth + 1);
+      this.#save();
+    }, this.animation);
+    const to = this.target(this.top);
+    if (from == null || to == null) return;
+    for (const callback of hooks.after) {
+      callback({ from, to, type: "popstate", willUnload: false });
+    }
   }
 
   get top(): Entry | null {
@@ -141,7 +157,7 @@ class Router {
         ? [...this.stack.slice(0, -1), entry]
         : [...this.stack, entry];
       this.#save();
-    });
+    }, this.animation);
   }
 
   pop(depth: number): void {
@@ -159,17 +175,12 @@ class Router {
       this.sheet = null;
       return;
     }
-    if (this.stack.length < 2) return;
-    const from = this.target(this.top);
-    withAnimation(() => {
-      this.stack = this.stack.slice(0, -1);
-      this.#save();
-    });
-    const to = this.target(this.top);
-    if (from == null || to == null) return;
-    for (const callback of hooks.after) {
-      callback({ from, to, type: "popstate", willUnload: false });
-    }
+    this.#popTo(this.stack.length - 2);
+  }
+
+  popToRoot(): void {
+    this.sheet = null;
+    this.#popTo(0);
   }
 }
 

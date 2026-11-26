@@ -10,7 +10,12 @@ import {
   parseSegments,
   resolveRoute,
 } from "swiftui-svelte/kit/match";
-import { back, goto, invalidate } from "swiftui-svelte/kit/navigation";
+import {
+  back,
+  goto,
+  invalidate,
+  popToRoot,
+} from "swiftui-svelte/kit/navigation";
 import { resolve } from "swiftui-svelte/kit/paths";
 import { page } from "swiftui-svelte/kit/state";
 import Router from "../src/kit/Router.svelte";
@@ -189,6 +194,17 @@ describe("router", () => {
     expect(titles()).toEqual(["Home"]);
   });
 
+  it("pops every pushed screen with popToRoot", async () => {
+    await goto("/items/1");
+    await goto("/items/2");
+    await tick();
+    expect(titles()).toEqual(["Home", "Item 1", "Item 2"]);
+    popToRoot();
+    await tick();
+    expect(titles()).toEqual(["Home"]);
+    expect(page.url.pathname).toBe("/");
+  });
+
   it("renders the root error page with the status when a load fails", async () => {
     await goto("/items/9");
     await tick();
@@ -275,6 +291,38 @@ describe("router", () => {
   });
 
   it("unmounts cleanly", () => {
+    unmount?.();
+    unmount = undefined;
+  });
+});
+
+describe("router with the fade transition", () => {
+  let unmount: (() => void) | undefined;
+
+  beforeAll(async () => {
+    reset();
+    unmount = mountComponent(Router, {
+      transition: "fade",
+      animation: { type: "easeInOut", duration: 250 },
+    });
+    await tick();
+  });
+
+  it("renders only the top screen, without a native stack", async () => {
+    expect(find("navstack")).toBeUndefined();
+    expect(text("home")).toBe("Home");
+    await goto("/items/2");
+    await tick();
+    expect(find("navstack")).toBeUndefined();
+    expect(text("home")).toBeUndefined();
+    expect(text("item")).toMatch(/^Item 2 loaded/);
+    const layer = find("zstack")?.children.find(
+      (child) => child.kind === "element" && child.name === "vstack",
+    );
+    expect(layer?.attributes.get("transition")).toBe("opacity");
+    back();
+    await tick();
+    expect(text("home")).toBe("Home");
     unmount?.();
     unmount = undefined;
   });

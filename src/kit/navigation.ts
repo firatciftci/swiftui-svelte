@@ -20,6 +20,10 @@ export function back(): void {
   router.back();
 }
 
+export function popToRoot(): void {
+  router.popToRoot();
+}
+
 function register<T>(set: Set<T>, callback: T): void {
   set.add(callback);
   onDestroy(() => set.delete(callback));

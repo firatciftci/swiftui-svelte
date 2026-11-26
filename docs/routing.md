@@ -57,6 +57,7 @@ Import navigation helpers from `$app/navigation` and read the current route from
 
 - `goto(href, { replaceState })` pushes a route, or replaces the current one.
 - `back()` pops the current screen.
+- `popToRoot()` pops every pushed screen and returns to the first one. Import it from `$app/navigation` or `swiftui-svelte/kit`.
 - `invalidate(depends)` and `invalidateAll()` run the `load` functions again.
 - `beforeNavigate(callback)` can cancel a navigation, and `afterNavigate(callback)` runs once a screen appears. As in SvelteKit, `navigation.to` is `null` when the navigation leaves the app.
 - `page` holds the `url`, `params`, `route`, `status`, `error`, and `data` for the current screen.
@@ -66,6 +67,23 @@ Import navigation helpers from `$app/navigation` and read the current route from
 ## Deep links
 
 An opened URL routes to the matching screen. The path after the app's scheme maps to the route: `yourapp://todos/2` opens `/todos/2`. To open web links too, such as universal links, list your site's hosts: `<Router hosts={["example.com"]} />` routes `https://example.com/todos/2` to `/todos/2`. The router ignores web URLs from any other host. On the simulator in a debug build, launch the app with `-route /todos/2` to open a route at startup.
+
+## Transitions
+
+By default, `<Router />` pushes screens onto a native navigation stack, with its navigation bar, back button, and swipe to go back. An app that draws its own header can pass `transition="fade"` instead. The router then shows only the top screen, without a navigation bar, and crossfades to the next screen with the `animation` you pass:
+
+```svelte
+<Router
+  transition="fade"
+  animation={{
+    type: "timingCurve",
+    curve: [0.25, 0.1, 0.25, 1],
+    duration: 250,
+  }}
+/>
+```
+
+The screens share a namespace, so elements with the same `matchedid` on two screens morph from one to the other as the screens change. There is no swipe to go back in this mode. Call `back()` from your own gesture or button.
 
 ## Differences from SvelteKit
 

@@ -7,6 +7,7 @@ export {
   redirect,
 } from "./errors.ts";
 export { default as Link } from "./Link.svelte";
+export { popToRoot } from "./navigation.ts";
 export { default as Router } from "./Router.svelte";
 export { useScreen } from "./screen.ts";
 export type {

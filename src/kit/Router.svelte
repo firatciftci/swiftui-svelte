@@ -1,17 +1,47 @@
 <script lang="ts">
   import { root } from "virtual:swiftui-svelte/routes";
+  import type { AnimationOptions } from "../elements.ts";
   import Sheet from "../components/Sheet.svelte";
   import { router, start } from "./client.svelte.ts";
   import EntryView from "./EntryView.svelte";
 
-  const { hosts = [] }: { hosts?: Array<string> } = $props();
+  const {
+    hosts = [],
+    transition = "push",
+    animation = true,
+  }: {
+    hosts?: Array<string>;
+    transition?: "push" | "fade";
+    animation?: AnimationOptions;
+  } = $props();
+
+  $effect.pre(() => {
+    router.animation = transition === "fade" ? animation : true;
+  });
 
   start(() => hosts);
 
   const RootLayout = root.layout;
+  const top = $derived(router.stack.at(-1));
 </script>
 
-{#snippet screens()}
+{#snippet sheet()}
+  {#if router.sheet != null}
+    <Sheet presented ondismiss={() => router.dismiss()}>
+      <navstack>
+        <screen
+          title={router.sheet.screen.title}
+          subtitle={router.sheet.screen.subtitle}
+          backbuttonhidden={router.sheet.screen.backButtonHidden}
+        >
+          <EntryView entry={router.sheet} />
+        </screen>
+      </navstack>
+    </Sheet>
+  {/if}
+{/snippet}
+
+{#snippet pushed()}
   <navstack onpop={(depth) => router.pop(depth)}>
     {#each router.stack as entry (entry.key)}
       <screen
@@ -20,22 +50,38 @@
         backbuttonhidden={entry.screen.backButtonHidden}
       >
         <EntryView {entry} />
-        {#if entry === router.stack.at(-1) && router.sheet != null}
-          <Sheet presented ondismiss={() => router.dismiss()}>
-            <navstack>
-              <screen
-                title={router.sheet.screen.title}
-                subtitle={router.sheet.screen.subtitle}
-                backbuttonhidden={router.sheet.screen.backButtonHidden}
-              >
-                <EntryView entry={router.sheet} />
-              </screen>
-            </navstack>
-          </Sheet>
+        {#if entry === top}
+          {@render sheet()}
         {/if}
       </screen>
     {/each}
   </navstack>
+{/snippet}
+
+{#snippet faded()}
+  <zstack maxwidth="infinity" maxheight="infinity" namespace>
+    {#if top != null}
+      {#key top.key}
+        <vstack
+          transition="opacity"
+          {animation}
+          maxwidth="infinity"
+          maxheight="infinity"
+        >
+          <EntryView entry={top} />
+        </vstack>
+      {/key}
+    {/if}
+    {@render sheet()}
+  </zstack>
+{/snippet}
+
+{#snippet screens()}
+  {#if transition === "fade"}
+    {@render faded()}
+  {:else}
+    {@render pushed()}
+  {/if}
 {/snippet}
 
 {#if RootLayout != null}
