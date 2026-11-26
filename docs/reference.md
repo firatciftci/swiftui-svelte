@@ -1564,15 +1564,15 @@ A `ContentUnavailableView`: an empty state with a symbol, a title, a description
 
 A `Button`: runs `onclick` when tapped.
 
-| Attribute     | Type                                                                                                 | Description                                                                                                                                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pressed`     | `ButtonFeedback`                                                                                     | The look of the button while it's pressed. The overrides apply to the label, and the button uses the plain style, so style its appearance with the label's own modifiers.                                                |
-| `hovered`     | `ButtonFeedback`                                                                                     | The look of the button while the pointer is over it, using the same values as `pressed`.                                                                                                                                 |
-| `variant`     | `"automatic" \| "borderless" \| "plain" \| "bordered" \| "prominent" \| "glass" \| "glassProminent"` | The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. |
-| `role`        | `"destructive" \| "cancel" \| "confirm" \| "close"`                                                  | The role of the button: `destructive` or `cancel`, or `confirm` and `close` on iOS 26 and later.                                                                                                                         |
-| `bordershape` | `"automatic" \| "capsule" \| "roundedRectangle" \| "circle" \| number`                               | The shape of a bordered or glass button: `automatic`, `capsule`, `roundedRectangle`, `circle`, or a corner radius in points.                                                                                             |
-| `repeat`      | `boolean`                                                                                            | Runs `onclick` again and again while the button is held down, as a stepper does.                                                                                                                                         |
-| `onclick`     | `() => void`                                                                                         | Runs when the button is tapped.                                                                                                                                                                                          |
+| Attribute     | Type                                                                                                 | Description                                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pressed`     | `ButtonFeedback`                                                                                     | The look of the button while it's pressed. Any modifier overrides the same attribute on the label while the button is pressed. These include `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. |
+| `hovered`     | `ButtonFeedback`                                                                                     | The look of the button while the pointer is over it. It takes the same values as `pressed`, and `pressed` wins while both apply.                                                                                                                                                                                                                                   |
+| `variant`     | `"automatic" \| "borderless" \| "plain" \| "bordered" \| "prominent" \| "glass" \| "glassProminent"` | The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions.                                                                                                                                           |
+| `role`        | `"destructive" \| "cancel" \| "confirm" \| "close"`                                                  | The role of the button: `destructive` or `cancel`, or `confirm` and `close` on iOS 26 and later.                                                                                                                                                                                                                                                                   |
+| `bordershape` | `"automatic" \| "capsule" \| "roundedRectangle" \| "circle" \| number`                               | The shape of a bordered or glass button: `automatic`, `capsule`, `roundedRectangle`, `circle`, or a corner radius in points.                                                                                                                                                                                                                                       |
+| `repeat`      | `boolean`                                                                                            | Runs `onclick` again and again while the button is held down, as a stepper does.                                                                                                                                                                                                                                                                                   |
+| `onclick`     | `() => void`                                                                                         | Runs when the button is tapped.                                                                                                                                                                                                                                                                                                                                    |
 
 ```svelte
 <script lang="ts">
@@ -1588,9 +1588,16 @@ A `Button`: runs `onclick` when tapped.
   <btn variant="glass" role="destructive" onclick={() => (count = 0)}>Reset</btn
   >
   <btn
-    pressed={{ scale: 0.95, opacity: 0.8, animation: "snappy" }}
+    pressed={{
+      scale: 0.95,
+      opacity: 0.8,
+      colormultiply: "#dddddd",
+      shadow: false,
+      animation: "snappy",
+    }}
     hovered={{
       brightness: 0.1,
+      shadow: { color: "#00000033", radius: 8, y: 4 },
       animation: {
         type: "timingCurve",
         curve: [0.42, 0, 0.58, 1],
@@ -1603,6 +1610,7 @@ A `Button`: runs `onclick` when tapped.
       color="white"
       background="blue"
       radius={8}
+      shadow={{ color: "#00000026", radius: 2, y: 1 }}
       padding={{ horizontal: 16, vertical: 8 }}
     >
       Press feedback
@@ -2486,21 +2494,21 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Color and style
 
-| Attribute          | Type                                                                             | Description                                                                                                                    |
-| ------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `color`            | `ShapeStyle`                                                                     | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                        |
-| `tint`             | `Color`                                                                          | The tint of the controls inside the element. Takes a color only.                                                               |
-| `background`       | `ShapeStyle`                                                                     | The background style, such as a color, a material, or a gradient, drawn behind the element.                                    |
-| `opacity`          | `number`                                                                         | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                 |
-| `brightness`       | `number`                                                                         | Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged.           |
-| `colormultiply`    | `Color`                                                                          | Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only.                    |
-| `blendmode`        | `BlendMode`                                                                      | How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`.                 |
-| `compositinggroup` | `boolean`                                                                        | Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole.   |
-| `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                               | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                             |
-| `shadow`           | `number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. |
-| `blur`             | `number`                                                                         | Blurs the element by this radius in points.                                                                                    |
-| `radius`           | `number`                                                                         | Rounds the corners of the element to this radius in points.                                                                    |
-| `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                      | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                             |
+| Attribute          | Type                                                                                      | Description                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `color`            | `ShapeStyle`                                                                              | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                                                                                                     |
+| `tint`             | `Color`                                                                                   | The tint of the controls inside the element. Takes a color only.                                                                                                                                            |
+| `background`       | `ShapeStyle`                                                                              | The background style, such as a color, a material, or a gradient, drawn behind the element.                                                                                                                 |
+| `opacity`          | `number`                                                                                  | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                                                                                              |
+| `brightness`       | `number`                                                                                  | Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged.                                                                                        |
+| `colormultiply`    | `Color`                                                                                   | Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only.                                                                                                 |
+| `blendmode`        | `BlendMode`                                                                               | How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`.                                                                                              |
+| `compositinggroup` | `boolean`                                                                                 | Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole.                                                                                |
+| `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                                        | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                                                                                                          |
+| `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has. |
+| `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                 |
+| `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                 |
+| `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                               | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                                                                                                          |
 
 ```svelte
 <vstack spacing={16} padding>
@@ -3348,7 +3356,7 @@ type BlendMode =
 ### `ButtonFeedback`
 
 ```ts
-type ButtonFeedback = ButtonFeedback;
+type ButtonFeedback = Modifiers;
 ```
 
 ### `ClipShape`

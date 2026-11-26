@@ -4,19 +4,14 @@ import Testing
 @testable import SvelteSwiftUI
 
 struct ButtonFeedbackTests {
-    @Test func readsOverridesFromAnObject() throws {
+    @Test func keepsEveryKeyExceptTheAnimationAsAnOverride() throws {
         let feedback = try #require(
             ButtonFeedback(
                 .object([
-                    "scale": .number(0.95), "opacity": .number(0.8), "brightness": .number(0.1), "color": .string("red"),
+                    "scale": .number(0.95), "shadow": .bool(false), "colormultiply": .string("#dddddd"),
                     "animation": .string("snappy"),
                 ])))
-        #expect(feedback.scale == 0.95)
-        #expect(feedback.opacity == 0.8)
-        #expect(feedback.brightness == 0.1)
-        #expect(feedback.color != nil)
-        #expect(feedback.background == nil)
-        #expect(feedback.shadow == nil)
+        #expect(feedback.overrides == ["scale": .number(0.95), "shadow": .bool(false), "colormultiply": .string("#dddddd")])
         #expect(feedback.animation == (MotionCurve(.string("snappy")) ?? MotionCurve()).animation)
     }
 
@@ -25,7 +20,15 @@ struct ButtonFeedbackTests {
         #expect(ButtonFeedback(.string("pressed")) == nil)
     }
 
-    @Test func readsShadowsTheSameWayAsTheShadowModifier() {
-        #expect(ButtonFeedback(.object(["shadow": .number(8)]))?.shadow == Effects.shadow(.number(8)))
+    @Test func overridesTheLabelsAttributesOnlyWhileActive() {
+        let node = Node(id: 1, kind: .element, name: "txt", text: "")
+        node.attributes = ["background": .string("red"), "radius": .number(8), "shadow": .number(4)]
+        node.feedback = ["background": .string("blue"), "shadow": .bool(false)]
+        #expect(node.attributes["background"] == .string("blue"))
+        #expect(node.attributes["radius"] == .number(8))
+        #expect(node.attributes["shadow"] == .bool(false))
+        node.feedback = [:]
+        #expect(node.attributes["background"] == .string("red"))
+        #expect(node.attributes["shadow"] == .number(4))
     }
 }

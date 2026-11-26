@@ -17,8 +17,15 @@ final class Node: Identifiable {
         }
     }
     private(set) var isBlank: Bool
-    var attributes: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: attributes)) }
+    var attributes: [String: JSONValue] {
+        get { feedback.isEmpty ? ownAttributes : ownAttributes.merging(feedback) { _, override in override } }
+        set { ownAttributes = newValue }
+    }
+    private var ownAttributes: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: ownAttributes)) }
+    }
+    var feedback: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: feedback)) }
     }
     var children: Array<Node> = [] {
         didSet {

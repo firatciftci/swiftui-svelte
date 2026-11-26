@@ -1,22 +1,12 @@
 import SwiftUI
 
 struct ButtonFeedback {
-    let scale: CGFloat?
-    let opacity: Double?
-    let brightness: Double?
-    let background: AnyShapeStyle?
-    let color: AnyShapeStyle?
-    let shadow: Effects.Shadow?
+    let overrides: [String: JSONValue]
     let animation: Animation
 
     init?(_ value: JSONValue?) {
         guard case let .object(options) = value else { return nil }
-        scale = options["scale"]?.number.map { CGFloat($0) }
-        opacity = options["opacity"]?.number
-        brightness = options["brightness"]?.number
-        background = Palette.style(options["background"])
-        color = Palette.style(options["color"])
-        shadow = Effects.shadow(options["shadow"])
+        overrides = options.filter { $0.key != "animation" }
         animation = (MotionCurve(options["animation"]) ?? MotionCurve()).animation
     }
 }
@@ -24,39 +14,31 @@ struct ButtonFeedback {
 struct FeedbackButtonStyle: ButtonStyle {
     let pressed: ButtonFeedback?
     let hovered: ButtonFeedback?
+    let labels: Array<Node>
 
     func makeBody(configuration: Configuration) -> some View {
-        FeedbackBody(configuration: configuration, pressed: pressed, hovered: hovered)
+        FeedbackBody(configuration: configuration, pressed: pressed, hovered: hovered, labels: labels)
     }
 
     private struct FeedbackBody: View {
         let configuration: Configuration
         let pressed: ButtonFeedback?
         let hovered: ButtonFeedback?
+        let labels: Array<Node>
         @State private var isHovered = false
 
         var body: some View {
             let isPressed = configuration.isPressed
             let active = isPressed ? pressed : (isHovered ? hovered : nil)
-            let phase = isPressed ? 2 : (isHovered ? 1 : 0)
+            let overrides = active?.overrides ?? [:]
+            let animation = active?.animation ?? .easeInOut(duration: 0.2)
             configuration.label
-                .modifier(FeedbackEffects(feedback: active))
-                .animation(active?.animation ?? .easeInOut(duration: 0.2), value: phase)
+                .onChange(of: overrides, initial: true) { _, overrides in
+                    withAnimation(animation) {
+                        for label in labels { label.feedback = overrides }
+                    }
+                }
                 .onHover { isHovered = $0 }
         }
-    }
-}
-
-private struct FeedbackEffects: ViewModifier {
-    let feedback: ButtonFeedback?
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(feedback?.scale ?? 1)
-            .opacity(feedback?.opacity ?? 1)
-            .brightness(feedback?.brightness ?? 0)
-            .background { Rectangle().fill(feedback?.background ?? AnyShapeStyle(.clear)) }
-            .ifLet(feedback?.color) { $0.foregroundStyle($1) }
-            .ifLet(feedback?.shadow) { $0.shadow(color: $1.color, radius: $1.radius, x: $1.x, y: $1.y) }
     }
 }
