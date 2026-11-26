@@ -3,7 +3,7 @@
 ## Keeping your app fast
 
 - **Key every `{#each}`.** With a key, Svelte moves rows when the order changes instead of building them again.
-- **Put long collections in a `list`, or in a lazy stack or grid inside a `scrollview`.** SwiftUI then creates rows only as they scroll into view. That works when every direct child of the container is a single row. If one of them is a `group` or a `disclosuregroup`, SwiftUI has to build every row up front to count them, so keep those out of long lists. A `sectionview` is fine as a direct child, because its rows are counted the same way.
+- **Put long collections in a `list`, or in a lazy stack or grid inside a `scrollview`.** SwiftUI then creates rows only as they scroll into view. That works when every direct child of the container is a single row. If one of them is a `group` or a `disclosuregroup`, SwiftUI has to build every row up front to count them, so keep those out of long lists. A container that has had one of them as a child keeps counting its rows that way, even after that child is gone. A `sectionview` is fine as a direct child, because its rows are counted the same way.
 - **Change state in place.** Setting `todo.done = true` updates one toggle, and Svelte sends only that change to Swift. Replacing the whole array makes Svelte compare every row.
 - **Load big lists in pages.** Creating 1,000 rows at once takes a few frames. [Loading data](loading-data.md) shows how to load the next page as the user scrolls.
 - **Debounce text fields that start work.** `debounce` on a `textfield` waits until the user stops typing before `oninput` runs.
@@ -35,19 +35,19 @@ Lazy containers keep memory flat while scrolling. In an iPhone 18 Pro simulator 
 
 ### Compared with plain SwiftUI
 
-The example app includes the same benchmark written in plain SwiftUI, with `@Observable` rows in a `List` and the same page of 300 entries in a `ScrollView`. In an iPhone 18 Pro simulator, with a Release build and the JIT off, the longest frames were:
+The example app includes the same benchmark written in plain SwiftUI, with `@Observable` rows in a `List` and the same page of 300 entries in a `ScrollView`. In an iPhone 18 Pro simulator, with a Release build and the JIT off, the longest frames over four runs that alternated between the two were:
 
 | Scenario                                       | swiftui-svelte | Plain SwiftUI |
 | ---------------------------------------------- | -------------- | ------------- |
-| Create 1,000 list rows                         | 71ms           | 65ms          |
+| Create 1,000 list rows                         | 66–79ms        | 56–69ms       |
 | Update all, update one, toggle all, append one | 17ms           | 17ms          |
-| Reverse 1,000 list rows                        | 50ms           | 43ms          |
+| Reverse 1,000 list rows                        | 44–49ms        | 39–58ms       |
 | Clear 1,000 list rows                          | 17ms           | 17ms          |
-| Create a page of 300 entries                   | 144ms          | 107ms         |
-| Update every entry on the page                 | 46ms           | 42ms          |
-| Clear the page                                 | 51–79ms        | 33ms          |
+| Create a page of 300 entries                   | 141–146ms      | 101–106ms     |
+| Update every entry on the page                 | 17–48ms        | 17–49ms       |
+| Clear the page                                 | 33–49ms        | 17–39ms       |
 
-Before version 1.0, every element went through the whole chain of about 20 modifier groups, so creating the page took 518ms and clearing it took 230ms. Elements now skip the groups they don't use, and a `txt` with plain text skips building an `AttributedString`.
+Before version 1.0, every element went through the whole chain of about 20 modifier groups, so creating the page took 518ms and clearing it took 230ms. Now each element is a single type-erased view that applies only the modifier groups it uses, and SwiftUI creates nothing for the groups it skips. A `txt` with plain text is a plain `Text`. Children that are single views also let SwiftUI count them up front, so it doesn't have to build them first.
 
 Reversing a keyed `{#each}` used to cost Svelte 109ms for 1,000 rows, because Svelte 5.59's keyed reconciliation is quadratic for reversals ([sveltejs/svelte#19439](https://github.com/sveltejs/svelte/issues/19439)). Until the fix ([#19440](https://github.com/sveltejs/svelte/pull/19440)) ships in Svelte, the `swiftui()` Vite plugin applies it to Svelte's `each` block when it builds your bundle, which brings the reversal down to 13ms. The plugin leaves the file alone if its source doesn't match, for example once a Svelte release includes the fix.
 
