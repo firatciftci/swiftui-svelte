@@ -50,6 +50,10 @@
       "types": "./dist/env.d.ts",
       "default": "./dist/env.js"
     },
+    "./query": {
+      "types": "./dist/query.d.ts",
+      "default": "./dist/query.js"
+    },
     "./native": {
       "types": "./dist/native.d.ts",
       "default": "./dist/native.js"
