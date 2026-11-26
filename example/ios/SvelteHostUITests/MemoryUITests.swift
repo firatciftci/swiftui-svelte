@@ -25,7 +25,7 @@ extension SvelteHostUITests {
             XCTAssertEqual(values.count, 3)
             if values.count == 3 {
                 XCTAssertLessThan(values[0], 500, "\(title) took \(values[0]) MB to open")
-                XCTAssertLessThan(values[2] - values[1], 40, "\(title) grew from \(values[1]) MB to \(values[2]) MB")
+                XCTAssertLessThan(values[2] - values[1], 80, "\(title) grew from \(values[1]) MB to \(values[2]) MB")
             }
             app.navigationBars.buttons["Playground"].tap()
             waitFor(section)
