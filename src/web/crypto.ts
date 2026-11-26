@@ -17,12 +17,7 @@ const integerArrays = [
   BigInt64Array,
   BigUint64Array,
 ];
-const digests = new Map([
-  ["SHA-1", "SHA-1"],
-  ["SHA-256", "SHA-256"],
-  ["SHA-384", "SHA-384"],
-  ["SHA-512", "SHA-512"],
-]);
+const digests = new Set(["SHA-1", "SHA-256", "SHA-384", "SHA-512"]);
 
 type UUID = `${string}-${string}-${string}-${string}-${string}`;
 
@@ -80,8 +75,8 @@ export function createCrypto(native: NativeCryptoBridge): HostCrypto {
       data: AllowSharedBufferSource,
     ): Promise<ArrayBuffer> {
       const name = typeof algorithm === "string" ? algorithm : algorithm.name;
-      const normalized = digests.get(name.toUpperCase());
-      if (normalized == null)
+      const normalized = name.toUpperCase();
+      if (!digests.has(normalized))
         throw new DOMExceptionShim(
           "Unrecognized algorithm name",
           "NotSupportedError",

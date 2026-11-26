@@ -99,7 +99,7 @@ export function createPerformance(clock: () => number): HostPerformance {
       let startTime = 0;
       let endTime = now();
       let detail: unknown = null;
-      if (typeof start === "object") {
+      if (start != null && typeof start === "object") {
         const options = start;
         detail = options.detail ?? null;
         if (options.start !== undefined && options.end !== undefined) {

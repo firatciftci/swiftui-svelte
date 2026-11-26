@@ -10,7 +10,13 @@ if (typeof requestAnimationFrame === "undefined") {
   globalThis.__svelteFrame = (time) => {
     const due = callbacks;
     callbacks = new Map();
-    for (const callback of due.values()) callback(time);
+    for (const callback of due.values()) {
+      try {
+        callback(time);
+      } catch (error) {
+        reportError(error);
+      }
+    }
   };
   globalThis.requestAnimationFrame = (callback) => {
     if (callbacks.size === 0) __nativeRequestFrame();

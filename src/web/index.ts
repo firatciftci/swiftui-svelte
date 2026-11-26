@@ -58,6 +58,15 @@ import {
   MessageEventShim,
 } from "./websocket.ts";
 
+function hostJSON(json: string): unknown {
+  try {
+    return JSON.parse(json) as unknown;
+  } catch (error) {
+    reportError(error);
+    return null;
+  }
+}
+
 function define(name: string, create: () => unknown): void {
   if (Reflect.has(globalThis, name)) return;
   const value = create();
@@ -72,6 +81,9 @@ function define(name: string, create: () => unknown): void {
 }
 
 export function installWebAPIs(): void {
+  define("reportError", () => (error: unknown) => {
+    console.error(error);
+  });
   define("window", () => globalThis);
   define("self", () => globalThis);
   define("DOMException", () => DOMExceptionShim);
@@ -125,7 +137,10 @@ export function installWebAPIs(): void {
   define("MediaQueryList", () => MediaQueryListShim);
   define("MediaQueryListEvent", () => MediaQueryListEventShim);
 
-  if (typeof __nativeRandomFill === "function") {
+  if (
+    typeof __nativeRandomFill === "function" &&
+    typeof __nativeDigest === "function"
+  ) {
     define("crypto", () =>
       createCrypto({ fill: __nativeRandomFill, digest: __nativeDigest }),
     );
@@ -149,7 +164,7 @@ export function installWebAPIs(): void {
   }
   if (typeof __nativeStorageLoad === "function") {
     define("localStorage", () => {
-      const loaded: unknown = JSON.parse(__nativeStorageLoad());
+      const loaded = hostJSON(__nativeStorageLoad());
       const entries: Array<[string, string]> = [];
       if (loaded != null && typeof loaded === "object") {
         for (const [key, value] of Object.entries(loaded))
@@ -161,7 +176,11 @@ export function installWebAPIs(): void {
         isSaving = true;
         queueMicrotask(() => {
           isSaving = false;
-          __nativeStorageSave(JSON.stringify(Object.fromEntries(items)));
+          try {
+            __nativeStorageSave(JSON.stringify(Object.fromEntries(items)));
+          } catch (error) {
+            reportError(error);
+          }
         });
       });
     });
@@ -194,9 +213,9 @@ export function installWebAPIs(): void {
 
   if (typeof __nativeEnvironment === "function") {
     updateEnvironment(
-      JSON.parse(__nativeEnvironment()) as Partial<HostEnvironment>,
+      hostJSON(__nativeEnvironment()) as Partial<HostEnvironment>,
     );
   }
   globalThis.__svelteEnvironment = (json) =>
-    updateEnvironment(JSON.parse(json) as Partial<HostEnvironment>);
+    updateEnvironment(hostJSON(json) as Partial<HostEnvironment>);
 }

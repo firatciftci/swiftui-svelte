@@ -370,11 +370,14 @@ export function btoaShim(data: unknown): string {
   return base64Encode(bytes);
 }
 
-export function atobShim(data: unknown): string {
-  const bytes = base64Decode(String(data));
+export function latin1(bytes: Uint8Array): string {
   let text = "";
   for (let index = 0; index < bytes.length; index += 8192) {
     text += String.fromCharCode(...bytes.subarray(index, index + 8192));
   }
   return text;
+}
+
+export function atobShim(data: unknown): string {
+  return latin1(base64Decode(String(data)));
 }

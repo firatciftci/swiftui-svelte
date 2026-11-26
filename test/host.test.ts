@@ -1,6 +1,20 @@
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
 import "swiftui-svelte";
 import { frame, native } from "./bridge.ts";
+
+it("runs the other frame callbacks when one throws", () => {
+  const reported: Array<unknown> = [];
+  vi.stubGlobal("reportError", (error: unknown) => void reported.push(error));
+  const times: Array<number> = [];
+  requestAnimationFrame(() => {
+    throw new Error("boom");
+  });
+  requestAnimationFrame((time) => void times.push(time));
+  frame(7);
+  vi.unstubAllGlobals();
+  expect(times).toEqual([7]);
+  expect(reported).toHaveLength(1);
+});
 
 it("runs animation frame callbacks once, with the frame time", () => {
   const times: Array<number> = [];

@@ -57,7 +57,7 @@ export type NativeWebSocketBridge = {
     handlers: WebSocketHandlers,
   ) => void;
   send: (id: number, data: string | Uint8Array<ArrayBuffer>) => void;
-  close: (id: number, code: number, reason: string) => void;
+  close: (id: number, code: number | null, reason: string) => void;
 };
 
 const token = /^[!#$%&'*+\-.^\w`|~]+$/;
@@ -120,7 +120,7 @@ class WebSocketShim extends EventTargetShim {
     }
     const list = typeof protocols === "string" ? [protocols] : [...protocols];
     if (
-      new Set(list.map((value) => value.toLowerCase())).size !== list.length ||
+      new Set(list).size !== list.length ||
       list.some((value) => !token.test(value))
     ) {
       throw new DOMExceptionShim(
@@ -138,7 +138,7 @@ class WebSocketShim extends EventTargetShim {
         this.dispatchEvent(new EventShim("open"));
       },
       message: (data) => {
-        if (this.#readyState !== 1) return;
+        if (this.#readyState !== 1 && this.#readyState !== 2) return;
         let value: string | ArrayBuffer | BlobShim = data as string;
         if (typeof data !== "string")
           value =
@@ -233,12 +233,24 @@ class WebSocketShim extends EventTargetShim {
       );
     }
     if (this.#readyState === 2 || this.#readyState === 3) return;
+    const wasConnecting = this.#readyState === 0;
     this.#readyState = 2;
-    this.#native.close(
-      this.#id,
-      code ?? (reason === undefined ? 1005 : 1000),
-      text,
-    );
+    if (wasConnecting) {
+      this.#native.close(this.#id, null, text);
+      void Promise.resolve().then(() => {
+        this.#readyState = 3;
+        this.dispatchEvent(new EventShim("error"));
+        this.dispatchEvent(
+          new CloseEventShim("close", {
+            code: 1006,
+            reason: "",
+            wasClean: false,
+          }),
+        );
+      });
+      return;
+    }
+    this.#native.close(this.#id, code ?? null, text);
   }
 
   get [Symbol.toStringTag](): string {

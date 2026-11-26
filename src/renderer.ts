@@ -76,7 +76,7 @@ type ChildNode = ElementNode | TextNode;
 const State = { Local: 0, Pending: 1, Native: 2 } as const;
 type NodeState = (typeof State)[keyof typeof State];
 
-export const protocol = 2;
+export const protocol = 3;
 
 export const opcodes = {
   root: 0,
@@ -170,12 +170,17 @@ function encode(node: ChildNode, record: Array<unknown>): void {
   const attributeCount = record.length;
   record.push(0);
   for (const [name, value] of node.attributes) {
-    if (typeof value === "function") continue;
+    if (value === undefined || typeof value === "function") continue;
     record.push(nameRef(name), value);
     (record[attributeCount] as number)++;
   }
   for (const [name, value] of node.derived) {
-    if (typeof value === "function" || node.attributes.has(name)) continue;
+    if (
+      value === undefined ||
+      typeof value === "function" ||
+      node.attributes.has(name)
+    )
+      continue;
     record.push(nameRef(name), value);
     (record[attributeCount] as number)++;
   }

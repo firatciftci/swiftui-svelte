@@ -134,12 +134,7 @@ const socketBridge: NativeWebSocketBridge = {
     sockets.get(id)?.send(data);
   },
   close(id, code, reason) {
-    sockets
-      .get(id)
-      ?.close(
-        code === 1005 ? undefined : code,
-        code === 1005 ? undefined : reason,
-      );
+    sockets.get(id)?.close(code ?? undefined, reason);
   },
 };
 

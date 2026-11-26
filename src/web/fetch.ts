@@ -5,6 +5,7 @@ import {
   base64Decode,
   bytesOf,
   encodeUTF8,
+  latin1,
   TextDecoderShim,
 } from "./encoding.ts";
 import { isIterable } from "./iterable.ts";
@@ -886,7 +887,7 @@ function fetchData(url: URLShim): ResponseShim {
   );
   if (/;\s*base64\s*$/i.test(type)) {
     type = type.replace(/;\s*base64\s*$/i, "");
-    bytes = base64Decode(String.fromCharCode(...bytes));
+    bytes = base64Decode(latin1(bytes));
   }
   if (type.startsWith(";")) type = `text/plain${type}`;
   if (type === "") type = "text/plain;charset=US-ASCII";
@@ -994,13 +995,16 @@ export function createFetch(native: NativeFetchBridge) {
         if (isFinished) return;
         isFinished = true;
         signal.removeEventListener("abort", onAbort);
-        if (failure == null) {
-          controller?.close();
-        } else {
-          const error = new TypeError("fetch failed", { cause: failure });
-          reject(error);
-          controller?.error(error);
+        if (failure == null && controller != null) {
+          controller.close();
+          return;
         }
+        const error = new TypeError(
+          "fetch failed",
+          failure == null ? undefined : { cause: failure },
+        );
+        reject(error);
+        controller?.error(error);
       },
     );
     return promise;

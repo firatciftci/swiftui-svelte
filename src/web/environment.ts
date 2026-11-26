@@ -97,7 +97,13 @@ export function observeEnvironment(
 export function updateEnvironment(changes: Partial<HostEnvironment>): void {
   const previous = { ...environment };
   Object.assign(environment, changes);
-  for (const observer of observers) observer(previous);
+  for (const observer of observers) {
+    try {
+      observer(previous);
+    } catch (error) {
+      reportError(error);
+    }
+  }
 }
 
 function feature(name: string, value: string | undefined): boolean | null {
