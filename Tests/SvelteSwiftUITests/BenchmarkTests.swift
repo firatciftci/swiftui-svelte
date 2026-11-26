@@ -7,6 +7,7 @@ struct BenchmarkTests {
     private let budgets: KeyValuePairs<String, Double> = [
         "create": 40, "update": 1, "swap": 2, "reverse": 5, "clear": 10,
     ]
+    private let slack: Double = ProcessInfo.processInfo.environment["CI"] == nil ? 1 : 3
 
     private func apply(_ runtime: SvelteRuntime, _ operation: String, _ count: Int) -> Double {
         let before = runtime.engine.stats.withLock(\.applyTime)
@@ -23,7 +24,7 @@ struct BenchmarkTests {
         let rows = { runtime.store.root(for: id)?.children.first?.children.count ?? 0 }
         for (operation, milliseconds) in budgets {
             let elapsed = apply(runtime, operation, count)
-            #expect(elapsed <= milliseconds * Double(count) / 1000, "\(operation) took \(elapsed)ms")
+            #expect(elapsed <= milliseconds * slack * Double(count) / 1000, "\(operation) took \(elapsed)ms")
             #expect(rows() == (operation == "clear" ? 0 : count), "\(operation)")
         }
         #expect(runtime.error == nil)

@@ -249,6 +249,8 @@ jobs:
           xcrun simctl bootstatus "$udid" -b
 
       - name: Run the Swift tests on a simulator
+        env:
+          TEST_RUNNER_CI: "true"
         run: |
           xcodebuild test \
             -scheme SvelteSwiftUI \

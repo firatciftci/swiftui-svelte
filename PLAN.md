@@ -43,7 +43,8 @@ Items marked _(maintainer)_ need the maintainer to do them: an iPhone connected 
 - [x] JS exceptions: in debug builds, an error overlay with the message, the stack, and the source-mapped location; in release builds, the error is logged and the last good tree stays on screen
 - [x] The failed snippet of `<svelte:boundary>` renders natively
 - [x] Source maps: Vite emits them, and the runtime maps stack traces with them
-- [ ] Safari Web Inspector works with debug builds in the simulator and on devices (verify `isInspectable` and document it)
+- [x] Safari Web Inspector lists the JavaScript context of debug builds in the simulator, and not of release builds (checked through the simulator's Web Inspector daemon, and documented)
+- [ ] Safari Web Inspector works with debug builds on a physical device _(maintainer)_
 - [x] Measure running JavaScriptCore off the main thread, with ops applied on the main actor, and adopt it if it cuts main-thread time without adding a frame of latency
 - [ ] A startup time budget: measure cold start to first frame on a device, and speed up bundle evaluation _(maintainer)_
 - [x] Memory: no leaked nodes or listeners after mounting and unmounting 10,000 elements (tested)
@@ -193,7 +194,7 @@ Every element is typed in `elements.ts`, rendered in Swift, shown in the example
 - [x] A docs site or `docs/` folder: getting started, every element and modifier with examples, and guides (navigation, forms, loading data, native modules, performance, debugging, and App Store release)
 - [x] TSDoc on every element and attribute in `elements.ts`, so editors show docs on hover
 - [x] The example app becomes a catalog of every element, with the to-do app as a real-world sample
-- [ ] Refreshed screenshots
+- [x] Refreshed screenshots
 
 ## M9. Release
 

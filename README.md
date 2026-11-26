@@ -32,7 +32,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/screens-dark.webp">
-    <img src=".github/assets/screens-light.webp" width="800" alt="Three iPhones running the example app: a to-do list with toggles, the Playground tab with a sheet open over a counter and the Svelte repository's star count, and an alert asking whether to clear finished to-dos">
+    <img src=".github/assets/screens-light.webp" width="800" alt="Three iPhones running the example app: a to-do list with the finished to-dos highlighted, the Catalog tab listing elements by section, and the Playground tab with a sheet open over a counter and the Svelte repository's star count">
   </picture>
 </p>
 
