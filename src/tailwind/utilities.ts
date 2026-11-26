@@ -1,17 +1,16 @@
-import type { Attributes } from "./runtime.ts";
-import type { Length, Lookup, Quantity, Rgba } from "./values.ts";
+import type { Attributes, Expression } from "./runtime.ts";
+import type { Lookup, Rgba } from "./values.ts";
 import { SYSTEM_COLORS } from "./system-colors.ts";
 import {
   compact,
-  dynamicOf,
-  format,
+  fixedPixels,
   numberOf,
   parseColor,
   pixels,
   quantityOf,
-  reduceMath,
   splitTopLevel,
   substitute,
+  times,
   toHex,
   Unsupported,
 } from "./values.ts";
@@ -31,9 +30,9 @@ export type Mapping = { patches: Array<Patch>; problems: Array<string> };
 type Context = {
   candidate: string;
   lookup: Lookup;
-  fontSize: number;
+  fontSize: Expression;
   fonts: ReadonlyMap<string, string>;
-  corners: Record<string, Length>;
+  corners: Record<string, Expression>;
 };
 
 const VERTICAL = ["vstack", "lazyvstack"];
@@ -114,7 +113,6 @@ const IGNORED = new Set([
   "tab-size",
   "text-rendering",
   "text-size-adjust",
-  "text-wrap",
   "touch-action",
   "transition-behavior",
   "transition-property",
@@ -154,9 +152,61 @@ const POSITIONING = new Set([
   "position",
 ]);
 
+const MARGIN_EDGES: Record<string, Array<string>> = {
+  margin: ["top", "leading", "bottom", "trailing"],
+  "margin-inline": ["leading", "trailing"],
+  "margin-block": ["top", "bottom"],
+  "margin-top": ["top"],
+  "margin-right": ["trailing"],
+  "margin-bottom": ["bottom"],
+  "margin-left": ["leading"],
+  "margin-inline-start": ["leading"],
+  "margin-inline-end": ["trailing"],
+  "margin-block-start": ["top"],
+  "margin-block-end": ["bottom"],
+};
+
+const BORDER_EDGES: Record<string, Array<string>> = {
+  "border-width": ["top", "leading", "bottom", "trailing"],
+  "border-top-width": ["top"],
+  "border-right-width": ["trailing"],
+  "border-bottom-width": ["bottom"],
+  "border-left-width": ["leading"],
+  "border-inline-width": ["leading", "trailing"],
+  "border-block-width": ["top", "bottom"],
+  "border-inline-start-width": ["leading"],
+  "border-inline-end-width": ["trailing"],
+  "border-block-start-width": ["top"],
+  "border-block-end-width": ["bottom"],
+};
+
+const ALIGNMENTS: Record<string, { horizontal: string; vertical: string }> = {
+  start: { horizontal: "leading", vertical: "top" },
+  "flex-start": { horizontal: "leading", vertical: "top" },
+  center: { horizontal: "center", vertical: "center" },
+  end: { horizontal: "trailing", vertical: "bottom" },
+  "flex-end": { horizontal: "trailing", vertical: "bottom" },
+};
+
+const ALIGN_CONTENT = new Set([
+  "start",
+  "end",
+  "center",
+  "stretch",
+  "flex-start",
+  "flex-end",
+]);
+
+const ALIGN_SELF: Record<string, string> = {
+  start: "start",
+  "flex-start": "start",
+  center: "center",
+  end: "end",
+  "flex-end": "end",
+  stretch: "stretch",
+};
+
 function reason(property: string): string {
-  if (property.startsWith("margin"))
-    return "Margins don't exist in SwiftUI. Put the space in the padding of a parent, or use the spacing of a stack";
   if (POSITIONING.has(property))
     return "Absolute and fixed positioning don't exist in SwiftUI. Use zstack with an alignment, an overlay, or the offset and position attributes";
   if (
@@ -216,23 +266,22 @@ export function mapCandidate(
   return mapping;
 }
 
-function fontSizeOf(declarations: Array<Declaration>, lookup: Lookup): number {
+function fontSizeOf(
+  declarations: Array<Declaration>,
+  lookup: Lookup,
+): Expression {
   const size = declarations.find(
     (declaration) => declaration.property === "font-size",
   );
   return size == null ? 16 : pixels(substitute(size.value, lookup), 16);
 }
 
-function resolved(value: string, { lookup, fontSize }: Context): string {
-  return reduceMath(substitute(value, lookup), fontSize);
+function resolved(value: string, { lookup }: Context): string {
+  return substitute(value, lookup);
 }
 
-function points(value: string, context: Context): Length {
-  const text = substitute(value, context.lookup).trim();
-  return (
-    dynamicOf(text, context.fontSize) ??
-    pixels(reduceMath(text, context.fontSize), context.fontSize)
-  );
+function points(value: string, context: Context): Expression {
+  return pixels(substitute(value, context.lookup), context.fontSize);
 }
 
 const PLATFORM_COLOR = /^platformColor\((.+)\)$/;
@@ -255,7 +304,7 @@ function colorOf(value: string, context: Context): string | null {
 }
 
 function spread(value: string): Array<string> {
-  return value.trim().split(/\s+/);
+  return splitTopLevel(value.trim(), /\s/);
 }
 
 type Handler = (
@@ -275,14 +324,9 @@ const HANDLERS = new Map<string, Handler>([
     "display",
     (_value, _context, raw) => {
       if (raw === "none") return [{ attrs: { hidden: true } }];
-      return [
-        "flex",
-        "block",
-        "inline",
-        "inline-block",
-        "inline-flex",
-        "contents",
-      ].includes(raw)
+      if (["flex", "inline-flex", "grid", "inline-grid"].includes(raw))
+        return [{ attrs: { css: true }, only: STACKS }];
+      return ["block", "inline", "inline-block", "contents"].includes(raw)
         ? [{ attrs: {} }]
         : null;
     },
@@ -376,8 +420,108 @@ const HANDLERS = new Map<string, Handler>([
   [
     "flex-direction",
     (_value, _context, raw) => {
-      if (raw === "column") return [{ attrs: {}, only: VERTICAL }];
-      return raw === "row" ? [{ attrs: {}, only: HORIZONTAL }] : null;
+      if (raw === "column")
+        return [{ attrs: { css: true }, only: VERTICAL }];
+      return raw === "row" ? [{ attrs: { css: true }, only: HORIZONTAL }] : null;
+    },
+  ],
+  [
+    "grid-template-columns",
+    (_value, _context, raw) => {
+      return compact(raw).replaceAll(" ", "") === "repeat(1,minmax(0,1fr))"
+        ? [{ attrs: { css: true }, only: VERTICAL }]
+        : null;
+    },
+  ],
+  [
+    "grid-auto-flow",
+    (_value, _context, raw) => {
+      if (raw === "column") return [{ attrs: { css: true }, only: HORIZONTAL }];
+      return raw === "row" ? [{ attrs: { css: true }, only: VERTICAL }] : null;
+    },
+  ],
+  [
+    "align-content",
+    (_value, _context, raw) => {
+      return ALIGN_CONTENT.has(raw) ? [{ attrs: {} }] : null;
+    },
+  ],
+  [
+    "table-layout",
+    (_value, _context, raw) => {
+      return raw === "fixed" || raw === "auto" ? [{ attrs: {} }] : null;
+    },
+  ],
+  [
+    "border-collapse",
+    (_value, _context, raw) => {
+      return raw === "collapse" || raw === "separate" ? [{ attrs: {} }] : null;
+    },
+  ],
+  [
+    "justify-content",
+    (_value, _context, raw) => {
+      const sides: Record<string, string> = {
+        start: "start",
+        "flex-start": "start",
+        center: "center",
+        end: "end",
+        "flex-end": "end",
+      };
+      const side = sides[raw];
+      if (side == null) return null;
+      const vertical = side === "start" ? "top" : side === "end" ? "bottom" : "center";
+      const horizontal = side === "start" ? "leading" : side === "end" ? "trailing" : "center";
+      return [
+        { attrs: { framealignment: vertical }, only: VERTICAL },
+        { attrs: { framealignment: horizontal }, only: HORIZONTAL },
+      ];
+    },
+  ],
+  [
+    "justify-items",
+    (_value, _context, raw) => {
+      const entry = ALIGNMENTS[raw];
+      return entry == null
+        ? null
+        : [{ attrs: { alignment: entry.horizontal }, only: VERTICAL }];
+    },
+  ],
+  [
+    "align-self",
+    (_value, _context, raw) => {
+      const side = ALIGN_SELF[raw];
+      return side == null ? null : [{ attrs: { selfalign: side } }];
+    },
+  ],
+  [
+    "justify-self",
+    (_value, _context, raw) => {
+      const side = ALIGN_SELF[raw];
+      return side == null ? null : [{ attrs: { selfalign: side } }];
+    },
+  ],
+  [
+    "container-type",
+    (_value, _context, raw) => {
+      return raw === "inline-size" ? [{ attrs: { container: "" } }] : null;
+    },
+  ],
+  [
+    "container-name",
+    (_value, _context, raw) => {
+      return [{ attrs: { container: raw } }];
+    },
+  ],
+  [
+    "text-wrap",
+    (_value, _context, raw) => {
+      if (raw === "balance")
+        return [{ attrs: { balanced: true }, only: ["txt"] }];
+      if (raw === "wrap" || raw === "pretty" || raw === "stable")
+        return [{ attrs: {}, only: ["txt"] }];
+      if (raw === "nowrap") return [{ attrs: { lines: 1 }, only: ["txt"] }];
+      return null;
     },
   ],
   [
@@ -470,24 +614,6 @@ const HANDLERS = new Map<string, Handler>([
     },
   ],
   [
-    "border-width",
-    (value, context) => {
-      return [{ attrs: { $borderWidth: points(value, context) } }];
-    },
-  ],
-  [
-    "border-color",
-    (value, context) => {
-      return [{ attrs: { $borderColor: colorOf(value, context) } }];
-    },
-  ],
-  [
-    "border-style",
-    (value, context) => {
-      return resolved(value, context) === "solid" ? [{ attrs: {} }] : null;
-    },
-  ],
-  [
     "font-size",
     (value, context) => {
       return [{ attrs: { size: points(value, context) } }];
@@ -496,17 +622,9 @@ const HANDLERS = new Map<string, Handler>([
   [
     "line-height",
     (value, context) => {
-      if (/^[\d.]+$/.test(resolved(value, context)))
-        return [
-          {
-            attrs: {
-              linebox:
-                Math.round(
-                  Number(resolved(value, context)) * context.fontSize * 100,
-                ) / 100,
-            },
-          },
-        ];
+      const quantity = quantityOf(resolved(value, context), context.fontSize);
+      if (quantity.unit === "" && typeof quantity.value === "number")
+        return [{ attrs: { linebox: times(quantity.value, context.fontSize) } }];
       return [{ attrs: { linebox: points(value, context) } }];
     },
   ],
@@ -738,7 +856,26 @@ function mapDeclaration(
     );
     return [{ attrs: { padding: edges } }];
   }
-  if (property.startsWith("margin")) return spacing(property, value, context);
+  if (Object.hasOwn(MARGIN_EDGES, property)) {
+    if (/^-?space-[xy]-/.test(context.candidate))
+      return spacing(property, value, context);
+    const amount = raw === "auto" ? "auto" : points(value, context);
+    const edges = Object.fromEntries(
+      (MARGIN_EDGES[property] ?? []).map((edge) => [edge, amount]),
+    );
+    return [{ attrs: { margin: edges } }];
+  }
+  if (Object.hasOwn(BORDER_EDGES, property)) {
+    const amount = points(value, context);
+    const edges = Object.fromEntries(
+      (BORDER_EDGES[property] ?? []).map((edge) => [edge, amount]),
+    );
+    return [{ attrs: { $borderWidth: edges } }];
+  }
+  if (/^border(?:-[a-z-]+)?-style$/.test(property))
+    return resolved(value, context) === "solid" ? [{ attrs: {} }] : null;
+  if (/^border(?:-[a-z-]+)?-color$/.test(property))
+    return [{ attrs: { $borderColor: colorOf(value, context) } }];
   if (Object.hasOwn(CORNERS, property)) {
     const corner = CORNERS[property];
     if (corner != null) context.corners[corner] = points(value, context);
@@ -806,17 +943,7 @@ function spacing(
 }
 
 function alignItems(raw: string): Array<Patch> | null {
-  const alignments: Record<
-    string,
-    { horizontal: string; vertical: string } | undefined
-  > = {
-    start: { horizontal: "leading", vertical: "top" },
-    "flex-start": { horizontal: "leading", vertical: "top" },
-    center: { horizontal: "center", vertical: "center" },
-    end: { horizontal: "trailing", vertical: "bottom" },
-    "flex-end": { horizontal: "trailing", vertical: "bottom" },
-  };
-  const entry = alignments[raw];
+  const entry = ALIGNMENTS[raw];
   if (entry == null) return null;
   return [
     { attrs: { alignment: entry.horizontal }, only: VERTICAL },
@@ -871,13 +998,18 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
     SCREEN_SAFE.test(value)
   )
     return [{ attrs: { [key]: "infinity" } }];
-  const quantity: Quantity = quantityOf(
-    resolved(raw, context),
-    context.fontSize,
-  );
+  const quantity = quantityOf(resolved(raw, context), context.fontSize);
   if (quantity.unit === "%")
     throw new Unsupported(`${property}: ${raw} isn't a fixed size`);
-  return [{ attrs: { [key]: pixels(format(quantity), context.fontSize) } }];
+  const length = quantity.value;
+  return [
+    {
+      attrs: {
+        [key]:
+          typeof length === "number" && !Number.isFinite(length) ? 9999 : length,
+      },
+    },
+  ];
 }
 
 type Layer = {
@@ -900,7 +1032,7 @@ function layers(
     for (const part of parts) {
       if (part === "inset") isInset = true;
       else if (/^-?[\d.]+(?:px|em|rem)?$/.test(part))
-        lengths.push(pixels(part, context.fontSize));
+        lengths.push(fixedPixels(part, context.fontSize));
       else layerColor = parseColor(part);
     }
     const [x = 0, y = 0, blur = 0, spreadLength = 0] = lengths;
@@ -937,7 +1069,12 @@ function boxShadow(value: string, context: Context): Array<Patch> {
     .filter((layer) => layer !== ring)
     .toSorted((a, b) => b.blur - a.blur)[0];
   const patches: Array<Patch> = [];
-  if (ring != null) patches.push({ attrs: { $borderWidth: ring.spread } });
+  if (ring != null)
+    patches.push({
+      attrs: {
+        $borderWidth: { top: ring.spread, leading: ring.spread, bottom: ring.spread, trailing: ring.spread },
+      },
+    });
   if (drop != null) patches.push({ attrs: { shadow: shadowOf(drop) } });
   return patches.length > 0 ? patches : [{ attrs: { shadow: false } }];
 }

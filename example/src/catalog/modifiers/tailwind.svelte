@@ -22,3 +22,18 @@
     />
   </btn>
 </hstack>
+<vstack class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700" css container="">
+  <txt
+    margin={{ leading: "auto", trailing: "auto" }}
+    balanced
+    class="text-sm text-neutral-600 dark:text-neutral-300"
+  >
+    Centered with margin, and balanced across its lines
+  </txt>
+  <txt selfalign="end" class="text-sm text-neutral-600 dark:text-neutral-300">
+    Aligned to the end of the stack
+  </txt>
+  <txt class="text-sm text-neutral-600 dark:text-neutral-300">
+    Borders take space, like padding
+  </txt>
+</vstack>

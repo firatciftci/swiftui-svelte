@@ -1,9 +1,25 @@
 export type Attributes = Record<string, unknown>;
-export type Edge = "top" | "right" | "bottom" | "left";
-export type Dynamic =
-  | { inset: Edge; plus?: number; atLeast?: number }
-  | { device: "hairline" | "pixelRatio" | "fontScale" }
-  | { device: "rounded"; value: number };
+export type Operator =
+  | "+"
+  | "-"
+  | "*"
+  | "/"
+  | "min"
+  | "max"
+  | "clamp"
+  | "round"
+  | "roundToNearestPixel"
+  | "fontScale"
+  | "pixelRatio"
+  | "hairlineWidth"
+  | "viewportWidth"
+  | "viewportHeight"
+  | "insetTop"
+  | "insetRight"
+  | "insetBottom"
+  | "insetLeft";
+export type Call = { op: Operator; args: Array<Expression> };
+export type Expression = number | Call;
 export type Rule = {
   when?: Array<string>;
   only?: Array<string>;
@@ -27,9 +43,10 @@ export type State = {
   platform: string;
   idiom: string;
   increaseContrast: boolean;
-  insets: Record<Edge, number>;
+  insets: Record<"top" | "right" | "bottom" | "left", number>;
   pixelRatio: number;
   fontScale: number;
+  containers: Record<string, number>;
 };
 export type Resolution = {
   attrs: Attributes;
@@ -50,6 +67,74 @@ export function classKey(tag: string, value: string): string {
   return `${tag} ${value}`;
 }
 
+const RUNTIME_OPERATORS: ReadonlySet<Operator> = new Set([
+  "roundToNearestPixel",
+  "fontScale",
+  "pixelRatio",
+  "hairlineWidth",
+  "viewportWidth",
+  "viewportHeight",
+  "insetTop",
+  "insetRight",
+  "insetBottom",
+  "insetLeft",
+]);
+
+export function isExpression(value: unknown): value is Call {
+  return (
+    isPlain(value) && typeof value.op === "string" && Array.isArray(value.args)
+  );
+}
+
+export function isDynamic(expression: Expression): boolean {
+  if (typeof expression === "number") return false;
+  return (
+    RUNTIME_OPERATORS.has(expression.op) ||
+    expression.args.some((arg) => isDynamic(arg))
+  );
+}
+
+export function containsDynamic(value: unknown): boolean {
+  if (isExpression(value)) return isDynamic(value);
+  if (Array.isArray(value)) return value.some((item) => containsDynamic(item));
+  return isPlain(value) && Object.values(value).some(containsDynamic);
+}
+
+export function arithmetic(op: Operator, values: Array<number>): number {
+  const [first = 0, second = 0, third = 0] = values;
+  switch (op) {
+    case "+": {
+      return first + second;
+    }
+    case "-": {
+      return first - second;
+    }
+    case "*": {
+      return first * second;
+    }
+    case "/": {
+      return first / second;
+    }
+    case "min": {
+      return Math.min(...values);
+    }
+    case "max": {
+      return Math.max(...values);
+    }
+    case "clamp": {
+      return Math.min(Math.max(second, first), third);
+    }
+    case "round": {
+      return values.length > 1 && second !== 0
+        ? Math.round(first / second) * second
+        : Math.round(first);
+    }
+    default: {
+      throw new Error(`${op} isn't arithmetic`);
+    }
+  }
+}
+
 const NAMED: Record<string, (state: State) => boolean> = {
   dark: (state) => state.dark,
   "reduce-motion": (state) => state.reduceMotion,
@@ -65,7 +150,17 @@ const NAMED: Record<string, (state: State) => boolean> = {
   "orientation:portrait": (state) => state.width <= state.height,
 };
 
+function containerSatisfied(condition: string, state: State): boolean {
+  const [, name = "", test = ""] = condition.split(":");
+  const width = state.containers[name];
+  if (width == null) return false;
+  if (test.startsWith(">=")) return width >= Number(test.slice(2));
+  return width < Number(test.slice(1));
+}
+
 function isSatisfied(condition: string, state: State): boolean {
+  if (condition.startsWith("container:"))
+    return containerSatisfied(condition, state);
   if (condition.startsWith("platform:"))
     return state.platform === condition.slice("platform:".length);
   if (condition.startsWith("idiom:"))
@@ -77,26 +172,53 @@ function isSatisfied(condition: string, state: State): boolean {
   return NAMED[condition]?.(state) ?? false;
 }
 
-function isDynamic(value: unknown): value is Dynamic {
-  return isPlain(value) && ("inset" in value || "device" in value);
+function evaluate(expression: Expression, state: State): number {
+  if (typeof expression === "number") return expression;
+  const values = expression.args.map((arg) => evaluate(arg, state));
+  const [first = 0] = values;
+  switch (expression.op) {
+    case "fontScale": {
+      return state.fontScale;
+    }
+    case "pixelRatio": {
+      return state.pixelRatio;
+    }
+    case "hairlineWidth": {
+      return 1 / state.pixelRatio;
+    }
+    case "viewportWidth": {
+      return state.width;
+    }
+    case "viewportHeight": {
+      return state.height;
+    }
+    case "insetTop": {
+      return state.insets.top;
+    }
+    case "insetRight": {
+      return state.insets.right;
+    }
+    case "insetBottom": {
+      return state.insets.bottom;
+    }
+    case "insetLeft": {
+      return state.insets.left;
+    }
+    case "roundToNearestPixel": {
+      return Math.round(first * state.pixelRatio) / state.pixelRatio;
+    }
+    default: {
+      return arithmetic(expression.op, values);
+    }
+  }
 }
 
-function measure(dynamic: Dynamic, state: State): number {
-  if ("inset" in dynamic) {
-    const inset = state.insets[dynamic.inset];
-    return dynamic.atLeast != null
-      ? Math.max(inset, dynamic.atLeast)
-      : inset + (dynamic.plus ?? 0);
-  }
-  if (dynamic.device === "rounded")
-    return Math.round(dynamic.value * state.pixelRatio) / state.pixelRatio;
-  if (dynamic.device === "hairline") return 1 / state.pixelRatio;
-  if (dynamic.device === "pixelRatio") return state.pixelRatio;
-  return state.fontScale;
+function isPlain(value: unknown): value is Attributes {
+  return typeof value === "object" && value != null && !Array.isArray(value);
 }
 
 function settle(value: unknown, state: State): unknown {
-  if (isDynamic(value)) return measure(value, state);
+  if (isExpression(value)) return evaluate(value, state);
   if (Array.isArray(value)) return value.map((item) => settle(item, state));
   if (isPlain(value))
     return Object.fromEntries(
@@ -111,8 +233,8 @@ function settleAll(attrs: Attributes, state: State): Attributes {
   );
 }
 
-function isPlain(value: unknown): value is Attributes {
-  return typeof value === "object" && value != null && !Array.isArray(value);
+function mergeable(value: unknown): value is Attributes {
+  return isPlain(value) && !isExpression(value);
 }
 
 function deepMerge(base: Attributes, extra: Attributes): Attributes {
@@ -120,7 +242,9 @@ function deepMerge(base: Attributes, extra: Attributes): Attributes {
   for (const [key, value] of Object.entries(extra)) {
     const current = merged[key];
     merged[key] =
-      isPlain(current) && isPlain(value) ? deepMerge(current, value) : value;
+      mergeable(current) && mergeable(value)
+        ? deepMerge(current, value)
+        : value;
   }
   return merged;
 }
@@ -130,7 +254,7 @@ function apply(target: Attributes, attrs: Attributes): void {
     if (value === null) Reflect.deleteProperty(target, key);
     else
       target[key] =
-        isPlain(value) && isPlain(target[key])
+        mergeable(value) && mergeable(target[key])
           ? deepMerge(target[key], value)
           : value;
   }
@@ -166,6 +290,17 @@ function animate(result: Attributes, duration: number): void {
   }
 }
 
+function borderOf(
+  widths: Attributes,
+  color: unknown,
+): Attributes | null {
+  const drawn = Object.values(widths).some((width) => width !== 0);
+  if (!drawn) return null;
+  const border: Attributes = { width: widths };
+  if (typeof color === "string") border.color = color;
+  return border;
+}
+
 function finish(output: Attributes): Attributes {
   const {
     $borderWidth,
@@ -177,11 +312,8 @@ function finish(output: Attributes): Attributes {
     ...rest
   } = output;
   const result: Attributes = rest;
-  if ($borderWidth != null) {
-    const border: Attributes = { width: $borderWidth };
-    if (typeof $borderColor === "string") border.color = $borderColor;
-    result.border = $borderWidth === 0 ? null : border;
-  }
+  if (isPlain($borderWidth))
+    result.border = borderOf($borderWidth, $borderColor);
   if (typeof $shadowColor === "string" && isPlain(result.shadow))
     result.shadow = { ...result.shadow, color: $shadowColor };
   if (isPlain($stop) && isPlain($direction)) {

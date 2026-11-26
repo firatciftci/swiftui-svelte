@@ -3422,9 +3422,14 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Tailwind CSS
 
-| Attribute | Type     | Description                                                                                                                                                                                                                                                                                           |
-| --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `class`   | `string` | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md). |
+| Attribute   | Type                                                                                                              | Description                                                                                                                                                                                                                                                                                           |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `class`     | `string`                                                                                                          | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md). |
+| `margin`    | `{ top?: number \| "auto"; leading?: number \| "auto"; bottom?: number \| "auto"; trailing?: number \| "auto"; }` | The space outside the element on each edge, in points, or "auto" to share the free space and center the element along that axis. Margin sits outside the background, border, and shadow, unlike padding.                                                                                              |
+| `container` | `string`                                                                                                          | Makes the element a query container for                                                                                                                                                                                                                                                               |
+| `css`       | `boolean`                                                                                                         | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.                                                                                                                                                               |
+| `selfalign` | `"start" \| "center" \| "end" \| "stretch"`                                                                       | How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this.                                                                                                                                                                             |
+| `balanced`  | `boolean`                                                                                                         | Balances the lines of a text element, so they come out an even width. The text-balance class sets this.                                                                                                                                                                                               |
 
 ```svelte
 <hstack class="items-center gap-2">
@@ -3451,6 +3456,25 @@ Every element takes these attributes, except the few whose entries say they don'
     />
   </btn>
 </hstack>
+<vstack
+  class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700"
+  css
+  container=""
+>
+  <txt
+    margin={{ leading: "auto", trailing: "auto" }}
+    balanced
+    class="text-sm text-neutral-600 dark:text-neutral-300"
+  >
+    Centered with margin, and balanced across its lines
+  </txt>
+  <txt selfalign="end" class="text-sm text-neutral-600 dark:text-neutral-300">
+    Aligned to the end of the stack
+  </txt>
+  <txt class="text-sm text-neutral-600 dark:text-neutral-300">
+    Borders take space, like padding
+  </txt>
+</vstack>
 ```
 
 ### Tailwind native utilities

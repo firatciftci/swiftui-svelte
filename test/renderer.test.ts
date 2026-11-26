@@ -1020,14 +1020,25 @@ describe("tailwind native conditions", () => {
         {
           order: 5,
           dynamic: true,
-          attrs: { padding: { top: { inset: "top", plus: 8 } } },
+          attrs: {
+            padding: {
+              top: { op: "+", args: [{ op: "insetTop", args: [] }, 8] },
+            },
+          },
         },
       ],
       hairline: [
         {
           order: 6,
           dynamic: true,
-          attrs: { $borderWidth: { device: "hairline" } },
+          attrs: {
+            $borderWidth: {
+              top: { op: "hairlineWidth", args: [] },
+              leading: { op: "hairlineWidth", args: [] },
+              bottom: { op: "hairlineWidth", args: [] },
+              trailing: { op: "hairlineWidth", args: [] },
+            },
+          },
         },
       ],
     },
@@ -1091,6 +1102,8 @@ describe("tailwind native conditions", () => {
   it("measures hairlines from the host's pixel ratio", async () => {
     __svelteEnvironment(JSON.stringify({ pixelRatio: 3 }));
     await render(Classes, { className: "hairline" });
-    expect(find("vstack")?.attributes.get("border")).toEqual({ width: 1 / 3 });
+    expect(find("vstack")?.attributes.get("border")).toEqual({
+      width: { top: 1 / 3, leading: 1 / 3, bottom: 1 / 3, trailing: 1 / 3 },
+    });
   });
 });

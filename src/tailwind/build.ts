@@ -12,15 +12,16 @@ import type {
 } from "./runtime.ts";
 import type { Declaration, Patch } from "./utilities.ts";
 import type { Lookup } from "./values.ts";
-import { classKey, resolveClasses } from "./runtime.ts";
+import { classKey, containsDynamic, resolveClasses } from "./runtime.ts";
 import { mapCandidate } from "./utilities.ts";
-import { pixels } from "./values.ts";
+import { fixedPixels } from "./values.ts";
 
 export type BuildOptions = {
   root: string;
   css: string;
   sources: Array<string>;
   fonts: Record<string, string>;
+  ignore?: Array<string>;
 };
 
 export type BuildResult = {
@@ -78,6 +79,7 @@ const NEUTRAL: State = {
   insets: { top: 0, right: 0, bottom: 0, left: 0 },
   pixelRatio: 1,
   fontScale: 1,
+  containers: {},
 };
 
 function sourceFiles(directories: Array<string>): Array<string> {
@@ -200,7 +202,7 @@ function conditionOf(
   );
   const limit = minimum?.[1] ?? maximum?.[1];
   if (limit == null) return null;
-  const threshold = pixels(limit, 16);
+  const threshold = fixedPixels(limit, 16);
   const isAtLeast = (minimum != null) !== isNegated;
   return { when: `${isAtLeast ? ">=" : "<"}${threshold}`, threshold };
 }
@@ -233,6 +235,16 @@ function wrapConditions(wrap: AtRule): {
   return { when, thresholds };
 }
 
+function containerConditionOf(wrap: AtRule): string | null {
+  const match =
+    /^(?:([\w-]+)\s+)?\(\s*width\s*(>=|<)\s*([\d.]+(?:rem|px|em))\s*\)$/.exec(
+      wrap.params.trim(),
+    );
+  if (match == null) return null;
+  const [, name = "", operator = ">=", limit = "0"] = match;
+  return `container:${name}:${operator}${fixedPixels(limit, 16)}`;
+}
+
 function conditionsOf(wraps: Array<AtRule>): {
   when: Array<string>;
   thresholds: Array<number>;
@@ -247,7 +259,18 @@ function conditionsOf(wraps: Array<AtRule>): {
       continue;
     }
     if (name === "layer") continue;
-    if (name !== "media" && name !== "container")
+    if (name === "container") {
+      const condition = containerConditionOf(wrap);
+      if (condition == null)
+        return {
+          when,
+          thresholds,
+          problem: `the container query "${wrap.params.trim()}" isn't supported`,
+        };
+      when.push(condition);
+      continue;
+    }
+    if (name !== "media")
       return { when, thresholds, problem: `@${name} isn't supported` };
     const found = wrapConditions(wrap);
     when.push(...found.when);
@@ -264,7 +287,10 @@ function stateOf(selector: string): {
   problems: Array<string>;
   ignored: boolean;
 } {
-  if (selector.includes("-webkit-scrollbar"))
+  if (
+    selector.includes("-webkit-scrollbar") ||
+    /:focus(?:-visible|-within)?\b/.test(selector)
+  )
     return { when: [], problems: [], ignored: true };
   const when: Array<string> = [];
   const problems: Array<string> = [];
@@ -395,20 +421,10 @@ function tableRules(group: Group, patch: Patch, sink: Array<TableRule>): void {
   const rule: TableRule = { order: group.order, attrs };
   const when = [...group.when, ...(patch.when ?? [])];
   if (when.length > 0) rule.when = when;
-  if (hasDynamic(attrs)) rule.dynamic = true;
+  if (containsDynamic(attrs)) rule.dynamic = true;
   if (patch.only != null) rule.only = patch.only;
   if (group.important) rule.important = true;
   sink.push(rule);
-}
-
-function hasDynamic(value: unknown): boolean {
-  if (Array.isArray(value)) return value.some((item) => hasDynamic(item));
-  if (typeof value !== "object" || value == null) return false;
-  return (
-    "inset" in value ||
-    "device" in value ||
-    Object.values(value).some((item) => hasDynamic(item))
-  );
 }
 
 type StateInfo = ReturnType<typeof stateOf>;
@@ -478,8 +494,9 @@ function groupRules(
   root: Root,
   candidates: ReadonlySet<string>,
   problems: Map<string, Set<string>>,
-): { groups: Map<string, Group>; seen: Set<string> } {
+): { groups: Map<string, Group>; seen: Set<string>; silent: Set<string> } {
   const seen = new Set<string>();
+  const silent = new Set<string>();
   const groups = new Map<string, Group>();
   let order = 0;
   eachRule(root, [], (rule, wraps) => {
@@ -488,13 +505,16 @@ function groupRules(
     seen.add(candidate);
     const position = order++;
     const state = stateOf(rule.selector);
-    if (state.ignored) return;
+    if (state.ignored) {
+      silent.add(candidate);
+      return;
+    }
     for (const problem of state.problems)
       addProblem(problems, candidate, problem);
     for (const entry of declarationsOf(rule, wraps))
       addEntry(groups, problems, candidate, position, state, entry);
   });
-  return { groups, seen };
+  return { groups, seen, silent };
 }
 
 function tokensFor(
@@ -537,12 +557,13 @@ function warningsFor(
   candidates: ReadonlySet<string>,
   seen: ReadonlySet<string>,
   problems: ReadonlyMap<string, ReadonlySet<string>>,
+  isIgnored: (token: string) => boolean,
 ): Array<string> {
   const warnings: Array<string> = [];
   for (const context of contexts) {
     const words = context.text.split(/\s+/).filter((word) => word !== "");
     for (const token of words) {
-      if (!candidates.has(token)) continue;
+      if (!candidates.has(token) || isIgnored(token)) continue;
       const messages = problems.get(token) ?? [];
       for (const problem of messages)
         warnings.push(
@@ -555,6 +576,16 @@ function warningsFor(
     }
   }
   return warnings;
+}
+
+function ignoredBy(patterns: Array<string>): (token: string) => boolean {
+  const expressions = patterns.map(
+    (pattern) =>
+      new RegExp(
+        `^${pattern.replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
+      ),
+  );
+  return (token) => expressions.some((expression) => expression.test(token));
 }
 
 function addStatics(table: ClassTable, contexts: Array<Context>): void {
@@ -582,13 +613,17 @@ export async function buildClassTable(
   const root = await compileStyles(cssPath, options.root, universe);
   const globals = lookupFor(collectGlobals(root));
   const problems = new Map<string, Set<string>>();
-  const { groups, seen } = groupRules(root, universe, problems);
+  const { groups, seen, silent } = groupRules(root, universe, problems);
   const { tokens, breakpoints } = tokensFor(
     groups,
     globals,
     options.fonts,
     problems,
   );
+  const isIgnored = ignoredBy(options.ignore ?? []);
+  for (const token of universe)
+    if (isIgnored(token)) silent.add(token);
+  for (const token of silent) tokens[token] ??= [{ order: 0, attrs: {} }];
   const table: ClassTable = {
     tokens,
     statics: {},
@@ -597,7 +632,9 @@ export async function buildClassTable(
   addStatics(table, contexts);
   return {
     table,
-    warnings: [...new Set(warningsFor(contexts, universe, seen, problems))],
+    warnings: [
+      ...new Set(warningsFor(contexts, universe, seen, problems, isIgnored)),
+    ],
     files: [cssPath, ...sourceList],
   };
 }

@@ -4,6 +4,7 @@ export type TailwindOptions = {
   css: string;
   sources?: Array<string>;
   fonts?: Record<string, string>;
+  ignore?: Array<string>;
 };
 
 const ID = "virtual:swiftui-svelte/tailwind";
@@ -13,6 +14,7 @@ export function tailwind({
   css,
   sources = ["src"],
   fonts = {},
+  ignore = [],
 }: TailwindOptions): Plugin {
   let root = "";
   return {
@@ -32,6 +34,7 @@ export function tailwind({
         css,
         sources,
         fonts,
+        ignore,
       });
       for (const file of files) this.addWatchFile(file);
       for (const warning of warnings) this.warn(warning);

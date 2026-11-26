@@ -1,9 +1,10 @@
-import type { Dynamic, Edge } from "./runtime.ts";
+import type { Call, Expression, Operator } from "./runtime.ts";
+import { arithmetic } from "./runtime.ts";
 
 export type Lookup = (name: string) => string | undefined;
-export type Length = number | Dynamic;
+export type Length = Expression;
 export type Rgba = { r: number; g: number; b: number; a: number };
-export type Quantity = { value: number; unit: "" | "px" | "%" | "deg" };
+export type Quantity = { value: Expression; unit: "" | "px" | "%" | "deg" };
 
 export class Unsupported extends Error {}
 
@@ -74,37 +75,57 @@ export function splitTopLevel(text: string, separator: RegExp): Array<string> {
   return parts;
 }
 
-const MATH = /(?:^|[^\w-])(calc|min|max|clamp)\(/;
-
-export function reduceMath(value: string, fontSize: number): string {
-  let result = value;
-  for (
-    let match = MATH.exec(result);
-    match != null;
-    match = MATH.exec(result)
-  ) {
-    const open = match.index + match[0].length - 1;
-    const close = closingParen(result, open);
-    const start = open - (match[1]?.length ?? 0);
-    const quantity = quantityOf(result.slice(start, close + 1), fontSize);
-    result =
-      result.slice(0, start) + format(quantity) + result.slice(close + 1);
-  }
-  return result;
-}
-
-export function format(quantity: Quantity): string {
-  if (!Number.isFinite(quantity.value)) return `9999${quantity.unit}`;
-  return `${round(quantity.value)}${quantity.unit}`;
+export function compact(text: string): string {
+  return text
+    .replaceAll(/\(\s+/g, "(")
+    .replaceAll(/\s+\)/g, ")")
+    .replaceAll(/\s+/g, " ")
+    .trim();
 }
 
 function round(value: number): number {
   return Number(value.toFixed(4));
 }
 
-const MATH_WORDS = new Set(["calc", "min", "max", "clamp"]);
+const MATH_WORDS = new Set(["calc", "min", "max", "clamp", "round"]);
+const DEVICE_WORDS = new Set(["fontScale", "pixelRatio", "hairlineWidth"]);
+const EDGE_OPERATORS: Record<string, Operator> = {
+  "safe-area-inset-top": "insetTop",
+  "safe-area-inset-right": "insetRight",
+  "safe-area-inset-bottom": "insetBottom",
+  "safe-area-inset-left": "insetLeft",
+};
+const VIEWPORT_UNITS: Record<string, Operator> = {
+  vw: "viewportWidth",
+  dvw: "viewportWidth",
+  svw: "viewportWidth",
+  lvw: "viewportWidth",
+  vh: "viewportHeight",
+  dvh: "viewportHeight",
+  svh: "viewportHeight",
+  lvh: "viewportHeight",
+};
 
-export function quantityOf(text: string, fontSize: number): Quantity {
+function numbersOf(values: Array<Expression>): Array<number> | null {
+  const numbers: Array<number> = [];
+  for (const value of values) {
+    if (typeof value !== "number") return null;
+    numbers.push(value);
+  }
+  return numbers;
+}
+
+function node(op: Operator, args: Array<Expression>): Expression {
+  const numbers = numbersOf(args);
+  if (numbers == null || op === "roundToNearestPixel") return { op, args };
+  return arithmetic(op, numbers);
+}
+
+function leaf(op: Operator): Call {
+  return { op, args: [] };
+}
+
+export function quantityOf(text: string, fontSize: Expression): Quantity {
   const tokens = tokenize(text);
   let position = 0;
   const peek = (): Token | undefined => tokens[position];
@@ -120,11 +141,21 @@ export function quantityOf(text: string, fontSize: number): Quantity {
     if (token.text !== ")") throw new Unsupported(`can't read ")"`);
   };
 
+  const argumentsOf = (): Array<Quantity> => {
+    const args = [sum()];
+    while (peek()?.text === ",") {
+      next();
+      args.push(sum());
+    }
+    expectClose();
+    return args;
+  };
+
   const factor = (): Quantity => {
     const token = next();
     if (token.kind === "op" && token.text === "-") {
       const inner = factor();
-      return { value: -inner.value, unit: inner.unit };
+      return { value: node("*", [-1, inner.value]), unit: inner.unit };
     }
     if (token.kind === "op" && token.text === "+") return factor();
     if (token.kind === "op" && token.text === "(") {
@@ -136,21 +167,39 @@ export function quantityOf(text: string, fontSize: number): Quantity {
       return unitOf(token.value, token.unit, fontSize);
     if (token.kind === "word" && token.text === "infinity")
       return { value: Infinity, unit: "" };
-    if (
-      token.kind === "word" &&
-      MATH_WORDS.has(token.text) &&
-      peek()?.text === "("
-    ) {
+    if (token.kind === "word" && peek()?.text === "(") {
       next();
-      const args = [sum()];
-      while (peek()?.text === ",") {
-        next();
-        args.push(sum());
-      }
-      expectClose();
-      return combine(token.text, args);
+      return call(token.text);
     }
     throw new Unsupported(`can't read "${text}"`);
+  };
+
+  const call = (name: string): Quantity => {
+    if (MATH_WORDS.has(name)) {
+      const args = argumentsOf();
+      return combine(name, args);
+    }
+    if (name === "env") {
+      const edge = EDGE_OPERATORS[next().text];
+      if (edge == null) throw new Unsupported(`env() can't read "${text}"`);
+      expectClose();
+      return { value: leaf(edge), unit: "px" };
+    }
+    if (DEVICE_WORDS.has(name)) {
+      expectClose();
+      return {
+        value: leaf(name as Operator),
+        unit: name === "hairlineWidth" ? "px" : "",
+      };
+    }
+    if (name === "roundToNearestPixel") {
+      const [argument = { value: 0, unit: "" }] = argumentsOf();
+      return {
+        value: node("roundToNearestPixel", [argument.value]),
+        unit: argument.unit,
+      };
+    }
+    throw new Unsupported(`${name}() isn't supported in "${text}"`);
   };
 
   const term = (): Quantity => {
@@ -173,12 +222,9 @@ export function quantityOf(text: string, fontSize: number): Quantity {
     return left;
   }
 
-  const checkEnd = (result: Quantity): Quantity => {
-    if (position !== tokens.length)
-      throw new Unsupported(`can't read "${text}"`);
-    return result;
-  };
-  return checkEnd(sum());
+  const result = sum();
+  if (position !== tokens.length) throw new Unsupported(`can't read "${text}"`);
+  return result;
 }
 
 type Token =
@@ -213,7 +259,10 @@ function tokenize(text: string): Array<Token> {
   return tokens;
 }
 
-function unitOf(value: number, unit: string, fontSize: number): Quantity {
+function unitOf(value: number, unit: string, fontSize: Expression): Quantity {
+  const viewport = VIEWPORT_UNITS[unit];
+  if (viewport != null)
+    return { value: node("*", [value / 100, leaf(viewport)]), unit: "px" };
   switch (unit) {
     case "": {
       return { value, unit: "" };
@@ -225,7 +274,7 @@ function unitOf(value: number, unit: string, fontSize: number): Quantity {
       return { value: value * REM, unit: "px" };
     }
     case "em": {
-      return { value: value * fontSize, unit: "px" };
+      return { value: node("*", [value, fontSize]), unit: "px" };
     }
     case "%": {
       return { value, unit: "%" };
@@ -243,7 +292,7 @@ function add(left: Quantity, right: Quantity, sign: 1 | -1): Quantity {
   if (left.unit !== right.unit && left.unit !== "" && right.unit !== "")
     throw new Unsupported(`can't add ${left.unit} and ${right.unit}`);
   return {
-    value: left.value + sign * right.value,
+    value: node(sign > 0 ? "+" : "-", [left.value, right.value]),
     unit: left.unit === "" ? right.unit : left.unit,
   };
 }
@@ -252,90 +301,59 @@ function multiply(left: Quantity, right: Quantity): Quantity {
   if (left.unit !== "" && right.unit !== "")
     throw new Unsupported("can't multiply two lengths");
   return {
-    value: left.value * right.value,
+    value: node("*", [left.value, right.value]),
     unit: left.unit === "" ? right.unit : left.unit,
   };
 }
 
 function divide(left: Quantity, right: Quantity): Quantity {
   if (right.unit !== "") throw new Unsupported("can't divide by a length");
-  return { value: left.value / right.value, unit: left.unit };
+  return { value: node("/", [left.value, right.value]), unit: left.unit };
 }
 
 function combine(name: string, args: Array<Quantity>): Quantity {
-  const unit = args[0]?.unit ?? "";
-  if (args.some((arg) => arg.unit !== unit))
+  const unit = args.find((arg) => arg.unit !== "")?.unit ?? "";
+  if (args.some((arg) => arg.unit !== "" && arg.unit !== unit))
     throw new Unsupported(`${name}() mixes units`);
   const values = args.map((arg) => arg.value);
-  if (name === "min") return { value: Math.min(...values), unit };
-  if (name === "max") return { value: Math.max(...values), unit };
-  if (name === "clamp" && values.length === 3) {
-    const [low = 0, middle = 0, high = 0] = values;
-    return { value: Math.min(Math.max(middle, low), high), unit };
-  }
   if (name === "calc" && args.length === 1)
     return args[0] ?? { value: 0, unit: "" };
+  if (name === "clamp" && values.length !== 3)
+    throw new Unsupported("clamp() needs three arguments");
+  if (name === "round" && values.length > 2)
+    throw new Unsupported("round() takes at most two arguments");
+  if (name === "min" || name === "max" || name === "round" || name === "clamp")
+    return { value: node(name, values), unit };
   throw new Unsupported(`${name}() has the wrong number of arguments`);
 }
 
-const EDGES: ReadonlyArray<Edge> = ["top", "right", "bottom", "left"];
-
-function edgeOf(name: string | undefined): Edge {
-  const edge = EDGES.find((candidate) => candidate === name);
-  if (edge == null)
-    throw new Unsupported(`safe-area-inset-${name} isn't supported`);
-  return edge;
+export function times(left: Expression, right: Expression): Expression {
+  return node("*", [left, right]);
 }
 
-export function compact(text: string): string {
-  return text
-    .replaceAll(/\(\s+/g, "(")
-    .replaceAll(/\s+\)/g, ")")
-    .replaceAll(/\s+/g, " ")
-    .trim();
+export function fixedPixels(text: string, fontSize: Expression): number {
+  const value = pixels(text, fontSize);
+  if (typeof value !== "number")
+    throw new Unsupported(`"${text}" must be a fixed length here`);
+  return value;
 }
 
-export function dynamicOf(text: string, fontSize: number): Dynamic | null {
-  const value = compact(text);
-  const inset = /^env\(safe-area-inset-(\w+)\)$/.exec(value);
-  if (inset != null) return { inset: edgeOf(inset[1]) };
-  const offset = /^calc\(env\(safe-area-inset-(\w+)\) \+ (.+)\)$/.exec(value);
-  if (offset != null)
-    return {
-      inset: edgeOf(offset[1]),
-      plus: pixels(reduceMath(offset[2] ?? "", fontSize), fontSize),
-    };
-  const floor = /^max\(env\(safe-area-inset-(\w+)\), (.+)\)$/.exec(value);
-  if (floor != null)
-    return {
-      inset: edgeOf(floor[1]),
-      atLeast: pixels(reduceMath(floor[2] ?? "", fontSize), fontSize),
-    };
-  const rounded = /^roundToNearestPixel\((.+)\)$/.exec(value);
-  if (rounded != null)
-    return {
-      device: "rounded",
-      value: pixels(reduceMath(rounded[1] ?? "", fontSize), fontSize),
-    };
-  if (value === "hairlineWidth()") return { device: "hairline" };
-  if (value === "pixelRatio()") return { device: "pixelRatio" };
-  if (value === "fontScale()") return { device: "fontScale" };
-  return null;
-}
-
-export function pixels(text: string, fontSize: number): number {
+export function pixels(text: string, fontSize: Expression): Expression {
   const quantity = quantityOf(text, fontSize);
   if (quantity.unit !== "px" && quantity.unit !== "")
     throw new Unsupported(`"${text}" isn't a length`);
-  return round(quantity.value);
+  return typeof quantity.value === "number"
+    ? round(quantity.value)
+    : quantity.value;
 }
 
 export function numberOf(text: string): number {
-  const trimmed = text.trim();
-  if (trimmed.endsWith("%")) return round(Number(trimmed.slice(0, -1)) / 100);
-  const value = Number(trimmed);
-  if (Number.isNaN(value)) throw new Unsupported(`"${text}" isn't a number`);
-  return round(value);
+  const quantity = quantityOf(text.trim(), REM);
+  if (typeof quantity.value !== "number")
+    throw new Unsupported(`"${text}" isn't a number`);
+  if (quantity.unit === "%") return round(quantity.value / 100);
+  if (quantity.unit !== "") throw new Unsupported(`"${text}" isn't a number`);
+  return round(quantity.value);
 }
 
 export function parseColor(text: string): Rgba | "currentcolor" {

@@ -11,6 +11,8 @@ import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 import { buildClassTable } from "../src/tailwind/build.ts";
 import { tailwind } from "../src/tailwind/vite.ts";
+import type { State } from "../src/tailwind/runtime.ts";
+import { resolveClasses } from "../src/tailwind/runtime.ts";
 
 const budget = { minified: 188_000, gzipped: 59_000 };
 
@@ -308,20 +310,30 @@ describe("native Tailwind utilities", () => {
     const { table } = await built;
     expect(table.tokens["pb-safe-offset-4"]?.[0]).toMatchObject({
       dynamic: true,
-      attrs: { padding: { bottom: { inset: "bottom", plus: 16 } } },
+      attrs: {
+        padding: {
+          bottom: { op: "+", args: [{ op: "insetBottom", args: [] }, 16] },
+        },
+      },
     });
     expect(table.tokens["pb-safe-or-[2px]"]?.[0]).toMatchObject({
-      attrs: { padding: { bottom: { inset: "bottom", atLeast: 2 } } },
+      attrs: {
+        padding: {
+          bottom: { op: "max", args: [{ op: "insetBottom", args: [] }, 2] },
+        },
+      },
     });
     expect(table.tokens["pt-safe"]?.[0]).toMatchObject({
-      attrs: { padding: { top: { inset: "top" } } },
+      attrs: { padding: { top: { op: "insetTop", args: [] } } },
     });
     expect(table.tokens["h-screen-safe"]?.[0]?.attrs).toEqual({
       height: "infinity",
     });
     expect(table.tokens.hairline?.[0]).toMatchObject({
       dynamic: true,
-      attrs: { $borderWidth: { device: "hairline" } },
+      attrs: {
+        $borderWidth: { top: { op: "hairlineWidth", args: [] } },
+      },
     });
   }, 60_000);
 
@@ -346,5 +358,176 @@ describe("native Tailwind utilities", () => {
         /^Tailwind class "bad-system-color" in .*Native\.svelte isn't supported by swiftui-svelte: platformColor\(systemBlue\) isn't a system color this library supports\.$/,
       ),
     ]);
+  }, 60_000);
+});
+
+describe("Tailwind layout, lengths, and containers", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-layout-"));
+  writeFileSync(
+    path.join(dir, "app.css"),
+    `@import "tailwindcss";
+@import "${path.resolve("src/tailwind/theme.css")}";
+@custom-variant md (@container (width >= 48rem));
+@theme {
+  --text-sm: calc(0.875rem * clamp(0.8, fontScale(), 2));
+  --text-sm--line-height: calc(1.25 / 0.875);
+}
+`,
+  );
+  writeFileSync(
+    path.join(dir, "Layout.svelte"),
+    '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n',
+  );
+  const base: State = {
+    dark: false,
+    width: 800,
+    height: 600,
+    reduceMotion: false,
+    rtl: false,
+    disabled: false,
+    platform: "unknown",
+    idiom: "phone",
+    increaseContrast: false,
+    insets: { top: 0, right: 0, bottom: 0, left: 0 },
+    pixelRatio: 2,
+    fontScale: 1,
+    containers: {},
+  };
+
+  it("maps margins, stack layout, borders, and focus states", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    expect(table.tokens["mx-auto"]?.[0]?.attrs).toEqual({
+      margin: { leading: "auto", trailing: "auto" },
+    });
+    expect(table.tokens["-mt-2"]?.[0]?.attrs).toEqual({ margin: { top: -8 } });
+    expect(table.tokens["grid"]?.[0]).toMatchObject({
+      attrs: { css: true },
+      only: ["vstack", "lazyvstack", "hstack", "lazyhstack"],
+    });
+    expect(table.tokens["grid-flow-col"]?.[0]?.only).toEqual([
+      "hstack",
+      "lazyhstack",
+    ]);
+    expect(table.tokens["justify-items-center"]?.[0]).toMatchObject({
+      attrs: { alignment: "center" },
+      only: ["vstack", "lazyvstack"],
+    });
+    expect(table.tokens["justify-center"]?.[0]).toMatchObject({
+      attrs: { framealignment: "center" },
+      only: ["vstack", "lazyvstack"],
+    });
+    expect(table.tokens["border-t"]?.[1]?.attrs).toEqual({
+      $borderWidth: { top: 1 },
+    });
+    expect(table.tokens["border-x-red-500"]?.[0]?.attrs).toEqual({
+      $borderColor: "#fb2c36",
+    });
+    expect(table.tokens["focus:outline-none"]).toEqual([
+      { order: expect.any(Number), attrs: {} },
+    ]);
+    expect(table.tokens["focus-visible:ring-2"]).toEqual([
+      { order: expect.any(Number), attrs: {} },
+    ]);
+    expect(table.tokens["content-start"]?.[0]?.attrs).toEqual({});
+    expect(table.tokens["table-fixed"]?.[0]?.attrs).toEqual({});
+    expect(table.tokens["border-collapse"]?.[0]?.attrs).toEqual({});
+    expect(warnings).toEqual([
+      expect.stringMatching(/^Tailwind class "justify-between" .+ distribution/),
+      expect.stringMatching(/^Tailwind class "decoration-2" .+/),
+    ]);
+  }, 60_000);
+
+  it("compiles container queries to container conditions, not window widths", async () => {
+    const { table } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+      ignore: ["decoration-2"],
+    });
+    expect(table.tokens["@container"]?.[0]?.attrs).toEqual({ container: "" });
+    expect(table.tokens["@container/side"]?.at(-1)?.attrs).toEqual({
+      container: "side",
+    });
+    expect(table.tokens["@sm:p-4"]?.[0]?.when).toEqual(["container::>=384"]);
+    expect(table.tokens["@max-xs:min-w-88"]?.[0]?.when).toEqual([
+      "container::<320",
+    ]);
+    expect(table.tokens["md:p-2"]?.[0]?.when).toEqual(["container::>=768"]);
+    expect(table.breakpoints).not.toContain(320);
+    expect(table.tokens["decoration-2"]).toEqual([
+      { order: expect.any(Number), attrs: {} },
+    ]);
+  }, 60_000);
+
+  it("keeps static lengths static and marks runtime expressions dynamic", async () => {
+    const { table } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+      ignore: [],
+    });
+    expect(table.tokens["w-[calc(10px*2)]"]).toEqual([
+      { order: expect.any(Number), attrs: { width: 20 } },
+    ]);
+    expect(table.tokens["w-[50vw]"]?.[0]).toMatchObject({
+      dynamic: true,
+      attrs: {
+        width: {
+          op: "*",
+          args: [0.5, { op: "viewportWidth", args: [] }],
+        },
+      },
+    });
+    expect(table.tokens["text-sm"]?.at(-1)).toMatchObject({
+      dynamic: true,
+      attrs: { linebox: { op: "*" } },
+    });
+    expect(table.tokens["rounded-[roundToNearestPixel(10px)]"]?.[0]?.attrs).toEqual(
+      { radius: { op: "roundToNearestPixel", args: [10] } },
+    );
+  }, 60_000);
+
+  it("resolves expressions, container conditions, and text balance at runtime", async () => {
+    const { table } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+      ignore: [],
+    });
+    const scaled = resolveClasses(table, "txt", "text-sm", {
+      ...base,
+      fontScale: 2,
+    });
+    expect(scaled.attrs.size).toBe(28);
+    expect(scaled.attrs.linebox as number).toBeCloseTo(40);
+    const fixed = resolveClasses(table, "txt", "text-sm", base);
+    expect(fixed.attrs.size).toBe(14);
+    expect(fixed.attrs.linebox as number).toBeCloseTo(20);
+    expect(
+      resolveClasses(table, "vstack", "@sm:p-4", {
+        ...base,
+        containers: { "": 500 },
+      }).attrs,
+    ).toEqual({ padding: { top: 16, leading: 16, bottom: 16, trailing: 16 } });
+    expect(
+      resolveClasses(table, "vstack", "@sm:p-4", {
+        ...base,
+        containers: { "": 300 },
+      }).attrs,
+    ).toEqual({});
+    expect(
+      resolveClasses(table, "txt", "text-balance", base).attrs,
+    ).toEqual({ balanced: true });
+    expect(
+      resolveClasses(table, "txt", "text-pretty", base).attrs,
+    ).toEqual({});
   }, 60_000);
 });

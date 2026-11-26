@@ -39,6 +39,7 @@ type ElementNode = Container &
     classValue: string | null;
     derived: Map<string, unknown>;
     reactive: boolean;
+    containerWidth?: number;
   };
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
@@ -502,6 +503,22 @@ const noClasses: Resolution = {
   misplaced: [],
 };
 
+function containersOf(element: ElementNode): Record<string, number> {
+  const widths: Record<string, number> = {};
+  const seen = new Set<string>();
+  let node: ParentNode | null = element.parent;
+  while (node != null && isElement(node)) {
+    const name = effective(node, "container");
+    if (typeof name === "string" && !seen.has(name)) {
+      seen.add(name);
+      if (node.containerWidth != null) widths[name] = node.containerWidth;
+    }
+    node = node.parent;
+  }
+  if (!seen.has("")) widths[""] = environment.viewportWidth;
+  return widths;
+}
+
 function classState(element: ElementNode): ClassState {
   const disabled = element.attributes.get("disabled");
   const isRtl = environment.layoutDirection === "rightToLeft";
@@ -524,6 +541,7 @@ function classState(element: ElementNode): ClassState {
     },
     pixelRatio: environment.pixelRatio,
     fontScale: environment.fontScale,
+    containers: containersOf(element),
   };
 }
 
@@ -590,14 +608,26 @@ function updateDerived(element: ElementNode, attrs: Attributes): void {
     if (!element.attributes.has(key)) changeAttribute(element, key);
 }
 
-observeEnvironment((previous) => {
-  if (classInputs(previous) === classInputs(environment)) return;
+function reapplyReactive(): void {
   for (const [id, reference] of reactiveElements) {
     const element = reference.deref();
     if (!element?.reactive) reactiveElements.delete(id);
     else applyClass(element, element.classValue);
   }
+}
+
+observeEnvironment((previous) => {
+  if (classInputs(previous) === classInputs(environment)) return;
+  reapplyReactive();
 });
+
+function containerResized(element: ElementNode, payload: unknown): void {
+  if (typeof payload !== "object" || payload == null) return;
+  if (!("width" in payload) || typeof payload.width !== "number") return;
+  if (element.containerWidth === payload.width) return;
+  element.containerWidth = payload.width;
+  reapplyReactive();
+}
 
 const renderer = createRenderer<{
   fragment: FragmentNode;
@@ -789,6 +819,8 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     return;
   }
   const element = elements.get(id)?.deref();
+  if (type === "resize" && element != null && effective(element, "container") != null)
+    containerResized(element, payload);
   const handlers = element?.listeners.get(type);
   if (element == null || handlers == null || handlers.size === 0) {
     if (request != null) {
