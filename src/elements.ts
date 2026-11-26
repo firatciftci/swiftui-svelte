@@ -1489,12 +1489,12 @@ declare module "svelte/elements" {
         /** A letter for this section in the list's section index, on iOS 26 and later. */
         indexlabel?: string;
       };
-    /** The background of its parent element, drawn behind the parent at its size. */
+    /** The background of its parent element, drawn behind the parent at its size. The parent's opacity and transforms apply to it too, but its clip shape, border, and shadow don't. */
     background: {
       /** Where the background sits, such as `center` (the default) or a corner such as `bottomTrailing`. */
       alignment?: LayerAlignment;
     };
-    /** The overlay of its parent element, drawn in front of the parent at its size. */
+    /** The overlay of its parent element, drawn in front of the parent at its size. The parent's opacity and transforms apply to it too, but its clip shape, border, and shadow don't. */
     overlay: {
       /** Where the overlay sits, such as `center` (the default) or a corner such as `bottomTrailing`. */
       alignment?: LayerAlignment;

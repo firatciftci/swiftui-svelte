@@ -2329,7 +2329,7 @@ A `Path` shape drawn from SVG path data.
 
 ### `background`
 
-The background of its parent element, drawn behind the parent at its size.
+The background of its parent element, drawn behind the parent at its size. The parent's opacity and transforms apply to it too, but its clip shape, border, and shadow don't.
 
 | Attribute   | Type             | Description                                                                                     |
 | ----------- | ---------------- | ----------------------------------------------------------------------------------------------- |
@@ -2351,7 +2351,7 @@ This element doesn't take modifiers.
 
 ### `overlay`
 
-The overlay of its parent element, drawn in front of the parent at its size.
+The overlay of its parent element, drawn in front of the parent at its size. The parent's opacity and transforms apply to it too, but its clip shape, border, and shadow don't.
 
 | Attribute   | Type             | Description                                                                                  |
 | ----------- | ---------------- | -------------------------------------------------------------------------------------------- |
