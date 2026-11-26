@@ -679,9 +679,9 @@ type Modifiers = {
   compositinggroup?: boolean;
   /** Brightens the element by blending a copy of it over itself with the plus-lighter mode at this opacity, from 0 to 1. Unlike brightness, which adds the same amount to every color, the copy's opacity sets the strength, so 0.125 adds an eighth of the element's color again. */
   lighten?: number;
-  /** Draws a soft inner edge along the rounded corners set by `radius`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed. */
+  /** Draws a soft inner edge along the element's `clipshape`, or along the rounded corners set by `radius` when there is no `clipshape`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed. */
   insetshadow?: boolean;
-  /** The look of this element while the `btn` around it is pressed. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. */
+  /** The look of this element while the `btn` around it is pressed. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated, both when the press starts and when it ends. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. */
   pressed?: ButtonFeedback;
   /** The look of this element while the pointer is over the `btn` around it. It takes the same values as `pressed`, and `pressed` wins while both apply. */
   hovered?: ButtonFeedback;

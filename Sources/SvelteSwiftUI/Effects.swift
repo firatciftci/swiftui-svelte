@@ -226,12 +226,18 @@ struct SafeAreaInsets: ViewModifier {
 }
 
 struct InsetShadow: ViewModifier {
-    let radius: CGFloat
+    let shape: AnyShape
+
+    init(attributes: [String: JSONValue]) {
+        shape =
+            Effects.shape(attributes["clipshape"])
+            ?? AnyShape(RoundedRectangle(cornerRadius: attributes["radius"]?.number ?? 0, style: .continuous))
+    }
 
     func body(content: Content) -> some View {
         content.overlay {
             Canvas { context, size in
-                let path = RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: CGRect(origin: .zero, size: size))
+                let path = shape.path(in: CGRect(origin: .zero, size: size))
                 context.clip(to: path)
                 for step in (0..<6).reversed() {
                     let offset = CGFloat(1 << step)

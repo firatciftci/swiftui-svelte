@@ -306,7 +306,7 @@ private struct Appearance: ViewModifier {
         content
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
-            .gated(attributes["insetshadow"]?.isTrue == true) { $0.modifier(InsetShadow(radius: attributes["radius"]?.number ?? 0)) }
+            .gated(attributes["insetshadow"]?.isTrue == true) { $0.modifier(InsetShadow(attributes: attributes)) }
     }
 }
 

@@ -14,6 +14,14 @@ struct ButtonFeedback {
 struct ButtonPress: Equatable {
     var isPressed = false
     var isHovered = false
+
+    func active(pressed: ButtonFeedback?, hovered: ButtonFeedback?) -> ButtonFeedback? {
+        isPressed ? pressed : (isHovered ? hovered : nil)
+    }
+
+    static func animation(from old: ButtonFeedback?, to new: ButtonFeedback?) -> Animation {
+        (new ?? old)?.animation ?? .easeInOut(duration: 0.2)
+    }
 }
 
 extension EnvironmentValues {
@@ -37,18 +45,22 @@ struct FeedbackButtonStyle: ButtonStyle {
         @State private var isHovered = false
 
         var body: some View {
-            let isPressed = configuration.isPressed
-            let active = isPressed ? pressed : (isHovered ? hovered : nil)
-            let overrides = active?.overrides ?? [:]
-            let animation = active?.animation ?? .easeInOut(duration: 0.2)
+            let press = ButtonPress(isPressed: configuration.isPressed, isHovered: isHovered)
+            let overrides = press.active(pressed: pressed, hovered: hovered)?.overrides ?? [:]
             configuration.label
-                .environment(\.buttonPress, ButtonPress(isPressed: isPressed, isHovered: isHovered))
-                .onChange(of: overrides, initial: true) { _, overrides in
-                    withAnimation(animation) {
-                        for label in labels { label.labelFeedback = overrides }
+                .environment(\.buttonPress, press)
+                .onChange(of: Change(press: press, overrides: overrides), initial: true) { old, new in
+                    let left = old.press.active(pressed: pressed, hovered: hovered)
+                    withAnimation(ButtonPress.animation(from: left, to: new.press.active(pressed: pressed, hovered: hovered))) {
+                        for label in labels { label.labelFeedback = new.overrides }
                     }
                 }
                 .onHover { isHovered = $0 }
+        }
+
+        private struct Change: Equatable {
+            let press: ButtonPress
+            let overrides: [String: JSONValue]
         }
     }
 }
@@ -58,12 +70,11 @@ struct StateFeedback: ViewModifier {
     @Environment(\.buttonPress) private var press
 
     func body(content: Content) -> some View {
-        content.onChange(of: press, initial: true) { _, press in
-            let active =
-                press.isPressed
-                ? ButtonFeedback(node.attributes["pressed"])
-                : (press.isHovered ? ButtonFeedback(node.attributes["hovered"]) : nil)
-            withAnimation(active?.animation ?? .easeInOut(duration: 0.2)) {
+        content.onChange(of: press, initial: true) { old, new in
+            let pressed = ButtonFeedback(node.attributes["pressed"])
+            let hovered = ButtonFeedback(node.attributes["hovered"])
+            let active = new.active(pressed: pressed, hovered: hovered)
+            withAnimation(ButtonPress.animation(from: old.active(pressed: pressed, hovered: hovered), to: active)) {
                 node.stateFeedback = active?.overrides ?? [:]
             }
         }
