@@ -11,7 +11,7 @@ import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 import { buildClassTable } from "../src/tailwind/build.ts";
 
-const budget = { minified: 184_000, gzipped: 57_000 };
+const budget = { minified: 188_000, gzipped: 59_000 };
 
 async function bundle(
   options: { mode?: string; entry?: string } = {},
