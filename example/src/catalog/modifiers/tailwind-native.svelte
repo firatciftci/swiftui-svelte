@@ -1,12 +1,12 @@
 <vstack
-  class="gap-3 rounded-xl corner-squircle bg-white p-4 dark:bg-neutral-900"
+  class="gap-3 rounded-xl corner-squircle bg-neutral-100 p-4 dark:bg-neutral-900"
 >
   <txt class="text-neutral-800 dark:text-neutral-50">Native variants</txt>
   <txt class="ios:text-blue-600 android:text-green-600 web:text-red-600">
     Blue on iOS, green on Android
   </txt>
   <txt
-    class="contrast-more:font-bold portrait:text-neutral-700 landscape:text-neutral-500"
+    class="contrast-more:font-bold portrait:text-neutral-700 landscape:text-neutral-500 dark:portrait:text-neutral-300 dark:landscape:text-neutral-400"
   >
     Bold with Increase Contrast
   </txt>
