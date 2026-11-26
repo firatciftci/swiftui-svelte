@@ -36,7 +36,7 @@ function closest(
   return best;
 }
 
-function warnOnce(key: string, message: string): void {
+export function warnOnce(key: string, message: string): void {
   if (warned.has(key)) return;
   warned.add(key);
   console.warn(message);

@@ -20,6 +20,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "border",
   "brightness",
   "cellanchor",
+  "class",
   "clipshape",
   "color",
   "colormultiply",

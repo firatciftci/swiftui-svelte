@@ -1,6 +1,7 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { move, protocol, withAnimation } from "swiftui-svelte";
+import { registerClasses } from "swiftui-svelte/renderer";
 import {
   animations,
   byTestId,
@@ -20,6 +21,7 @@ import {
 } from "./bridge.ts";
 import Accessible from "./components/Accessible.svelte";
 import Boundary from "./components/Boundary.svelte";
+import Classes from "./components/Classes.svelte";
 import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
 import Gestures from "./components/Gestures.svelte";
@@ -43,8 +45,9 @@ let unmount: (() => void) | undefined;
 
 async function render(
   component: Parameters<typeof mountComponent>[0],
+  props: Record<string, unknown> = {},
 ): Promise<void> {
-  unmount = mountComponent(component);
+  unmount = mountComponent(component, props);
   flushSync();
   await settle();
 }
@@ -915,5 +918,73 @@ describe("attributes", () => {
     expect(find("vstack")?.attributes.get("data-number")).toBe(2);
     await update(() => (state.values.big = 2n ** 70n));
     expect(find("vstack")?.attributes.get("data-big")).toBe(2 ** 70);
+  });
+});
+
+describe("tailwind classes", () => {
+  const padding = { top: 16, leading: 16, bottom: 16, trailing: 16 };
+  const table = {
+    tokens: {
+      "p-4": [{ order: 1, attrs: { padding } }],
+      "bg-white": [{ order: 2, attrs: { background: "#ffffff" } }],
+      "dark:bg-black": [
+        { order: 3, when: ["dark"], attrs: { background: "#000000" } },
+      ],
+      "md:p-2": [
+        {
+          order: 4,
+          when: [">=768"],
+          attrs: { padding: { top: 8, leading: 8, bottom: 8, trailing: 8 } },
+        },
+      ],
+    },
+    statics: {},
+    breakpoints: [768],
+  };
+
+  beforeEach(() => registerClasses(table));
+  afterEach(() => {
+    registerClasses({ tokens: {}, statics: {}, breakpoints: [] });
+    __svelteEnvironment(
+      JSON.stringify({ colorScheme: "light", viewportWidth: 0 }),
+    );
+  });
+
+  it("applies the attributes of each class, sent without the class name", async () => {
+    await render(Classes, { className: "p-4 bg-white" });
+    const stack = find("vstack");
+    expect(stack?.attributes.get("padding")).toEqual(padding);
+    expect(stack?.attributes.get("background")).toBe("#ffffff");
+    expect(stack?.attributes.has("class")).toBe(false);
+  });
+
+  it("lets an explicit attribute replace the one a class sets", async () => {
+    await render(Classes, { className: "p-4 bg-white", padding: 0 });
+    const stack = find("vstack");
+    expect(stack?.attributes.get("padding")).toBe(0);
+    expect(stack?.attributes.get("background")).toBe("#ffffff");
+  });
+
+  it("applies conditional classes for the current color scheme and width", async () => {
+    __svelteEnvironment(
+      JSON.stringify({ colorScheme: "dark", viewportWidth: 800 }),
+    );
+    await render(Classes, { className: "bg-white dark:bg-black md:p-2" });
+    const stack = find("vstack");
+    expect(stack?.attributes.get("background")).toBe("#000000");
+    expect(stack?.attributes.get("padding")).toEqual({
+      top: 8,
+      leading: 8,
+      bottom: 8,
+      trailing: 8,
+    });
+  });
+
+  it("re-resolves conditional classes when the environment changes", async () => {
+    await render(Classes, { className: "bg-white dark:bg-black" });
+    expect(find("vstack")?.attributes.get("background")).toBe("#ffffff");
+    __svelteEnvironment(JSON.stringify({ colorScheme: "dark" }));
+    await settle();
+    expect(find("vstack")?.attributes.get("background")).toBe("#000000");
   });
 });
