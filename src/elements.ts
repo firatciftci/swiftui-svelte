@@ -1284,6 +1284,14 @@ declare module "svelte/elements" {
       kerning?: number;
       /** Adjusts the tracking of the text, which is the space between letters, in points. */
       tracking?: number;
+      /** Moves the text up or down from the baseline, in points. A positive value raises the text, and a negative value lowers it. */
+      baselineoffset?: number;
+      /** The line style of the underline: `solid`, `dotted`, or `dashed`. Applies when `underline` is set. */
+      underlinestyle?: "solid" | "dotted" | "dashed";
+      /** The color of the underline. Applies when `underline` is set. */
+      underlinecolor?: Color;
+      /** Uses digits of equal width, so numbers that change don't shift the text around them. */
+      monospaceddigit?: boolean;
       /** The extra space between lines, in points. */
       linespacing?: number;
       /** Where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`. */

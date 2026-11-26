@@ -48,6 +48,23 @@ struct RichTextTests {
         #expect(run(string, "A")?.swiftUI.font == nil)
     }
 
+    @Test func decoratesUnderlinesBaselinesAndDigits() throws {
+        let string = Styles.attributedString(
+            txt(
+                [
+                    "underline": .bool(true), "underlinestyle": .string("dotted"), "underlinecolor": .string("red"),
+                    "baselineoffset": .number(-3), "monospaceddigit": .bool(true),
+                ],
+                [text("1"), txt(["underlinestyle": .string("dashed")], [text("2")])]))
+        let first = try #require(run(string, "1"))
+        #expect(first.swiftUI.underlineStyle == Text.LineStyle(pattern: .dot, color: .red))
+        #expect(first.baselineOffset == -3)
+        #expect(first.swiftUI.font == Font.body.monospacedDigit())
+        let second = try #require(run(string, "2"))
+        #expect(second.swiftUI.underlineStyle == Text.LineStyle(pattern: .dash, color: .red))
+        #expect(second.baselineOffset == -3)
+    }
+
     @Test func decoratesWholeTextFromTheOuterElement() throws {
         let string = Styles.attributedString(
             txt(

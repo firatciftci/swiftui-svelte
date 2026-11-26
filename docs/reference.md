@@ -1268,21 +1268,25 @@ A `ControlGroup`: joins its controls, such as buttons, into one control.
 
 A `Text`: displays text. Its `txt` children style spans of it, and it can render Markdown.
 
-| Attribute       | Type                                  | Description                                                                                                                                          |
-| --------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lines`         | `number`                              | The maximum number of lines. Leave it out for no limit.                                                                                              |
-| `align`         | `"leading" \| "center" \| "trailing"` | The alignment of wrapped lines: `leading`, `center`, or `trailing`.                                                                                  |
-| `underline`     | `boolean`                             | Underlines the text.                                                                                                                                 |
-| `strikethrough` | `boolean`                             | Draws a line through the text.                                                                                                                       |
-| `href`          | `string`                              | Makes the text a link that opens this URL in the browser.                                                                                            |
-| `markdown`      | `boolean \| string`                   | Renders the text as inline Markdown: bold, italic, strikethrough, code, and links. Set it with no value to use the element's own text as the source. |
-| `whitespace`    | `"normal" \| "pre-line" \| "pre"`     | How spaces and line breaks are handled: `normal` collapses them, `pre-line` keeps line breaks, and `pre` keeps every space.                          |
-| `kerning`       | `number`                              | Adjusts the space between letters, in points.                                                                                                        |
-| `tracking`      | `number`                              | Adjusts the tracking of the text, which is the space between letters, in points.                                                                     |
-| `linespacing`   | `number`                              | The extra space between lines, in points.                                                                                                            |
-| `truncation`    | `"head" \| "middle" \| "tail"`        | Where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`.                                                                          |
-| `minscale`      | `number`                              | The smallest fraction of the font size that the text can shrink to before it's truncated, such as `0.5`.                                             |
-| `selectable`    | `boolean`                             | Lets the user select and copy the text.                                                                                                              |
+| Attribute         | Type                                  | Description                                                                                                                                          |
+| ----------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lines`           | `number`                              | The maximum number of lines. Leave it out for no limit.                                                                                              |
+| `align`           | `"leading" \| "center" \| "trailing"` | The alignment of wrapped lines: `leading`, `center`, or `trailing`.                                                                                  |
+| `underline`       | `boolean`                             | Underlines the text.                                                                                                                                 |
+| `strikethrough`   | `boolean`                             | Draws a line through the text.                                                                                                                       |
+| `href`            | `string`                              | Makes the text a link that opens this URL in the browser.                                                                                            |
+| `markdown`        | `boolean \| string`                   | Renders the text as inline Markdown: bold, italic, strikethrough, code, and links. Set it with no value to use the element's own text as the source. |
+| `whitespace`      | `"normal" \| "pre-line" \| "pre"`     | How spaces and line breaks are handled: `normal` collapses them, `pre-line` keeps line breaks, and `pre` keeps every space.                          |
+| `kerning`         | `number`                              | Adjusts the space between letters, in points.                                                                                                        |
+| `tracking`        | `number`                              | Adjusts the tracking of the text, which is the space between letters, in points.                                                                     |
+| `baselineoffset`  | `number`                              | Moves the text up or down from the baseline, in points. A positive value raises the text, and a negative value lowers it.                            |
+| `underlinestyle`  | `"solid" \| "dotted" \| "dashed"`     | The line style of the underline: `solid`, `dotted`, or `dashed`. Applies when `underline` is set.                                                    |
+| `underlinecolor`  | `Color`                               | The color of the underline. Applies when `underline` is set.                                                                                         |
+| `monospaceddigit` | `boolean`                             | Uses digits of equal width, so numbers that change don't shift the text around them.                                                                 |
+| `linespacing`     | `number`                              | The extra space between lines, in points.                                                                                                            |
+| `truncation`      | `"head" \| "middle" \| "tail"`        | Where the text is cut off when it doesn't fit: `head`, `middle`, or `tail`.                                                                          |
+| `minscale`        | `number`                              | The smallest fraction of the font size that the text can shrink to before it's truncated, such as `0.5`.                                             |
+| `selectable`      | `boolean`                             | Lets the user select and copy the text.                                                                                                              |
 
 ```svelte
 <vstack alignment="leading" spacing={12} padding>
@@ -1297,6 +1301,14 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
     A long line of text that gets cut off in the middle when it doesn't fit
   </txt>
   <txt selectable font="footnote" tracking={2}>SELECT AND COPY ME</txt>
+  <txt font="body"
+    >Footnote<txt baselineoffset={6} font="caption">1</txt> and
+    <txt underline underlinestyle="dotted" underlinecolor="red">dotted</txt>
+    and
+    <txt underline underlinestyle="dashed" underlinecolor="blue">dashed</txt>
+    underlines.</txt
+  >
+  <txt monospaceddigit font="title2">12:34</txt>
   <txt font="body"
     >Spans can use <txt fontname="Georgia-Italic">Georgia italic</txt> too.</txt
   >

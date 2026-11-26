@@ -11,6 +11,14 @@
   </txt>
   <txt selectable font="footnote" tracking={2}>SELECT AND COPY ME</txt>
   <txt font="body"
+    >Footnote<txt baselineoffset={6} font="caption">1</txt> and
+    <txt underline underlinestyle="dotted" underlinecolor="red">dotted</txt>
+    and
+    <txt underline underlinestyle="dashed" underlinecolor="blue">dashed</txt>
+    underlines.</txt
+  >
+  <txt monospaceddigit font="title2">12:34</txt>
+  <txt font="body"
     >Spans can use <txt fontname="Georgia-Italic">Georgia italic</txt> too.</txt
   >
 </vstack>

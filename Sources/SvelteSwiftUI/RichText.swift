@@ -12,6 +12,10 @@ struct Span {
     var color: Color?
     var background: Color?
     var isUnderlined = false
+    var underlinePattern: Text.LineStyle.Pattern?
+    var underlineColor: Color?
+    var isMonospacedDigit = false
+    var baselineOffset: Double?
     var isStruckThrough = false
     var kerning: Double?
     var tracking: Double?
@@ -58,8 +62,21 @@ struct Span {
     private mutating func apply(decorations attributes: [String: JSONValue]) {
         if let italic = attributes["italic"] { isItalic = italic.isTrue }
         if let underline = attributes["underline"] { isUnderlined = underline.isTrue }
+        if let pattern = attributes["underlinestyle"]?.string { underlinePattern = Self.pattern(pattern) }
+        if let color = Palette.color(attributes["underlinecolor"]?.string) { underlineColor = color }
+        if let monospaced = attributes["monospaceddigit"] { isMonospacedDigit = monospaced.isTrue }
+        if let baseline = attributes["baselineoffset"]?.number { baselineOffset = baseline }
         if let strikethrough = attributes["strikethrough"] { isStruckThrough = strikethrough.isTrue }
         if let href = attributes["href"]?.string { link = URL(string: href) }
+    }
+
+    private static func pattern(_ name: String) -> Text.LineStyle.Pattern? {
+        switch name {
+        case "solid": .solid
+        case "dotted": .dot
+        case "dashed": .dash
+        default: nil
+        }
     }
 
     private var resolvedFont: Font {
@@ -72,10 +89,11 @@ struct Span {
     var container: AttributeContainer {
         var container = AttributeContainer()
         var intent: InlinePresentationIntent = []
-        if hasFont || (weight != nil && weight != .bold) {
+        if hasFont || isMonospacedDigit || (weight != nil && weight != .bold) {
             var resolved = resolvedFont
             if let weight { resolved = resolved.weight(weight) }
             if isItalic { resolved = resolved.italic() }
+            if isMonospacedDigit { resolved = resolved.monospacedDigit() }
             container.swiftUI.font = resolved
         } else {
             if weight == .bold { intent.insert(.stronglyEmphasized) }
@@ -84,7 +102,8 @@ struct Span {
         if !intent.isEmpty { container.inlinePresentationIntent = intent }
         if let color { container.swiftUI.foregroundColor = color }
         if let background { container.swiftUI.backgroundColor = background }
-        if isUnderlined { container.swiftUI.underlineStyle = .single }
+        if isUnderlined { container.swiftUI.underlineStyle = Text.LineStyle(pattern: underlinePattern ?? .solid, color: underlineColor) }
+        if let baselineOffset { container.baselineOffset = baselineOffset }
         if isStruckThrough { container.swiftUI.strikethroughStyle = .single }
         if let kerning { container.swiftUI.kern = kerning }
         if let tracking { container.swiftUI.tracking = tracking }
@@ -117,7 +136,10 @@ struct TextView: View {
 }
 
 extension Styles {
-    private static let spanAttributes = ["kerning", "tracking", "italic", "underline", "strikethrough", "href"]
+    private static let spanAttributes = [
+        "kerning", "tracking", "italic", "underline", "underlinestyle", "underlinecolor", "monospaceddigit", "baselineoffset",
+        "strikethrough", "href",
+    ]
 
     static func text(_ node: Node) -> Text {
         if let plain = plainText(node) { return Text(plain) }
