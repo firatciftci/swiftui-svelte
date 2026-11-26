@@ -62,8 +62,6 @@ enum Effects {
     struct Border {
         let style: AnyShapeStyle
         let widths: EdgeInsets
-
-        var width: CGFloat { max(widths.top, widths.leading, widths.bottom, widths.trailing) }
     }
 
     static func border(_ value: JSONValue?) -> Border? {
