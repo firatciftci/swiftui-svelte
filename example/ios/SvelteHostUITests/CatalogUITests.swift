@@ -27,7 +27,7 @@ extension SvelteHostUITests {
             next.tap()
             open(identifier)
         }
-        XCTAssertEqual(opened.count, 92, "Opened \(opened.sorted())")
+        XCTAssertEqual(opened.count, 94, "Opened \(opened.sorted())")
     }
 
     private func open(_ identifier: String) {
