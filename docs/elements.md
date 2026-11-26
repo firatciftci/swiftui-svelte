@@ -62,6 +62,8 @@ A `txt` inside another `txt` styles part of the text, the way a `<span>` does. T
 </txt>
 ```
 
+To use a font that isn't a system style, set `fontname` to the font's PostScript name, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font` as well, the size scales with Dynamic Type relative to that text style. Spans take `fontname` too. A custom font must be listed under `UIAppFonts` in the app's Info.plist. If no installed font has the name, SwiftUI falls back to the system font.
+
 Spans also take `italic`, `underline`, and `strikethrough`, and `href` turns a span into a link that opens in the browser. A span can turn a decoration back off with `underline={false}`.
 
 For text from Markdown, set `markdown` to the source, or set it with no value to read the text inside the element:

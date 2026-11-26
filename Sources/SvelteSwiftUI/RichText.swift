@@ -2,6 +2,7 @@ import SwiftUI
 
 struct Span {
     var font: String?
+    var fontName: String?
     var size: Double?
     var design: Font.Design?
     var hasFont = false
@@ -17,6 +18,7 @@ struct Span {
 
     init(root attributes: [String: JSONValue]) {
         font = attributes["font"]?.string
+        fontName = attributes["fontname"]?.string
         size = attributes["size"]?.number
         design = Styles.design(attributes["design"]?.string)
         kerning = attributes["kerning"]?.number
@@ -27,12 +29,15 @@ struct Span {
     func merged(_ attributes: [String: JSONValue]) -> Self {
         var span = self
         let font = attributes["font"]?.string
+        let fontName = attributes["fontname"]?.string
         let size = attributes["size"]?.number
+        span.fontName = fontName ?? span.fontName
         if font != nil || size != nil {
             span.font = font ?? span.font
             span.size = size
             span.hasFont = true
         }
+        if fontName != nil { span.hasFont = true }
         if let design = Styles.design(attributes["design"]?.string) {
             span.design = design
             span.hasFont = true
@@ -54,6 +59,7 @@ struct Span {
     }
 
     private var resolvedFont: Font {
+        if let fontName { return Styles.custom(fontName, size: size, style: font) }
         if let size { return .system(size: size, design: design) }
         if let design { return .system(Styles.textStyle(font) ?? .body, design: design) }
         return Styles.font(font) ?? .body

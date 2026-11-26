@@ -1211,7 +1211,6 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
 | --------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lines`         | `number`                              | The maximum number of lines. Leave it out for no limit.                                                                                              |
 | `align`         | `"leading" \| "center" \| "trailing"` | The alignment of wrapped lines: `leading`, `center`, or `trailing`.                                                                                  |
-| `italic`        | `boolean`                             | Draws the text in italics.                                                                                                                           |
 | `underline`     | `boolean`                             | Underlines the text.                                                                                                                                 |
 | `strikethrough` | `boolean`                             | Draws a line through the text.                                                                                                                       |
 | `href`          | `string`                              | Makes the text a link that opens this URL in the browser.                                                                                            |
@@ -1232,11 +1231,14 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
     <txt italic>italic</txt>, or
     <txt href="https://svelte.dev" underline>links</txt>.
   </txt>
-  <txt markdown="Markdown works **too**, with `code` and _emphasis_." />
+  <txt markdown="Markdown works **too**, with `code` and _emphasis_."></txt>
   <txt lines={1} truncation="middle">
     A long line of text that gets cut off in the middle when it doesn't fit
   </txt>
   <txt selectable font="footnote" tracking={2}>SELECT AND COPY ME</txt>
+  <txt font="body"
+    >Spans can use <txt fontname="Georgia-Italic">Georgia italic</txt> too.</txt
+  >
 </vstack>
 ```
 
@@ -2313,12 +2315,14 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Typography
 
-| Attribute | Type                                                | Description                                                                                                              |
-| --------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `font`    | `Font`                                              | The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element. |
-| `size`    | `number`                                            | A fixed font size in points, like `.system(size:)`. It doesn't follow Dynamic Type.                                      |
-| `design`  | `"default" \| "rounded" \| "serif" \| "monospaced"` | The font design: `default`, `rounded`, `serif`, or `monospaced`.                                                         |
-| `weight`  | `Weight`                                            | The font weight, from `ultraLight` through `black`.                                                                      |
+| Attribute  | Type                                                | Description                                                                                                                                                                                                                        |
+| ---------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `font`     | `Font`                                              | The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element.                                                                                                           |
+| `fontname` | `string`                                            | The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style.                      |
+| `size`     | `number`                                            | A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. |
+| `design`   | `"default" \| "rounded" \| "serif" \| "monospaced"` | The font design: `default`, `rounded`, `serif`, or `monospaced`.                                                                                                                                                                   |
+| `weight`   | `Weight`                                            | The font weight, from `ultraLight` through `black`.                                                                                                                                                                                |
+| `italic`   | `boolean`                                           | Draws the text in italics.                                                                                                                                                                                                         |
 
 ```svelte
 <vstack alignment="leading" spacing={8} padding>
@@ -2327,6 +2331,10 @@ Every element takes these attributes, except the few whose entries say they don'
   <txt size={28} design="rounded">Rounded at 28 points</txt>
   <txt font="callout" design="monospaced">let monospaced = true</txt>
   <txt design="serif" weight="light">Light serif</txt>
+  <txt fontname="Georgia-Bold" size={24}>Georgia Bold at 24 points</txt>
+  <txt fontname="Georgia" font="body" italic
+    >Georgia italic, scaled with Dynamic Type</txt
+  >
 </vstack>
 ```
 

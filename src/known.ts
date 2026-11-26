@@ -34,6 +34,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "dynamictypesize",
   "feedbacktrigger",
   "font",
+  "fontname",
   "framealignment",
   "glasseffect",
   "glassid",
@@ -44,6 +45,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "idealwidth",
   "ignoressafearea",
   "in",
+  "italic",
   "lang",
   "longpressduration",
   "maxheight",
@@ -295,7 +297,6 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   txt: [
     "align",
     "href",
-    "italic",
     "kerning",
     "lines",
     "linespacing",

@@ -597,12 +597,16 @@ type Modifiers = {
   padding?: Insets;
   /** The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element. */
   font?: Font;
-  /** A fixed font size in points, like `.system(size:)`. It doesn't follow Dynamic Type. */
+  /** The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style. */
+  fontname?: string;
+  /** A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. */
   size?: number;
   /** The font design: `default`, `rounded`, `serif`, or `monospaced`. */
   design?: "default" | "rounded" | "serif" | "monospaced";
   /** The font weight, from `ultraLight` through `black`. */
   weight?: Weight;
+  /** Draws the text in italics. */
+  italic?: boolean;
   /** The foreground style of the content, such as a named color, a CSS color, or a gradient. */
   color?: ShapeStyle;
   /** The tint of the controls inside the element. Takes a color only. */
@@ -1187,8 +1191,6 @@ declare module "svelte/elements" {
       lines?: number;
       /** The alignment of wrapped lines: `leading`, `center`, or `trailing`. */
       align?: "leading" | "center" | "trailing";
-      /** Draws the text in italics. */
-      italic?: boolean;
       /** Underlines the text. */
       underline?: boolean;
       /** Draws a line through the text. */

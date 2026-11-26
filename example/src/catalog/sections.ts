@@ -135,7 +135,7 @@ export const modifierGroups: Array<{
   {
     name: "typography",
     title: "Typography",
-    modifiers: ["font", "size", "design", "weight"],
+    modifiers: ["font", "fontname", "size", "design", "weight", "italic"],
   },
   {
     name: "color-and-style",
