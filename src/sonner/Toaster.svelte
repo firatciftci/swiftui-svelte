@@ -57,38 +57,40 @@
   const scheme = $derived(theme === "system" ? undefined : theme);
 </script>
 
-{#if isStacked}
-  <zstack
-    padding={{ horizontal: 8, vertical: 8 }}
-    maxwidth="infinity"
-    maxheight="infinity"
-    framealignment={alignment}
-    colorscheme={scheme}
-    ontap={() => (isExpanded = true)}
-  >
-    {#each stack as toast (toast.id)}
-      <ToastItem
-        {toast}
-        {position}
-        {duration}
-        {closeButton}
-        {richColors}
-        stackDepth={visible.indexOf(toast)}
-      />
-    {/each}
-  </zstack>
-{:else}
-  <vstack
-    spacing={gap}
-    padding={{ horizontal: 8, vertical: 8 }}
-    maxwidth="infinity"
-    maxheight="infinity"
-    framealignment={alignment}
-    colorscheme={scheme}
-    ontap={() => (isExpanded = false)}
-  >
-    {#each flow as toast (toast.id)}
-      <ToastItem {toast} {position} {duration} {closeButton} {richColors} />
-    {/each}
-  </vstack>
+{#if visible.length > 0}
+  {#if isStacked}
+    <zstack
+      padding={{ horizontal: 8, vertical: 8 }}
+      maxwidth="infinity"
+      maxheight="infinity"
+      framealignment={alignment}
+      colorscheme={scheme}
+      ontap={() => (isExpanded = true)}
+    >
+      {#each stack as toast (toast.id)}
+        <ToastItem
+          {toast}
+          {position}
+          {duration}
+          {closeButton}
+          {richColors}
+          stackDepth={visible.indexOf(toast)}
+        />
+      {/each}
+    </zstack>
+  {:else}
+    <vstack
+      spacing={gap}
+      padding={{ horizontal: 8, vertical: 8 }}
+      maxwidth="infinity"
+      maxheight="infinity"
+      framealignment={alignment}
+      colorscheme={scheme}
+      ontap={() => (isExpanded = false)}
+    >
+      {#each flow as toast (toast.id)}
+        <ToastItem {toast} {position} {duration} {closeButton} {richColors} />
+      {/each}
+    </vstack>
+  {/if}
 {/if}
