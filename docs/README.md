@@ -11,6 +11,7 @@
 - [Libraries](libraries.md): TanStack Query, tRPC, oRPC, and Better Auth, and the setup each one needs in the app.
 - [Web APIs](web-apis.md): `fetch`, `WebSocket`, `localStorage`, and the other browser APIs that the app provides.
 - [Native modules and components](native-modules.md): calling Swift from JavaScript, the built-in modules, and SwiftUI views as new elements.
+- [Host protocol](protocol.md): what a native host must implement to run a swiftui-svelte app, including the render opcodes, value encoding, host globals, events, environment fields, and versioning.
 - [Embedding in a Swift app](embedding.md): props, actions, several components in one bundle, and views that share one runtime.
 - [Tailwind CSS](tailwind.md): applying Tailwind utility classes to elements, the variants for dark mode and window width, and which utilities have a native equivalent.
 - [Performance](performance.md): keeping the app fast, and how to measure it on a device.
