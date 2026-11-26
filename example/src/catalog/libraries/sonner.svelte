@@ -44,6 +44,16 @@
     <btn
       variant="bordered"
       onclick={() =>
+        toast.promise(
+          delay(1_500).then(() => Promise.reject(new Error("Offline"))),
+          { loading: "Sending", success: "Sent", error: "Failed" },
+        )}
+    >
+      Promise error
+    </btn>
+    <btn
+      variant="bordered"
+      onclick={() =>
         toast.custom(CustomToast, {
           componentProps: { title: "Custom toast" },
         })}
