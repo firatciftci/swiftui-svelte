@@ -1364,6 +1364,7 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
   <txt font="body"
     >Spans can use <txt fontname="Georgia-Italic">Georgia italic</txt> too.</txt
   >
+  <txt fontname="Georgia" size={20} lang="tr">grafik geçmiş</txt>
 </vstack>
 ```
 
@@ -3206,17 +3207,17 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Environment and feedback
 
-| Attribute                 | Type                                                                   | Description                                                                                                                               |
-| ------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `lang`                    | `string`                                                               | The locale of the element and everything inside it, such as `ar` or `en-US`. SwiftUI uses it to format dates and numbers.                 |
-| `dir`                     | `"ltr" \| "rtl"`                                                       | The layout direction of the element and everything inside it: `ltr` or `rtl`.                                                             |
-| `dynamictypesize`         | `DynamicTypeSize \| { min?: DynamicTypeSize; max?: DynamicTypeSize; }` | Pins the Dynamic Type size, such as `xLarge`, or keeps it within `{ min, max }`.                                                          |
-| `colorscheme`             | `"light" \| "dark"`                                                    | Forces `light` or `dark` mode on the element and everything inside it.                                                                    |
-| `preferredcolorscheme`    | `"light" \| "dark"`                                                    | Asks the window, sheet, or popover that contains the element to use `light` or `dark` mode.                                               |
-| `disabled`                | `boolean`                                                              | Disables every control inside the element.                                                                                                |
-| `sensoryfeedback`         | `SensoryFeedback`                                                      | The haptic feedback to play each time `feedbacktrigger` changes: a name such as `success` or `impact`, or an object describing an impact. |
-| `feedbacktrigger`         | `unknown`                                                              | The value to watch for `sensoryfeedback`. Feedback plays each time it changes.                                                            |
-| `scrolldismisseskeyboard` | `"automatic" \| "immediately" \| "interactively" \| "never"`           | Whether scrolling hides the keyboard: `automatic`, `immediately`, `interactively`, or `never`.                                            |
+| Attribute                 | Type                                                                   | Description                                                                                                                                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lang`                    | `string`                                                               | The locale of the element and everything inside it, such as `ar` or `en-US`. SwiftUI uses it to format dates and numbers, and text inside the element is shaped for that language, so that Turkish `f` and dotted `i` stay apart. |
+| `dir`                     | `"ltr" \| "rtl"`                                                       | The layout direction of the element and everything inside it: `ltr` or `rtl`.                                                                                                                                                     |
+| `dynamictypesize`         | `DynamicTypeSize \| { min?: DynamicTypeSize; max?: DynamicTypeSize; }` | Pins the Dynamic Type size, such as `xLarge`, or keeps it within `{ min, max }`.                                                                                                                                                  |
+| `colorscheme`             | `"light" \| "dark"`                                                    | Forces `light` or `dark` mode on the element and everything inside it.                                                                                                                                                            |
+| `preferredcolorscheme`    | `"light" \| "dark"`                                                    | Asks the window, sheet, or popover that contains the element to use `light` or `dark` mode.                                                                                                                                       |
+| `disabled`                | `boolean`                                                              | Disables every control inside the element.                                                                                                                                                                                        |
+| `sensoryfeedback`         | `SensoryFeedback`                                                      | The haptic feedback to play each time `feedbacktrigger` changes: a name such as `success` or `impact`, or an object describing an impact.                                                                                         |
+| `feedbacktrigger`         | `unknown`                                                              | The value to watch for `sensoryfeedback`. Feedback plays each time it changes.                                                                                                                                                    |
+| `scrolldismisseskeyboard` | `"automatic" \| "immediately" \| "interactively" \| "never"`           | Whether scrolling hides the keyboard: `automatic`, `immediately`, `interactively`, or `never`.                                                                                                                                    |
 
 ```svelte
 <script lang="ts">

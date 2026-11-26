@@ -49,6 +49,7 @@ struct Span {
     var kerning: Double?
     var tracking: Double?
     var link: URL?
+    var language: String?
 
     init(root attributes: [String: JSONValue], base: TextBase = TextBase()) {
         let inherited = base.merged(attributes)
@@ -59,8 +60,11 @@ struct Span {
         design = inherited.design
         kerning = attributes["kerning"]?.number
         tracking = attributes["tracking"]?.number
+        language = attributes["lang"]?.string ?? Self.appLanguage
         apply(decorations: attributes)
     }
+
+    static let appLanguage = Bundle.main.preferredLocalizations.first
 
     func merged(_ attributes: [String: JSONValue]) -> Self {
         var span = self
@@ -85,6 +89,7 @@ struct Span {
         span.background = Palette.color(attributes["background"]?.string) ?? background
         span.kerning = attributes["kerning"]?.number ?? kerning
         span.tracking = attributes["tracking"]?.number ?? tracking
+        span.language = attributes["lang"]?.string ?? span.language
         span.apply(decorations: attributes)
         return span
     }
@@ -138,6 +143,7 @@ struct Span {
         if let kerning { container.swiftUI.kern = kerning }
         if let tracking { container.swiftUI.tracking = tracking }
         if let link { container.link = link }
+        if let language { container.languageIdentifier = language }
         return container
     }
 }
@@ -173,8 +179,11 @@ extension Styles {
         "strikethrough", "href",
     ]
 
-    static func text(_ node: Node, base: TextBase = TextBase()) -> Text {
-        if let plain = plainText(node) { return Text(plain) }
+    @MainActor static func text(_ node: Node, base: TextBase = TextBase()) -> Text {
+        if let plain = plainText(node) {
+            guard let language = node.attributes["lang"]?.string ?? Span.appLanguage else { return Text(plain) }
+            return Text(AttributedString(plain, attributes: Languages.container(language)))
+        }
         return Text(attributedString(node, base: base))
     }
 
@@ -236,6 +245,18 @@ extension Styles {
             }
         }
         return result
+    }
+}
+
+@MainActor private enum Languages {
+    private static var containers: [String: AttributeContainer] = [:]
+
+    static func container(_ identifier: String) -> AttributeContainer {
+        if let container = containers[identifier] { return container }
+        var container = AttributeContainer()
+        container.languageIdentifier = identifier
+        containers[identifier] = container
+        return container
     }
 }
 

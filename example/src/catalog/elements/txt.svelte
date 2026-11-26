@@ -21,4 +21,5 @@
   <txt font="body"
     >Spans can use <txt fontname="Georgia-Italic">Georgia italic</txt> too.</txt
   >
+  <txt fontname="Georgia" size={20} lang="tr">grafik geçmiş</txt>
 </vstack>
