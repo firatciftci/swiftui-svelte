@@ -85,6 +85,9 @@ public final class SvelteRuntime {
             }
         #endif
         reload()
+        #if DEBUG
+            if let route = Self.launchRoute { pendingURLs.insert(route, at: 0) }
+        #endif
         for url in pendingURLs { deliver(url) }
         pendingURLs.removeAll()
         guard reloadsOnChange else { return }
@@ -300,6 +303,15 @@ public final class SvelteRuntime {
         let engine = engine
         engine.queue.async { engine.collectGarbage() }
     }
+
+    #if DEBUG
+        static var launchRoute: URL? {
+            guard let index = CommandLine.arguments.firstIndex(of: "-route"), CommandLine.arguments.indices.contains(index + 1) else {
+                return nil
+            }
+            return URL(string: "route:" + CommandLine.arguments[index + 1])
+        }
+    #endif
 
     public func open(_ url: URL) {
         if isStarted {
