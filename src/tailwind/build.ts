@@ -12,7 +12,7 @@ import type {
 } from "./runtime.ts";
 import type { Declaration, Patch } from "./utilities.ts";
 import type { Lookup } from "./values.ts";
-import { classKey, containsDynamic, resolveClasses } from "./runtime.ts";
+import { classKey, hasDynamic, resolveClasses } from "./runtime.ts";
 import { mapCandidate } from "./utilities.ts";
 import { fixedPixels } from "./values.ts";
 
@@ -245,6 +245,33 @@ function containerConditionOf(wrap: AtRule): string | null {
   return `container:${name}:${operator}${fixedPixels(limit, 16)}`;
 }
 
+function wrapOf(wrap: AtRule): {
+  when: Array<string>;
+  thresholds: Array<number>;
+  problem?: string;
+} {
+  const name = wrap.name.toLowerCase();
+  if (name === "supports")
+    return {
+      when: wrap.params.trim() === "selector(div > div)" ? ["web"] : [],
+      thresholds: [],
+    };
+  if (name === "layer") return { when: [], thresholds: [] };
+  if (name === "container") {
+    const condition = containerConditionOf(wrap);
+    if (condition == null)
+      return {
+        when: [],
+        thresholds: [],
+        problem: `the container query "${wrap.params.trim()}" isn't supported`,
+      };
+    return { when: [condition], thresholds: [] };
+  }
+  if (name !== "media")
+    return { when: [], thresholds: [], problem: `@${name} isn't supported` };
+  return wrapConditions(wrap);
+}
+
 function conditionsOf(wraps: Array<AtRule>): {
   when: Array<string>;
   thresholds: Array<number>;
@@ -253,26 +280,7 @@ function conditionsOf(wraps: Array<AtRule>): {
   const when: Array<string> = [];
   const thresholds: Array<number> = [];
   for (const wrap of wraps) {
-    const name = wrap.name.toLowerCase();
-    if (name === "supports") {
-      if (wrap.params.trim() === "selector(div > div)") when.push("web");
-      continue;
-    }
-    if (name === "layer") continue;
-    if (name === "container") {
-      const condition = containerConditionOf(wrap);
-      if (condition == null)
-        return {
-          when,
-          thresholds,
-          problem: `the container query "${wrap.params.trim()}" isn't supported`,
-        };
-      when.push(condition);
-      continue;
-    }
-    if (name !== "media")
-      return { when, thresholds, problem: `@${name} isn't supported` };
-    const found = wrapConditions(wrap);
+    const found = wrapOf(wrap);
     when.push(...found.when);
     thresholds.push(...found.thresholds);
     if (found.problem != null)
@@ -421,7 +429,7 @@ function tableRules(group: Group, patch: Patch, sink: Array<TableRule>): void {
   const rule: TableRule = { order: group.order, attrs };
   const when = [...group.when, ...(patch.when ?? [])];
   if (when.length > 0) rule.when = when;
-  if (containsDynamic(attrs)) rule.dynamic = true;
+  if (hasDynamic(attrs)) rule.dynamic = true;
   if (patch.only != null) rule.only = patch.only;
   if (group.important) rule.important = true;
   sink.push(rule);
@@ -582,7 +590,7 @@ function ignoredBy(patterns: Array<string>): (token: string) => boolean {
   const expressions = patterns.map(
     (pattern) =>
       new RegExp(
-        `^${pattern.replaceAll(/[.+?^${}()|[\]\\]/g, "\\$&").replaceAll("*", ".*")}$`,
+        `^${pattern.replaceAll(/[.+?^${}()|[\]\\]/g, String.raw`\$&`).replaceAll("*", ".*")}$`,
       ),
   );
   return (token) => expressions.some((expression) => expression.test(token));

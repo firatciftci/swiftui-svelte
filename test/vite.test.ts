@@ -9,9 +9,9 @@ import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
-import { buildClassTable } from "../src/tailwind/build.ts";
 import { tailwind } from "../src/tailwind/vite.ts";
 import type { State } from "../src/tailwind/runtime.ts";
+import { buildClassTable } from "../src/tailwind/build.ts";
 import { resolveClasses } from "../src/tailwind/runtime.ts";
 
 const budget = { minified: 188_000, gzipped: 59_000 };
@@ -359,7 +359,7 @@ describe("native Tailwind utilities", () => {
   }, 60_000);
 });
 
-describe("Tailwind layout, lengths, and containers", () => {
+describe("tailwind layout, lengths, and containers", () => {
   const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-layout-"));
   writeFileSync(
     path.join(dir, "app.css"),
@@ -403,7 +403,7 @@ describe("Tailwind layout, lengths, and containers", () => {
       margin: { leading: "auto", trailing: "auto" },
     });
     expect(table.tokens["-mt-2"]?.[0]?.attrs).toEqual({ margin: { top: -8 } });
-    expect(table.tokens["grid"]?.[0]).toMatchObject({
+    expect(table.tokens.grid?.[0]).toMatchObject({
       attrs: { css: true },
       only: ["vstack", "lazyvstack", "hstack", "lazyhstack"],
     });
@@ -425,12 +425,12 @@ describe("Tailwind layout, lengths, and containers", () => {
     expect(table.tokens["border-x-red-500"]?.[0]?.attrs).toEqual({
       $borderColor: "#fb2c36",
     });
-    expect(table.tokens["focus:outline-none"]).toEqual([
-      { order: expect.any(Number), attrs: {} },
-    ]);
-    expect(table.tokens["focus-visible:ring-2"]).toEqual([
-      { order: expect.any(Number), attrs: {} },
-    ]);
+    expect(
+      table.tokens["focus:outline-none"]?.map((rule) => rule.attrs),
+    ).toEqual([{}]);
+    expect(
+      table.tokens["focus-visible:ring-2"]?.map((rule) => rule.attrs),
+    ).toEqual([{}]);
     expect(table.tokens["content-start"]?.[0]?.attrs).toEqual({});
     expect(table.tokens["table-fixed"]?.[0]?.attrs).toEqual({});
     expect(table.tokens["border-collapse"]?.[0]?.attrs).toEqual({});
@@ -460,8 +460,8 @@ describe("Tailwind layout, lengths, and containers", () => {
     ]);
     expect(table.tokens["md:p-2"]?.[0]?.when).toEqual(["container::>=768"]);
     expect(table.breakpoints).not.toContain(320);
-    expect(table.tokens["decoration-2"]).toEqual([
-      { order: expect.any(Number), attrs: {} },
+    expect(table.tokens["decoration-2"]?.map((rule) => rule.attrs)).toEqual([
+      {},
     ]);
   }, 60_000);
 
@@ -473,9 +473,9 @@ describe("Tailwind layout, lengths, and containers", () => {
       fonts: {},
       ignore: [],
     });
-    expect(table.tokens["w-[calc(10px*2)]"]).toEqual([
-      { order: expect.any(Number), attrs: { width: 20 } },
-    ]);
+    expect(table.tokens["w-[calc(10px*2)]"]?.map((rule) => rule.attrs)).toEqual(
+      [{ width: 20 }],
+    );
     expect(table.tokens["w-[50vw]"]?.[0]).toMatchObject({
       dynamic: true,
       attrs: {

@@ -521,7 +521,7 @@ const HANDLERS = new Map<string, Handler>([
     (_value, _context, raw) => {
       if (raw === "balance")
         return [{ attrs: { balanced: true }, only: ["txt"] }];
-      if (raw === "wrap" || raw === "pretty" || raw === "stable")
+      if (["wrap", "pretty", "stable"].includes(raw))
         return [{ attrs: {}, only: ["txt"] }];
       if (raw === "nowrap") return [{ attrs: { lines: 1 }, only: ["txt"] }];
       return null;
@@ -835,6 +835,41 @@ const HANDLERS = new Map<string, Handler>([
   ],
 ]);
 
+function isBoxProperty(property: string): boolean {
+  return (
+    Object.hasOwn(MARGIN_EDGES, property) ||
+    Object.hasOwn(BORDER_EDGES, property) ||
+    /^border(?:-[a-z-]+)?-(?:style|color)$/.test(property)
+  );
+}
+
+function boxPatches(
+  property: string,
+  value: string,
+  raw: string,
+  context: Context,
+): Array<Patch> | null {
+  if (Object.hasOwn(MARGIN_EDGES, property)) {
+    if (/^-?space-[xy]-/.test(context.candidate))
+      return spacing(property, value, context);
+    const amount = raw === "auto" ? "auto" : points(value, context);
+    const edges = Object.fromEntries(
+      (MARGIN_EDGES[property] ?? []).map((edge) => [edge, amount]),
+    );
+    return [{ attrs: { margin: edges } }];
+  }
+  if (Object.hasOwn(BORDER_EDGES, property)) {
+    const amount = points(value, context);
+    const edges = Object.fromEntries(
+      (BORDER_EDGES[property] ?? []).map((edge) => [edge, amount]),
+    );
+    return [{ attrs: { $borderWidth: edges } }];
+  }
+  if (property.endsWith("-style"))
+    return resolved(value, context) === "solid" ? [{ attrs: {} }] : null;
+  return [{ attrs: { $borderColor: colorOf(value, context) } }];
+}
+
 function mapDeclaration(
   declaration: Declaration,
   context: Context,
@@ -861,26 +896,7 @@ function mapDeclaration(
     );
     return [{ attrs: { padding: edges } }];
   }
-  if (Object.hasOwn(MARGIN_EDGES, property)) {
-    if (/^-?space-[xy]-/.test(context.candidate))
-      return spacing(property, value, context);
-    const amount = raw === "auto" ? "auto" : points(value, context);
-    const edges = Object.fromEntries(
-      (MARGIN_EDGES[property] ?? []).map((edge) => [edge, amount]),
-    );
-    return [{ attrs: { margin: edges } }];
-  }
-  if (Object.hasOwn(BORDER_EDGES, property)) {
-    const amount = points(value, context);
-    const edges = Object.fromEntries(
-      (BORDER_EDGES[property] ?? []).map((edge) => [edge, amount]),
-    );
-    return [{ attrs: { $borderWidth: edges } }];
-  }
-  if (/^border(?:-[a-z-]+)?-style$/.test(property))
-    return resolved(value, context) === "solid" ? [{ attrs: {} }] : null;
-  if (/^border(?:-[a-z-]+)?-color$/.test(property))
-    return [{ attrs: { $borderColor: colorOf(value, context) } }];
+  if (isBoxProperty(property)) return boxPatches(property, value, raw, context);
   if (Object.hasOwn(CORNERS, property)) {
     const corner = CORNERS[property];
     if (corner != null) context.corners[corner] = points(value, context);

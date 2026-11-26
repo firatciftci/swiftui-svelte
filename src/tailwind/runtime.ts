@@ -80,13 +80,13 @@ const RUNTIME_OPERATORS: ReadonlySet<Operator> = new Set([
   "insetLeft",
 ]);
 
-export function isExpression(value: unknown): value is Call {
+function isExpression(value: unknown): value is Call {
   return (
     isPlain(value) && typeof value.op === "string" && Array.isArray(value.args)
   );
 }
 
-export function isDynamic(expression: Expression): boolean {
+function isDynamic(expression: Expression): boolean {
   if (typeof expression === "number") return false;
   return (
     RUNTIME_OPERATORS.has(expression.op) ||
@@ -94,10 +94,12 @@ export function isDynamic(expression: Expression): boolean {
   );
 }
 
-export function containsDynamic(value: unknown): boolean {
+export function hasDynamic(value: unknown): boolean {
   if (isExpression(value)) return isDynamic(value);
-  if (Array.isArray(value)) return value.some((item) => containsDynamic(item));
-  return isPlain(value) && Object.values(value).some(containsDynamic);
+  if (Array.isArray(value)) return value.some((item) => hasDynamic(item));
+  return (
+    isPlain(value) && Object.values(value).some((item) => hasDynamic(item))
+  );
 }
 
 export function arithmetic(op: Operator, values: Array<number>): number {
@@ -125,7 +127,7 @@ export function arithmetic(op: Operator, values: Array<number>): number {
       return Math.min(Math.max(second, first), third);
     }
     case "round": {
-      return values.length > 1 && second !== 0
+      return second !== 0 && values.length > 1
         ? Math.round(first / second) * second
         : Math.round(first);
     }
@@ -150,8 +152,8 @@ const NAMED: Record<string, (state: State) => boolean> = {
   "orientation:portrait": (state) => state.width <= state.height,
 };
 
-function containerSatisfied(condition: string, state: State): boolean {
-  const [, name = "", test = ""] = condition.split(":");
+function isContainerSatisfied(condition: string, state: State): boolean {
+  const [, name = "", test = ""] = condition.split(":", 3);
   const width = state.containers[name];
   if (width == null) return false;
   if (test.startsWith(">=")) return width >= Number(test.slice(2));
@@ -160,7 +162,7 @@ function containerSatisfied(condition: string, state: State): boolean {
 
 function isSatisfied(condition: string, state: State): boolean {
   if (condition.startsWith("container:"))
-    return containerSatisfied(condition, state);
+    return isContainerSatisfied(condition, state);
   if (condition.startsWith("platform:"))
     return state.platform === condition.slice("platform:".length);
   if (condition.startsWith("idiom:"))
@@ -233,7 +235,7 @@ function settleAll(attrs: Attributes, state: State): Attributes {
   );
 }
 
-function mergeable(value: unknown): value is Attributes {
+function isMergeable(value: unknown): value is Attributes {
   return isPlain(value) && !isExpression(value);
 }
 
@@ -242,7 +244,7 @@ function deepMerge(base: Attributes, extra: Attributes): Attributes {
   for (const [key, value] of Object.entries(extra)) {
     const current = merged[key];
     merged[key] =
-      mergeable(current) && mergeable(value)
+      isMergeable(current) && isMergeable(value)
         ? deepMerge(current, value)
         : value;
   }
@@ -254,7 +256,7 @@ function apply(target: Attributes, attrs: Attributes): void {
     if (value === null) Reflect.deleteProperty(target, key);
     else
       target[key] =
-        mergeable(value) && mergeable(target[key])
+        isMergeable(value) && isMergeable(target[key])
           ? deepMerge(target[key], value)
           : value;
   }
@@ -291,8 +293,8 @@ function animate(result: Attributes, duration: number): void {
 }
 
 function borderOf(widths: Attributes, color: unknown): Attributes | null {
-  const drawn = Object.values(widths).some((width) => width !== 0);
-  if (!drawn) return null;
+  const isDrawn = Object.values(widths).some((width) => width !== 0);
+  if (!isDrawn) return null;
   const border: Attributes = { width: widths };
   if (typeof color === "string") border.color = color;
   return border;

@@ -622,9 +622,14 @@ observeEnvironment((previous) => {
 });
 
 function containerResized(element: ElementNode, payload: unknown): void {
-  if (typeof payload !== "object" || payload == null) return;
-  if (!("width" in payload) || typeof payload.width !== "number") return;
-  if (element.containerWidth === payload.width) return;
+  if (
+    typeof payload !== "object" ||
+    payload == null ||
+    !("width" in payload) ||
+    typeof payload.width !== "number" ||
+    element.containerWidth === payload.width
+  )
+    return;
   element.containerWidth = payload.width;
   reapplyReactive();
 }

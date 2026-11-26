@@ -2,7 +2,6 @@ import type { Call, Expression, Operator } from "./runtime.ts";
 import { arithmetic } from "./runtime.ts";
 
 export type Lookup = (name: string) => string | undefined;
-export type Length = Expression;
 export type Rgba = { r: number; g: number; b: number; a: number };
 export type Quantity = { value: Expression; unit: "" | "px" | "%" | "deg" };
 
@@ -125,6 +124,16 @@ function leaf(op: Operator): Call {
   return { op, args: [] };
 }
 
+function completed(
+  result: Quantity,
+  consumed: number,
+  total: number,
+  text: string,
+): Quantity {
+  if (consumed !== total) throw new Unsupported(`can't read "${text}"`);
+  return result;
+}
+
 export function quantityOf(text: string, fontSize: Expression): Quantity {
   const tokens = tokenize(text);
   let position = 0;
@@ -174,7 +183,7 @@ export function quantityOf(text: string, fontSize: Expression): Quantity {
     throw new Unsupported(`can't read "${text}"`);
   };
 
-  const call = (name: string): Quantity => {
+  function call(name: string): Quantity {
     if (MATH_WORDS.has(name)) {
       const args = argumentsOf();
       return combine(name, args);
@@ -200,7 +209,7 @@ export function quantityOf(text: string, fontSize: Expression): Quantity {
       };
     }
     throw new Unsupported(`${name}() isn't supported in "${text}"`);
-  };
+  }
 
   const term = (): Quantity => {
     let left = factor();
@@ -222,9 +231,7 @@ export function quantityOf(text: string, fontSize: Expression): Quantity {
     return left;
   }
 
-  const result = sum();
-  if (position !== tokens.length) throw new Unsupported(`can't read "${text}"`);
-  return result;
+  return completed(sum(), position, tokens.length, text);
 }
 
 type Token =
@@ -322,8 +329,14 @@ function combine(name: string, args: Array<Quantity>): Quantity {
     throw new Unsupported("clamp() needs three arguments");
   if (name === "round" && values.length > 2)
     throw new Unsupported("round() takes at most two arguments");
-  if (name === "min" || name === "max" || name === "round" || name === "clamp")
-    return { value: node(name, values), unit };
+  switch (name) {
+    case "min":
+    case "max":
+    case "round":
+    case "clamp": {
+      return { value: node(name, values), unit };
+    }
+  }
   throw new Unsupported(`${name}() has the wrong number of arguments`);
 }
 
