@@ -51,6 +51,31 @@ describe("mode-watcher", () => {
     expect(userPrefersMode.current).toBe("system");
   });
 
+  it("reads and writes the storage key and default mode it's given", () => {
+    vi.stubGlobal("__nativeInvoke", vi.fn());
+    localStorage.setItem("themePreference", "dark");
+    const stop = mountComponent(ModeWatcher, {
+      modeStorageKey: "themePreference",
+      defaultMode: "light",
+    });
+    flushSync();
+    expect(userPrefersMode.current).toBe("dark");
+    setMode("light");
+    expect(localStorage.getItem("themePreference")).toBe("light");
+    localStorage.removeItem("themePreference");
+    stop();
+    const fallback = mountComponent(ModeWatcher, {
+      modeStorageKey: "themePreference",
+      defaultMode: "dark",
+    });
+    flushSync();
+    expect(userPrefersMode.current).toBe("dark");
+    fallback();
+    const defaults = mountComponent(ModeWatcher);
+    flushSync();
+    defaults();
+  });
+
   it("sends the preference to the host's color scheme", () => {
     const invoke = vi.fn();
     vi.stubGlobal("__nativeInvoke", invoke);

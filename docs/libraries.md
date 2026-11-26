@@ -185,4 +185,6 @@ Mount `<ModeWatcher />` once, at the root. It sends the saved preference to the 
 - `mode.current` is the mode the app shows, `"light"` or `"dark"`.
 - `systemPrefersMode.current` is the device setting.
 
+`<ModeWatcher>` accepts two of mode-watcher's props: `modeStorageKey`, the `localStorage` key the preference is saved under (`mode-watcher-mode` by default), and `defaultMode`, the preference to use when nothing is saved (`"system"` by default). The other props, such as `track`, `themeStorageKey`, and `darkClassNames`, compile but do nothing.
+
 The `prefers-color-scheme` media query follows the device setting, not the app's choice, as it does in a browser that overrides the color scheme.
