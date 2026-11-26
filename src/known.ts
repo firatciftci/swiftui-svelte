@@ -32,6 +32,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "contentmode",
   "contentshape",
   "controlsize",
+  "cornerstyle",
   "deletedisabled",
   "design",
   "dir",

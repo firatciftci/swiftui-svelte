@@ -669,6 +669,8 @@ type Modifiers = {
   background?: ShapeStyle;
   /** Rounds the corners of the element to this radius in points. */
   radius?: number;
+  /** The style of the corners that `radius` rounds: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs). */
+  cornerstyle?: "continuous" | "circular";
   /** The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1. */
   opacity?: number;
   /** Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged. */
