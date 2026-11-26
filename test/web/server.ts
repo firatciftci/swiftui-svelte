@@ -61,6 +61,12 @@ async function handle(
         .end(bytes);
       break;
     }
+    case "/cookie": {
+      response
+        .writeHead(200, { "set-cookie": "swiftui_test=kept; Path=/" })
+        .end("ok");
+      break;
+    }
     case "/redirect": {
       response
         .writeHead(302, { location: url.searchParams.get("to") ?? "/" })
@@ -77,6 +83,31 @@ async function handle(
       for (const line of ["one\n", "two\n", "three\n"]) {
         response.write(line);
         await wait(url.searchParams.has("slow") ? 5000 : 40);
+        if (response.destroyed) return;
+      }
+      response.end();
+      break;
+    }
+    case "/sse": {
+      response.writeHead(200, { "content-type": "text/event-stream" });
+      response.flushHeaders();
+      const chunks =
+        request.headers["last-event-id"] == null
+          ? [
+              "retry: 10\n",
+              ": comment\n",
+              "id: 1\ndata: hello\n\n",
+              "event: named\r\nid: 2\r\ndata: a\rdata: b\r\n\r\n",
+              "data: split\r",
+              "\ndata: crlf\n\n",
+              "event: blank\ndata:\n\n",
+              "id: 3\n\n",
+              "data: partial",
+            ]
+          : ["data: resumed\n\n"];
+      for (const chunk of chunks) {
+        response.write(chunk);
+        await wait(5);
         if (response.destroyed) return;
       }
       response.end();

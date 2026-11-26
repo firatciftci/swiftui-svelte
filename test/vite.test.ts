@@ -10,7 +10,7 @@ import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 
-const budget = { minified: 180_000, gzipped: 55_000 };
+const budget = { minified: 184_000, gzipped: 57_000 };
 
 async function bundle(
   options: { mode?: string; entry?: string } = {},

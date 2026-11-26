@@ -36,6 +36,7 @@ const web: Web = {
   Response,
   fetch,
   WebSocket,
+  EventSource,
   crypto,
   performance,
   navigator,

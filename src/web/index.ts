@@ -24,6 +24,7 @@ import {
   EventShim,
   EventTargetShim,
 } from "./events.ts";
+import { createEventSource } from "./eventsource.ts";
 import {
   createFetch,
   FormDataShim,
@@ -130,9 +131,12 @@ export function installWebAPIs(): void {
     );
   }
   if (typeof __nativeFetch === "function") {
-    define("fetch", () =>
-      createFetch({ start: __nativeFetch, cancel: __nativeFetchCancel }),
-    );
+    const fetchShim = createFetch({
+      start: __nativeFetch,
+      cancel: __nativeFetchCancel,
+    });
+    define("fetch", () => fetchShim);
+    define("EventSource", () => createEventSource(fetchShim));
   }
   if (typeof __nativeWebSocketOpen === "function") {
     define("WebSocket", () =>

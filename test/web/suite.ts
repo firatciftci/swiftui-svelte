@@ -40,6 +40,7 @@ export type Web = {
   Response: typeof Response;
   fetch: typeof fetch;
   WebSocket: typeof WebSocket;
+  EventSource?: typeof EventSource;
   crypto: Pick<Crypto, "getRandomValues" | "randomUUID" | "subtle">;
   performance: Pick<
     Performance,
@@ -72,6 +73,12 @@ export type Server = { http: string; ws: string };
 export type Case = { name: string; run: (web: Web, server: Server) => unknown };
 
 type Host = NonNullable<Web["host"]>;
+
+function eventSource(web: Web): typeof EventSource {
+  if (web.EventSource == null)
+    throw new Error("This case needs the host's EventSource");
+  return web.EventSource;
+}
 
 function host(web: Web): Host {
   if (web.host == null) throw new Error("This case needs the host environment");
@@ -533,6 +540,7 @@ test("Request normalizes methods, bodies, and defaults", async (web) => {
   equal(request.headers.get("content-type"), "text/plain;charset=UTF-8");
   equal(request.redirect, "follow");
   equal(request.credentials, "same-origin");
+  ok("credentials" in web.Request.prototype, "credentials is on the prototype");
   equal(request.cache, "default");
   equal(request.mode, "cors");
   equal(request.signal.aborted, false);
@@ -936,6 +944,99 @@ test("WebSocket fires error and close when the connection fails", async (web, se
   equal(event.code, 1006);
   equal(event.wasClean, false);
 });
+
+hostTest(
+  "fetch sends an Origin header and keeps cookies between requests",
+  async (web, server) => {
+    const cookie = await web.fetch(`${server.http}/cookie`);
+    await cookie.text();
+    const response = await web.fetch(`${server.http}/echo`, {
+      headers: { Origin: "https://app.example" },
+    });
+    const echo = (await response.json()) as { headers: Record<string, string> };
+    equal(echo.headers.origin, "https://app.example");
+    equal(echo.headers.cookie, "swiftui_test=kept");
+  },
+);
+
+hostTest(
+  "EventSource streams messages and named events, and reconnects with Last-Event-ID",
+  async (web, server) => {
+    const EventSourceCtor = eventSource(web);
+    const source = new EventSourceCtor(`${server.http}/sse`);
+    equal(source.readyState, EventSourceCtor.CONNECTING);
+    equal(source.url, `${server.http}/sse`);
+    equal(source.withCredentials, false);
+    let opens = 0;
+    let errors = 0;
+    source.addEventListener("open", () => opens++);
+    source.addEventListener("error", () => errors++);
+    const events = await new Promise<Array<MessageEvent<string>>>((resolve) => {
+      const received: Array<MessageEvent<string>> = [];
+      const listener = (event: Event): void => {
+        received.push(event as MessageEvent<string>);
+        if (received.length !== 5) {
+          return;
+        }
+
+        source.close();
+        resolve(received);
+      };
+      source.addEventListener("message", listener);
+      source.addEventListener("named", listener);
+      source.addEventListener("blank", listener);
+    });
+    deep(
+      events.map((event) => [event.type, event.data, event.lastEventId]),
+      [
+        ["message", "hello", "1"],
+        ["named", "a\nb", "2"],
+        ["message", "split\ncrlf", "2"],
+        ["blank", "", "2"],
+        ["message", "resumed", "3"],
+      ],
+    );
+    equal(opens, 2, "the connection reopens after the stream ends");
+    equal(errors, 1);
+    equal(source.readyState, EventSourceCtor.CLOSED);
+  },
+);
+
+hostTest(
+  "EventSource fails without reconnecting on an HTTP error or another content type",
+  async (web, server) => {
+    const EventSourceCtor = eventSource(web);
+    for (const path of ["/status/500", "/json"]) {
+      const source = new EventSourceCtor(`${server.http}${path}`);
+      let isOpened = false;
+      source.addEventListener("open", () => (isOpened = true));
+      await new Promise((resolve) =>
+        source.addEventListener("error", resolve, { once: true }),
+      );
+      await delay(30);
+      equal(source.readyState, EventSourceCtor.CLOSED, path);
+      equal(isOpened, false, path);
+    }
+  },
+);
+
+hostTest(
+  "EventSource close stops delivery, and bad URLs throw",
+  async (web, server) => {
+    const EventSourceCtor = eventSource(web);
+    throws(() => new EventSourceCtor("not a url"), "SyntaxError");
+    const source = new EventSourceCtor(`${server.http}/stream?slow`);
+    await new Promise((resolve) =>
+      source.addEventListener("open", resolve, { once: true }),
+    );
+    let messages = 0;
+    source.addEventListener("message", () => messages++);
+    source.close();
+    equal(source.readyState, EventSourceCtor.CLOSED);
+    await delay(50);
+    equal(messages, 0);
+  },
+);
 
 test("crypto.getRandomValues fills integer arrays", (web) => {
   const bytes = new Uint8Array(64);

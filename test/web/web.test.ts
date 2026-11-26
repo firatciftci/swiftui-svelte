@@ -25,6 +25,7 @@ import {
   EventShim,
   EventTargetShim,
 } from "swiftui-svelte/web/events";
+import { createEventSource } from "swiftui-svelte/web/eventsource";
 import {
   createFetch,
   FormDataShim,
@@ -50,6 +51,7 @@ import { startServer } from "./server.ts";
 import { cases, hostCases } from "./suite.ts";
 
 const fetches = new Map<number, AbortController>();
+const cookieJar = new Map<string, string>();
 const fetchBridge: NativeFetchBridge = {
   start(id, json, body, onResponse, onData, onEnd) {
     const request = JSON.parse(json) as {
@@ -62,13 +64,26 @@ const fetchBridge: NativeFetchBridge = {
     fetches.set(id, controller);
     void (async () => {
       try {
+        const headers = [...request.headers];
+        if (cookieJar.size > 0)
+          headers.push([
+            "cookie",
+            [...cookieJar]
+              .map(([name, value]) => `${name}=${value}`)
+              .join("; "),
+          ]);
         const response = await fetch(request.url, {
           method: request.method,
-          headers: request.headers,
+          headers,
           body: body == null ? undefined : Buffer.from(body),
           redirect: request.redirect,
           signal: controller.signal,
         });
+        for (const header of response.headers.getSetCookie()) {
+          const [pair = ""] = header.split(";", 1);
+          const [name = "", ...value] = pair.split("=");
+          cookieJar.set(name, value.join("="));
+        }
         onResponse(
           JSON.stringify({
             status: response.status,
@@ -130,6 +145,7 @@ const socketBridge: NativeWebSocketBridge = {
 
 const target = new EventTargetShim();
 
+const shimFetch = createFetch(fetchBridge);
 const shimValues: unknown = {
   DOMException: DOMExceptionShim,
   Event: EventShim,
@@ -157,8 +173,9 @@ const shimValues: unknown = {
   Headers: HeadersShim,
   Request: RequestShim,
   Response: ResponseShim,
-  fetch: createFetch(fetchBridge),
+  fetch: shimFetch,
   WebSocket: createWebSocket(socketBridge),
+  EventSource: createEventSource(shimFetch),
   crypto: createCrypto({
     fill: (bytes) => void webcrypto.getRandomValues(bytes),
     digest: (algorithm, data) =>

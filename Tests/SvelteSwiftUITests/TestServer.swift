@@ -127,12 +127,23 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
         case "/bytes":
             let count = Int(query["n"] ?? "0") ?? 0
             respond(200, ["content-type": "application/octet-stream"], Data((0..<count).map { UInt8($0 % 256) }))
+        case "/cookie":
+            respond(200, ["set-cookie": "swiftui_test=kept; Path=/"], Data("ok".utf8))
         case "/redirect":
             respond(302, ["location": query["to"] ?? "/"], Data())
         case "/headers":
             respond(200, ["x-one": "1", "x-two": "two"], Data("ok".utf8))
         case "/stream":
             stream(["one\n", "two\n", "three\n"], delay: query["slow"] == nil ? 0.04 : 5)
+        case "/sse":
+            let chunks =
+                headers["last-event-id"] == nil
+                ? [
+                    "retry: 10\n", ": comment\n", "id: 1\ndata: hello\n\n",
+                    "event: named\r\nid: 2\r\ndata: a\rdata: b\r\n\r\n", "data: split\r", "\ndata: crlf\n\n",
+                    "event: blank\ndata:\n\n", "id: 3\n\n", "data: partial",
+                ] : ["data: resumed\n\n"]
+            stream(chunks, delay: 0.005)
         case "/slow":
             queue.asyncAfter(deadline: .now() + 5) { [self] in respond(200, [:], Data("late".utf8)) }
         case let path where path.hasPrefix("/status/"):

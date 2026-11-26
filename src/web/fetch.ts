@@ -526,7 +526,7 @@ function cloneBody(source: object, target: object): void {
 
 const methods = new Set(["DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"]);
 
-type RequestInitShim = {
+export type RequestInitShim = {
   method?: string;
   headers?: HeadersInitShim;
   body?: BodyInitShim;
@@ -544,11 +544,11 @@ type RequestInitShim = {
 };
 
 export class RequestShim extends BodyShim {
+  #credentials: RequestCredentials;
   readonly url: string;
   readonly method: string;
   readonly headers: HeadersShim;
   readonly redirect: RequestRedirect;
-  readonly credentials: RequestCredentials;
   readonly cache: RequestCache;
   readonly mode: RequestMode;
   readonly referrer: string;
@@ -558,7 +558,6 @@ export class RequestShim extends BodyShim {
   readonly signal: AbortSignalShim;
   readonly destination = "";
   readonly duplex = "half";
-
   constructor(
     input: string | URLShim | URL | RequestShim,
     init: RequestInitShim = {},
@@ -590,7 +589,8 @@ export class RequestShim extends BodyShim {
     this.method = method;
     this.headers = new HeadersShim(init.headers ?? source?.headers);
     this.redirect = init.redirect ?? source?.redirect ?? "follow";
-    this.credentials = init.credentials ?? source?.credentials ?? "same-origin";
+    this.#credentials =
+      init.credentials ?? source?.credentials ?? "same-origin";
     this.cache = init.cache ?? source?.cache ?? "default";
     this.mode = init.mode ?? source?.mode ?? "cors";
     this.referrer = init.referrer ?? source?.referrer ?? "about:client";
@@ -625,6 +625,10 @@ export class RequestShim extends BodyShim {
     } else {
       bodies.set(this, { source: null, used: false, stream: null });
     }
+  }
+
+  get credentials(): RequestCredentials {
+    return this.#credentials;
   }
 
   clone(): RequestShim {
