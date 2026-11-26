@@ -204,6 +204,22 @@ export type AnimationOptions =
       /** The control points of a `timingCurve`, given as `[x1, y1, x2, y2]`, the same as a CSS `cubic-bezier`. Required with `type: "timingCurve"`. */
       curve?: [number, number, number, number];
     };
+type ButtonFeedback = {
+  /** The scale of the label, such as `0.95`. */
+  scale?: number;
+  /** The opacity of the label, from 0 to 1. */
+  opacity?: number;
+  /** The brightness change of the label, from -1 to 1. */
+  brightness?: number;
+  /** The background drawn behind the label, as a rectangle. */
+  background?: ShapeStyle;
+  /** The foreground style of the label. */
+  color?: ShapeStyle;
+  /** The shadow of the label, using the same values as `shadow`. */
+  shadow?: Modifiers["shadow"];
+  /** The animation that plays when this state starts. */
+  animation?: AnimationOptions;
+};
 type LayerAlignment =
   | "center"
   | "top"
@@ -1284,6 +1300,10 @@ declare module "svelte/elements" {
     icon: Record<string, never>;
     /** A `Button`: runs `onclick` when tapped. */
     btn: Modifiers & {
+      /** The look of the button while it's pressed. The overrides apply to the label, and the button uses the plain style, so style its appearance with the label's own modifiers. */
+      pressed?: ButtonFeedback;
+      /** The look of the button while the pointer is over it, using the same values as `pressed`. */
+      hovered?: ButtonFeedback;
       /** The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. */
       variant?:
         | "automatic"

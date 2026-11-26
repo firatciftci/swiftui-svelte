@@ -1450,6 +1450,8 @@ A `Button`: runs `onclick` when tapped.
 
 | Attribute     | Type                                                                                                 | Description                                                                                                                                                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pressed`     | `ButtonFeedback`                                                                                     | The look of the button while it's pressed. The overrides apply to the label, and the button uses the plain style, so style its appearance with the label's own modifiers.                                                |
+| `hovered`     | `ButtonFeedback`                                                                                     | The look of the button while the pointer is over it, using the same values as `pressed`.                                                                                                                                 |
 | `variant`     | `"automatic" \| "borderless" \| "plain" \| "bordered" \| "prominent" \| "glass" \| "glassProminent"` | The button style: `automatic`, `borderless` (the default), `plain`, `bordered`, `prominent`, `glass`, or `glassProminent`. The glass styles need iOS 26 and fall back to `bordered` and `prominent` on earlier versions. |
 | `role`        | `"destructive" \| "cancel" \| "confirm" \| "close"`                                                  | The role of the button: `destructive` or `cancel`, or `confirm` and `close` on iOS 26 and later.                                                                                                                         |
 | `bordershape` | `"automatic" \| "capsule" \| "roundedRectangle" \| "circle" \| number`                               | The shape of a bordered or glass button: `automatic`, `capsule`, `roundedRectangle`, `circle`, or a corner radius in points.                                                                                             |
@@ -1469,6 +1471,27 @@ A `Button`: runs `onclick` when tapped.
   </btn>
   <btn variant="glass" role="destructive" onclick={() => (count = 0)}>Reset</btn
   >
+  <btn
+    pressed={{ scale: 0.95, opacity: 0.8, animation: "snappy" }}
+    hovered={{
+      brightness: 0.1,
+      animation: {
+        type: "timingCurve",
+        curve: [0.42, 0, 0.58, 1],
+        duration: 200,
+      },
+    }}
+    onclick={() => count++}
+  >
+    <txt
+      color="white"
+      background="blue"
+      radius={8}
+      padding={{ horizontal: 16, vertical: 8 }}
+    >
+      Press feedback
+    </txt>
+  </btn>
 </vstack>
 ```
 
@@ -3085,6 +3108,12 @@ type AnimationOptions = AnimationOptions;
 
 ```ts
 type BarVisibility = boolean | "automatic" | "visible" | "hidden";
+```
+
+### `ButtonFeedback`
+
+```ts
+type ButtonFeedback = ButtonFeedback;
 ```
 
 ### `ClipShape`

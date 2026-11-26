@@ -248,6 +248,8 @@ Svelte's `transition:`, `in:`, and `out:` directives need the DOM, so the compil
 
 To set your own easing, use `type: "timingCurve"` with `curve`, which takes the four control points of a cubic Bézier, as in CSS. `curve: [0.4, 0, 0.2, 1]` is the standard ease-in-out curve. The same object works for `animation`, `in`, `out`, and `withAnimation`. Set `disablesanimations` on an element to stop its changes from animating, including changes that a surrounding `withAnimation` makes.
 
+A button can show feedback while it's pressed or while the pointer is over it. Set `pressed` or `hovered` to an object with any of `scale`, `opacity`, `brightness`, `background`, `color`, `shadow`, and `animation`. Each value applies to the button's label, and the state's `animation` plays when the state starts. A button with either attribute uses the plain style, so draw its chrome with the label's own modifiers, such as `background` and `radius` on a `txt` inside the button. The press state comes from the button style, so it doesn't wait for a round trip to Svelte.
+
 ### Animating a state change
 
 To animate everything that one state change does to the screen, wrap the change in `withAnimation`, the way you would in SwiftUI:

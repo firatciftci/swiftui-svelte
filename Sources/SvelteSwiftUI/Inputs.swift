@@ -132,31 +132,37 @@ struct ButtonElement: View {
                 runtime.dispatch(node.id, "click", waits: false)
             } label: {
                 ForEach(node.renderedChildren) { NodeView(node: $0) }
-            }
+            },
+            pressed: ButtonFeedback(attributes["pressed"]),
+            hovered: ButtonFeedback(attributes["hovered"])
         )
         .ifLet(Inputs.borderShape(attributes["bordershape"])) { $0.buttonBorderShape($1) }
         .buttonRepeatBehavior(attributes["repeat"]?.isTrue == true ? .enabled : .automatic)
     }
 
-    @ViewBuilder private func styled(_ button: some View) -> some View {
-        switch node.attributes["variant"]?.string {
-        case "automatic": button
-        case "plain": button.buttonStyle(.plain)
-        case "bordered": button.buttonStyle(.bordered)
-        case "prominent": button.buttonStyle(.borderedProminent)
-        case "glass":
-            if #available(iOS 26, macOS 26, visionOS 26, *) {
-                button.buttonStyle(.glass)
-            } else {
-                button.buttonStyle(.bordered)
+    @ViewBuilder private func styled(_ button: some View, pressed: ButtonFeedback?, hovered: ButtonFeedback?) -> some View {
+        if pressed != nil || hovered != nil {
+            button.buttonStyle(FeedbackButtonStyle(pressed: pressed, hovered: hovered))
+        } else {
+            switch node.attributes["variant"]?.string {
+            case "automatic": button
+            case "plain": button.buttonStyle(.plain)
+            case "bordered": button.buttonStyle(.bordered)
+            case "prominent": button.buttonStyle(.borderedProminent)
+            case "glass":
+                if #available(iOS 26, macOS 26, visionOS 26, *) {
+                    button.buttonStyle(.glass)
+                } else {
+                    button.buttonStyle(.bordered)
+                }
+            case "glassProminent":
+                if #available(iOS 26, macOS 26, visionOS 26, *) {
+                    button.buttonStyle(.glassProminent)
+                } else {
+                    button.buttonStyle(.borderedProminent)
+                }
+            default: button.buttonStyle(.borderless)
             }
-        case "glassProminent":
-            if #available(iOS 26, macOS 26, visionOS 26, *) {
-                button.buttonStyle(.glassProminent)
-            } else {
-                button.buttonStyle(.borderedProminent)
-            }
-        default: button.buttonStyle(.borderless)
         }
     }
 }

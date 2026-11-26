@@ -319,7 +319,15 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   placeholder: [],
   failure: [],
   icon: [],
-  btn: ["bordershape", "onclick", "repeat", "role", "variant"],
+  btn: [
+    "bordershape",
+    "hovered",
+    "onclick",
+    "pressed",
+    "repeat",
+    "role",
+    "variant",
+  ],
   sfsymbol: [
     "active",
     "colors",

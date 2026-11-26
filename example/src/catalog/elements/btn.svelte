@@ -10,4 +10,25 @@
   </btn>
   <btn variant="glass" role="destructive" onclick={() => (count = 0)}>Reset</btn
   >
+  <btn
+    pressed={{ scale: 0.95, opacity: 0.8, animation: "snappy" }}
+    hovered={{
+      brightness: 0.1,
+      animation: {
+        type: "timingCurve",
+        curve: [0.42, 0, 0.58, 1],
+        duration: 200,
+      },
+    }}
+    onclick={() => count++}
+  >
+    <txt
+      color="white"
+      background="blue"
+      radius={8}
+      padding={{ horizontal: 16, vertical: 8 }}
+    >
+      Press feedback
+    </txt>
+  </btn>
 </vstack>
