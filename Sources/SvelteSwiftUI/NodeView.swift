@@ -2,6 +2,7 @@ import SwiftUI
 
 struct NodeView: View {
     let node: Node
+    var placement: CSSPlacement?
 
     static let multiple: Set<String> = [
         "sheet", "fullscreencover", "popover", "inspector", "swipeactions", "tab", "toolbar", "sectionview", "group",
@@ -9,15 +10,16 @@ struct NodeView: View {
     static let multiView = multiple.union(["disclosuregroup", "gridrow"])
 
     var body: AnyView {
-        AnyView(NodeShape.view(of: node))
+        AnyView(NodeShape.view(of: node, placement: placement))
     }
 }
 
 struct SingleNodeView: View {
     let node: Node
+    var placement: CSSPlacement?
 
     var body: AnyView {
-        AnyView(NodeShape.view(of: node))
+        AnyView(NodeShape.view(of: node, placement: placement))
     }
 
     nonisolated static func _viewListCount(inputs _: _ViewListCountInputs) -> Int? { 1 }
@@ -28,35 +30,43 @@ struct Children: View {
 
     var body: some View {
         if node.hasMultiViewChild {
-            ForEach(node.renderedChildren) { NodeView(node: $0) }
+            ForEach(node.renderedChildren) { child in
+                let placement = CSSPlacement.of(child, in: node)
+                NodeView(node: child, placement: placement).layoutValue(key: CSSPlacementKey.self, value: placement)
+            }
         } else {
-            ForEach(node.renderedChildren) { SingleNodeView(node: $0) }
+            ForEach(node.renderedChildren) { child in
+                let placement = CSSPlacement.of(child, in: node)
+                SingleNodeView(node: child, placement: placement).layoutValue(key: CSSPlacementKey.self, value: placement)
+            }
         }
     }
 }
 
 enum NodeShape {
-    static func view(of node: Node) -> any View {
+    static func view(of node: Node, placement: CSSPlacement? = nil) -> any View {
         switch node.kind {
         case .text:
             Text(Whitespace.normal.collapsed(node.text))
         case .fragment:
             VStack(spacing: 0) { Children(node: node) }.modifier(Presentations(node: node))
         case .element:
-            traits(of: node, modified(element(of: node), node))
+            traits(of: node, modified(element(of: node, placement: placement), node, placement))
         }
     }
 
-    private static func modified(_ element: any View, _ node: Node) -> any View {
+    private static func modified(_ element: any View, _ node: Node, _ placement: CSSPlacement?) -> any View {
         let modifiers = node.modifiers.subtracting(.traits)
-        return hosted(behaved(shaped(element, node, modifiers), node, modifiers), node, modifiers)
+        return hosted(behaved(shaped(element, node, modifiers, placement), node, modifiers), node, modifiers)
     }
 
-    private static func shaped(_ element: any View, _ node: Node, _ modifiers: ModifierSet) -> any View {
+    private static func shaped(_ element: any View, _ node: Node, _ modifiers: ModifierSet, _ placement: CSSPlacement?) -> any View {
         let attributes = node.attributes
         var view = element
+        if let placement, case let .stretch(axis) = placement { view = view.applying(StretchFrame(axis: axis)) }
         if modifiers.contains(.safeArea) { view = view.applying(SafeAreaInsets(node: node)) }
         if modifiers.contains(.framing) { view = view.applying(Framing(attributes: attributes)).applying(Sizing(attributes: attributes)) }
+        if modifiers.contains(.decorations) { view = view.applying(BorderBand(attributes: attributes)) }
         if modifiers.contains(.typography) { view = view.applying(Typography(attributes: attributes)) }
         if modifiers.contains(.appearance) { view = view.applying(Appearance(attributes: attributes)) }
         if modifiers.contains(.decorations) { view = view.applying(Decorations(node: node)) }
@@ -90,6 +100,7 @@ enum NodeShape {
         if modifiers.contains(.animated) { view = view.applying(AnimatedChildren(node: node)) }
         if modifiers.contains(.attachments) { view = view.applying(Attachments(node: node)) }
         if node.ownsButtonFeedback { view = view.applying(StateFeedback(node: node)) }
+        if modifiers.contains(.margins) { view = view.applying(Margins(attributes: node.attributes)) }
         return view
     }
 
@@ -102,9 +113,12 @@ enum NodeShape {
         return view
     }
 
-    private static func element(of node: Node) -> any View {
+    private static func element(of node: Node, placement: CSSPlacement?) -> any View {
         if NodeView.multiple.contains(node.name) { return MultipleElement(node: node) }
         let attributes = node.attributes
+        if ["vstack", "hstack"].contains(node.name), attributes["css"]?.isTrue == true {
+            return CSSStack(node: node, placement: placement)
+        }
         let alignment = attributes["alignment"]?.string
         let spacing = attributes["spacing"]?.number.map { CGFloat($0) }
         switch node.name {

@@ -27,4 +27,14 @@ struct GeometryTests {
         #expect(Geometry.scale(.object(["y": .number(0.5)])) == CGSize(width: 1, height: 0.5))
         #expect(Geometry.scale(nil) == nil)
     }
+
+    @Test func readsMarginEdgesAndAutoAlignment() {
+        let margin = Margin(.object(["top": .number(-4), "trailing": .string("auto")]))
+        #expect(margin.insets == EdgeInsets(top: -4, leading: 0, bottom: 0, trailing: 0))
+        #expect(margin.horizontal == .leading)
+        #expect(margin.vertical == nil)
+        #expect(Margin(.object(["leading": .string("auto"), "trailing": .string("auto")])).horizontal == .center)
+        #expect(Margin(.object(["bottom": .string("auto")])).vertical == .top)
+        #expect(Margin(nil).insets == EdgeInsets())
+    }
 }

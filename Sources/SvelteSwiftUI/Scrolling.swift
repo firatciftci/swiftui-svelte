@@ -137,7 +137,7 @@ struct Resizing: ViewModifier {
     @Environment(SvelteRuntime.self) private var runtime
 
     func body(content: Content) -> some View {
-        if node.listens(to: "resize") {
+        if node.listens(to: "resize") || node.attributes["container"] != nil {
             let id = node.id
             content.onGeometryChange(
                 for: CGSize.self,

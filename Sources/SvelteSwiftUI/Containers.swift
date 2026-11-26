@@ -149,3 +149,153 @@ struct GridCell: ViewModifier {
             .ifLet(UnitPoint(anchor: attributes["cellanchor"]?.string)) { $0.gridCellAnchor($1) }
     }
 }
+
+nonisolated enum CSSPlacement: Hashable {
+    case stretch(Axis)
+    case align(UnitPoint)
+
+    var point: UnitPoint {
+        switch self {
+        case .stretch: .zero
+        case let .align(point): point
+        }
+    }
+
+    static func point(_ name: String, cross: Axis) -> UnitPoint {
+        let factor: CGFloat =
+            switch name {
+            case "start", "leading", "top": 0
+            case "end", "trailing", "bottom": 1
+            default: 0.5
+            }
+        return cross == .horizontal ? UnitPoint(x: factor, y: 0) : UnitPoint(x: 0, y: factor)
+    }
+}
+
+extension CSSPlacement {
+    static func of(_ child: Node, in parent: Node) -> CSSPlacement? {
+        guard parent.attributes["css"]?.isTrue == true else { return nil }
+        let cross: Axis = parent.name == "hstack" ? .vertical : .horizontal
+        let selfAlign = child.attributes["selfalign"]?.string
+        let explicit = selfAlign.flatMap { ["start", "center", "end"].contains($0) ? $0 : nil }
+        guard let item = explicit ?? parent.attributes["alignment"]?.string else { return .stretch(cross) }
+        return .align(point(item, cross: cross))
+    }
+}
+
+nonisolated struct CSSPlacementKey: LayoutValueKey {
+    static let defaultValue: CSSPlacement? = nil
+}
+
+struct StretchFrame: ViewModifier {
+    let axis: Axis
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if axis == .horizontal {
+            content.frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            content.frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+}
+
+struct CSSStack: View {
+    let node: Node
+    let placement: CSSPlacement?
+
+    var body: some View {
+        let spacing = CGFloat(node.attributes["spacing"]?.number ?? 0)
+        let fills = placement == .stretch(.horizontal)
+        if node.name == "vstack" {
+            let column = CSSColumn(spacing: spacing, fills: fills)
+            column { Children(node: node) }
+        } else {
+            let row = CSSRow(spacing: spacing, fills: fills)
+            row { Children(node: node) }
+        }
+    }
+}
+
+struct CSSColumn: SwiftUI.Layout {
+    let spacing: CGFloat
+    let fills: Bool
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
+        let content = subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+        let width = fills ? (proposal.width ?? content) : min(content, proposal.width ?? content)
+        var height: CGFloat = 0
+        for subview in subviews {
+            height += subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+        }
+        return CGSize(width: width, height: height + spacing * CGFloat(max(subviews.count - 1, 0)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) {
+        var y = bounds.minY
+        for subview in subviews {
+            let proposal = ProposedViewSize(width: bounds.width, height: nil)
+            let size = subview.sizeThatFits(proposal)
+            let point = subview[CSSPlacementKey.self]?.point ?? .zero
+            subview.place(
+                at: CGPoint(x: bounds.minX + (bounds.width - size.width) * point.x, y: y), anchor: .topLeading, proposal: proposal)
+            y += size.height + spacing
+        }
+    }
+}
+
+struct CSSRow: SwiftUI.Layout {
+    let spacing: CGFloat
+    let fills: Bool
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
+        let widths = Self.widths(proposal.width, subviews, spacing: spacing)
+        let total = Self.sum(widths) + spacing * CGFloat(max(widths.count - 1, 0))
+        let width = fills ? (proposal.width ?? total) : min(total, proposal.width ?? total)
+        return CGSize(width: width, height: Self.height(widths, subviews))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) {
+        let widths = Self.widths(bounds.width, subviews, spacing: spacing)
+        let height = Self.height(widths, subviews)
+        var x = bounds.minX
+        for (subview, width) in zip(subviews, widths) {
+            let placement = subview[CSSPlacementKey.self]
+            var proposal = ProposedViewSize(width: width, height: nil)
+            if case .stretch? = placement { proposal.height = height }
+            let size = subview.sizeThatFits(proposal)
+            let y = bounds.minY + (height - size.height) * (placement?.point.y ?? 0)
+            subview.place(at: CGPoint(x: x, y: y), anchor: .topLeading, proposal: proposal)
+            x += width + spacing
+        }
+    }
+
+    private static func widths(_ limit: CGFloat?, _ subviews: SwiftUI.Layout.Subviews, spacing: CGFloat) -> Array<CGFloat> {
+        var ideal: Array<CGFloat> = []
+        var minimum: Array<CGFloat> = []
+        for subview in subviews {
+            ideal.append(subview.sizeThatFits(.unspecified).width)
+            minimum.append(subview.sizeThatFits(ProposedViewSize(width: 0, height: nil)).width)
+        }
+        let gaps = spacing * CGFloat(max(subviews.count - 1, 0))
+        guard let limit, limit < sum(ideal) + gaps else { return ideal }
+        let flex = sum(zip(ideal, minimum).map { $0 - $1 })
+        let slack = max(limit - gaps - sum(minimum), 0)
+        let ratio = flex > 0 ? min(slack / flex, 1) : 0
+        return zip(ideal, minimum).map { $1 + ($0 - $1) * ratio }
+    }
+
+    private static func height(_ widths: Array<CGFloat>, _ subviews: SwiftUI.Layout.Subviews) -> CGFloat {
+        var height: CGFloat = 0
+        for (subview, width) in zip(subviews, widths) {
+            height = max(height, subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height)
+        }
+        return height
+    }
+
+    private static func sum(_ values: Array<CGFloat>) -> CGFloat {
+        var total: CGFloat = 0
+        for value in values { total += value }
+        return total
+    }
+}

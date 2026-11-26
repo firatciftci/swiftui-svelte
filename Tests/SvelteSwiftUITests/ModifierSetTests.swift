@@ -13,12 +13,14 @@ struct ModifierSetTests {
         "AnimatedChildren": .animated, "Attachments": .attachments, "RowTraits": .rowTraits, "RowOptions": .rowTraits,
         "SafeAreaInsets": .safeArea, "PointerEvents": .pointer, "ScrollVisibility": .scrolling, "SharedNamespace": .shared,
         "MatchedGeometry": .shared, "Sizing": .framing, "LayoutPriority": .framing,
+        "Margins": .margins, "BorderBand": .decorations,
     ]
     nonisolated private static let modifiers = [
         "Framing", "Typography", "Appearance", "Compositing", "Decorations", "GlassSurface", "Transforms", "Layers", "Accessible",
         "AccessibleDescription", "AccessibleActions", "Lifecycle", "GestureHandlers", "Taps", "Drags", "Pinches", "GridCell",
         "Resizing", "Localized", "Preferences", "Availability", "AnimatedChildren", "Attachments", "RowTraits", "RowOptions",
         "SafeAreaInsets", "PointerEvents", "ScrollVisibility", "SharedNamespace", "MatchedGeometry", "Sizing", "LayoutPriority",
+        "Margins", "BorderBand",
     ]
 
     private static func source() throws -> String {
@@ -88,6 +90,8 @@ struct ModifierSetTests {
     @Test func mapsTheKeysThatHelpersRead() {
         for key in ["font", "size", "design"] { #expect(ModifierSet.byAttribute[key]?.contains(.typography) == true) }
         for key in ["transition", "in", "out"] { #expect(ModifierSet.byAttribute[key]?.contains(.rowTraits) == true) }
+        #expect(ModifierSet.byAttribute["margin"] == .margins)
+        #expect(ModifierSet.byAttribute["container"] == .resizing)
     }
 
     @Test func leavesPlainNodesWithoutModifiers() {

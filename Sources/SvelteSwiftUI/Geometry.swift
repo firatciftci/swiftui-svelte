@@ -111,3 +111,48 @@ struct Transforms: ViewModifier {
             .ifLet(Geometry.point(attributes["position"])) { $0.position(x: $1.x, y: $1.y) }
     }
 }
+
+struct Margin {
+    let insets: EdgeInsets
+    let horizontal: HorizontalAlignment?
+    let vertical: VerticalAlignment?
+
+    init(_ value: JSONValue?) {
+        var edges: [String: JSONValue] = [:]
+        if case let .object(object)? = value { edges = object }
+        func points(_ name: String) -> CGFloat { CGFloat(edges[name]?.number ?? 0) }
+        func isAuto(_ name: String) -> Bool { edges[name]?.string == "auto" }
+        insets = EdgeInsets(top: points("top"), leading: points("leading"), bottom: points("bottom"), trailing: points("trailing"))
+        horizontal =
+            switch (isAuto("leading"), isAuto("trailing")) {
+            case (true, true): .center
+            case (true, false): .trailing
+            case (false, true): .leading
+            case (false, false): nil
+            }
+        vertical =
+            switch (isAuto("top"), isAuto("bottom")) {
+            case (true, true): .center
+            case (true, false): .bottom
+            case (false, true): .top
+            case (false, false): nil
+            }
+    }
+}
+
+struct Margins: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        let margin = Margin(attributes["margin"])
+        content
+            .padding(margin.insets)
+            .gated(margin.horizontal != nil || margin.vertical != nil) { view in
+                view.frame(
+                    maxWidth: margin.horizontal == nil ? nil : .infinity,
+                    maxHeight: margin.vertical == nil ? nil : .infinity,
+                    alignment: Alignment(horizontal: margin.horizontal ?? .center, vertical: margin.vertical ?? .center)
+                )
+            }
+    }
+}

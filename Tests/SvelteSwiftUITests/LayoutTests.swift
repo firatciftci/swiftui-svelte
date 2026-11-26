@@ -66,4 +66,22 @@ struct LayoutTests {
         #expect(Styles.padding(.number(-4)) == -4)
         #expect(Styles.padding(nil) == 0)
     }
+
+    @Test func placesCSSChildrenByTheirFlowAlignment() {
+        let parent = Node(id: 1, kind: .element, name: "vstack", text: "")
+        parent.attributes = ["css": .bool(true)]
+        let child = Node(id: 2, kind: .element, name: "txt", text: "")
+        #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
+        child.attributes = ["selfalign": .string("end")]
+        #expect(CSSPlacement.of(child, in: parent) == .align(UnitPoint(x: 1, y: 0)))
+        child.attributes = ["selfalign": .string("stretch")]
+        #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
+        parent.attributes["alignment"] = .string("center")
+        #expect(CSSPlacement.of(child, in: parent) == .align(UnitPoint(x: 0.5, y: 0)))
+        let row = Node(id: 3, kind: .element, name: "hstack", text: "")
+        row.attributes = ["css": .bool(true)]
+        #expect(CSSPlacement.of(child, in: row) == .stretch(.vertical))
+        parent.attributes["css"] = nil
+        #expect(CSSPlacement.of(child, in: parent) == nil)
+    }
 }

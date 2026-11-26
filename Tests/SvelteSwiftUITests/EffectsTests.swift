@@ -57,4 +57,11 @@ struct EffectsTests {
         #expect(Effects.blendMode("sideways") == nil)
         #expect(Effects.blendMode(nil) == nil)
     }
+
+    @Test func readsBorderWidthsPerEdge() {
+        let partial = Effects.border(.object(["width": .object(["top": .number(2), "leading": .number(-1)])]))
+        #expect(partial?.widths == EdgeInsets(top: 2, leading: 0, bottom: 0, trailing: 0))
+        #expect(partial?.width == 2)
+        #expect(Effects.border(.object(["color": .string("red")]))?.widths == EdgeInsets(top: 1, leading: 1, bottom: 1, trailing: 1))
+    }
 }

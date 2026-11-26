@@ -24,6 +24,7 @@ struct ModifierSet: OptionSet, Hashable {
     static let pointer = Self(rawValue: 1 << 20)
     static let scrolling = Self(rawValue: 1 << 21)
     static let shared = Self(rawValue: 1 << 22)
+    static let margins = Self(rawValue: 1 << 23)
     static let traits: Self = [.gridCell, .rowTraits]
 
     static let byAttribute: [String: Self] = {
@@ -32,6 +33,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "framealignment", "width", "height", "linebox", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight",
                 "maxheight", "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
             ],
+            .margins: ["margin"],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
             .appearance: [
                 "background", "opacity", "radius", "cornerstyle", "brightness", "colormultiply", "blendmode", "compositinggroup", "lighten",
@@ -55,6 +57,7 @@ struct ModifierSet: OptionSet, Hashable {
             .availability: ["disabled", "hidden", "ignoressafearea", "allowshittesting"],
             .animated: ["animated", "animation", "disablesanimations"],
             .scrolling: ["visibilitythreshold"],
+            .resizing: ["container"],
             .shared: ["namespace", "matchedid"],
             .rowTraits: [
                 "transition", "in", "out", "zindex", "deletedisabled", "movedisabled", "rowbackground", "rowinsets", "rowseparator",

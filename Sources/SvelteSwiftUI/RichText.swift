@@ -152,14 +152,17 @@ struct TextView: View {
 
     var body: some View {
         let attributes = node.attributes
+        let alignment = Self.alignment(attributes["align"]?.string)
+        let balancing = BalancedLayout(alignment: alignment)
         Styles.text(node, base: base)
             .gated(attributes["monospaceddigit"]?.isTrue == true) { $0.monospacedDigit() }
             .lineLimit(attributes["lines"]?.number.map { Int($0) })
-            .multilineTextAlignment(Self.alignment(attributes["align"]?.string))
+            .multilineTextAlignment(alignment)
             .ifLet(attributes["linespacing"]?.number) { $0.lineSpacing($1) }
             .ifLet(Styles.truncationMode(attributes["truncation"]?.string)) { $0.truncationMode($1) }
             .ifLet(attributes["minscale"]?.number) { $0.minimumScaleFactor($1) }
             .ifLet(attributes["selectable"]?.isTrue == true ? true : nil) { view, _ in view.textSelection(.enabled) }
+            .gated(attributes["balanced"]?.isTrue == true) { view in balancing { view } }
     }
 
     private static func alignment(_ name: String?) -> TextAlignment {
@@ -168,6 +171,45 @@ struct TextView: View {
         case "trailing": .trailing
         default: .leading
         }
+    }
+}
+
+struct BalancedLayout: SwiftUI.Layout {
+    let alignment: TextAlignment
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
+        guard let text = subviews.first else { return .zero }
+        let width = Self.width(of: text, within: proposal.width)
+        let size = text.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: proposal.width ?? size.width, height: size.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) {
+        guard let text = subviews.first else { return }
+        let width = Self.width(of: text, within: bounds.width)
+        let proposal = ProposedViewSize(width: width, height: nil)
+        let (x, anchor): (CGFloat, UnitPoint) =
+            switch alignment {
+            case .leading: (bounds.minX, .topLeading)
+            case .center: (bounds.midX, .top)
+            case .trailing: (bounds.maxX, .topTrailing)
+            }
+        text.place(at: CGPoint(x: x, y: bounds.minY), anchor: anchor, proposal: proposal)
+    }
+
+    private static func width(of text: SwiftUI.LayoutSubview, within limit: CGFloat?) -> CGFloat {
+        let natural = text.sizeThatFits(ProposedViewSize(width: limit, height: nil))
+        var narrowest: CGFloat = 0
+        var widest = natural.width
+        while widest - narrowest > 0.5 {
+            let middle = (narrowest + widest) / 2
+            if text.sizeThatFits(ProposedViewSize(width: middle, height: nil)).height <= natural.height {
+                widest = middle
+            } else {
+                narrowest = middle
+            }
+        }
+        return widest
     }
 }
 

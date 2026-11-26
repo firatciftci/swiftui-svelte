@@ -61,19 +61,31 @@ enum Effects {
 
     struct Border {
         let style: AnyShapeStyle
-        let width: CGFloat
+        let widths: EdgeInsets
+
+        var width: CGFloat { max(widths.top, widths.leading, widths.bottom, widths.trailing) }
     }
 
     static func border(_ value: JSONValue?) -> Border? {
         switch value {
         case .string:
-            return Palette.style(value).map { Border(style: $0, width: 1) }
+            return Palette.style(value).map { Border(style: $0, widths: uniform(1)) }
         case let .object(options):
             let style = Palette.style(options["color"]) ?? AnyShapeStyle(.separator)
-            return Border(style: style, width: max(options["width"]?.number ?? 1, 0))
+            return Border(style: style, widths: widths(options["width"]))
         default:
             return nil
         }
+    }
+
+    private static func widths(_ value: JSONValue?) -> EdgeInsets {
+        guard case let .object(edges) = value else { return uniform(max(CGFloat(value?.number ?? 1), 0)) }
+        func width(_ name: String) -> CGFloat { max(CGFloat(edges[name]?.number ?? 0), 0) }
+        return EdgeInsets(top: width("top"), leading: width("leading"), bottom: width("bottom"), trailing: width("trailing"))
+    }
+
+    private static func uniform(_ width: CGFloat) -> EdgeInsets {
+        EdgeInsets(top: width, leading: width, bottom: width, trailing: width)
     }
 
     struct Shadow: Equatable {
@@ -166,7 +178,6 @@ struct Decorations: ViewModifier {
         let attributes = node.attributes
         content
             .ifLet(Effects.shape(attributes["clipshape"])) { $0.clipShape($1) }
-            .ifLet(Effects.border(attributes["border"])) { $0.border($1.style, width: $1.width) }
             .ifLet(Effects.shadow(attributes["shadow"])) { $0.shadow(color: $1.color, radius: $1.radius, x: $1.x, y: $1.y) }
             .ifLet(attributes["blur"]?.number) { $0.blur(radius: max($1, 0)) }
             .ifLet(node.attachment("maskview")) { view, mask in
@@ -268,5 +279,35 @@ struct Lightening: ViewModifier {
         content.compositingGroup().overlay {
             content.compositingGroup().opacity(amount).blendMode(.plusLighter).allowsHitTesting(false)
         }
+    }
+}
+
+struct BorderBand: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content.ifLet(Effects.border(attributes["border"])) { view, border in
+            view.padding(border.widths).overlay {
+                BorderRing(widths: border.widths)
+                    .fill(border.style, style: FillStyle(eoFill: true))
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+struct BorderRing: Shape {
+    let widths: EdgeInsets
+
+    nonisolated func path(in rect: CGRect) -> Path {
+        var path = Path(rect)
+        path.addRect(
+            CGRect(
+                x: rect.minX + widths.leading,
+                y: rect.minY + widths.top,
+                width: rect.width - widths.leading - widths.trailing,
+                height: rect.height - widths.top - widths.bottom
+            ))
+        return path
     }
 }
