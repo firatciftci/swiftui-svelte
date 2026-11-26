@@ -139,8 +139,10 @@ export type ShapeStyle =
 type ShapeAttributes = Modifiers & {
   /** The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. */
   fill?: ShapeStyle;
-  /** The style of the shape's outline. */
+  /** The style of the shape's outline, centered on the shape's edge. */
   stroke?: ShapeStyle;
+  /** The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. */
+  strokeborder?: ShapeStyle;
   /** The width of the outline in points. Defaults to 1. */
   linewidth?: number;
   /** The shape of the outline's ends: `butt`, `round`, or `square`. */

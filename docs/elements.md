@@ -119,6 +119,8 @@ The shape elements draw SwiftUI shapes, filled with the foreground style unless 
 />
 ```
 
+`stroke` draws the outline centered on the shape's edge, so half of its width falls outside the frame. `strokeborder` draws the outline inside the edge, like SwiftUI's `strokeBorder`, which keeps it within the frame. Use `strokeborder` for panel borders and rings that must sit on exact pixels. `strokeborder` takes precedence when both are set.
+
 | Element                                  | SwiftUI                        | Attributes                                                                |
 | ---------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
 | `rectangle`                              | `Rectangle`                    |                                                                           |

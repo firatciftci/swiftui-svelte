@@ -207,6 +207,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
   ],
   roundedrectangle: [
     "cornerradius",
@@ -219,6 +220,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
   ],
   unevenroundedrectangle: [
     "bottomleading",
@@ -232,6 +234,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
     "topleading",
     "toptrailing",
   ],
@@ -244,6 +247,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
   ],
   ellipseshape: [
     "dash",
@@ -254,6 +258,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
   ],
   capsule: [
     "corners",
@@ -265,6 +270,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
   ],
   pathshape: [
     "d",
@@ -276,6 +282,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "linejoin",
     "linewidth",
     "stroke",
+    "strokeborder",
     "viewbox",
   ],
   lazyvstack: ["alignment", "pinned", "spacing"],

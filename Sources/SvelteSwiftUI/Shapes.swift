@@ -37,12 +37,18 @@ struct ShapeElement: View {
         }
     }
 
-    @ViewBuilder private func draw(_ shape: some Shape) -> some View {
+    @ViewBuilder private func draw(_ shape: some InsettableShape) -> some View {
         let attributes = node.attributes
         let fillStyle = FillStyle(eoFill: attributes["fillrule"]?.string == "evenodd")
         let fill = Palette.style(attributes["fill"])
-        if let stroke = Palette.style(attributes["stroke"]) {
-            let strokeStyle = Self.strokeStyle(attributes)
+        let strokeStyle = Self.strokeStyle(attributes)
+        if let border = Palette.style(attributes["strokeborder"]) {
+            if let fill {
+                shape.fill(fill, style: fillStyle).strokeBorder(border, style: strokeStyle)
+            } else {
+                shape.strokeBorder(border, style: strokeStyle)
+            }
+        } else if let stroke = Palette.style(attributes["stroke"]) {
             if let fill {
                 shape.fill(fill, style: fillStyle).stroke(stroke, style: strokeStyle)
             } else {
@@ -82,9 +88,13 @@ struct ShapeElement: View {
     }
 }
 
-nonisolated struct SVGShape: Shape {
+nonisolated struct SVGShape: InsettableShape {
     let path: Path
     let viewBox: CGRect?
+
+    func inset(by amount: CGFloat) -> InsetShape<Self> {
+        InsetShape(base: self, amount: amount)
+    }
 
     func path(in rect: CGRect) -> Path {
         guard let viewBox, viewBox.width > 0, viewBox.height > 0 else { return path }
@@ -339,5 +349,18 @@ enum SVGPath {
             path.addCurve(to: target, control1: control1, control2: control2)
             theta = next
         }
+    }
+}
+
+nonisolated struct InsetShape<Base: Shape>: InsettableShape {
+    let base: Base
+    let amount: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        base.path(in: rect.insetBy(dx: amount, dy: amount))
+    }
+
+    func inset(by amount: CGFloat) -> Self {
+        Self(base: base, amount: self.amount + amount)
     }
 }

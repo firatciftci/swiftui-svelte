@@ -2177,16 +2177,17 @@ A `ColorPicker`: lets the user pick a color.
 
 A `Rectangle` shape.
 
-| Attribute   | Type                            | Description                                                                                   |
-| ----------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`      | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`    | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth` | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`   | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`  | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`      | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase` | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`  | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
+| Attribute      | Type                            | Description                                                                                                                             |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
 
 ```svelte
 <rectangle
@@ -2204,18 +2205,19 @@ A `Rectangle` shape.
 
 A `RoundedRectangle` shape.
 
-| Attribute      | Type                            | Description                                                                                   |
-| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`       | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
-| `corners`      | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                   |
-| `cornerradius` | `number`                        | The corner radius in points. Defaults to 8.                                                   |
+| Attribute      | Type                            | Description                                                                                                                             |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
+| `corners`      | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
+| `cornerradius` | `number`                        | The corner radius in points. Defaults to 8.                                                                                             |
 
 ```svelte
 <roundedrectangle
@@ -2232,21 +2234,22 @@ A `RoundedRectangle` shape.
 
 An `UnevenRoundedRectangle` shape, with its own radius for each corner.
 
-| Attribute        | Type                            | Description                                                                                   |
-| ---------------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`           | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`         | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth`      | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`        | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`       | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`           | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase`      | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`       | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
-| `corners`        | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                   |
-| `topleading`     | `number`                        | The radius in points of the top leading corner. Defaults to 0.                                |
-| `toptrailing`    | `number`                        | The radius in points of the top trailing corner. Defaults to 0.                               |
-| `bottomleading`  | `number`                        | The radius in points of the bottom leading corner. Defaults to 0.                             |
-| `bottomtrailing` | `number`                        | The radius in points of the bottom trailing corner. Defaults to 0.                            |
+| Attribute        | Type                            | Description                                                                                                                             |
+| ---------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`           | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`         | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder`   | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`      | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`        | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`       | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`           | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`      | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`       | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
+| `corners`        | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
+| `topleading`     | `number`                        | The radius in points of the top leading corner. Defaults to 0.                                                                          |
+| `toptrailing`    | `number`                        | The radius in points of the top trailing corner. Defaults to 0.                                                                         |
+| `bottomleading`  | `number`                        | The radius in points of the bottom leading corner. Defaults to 0.                                                                       |
+| `bottomtrailing` | `number`                        | The radius in points of the bottom trailing corner. Defaults to 0.                                                                      |
 
 ```svelte
 <unevenroundedrectangle
@@ -2262,42 +2265,47 @@ An `UnevenRoundedRectangle` shape, with its own radius for each corner.
 
 A `Circle` shape.
 
-| Attribute   | Type                            | Description                                                                                   |
-| ----------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`      | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`    | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth` | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`   | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`  | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`      | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase` | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`  | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
+| Attribute      | Type                            | Description                                                                                                                             |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
 
 ```svelte
-<circleshape
-  stroke="teal"
-  linewidth={4}
-  linecap="round"
-  dash={[8, 6]}
-  width={100}
-  height={100}
-/>
+<hstack spacing={16}>
+  <circleshape
+    stroke="teal"
+    linewidth={4}
+    linecap="round"
+    dash={[8, 6]}
+    width={100}
+    height={100}
+  />
+  <circleshape strokeborder="teal" linewidth={4} width={100} height={100} />
+</hstack>
 ```
 
 ### `ellipseshape`
 
 An `Ellipse` shape.
 
-| Attribute   | Type                            | Description                                                                                   |
-| ----------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`      | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`    | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth` | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`   | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`  | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`      | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase` | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`  | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
+| Attribute      | Type                            | Description                                                                                                                             |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
 
 ```svelte
 <ellipseshape fill="orange.gradient" width={160} height={90} />
@@ -2307,17 +2315,18 @@ An `Ellipse` shape.
 
 A `Capsule` shape, with fully rounded ends.
 
-| Attribute   | Type                            | Description                                                                                   |
-| ----------- | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `fill`      | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style. |
-| `stroke`    | `ShapeStyle`                    | The style of the shape's outline.                                                             |
-| `linewidth` | `number`                        | The width of the outline in points. Defaults to 1.                                            |
-| `linecap`   | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                |
-| `linejoin`  | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                             |
-| `dash`      | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                |
-| `dashphase` | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.           |
-| `fillrule`  | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                |
-| `corners`   | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                   |
+| Attribute      | Type                            | Description                                                                                                                             |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                           |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                         |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`. |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                      |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                          |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                       |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
+| `corners`      | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
 
 ```svelte
 <capsule fill="green" width={160} height={44}>
@@ -2331,18 +2340,19 @@ A `Capsule` shape, with fully rounded ends.
 
 A `Path` shape drawn from SVG path data.
 
-| Attribute   | Type                            | Description                                                                                                                              |
-| ----------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `fill`      | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                            |
-| `stroke`    | `ShapeStyle`                    | The style of the shape's outline.                                                                                                        |
-| `linewidth` | `number`                        | The width of the outline in points. Defaults to 1.                                                                                       |
-| `linecap`   | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                           |
-| `linejoin`  | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                        |
-| `dash`      | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                           |
-| `dashphase` | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                      |
-| `fillrule`  | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                           |
-| `d`         | `string`                        | SVG path data for the shape. Every path command is supported, including arcs.                                                            |
-| `viewbox`   | `string`                        | The SVG `viewBox`, such as `0 0 24 24`. With it, the path scales to fit the frame. Without it, the path is drawn at its own coordinates. |
+| Attribute      | Type                            | Description                                                                                                                              |
+| -------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `fill`         | `ShapeStyle`                    | The fill style of the shape. Without `fill` or `stroke`, the shape uses the foreground style.                                            |
+| `stroke`       | `ShapeStyle`                    | The style of the shape's outline, centered on the shape's edge.                                                                          |
+| `strokeborder` | `ShapeStyle`                    | The style of the shape's outline, drawn inside the shape's edge, so the outline stays within the frame. Takes precedence over `stroke`.  |
+| `linewidth`    | `number`                        | The width of the outline in points. Defaults to 1.                                                                                       |
+| `linecap`      | `"butt" \| "round" \| "square"` | The shape of the outline's ends: `butt`, `round`, or `square`.                                                                           |
+| `linejoin`     | `"miter" \| "round" \| "bevel"` | The shape of the outline's corners: `miter`, `round`, or `bevel`.                                                                        |
+| `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                           |
+| `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                      |
+| `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                           |
+| `d`            | `string`                        | SVG path data for the shape. Every path command is supported, including arcs.                                                            |
+| `viewbox`      | `string`                        | The SVG `viewBox`, such as `0 0 24 24`. With it, the path scales to fit the frame. Without it, the path is drawn at its own coordinates. |
 
 ```svelte
 <pathshape
