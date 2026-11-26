@@ -1051,7 +1051,7 @@ declare module "svelte/elements" {
       /** On iOS 26 and later, collapses the search field into a toolbar button. */
       minimize?: boolean;
     };
-    /** A `.toolbar` whose children are added as toolbar items to the nearest screen. */
+    /** A `.toolbar` whose children become toolbar items of the element it sits in, such as a screen, a dialog, or a section of a page. Put it next to a `textfield` with `placement="keyboard"` to show a bar above the keyboard while the field has focus. */
     toolbar: {
       /** Where the toolbar items go: `trailing` (the default), `leading`, `principal`, `bottom`, `keyboard`, or a semantic placement such as `primaryAction`. */
       placement?: ToolbarPlacement;

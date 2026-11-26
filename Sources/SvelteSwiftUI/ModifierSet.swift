@@ -77,7 +77,8 @@ struct ModifierSet: OptionSet, Hashable {
 
     static let byAttachment: [String: Self] = [
         "background": .layers, "overlay": .layers, "maskview": .decorations, "safeareainset": .safeArea,
-        "searchable": .attachments, "contextmenu": .attachments, "swipeactions": .rowTraits,
+        "searchable": .attachments, "contextmenu": .attachments, "swipeactions": .rowTraits, "toolbar": .attachments,
+        "toolbarspacer": .attachments,
     ]
 
     init(rawValue: UInt32) {

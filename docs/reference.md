@@ -209,7 +209,7 @@ This element doesn't take modifiers.
 
 ### `toolbar`
 
-A `.toolbar` whose children are added as toolbar items to the nearest screen.
+A `.toolbar` whose children become toolbar items of the element it sits in, such as a screen, a dialog, or a section of a page. Put it next to a `textfield` with `placement="keyboard"` to show a bar above the keyboard while the field has focus.
 
 | Attribute   | Type               | Description                                                                                                                                          |
 | ----------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -231,6 +231,15 @@ This element doesn't take modifiers.
   </toolbar>
   <toolbar placement="bottom">
     <btn onclick={() => (count = 0)}>Reset</btn>
+  </toolbar>
+  <textfield
+    placeholder="Toolbar above the keyboard"
+    value=""
+    oninput={() => {}}
+  />
+  <toolbar placement="keyboard">
+    <spacer />
+    <btn>Done</btn>
   </toolbar>
 </vstack>
 ```

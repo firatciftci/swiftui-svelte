@@ -395,6 +395,7 @@ private struct Attachments: ViewModifier {
         content
             .ifLet(node.attachment("searchable")) { $0.modifier(Searching(node: $1)) }
             .ifLet(node.attachment("contextmenu")) { $0.modifier(ContextMenu(node: $1)) }
+            .gated(node.hasToolbarItems) { $0.modifier(Toolbars(node: node)) }
     }
 }
 

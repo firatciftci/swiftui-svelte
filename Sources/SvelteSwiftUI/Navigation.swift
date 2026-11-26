@@ -70,7 +70,20 @@ struct Screen: View {
                 $0.toolbarBackground($1, for: .navigationBar).toolbarBackgroundVisibility(.visible, for: .navigationBar)
             }
         #endif
-        .toolbar {
+    }
+}
+
+extension Node {
+    var hasToolbarItems: Bool {
+        children.contains { $0.name == "toolbar" || $0.name == "toolbarspacer" }
+    }
+}
+
+struct Toolbars: ViewModifier {
+    let node: Node
+
+    func body(content: Content) -> some View {
+        content.toolbar {
             ForEach(node.children.filter { $0.name == "toolbar" || $0.name == "toolbarspacer" }) { item in
                 if item.name == "toolbarspacer" {
                     ToolbarGap(node: item)

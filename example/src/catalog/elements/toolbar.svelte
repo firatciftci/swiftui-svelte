@@ -12,4 +12,13 @@
   <toolbar placement="bottom">
     <btn onclick={() => (count = 0)}>Reset</btn>
   </toolbar>
+  <textfield
+    placeholder="Toolbar above the keyboard"
+    value=""
+    oninput={() => {}}
+  />
+  <toolbar placement="keyboard">
+    <spacer />
+    <btn>Done</btn>
+  </toolbar>
 </vstack>
