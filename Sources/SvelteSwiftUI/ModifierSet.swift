@@ -30,7 +30,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
             ],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
-            .appearance: ["background", "opacity", "radius"],
+            .appearance: ["background", "opacity", "radius", "brightness", "colormultiply", "blendmode", "compositinggroup"],
             .decorations: ["clipshape", "border", "shadow", "blur", "contentshape"],
             .glass: ["glasseffect", "glassid", "glassunion"],
             .transforms: ["offset", "position", "rotation", "rotationanchor", "scale", "scaleanchor"],

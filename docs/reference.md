@@ -2431,17 +2431,21 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Color and style
 
-| Attribute     | Type                                                                             | Description                                                                                                                    |
-| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `color`       | `ShapeStyle`                                                                     | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                        |
-| `tint`        | `Color`                                                                          | The tint of the controls inside the element. Takes a color only.                                                               |
-| `background`  | `ShapeStyle`                                                                     | The background style, such as a color, a material, or a gradient, drawn behind the element.                                    |
-| `opacity`     | `number`                                                                         | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                 |
-| `border`      | `Color \| { color?: ShapeStyle; width?: number; }`                               | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                             |
-| `shadow`      | `number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. |
-| `blur`        | `number`                                                                         | Blurs the element by this radius in points.                                                                                    |
-| `radius`      | `number`                                                                         | Rounds the corners of the element to this radius in points.                                                                    |
-| `controlsize` | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                      | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                             |
+| Attribute          | Type                                                                             | Description                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `color`            | `ShapeStyle`                                                                     | The foreground style of the content, such as a named color, a CSS color, or a gradient.                                        |
+| `tint`             | `Color`                                                                          | The tint of the controls inside the element. Takes a color only.                                                               |
+| `background`       | `ShapeStyle`                                                                     | The background style, such as a color, a material, or a gradient, drawn behind the element.                                    |
+| `opacity`          | `number`                                                                         | The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1.                                                 |
+| `brightness`       | `number`                                                                         | Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged.           |
+| `colormultiply`    | `Color`                                                                          | Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only.                    |
+| `blendmode`        | `BlendMode`                                                                      | How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`.                 |
+| `compositinggroup` | `boolean`                                                                        | Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole.   |
+| `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                               | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                             |
+| `shadow`           | `number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. |
+| `blur`             | `number`                                                                         | Blurs the element by this radius in points.                                                                                    |
+| `radius`           | `number`                                                                         | Rounds the corners of the element to this radius in points.                                                                    |
+| `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                      | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                             |
 
 ```svelte
 <vstack spacing={16} padding>
@@ -2468,6 +2472,17 @@ Every element takes these attributes, except the few whose entries say they don'
     <txt opacity={0.4}>Faded</txt>
     <txt blur={2}>Blurred</txt>
   </hstack>
+  <hstack spacing={16}>
+    <txt padding background="orange" radius={8} brightness={0.3}>Brighter</txt>
+    <txt padding background="orange" radius={8} colormultiply="blue">Tinted</txt
+    >
+    <txt padding background="white" radius={8} blendmode="multiply" color="red"
+      >Multiplied</txt
+    >
+  </hstack>
+  <txt compositinggroup opacity={0.5}>
+    <span color="red">Grouped</span> <span color="blue">spans</span>
+  </txt>
   <btn variant="prominent" tint="green" controlsize="large">
     Large green button
   </btn>
@@ -3206,6 +3221,28 @@ type AnimationOptions = AnimationOptions;
 
 ```ts
 type BarVisibility = boolean | "automatic" | "visible" | "hidden";
+```
+
+### `BlendMode`
+
+```ts
+type BlendMode =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "soft-light"
+  | "hard-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity";
 ```
 
 ### `ButtonFeedback`

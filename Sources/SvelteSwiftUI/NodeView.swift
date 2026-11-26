@@ -352,6 +352,10 @@ private struct Appearance: ViewModifier {
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
             .opacity(attributes["opacity"]?.number ?? 1)
+            .ifLet(attributes["brightness"]?.number) { $0.brightness($1) }
+            .ifLet(Palette.color(attributes["colormultiply"]?.string)) { $0.colorMultiply($1) }
+            .ifLet(Effects.blendMode(attributes["blendmode"]?.string)) { $0.blendMode($1) }
+            .gated(attributes["compositinggroup"]?.isTrue == true) { $0.compositingGroup() }
     }
 }
 

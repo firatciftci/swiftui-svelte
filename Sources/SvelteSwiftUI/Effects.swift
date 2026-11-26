@@ -1,6 +1,28 @@
 import SwiftUI
 
 enum Effects {
+    static func blendMode(_ name: String?) -> BlendMode? {
+        switch name {
+        case "normal": .normal
+        case "multiply": .multiply
+        case "screen": .screen
+        case "overlay": .overlay
+        case "darken": .darken
+        case "lighten": .lighten
+        case "color-dodge": .colorDodge
+        case "color-burn": .colorBurn
+        case "soft-light": .softLight
+        case "hard-light": .hardLight
+        case "difference": .difference
+        case "exclusion": .exclusion
+        case "hue": .hue
+        case "saturation": .saturation
+        case "color": .color
+        case "luminosity": .luminosity
+        default: nil
+        }
+    }
+
     static func shape(_ value: JSONValue?) -> AnyShape? {
         switch value {
         case .string("rectangle"): AnyShape(Rectangle())

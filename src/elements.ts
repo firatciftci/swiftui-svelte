@@ -154,6 +154,23 @@ type ShapeAttributes = Modifiers & {
   /** How the fill decides which areas are inside the shape: `nonzero` or `evenodd`. */
   fillrule?: "nonzero" | "evenodd";
 };
+type BlendMode =
+  | "normal"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "soft-light"
+  | "hard-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity";
 type Corners = {
   /** The corner style: `continuous` (the default) or `circular`. */
   corners?: "continuous" | "circular";
@@ -652,6 +669,14 @@ type Modifiers = {
   radius?: number;
   /** The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1. */
   opacity?: number;
+  /** Adds brightness to the element, from -1 (darker) to 1 (brighter). Defaults to 0, which leaves the element unchanged. */
+  brightness?: number;
+  /** Multiplies the colors of the element by this color, which darkens or tints the element. Takes a color only. */
+  colormultiply?: Color;
+  /** How the element's colors blend with the views behind it, such as `multiply` or `screen`. Defaults to `normal`. */
+  blendmode?: BlendMode;
+  /** Draws the element and its children as one layer before blending, so `opacity` and `blendmode` apply to the group as a whole. */
+  compositinggroup?: boolean;
   /** A fixed width in points. */
   width?: number;
   /** A fixed height in points. */

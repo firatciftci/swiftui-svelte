@@ -51,5 +51,9 @@ struct EffectsTests {
         let object = Effects.ignoredSafeArea(.object(["regions": .string("container"), "edges": .string("bottom")]))
         #expect(object == Effects.SafeArea(regions: .container, edges: .bottom))
         #expect(Effects.ignoredSafeArea(.array([.string("sideways")])) == nil)
+        #expect(Effects.blendMode("multiply") == .multiply)
+        #expect(Effects.blendMode("color-dodge") == .colorDodge)
+        #expect(Effects.blendMode("sideways") == nil)
+        #expect(Effects.blendMode(nil) == nil)
     }
 }

@@ -127,6 +127,8 @@ The shape elements draw SwiftUI shapes, filled with the foreground style unless 
 
 All of them also take `linewidth`, `linecap`, `linejoin`, `dash`, `dashphase`, and `fillrule` (`nonzero` or `evenodd`). `corners` is `continuous`, the default, or `circular`. A `pathshape` reads every SVG path command, including arcs. With a `viewbox`, it scales the path to fit its frame the way an SVG icon does; without one, it draws the path at its own coordinates.
 
+`brightness`, `colormultiply`, `blendmode`, and `compositinggroup` change how an element's colors mix with what's behind it. `brightness` is a number from -1 to 1 that lightens or darkens the element. `colormultiply` multiplies the element's colors by a color, which tints it. `blendmode` takes one of the CSS blend mode names, such as `multiply`, `screen`, or `color-dodge`. Set `compositinggroup` to blend an element's children as one layer, so the blend mode and `opacity` apply to the group rather than to each child.
+
 ## Bindable components
 
 Svelte doesn't allow `bind:` on elements in custom renderer components, so `swiftui-svelte/components` wraps the controls in components with bindable props:

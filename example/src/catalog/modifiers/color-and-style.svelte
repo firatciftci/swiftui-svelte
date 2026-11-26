@@ -22,6 +22,17 @@
     <txt opacity={0.4}>Faded</txt>
     <txt blur={2}>Blurred</txt>
   </hstack>
+  <hstack spacing={16}>
+    <txt padding background="orange" radius={8} brightness={0.3}>Brighter</txt>
+    <txt padding background="orange" radius={8} colormultiply="blue">Tinted</txt
+    >
+    <txt padding background="white" radius={8} blendmode="multiply" color="red"
+      >Multiplied</txt
+    >
+  </hstack>
+  <txt compositinggroup opacity={0.5}>
+    <span color="red">Grouped</span> <span color="blue">spans</span>
+  </txt>
   <btn variant="prominent" tint="green" controlsize="large">
     Large green button
   </btn>
