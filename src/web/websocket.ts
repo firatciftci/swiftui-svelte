@@ -218,15 +218,14 @@ class WebSocketShim extends EventTargetShim {
     this.#native.send(this.#id, payload);
   }
 
-  close(code?: number, reason?: string): void {
+  close(code?: number, reason = ""): void {
     if (code !== undefined && code !== 1000 && (code < 3000 || code > 4999)) {
       throw new DOMExceptionShim(
         `Failed to execute 'close' on 'WebSocket': The close code must be either 1000, or between 3000 and 4999. ${String(code)} is neither.`,
         "InvalidAccessError",
       );
     }
-    const text = reason ?? "";
-    if (encodeUTF8(text).length > 123) {
+    if (encodeUTF8(reason).length > 123) {
       throw new DOMExceptionShim(
         "Failed to execute 'close' on 'WebSocket': The close reason must not be greater than 123 UTF-8 bytes.",
         "SyntaxError",
@@ -236,8 +235,8 @@ class WebSocketShim extends EventTargetShim {
     const wasConnecting = this.#readyState === 0;
     this.#readyState = 2;
     if (wasConnecting) {
-      this.#native.close(this.#id, null, text);
-      void Promise.resolve().then(() => {
+      this.#native.close(this.#id, null, reason);
+      queueMicrotask(() => {
         this.#readyState = 3;
         this.dispatchEvent(new EventShim("error"));
         this.dispatchEvent(
@@ -250,7 +249,7 @@ class WebSocketShim extends EventTargetShim {
       });
       return;
     }
-    this.#native.close(this.#id, code ?? null, text);
+    this.#native.close(this.#id, code ?? null, reason);
   }
 
   get [Symbol.toStringTag](): string {

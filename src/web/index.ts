@@ -23,6 +23,7 @@ import {
   DOMExceptionShim,
   EventShim,
   EventTargetShim,
+  logError,
 } from "./events.ts";
 import { createEventSource } from "./eventsource.ts";
 import {
@@ -81,9 +82,7 @@ function define(name: string, create: () => unknown): void {
 }
 
 export function installWebAPIs(): void {
-  define("reportError", () => (error: unknown) => {
-    console.error(error);
-  });
+  define("reportError", () => logError);
   define("window", () => globalThis);
   define("self", () => globalThis);
   define("DOMException", () => DOMExceptionShim);
