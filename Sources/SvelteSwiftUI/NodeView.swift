@@ -306,7 +306,9 @@ private struct Appearance: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
-            .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
+            .ifLet(attributes["radius"]?.number) {
+                $0.clipShape(.rect(cornerRadius: $1, style: Effects.cornerStyle(attributes["cornerstyle"])))
+            }
             .gated(attributes["insetshadow"]?.isTrue == true) { $0.modifier(InsetShadow(attributes: attributes)) }
     }
 }

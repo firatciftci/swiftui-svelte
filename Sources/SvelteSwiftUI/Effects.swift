@@ -37,6 +37,10 @@ enum Effects {
         }
     }
 
+    static func cornerStyle(_ value: JSONValue?) -> RoundedCornerStyle {
+        value?.string == "circular" ? .circular : .continuous
+    }
+
     private static func shape(_ options: [String: JSONValue]) -> AnyShape? {
         if let data = options["d"]?.string {
             return AnyShape(SVGShape(path: SVGPathCache.path(data), viewBox: SVGShape.viewBox(options["viewbox"]?.string)))
@@ -231,7 +235,12 @@ struct InsetShadow: ViewModifier {
     init(attributes: [String: JSONValue]) {
         shape =
             Effects.shape(attributes["clipshape"])
-            ?? AnyShape(RoundedRectangle(cornerRadius: attributes["radius"]?.number ?? 0, style: .continuous))
+            ?? AnyShape(
+                RoundedRectangle(
+                    cornerRadius: attributes["radius"]?.number ?? 0,
+                    style: Effects.cornerStyle(attributes["cornerstyle"])
+                )
+            )
     }
 
     func body(content: Content) -> some View {

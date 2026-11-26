@@ -34,7 +34,8 @@ struct ModifierSet: OptionSet, Hashable {
             ],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
             .appearance: [
-                "background", "opacity", "radius", "brightness", "colormultiply", "blendmode", "compositinggroup", "lighten", "insetshadow",
+                "background", "opacity", "radius", "cornerstyle", "brightness", "colormultiply", "blendmode", "compositinggroup", "lighten",
+                "insetshadow",
             ],
             .decorations: ["clipshape", "border", "shadow", "blur", "contentshape"],
             .glass: ["glasseffect", "glassid", "glassunion"],
