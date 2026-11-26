@@ -2,10 +2,10 @@
   import type { Color, DragEvent } from "swiftui-svelte/elements";
   import { env } from "swiftui-svelte/env";
   import { withAnimation } from "swiftui-svelte/renderer";
-  import type { Position, ToastT, ToastType } from "./types.ts";
   import { toastStore } from "./state.svelte.ts";
+  import type { Position, ToastT, ToastType } from "./types.ts";
 
-  const {
+  let {
     toast,
     position,
     duration,
@@ -35,7 +35,6 @@
   };
 
   const isBottom = $derived(!position.startsWith("top"));
-  const stackShift = $derived((isBottom ? -1 : 1) * stackDepth * 8);
   const tint = $derived(richColors ? TINTS[toast.type] : undefined);
   const icon = $derived(ICONS[toast.type]);
   const hasClose = $derived(closeButton && toast.dismissible !== false);
@@ -46,6 +45,8 @@
     toast.duration ??
       (toast.type === "loading" ? Number.POSITIVE_INFINITY : duration),
   );
+  const stackShift = $derived((isBottom ? -1 : 1) * stackDepth * 10);
+  const stackScale = $derived(1 - stackDepth * 0.05);
 
   let offset = $state({ x: 0, y: 0 });
   let isDragging = $state(false);
@@ -66,9 +67,13 @@
     toastStore.dismiss(toast.id);
   }
 
-  function runAction(action: { onClick: () => void }): void {
-    action.onClick();
+  function runAction(run: { onClick: () => void }): void {
+    run.onClick();
     close();
+  }
+
+  function towardEdge(value: number): number {
+    return isBottom ? Math.max(value, 0) : Math.min(value, 0);
   }
 
   function onDrag(drag: DragEvent): void {
@@ -81,7 +86,7 @@
       offset =
         axis === "horizontal"
           ? { x: drag.translation.x, y: 0 }
-          : { x: 0, y: drag.translation.y };
+          : { x: 0, y: towardEdge(drag.translation.y) };
       return;
     }
 
@@ -117,60 +122,68 @@
   transition={isBottom ? "move-bottom opacity" : "move-top opacity"}
   animation={{ type: "easeInOut", duration: 250 }}
   offset={{ x: 0, y: stackShift }}
+  scale={stackScale}
+  scaleanchor={isBottom ? "bottom" : "top"}
   ondrag={toast.dismissible === false ? undefined : onDrag}
   dragdistance={4}
 >
-  <hstack {offset} opacity={isLeaving ? 0 : 1}>
+  <hstack offset={offset} opacity={isLeaving ? 0 : 1}>
     {#if CustomComponent != null}
       <CustomComponent {...toast.componentProps} closeToast={close} />
     {:else}
       <hstack
-        spacing={10}
-        padding={{
-          leading: 16,
-          trailing: hasClose ? 8 : 16,
-          top: 12,
-          bottom: 12,
-        }}
-        minheight={44}
-        maxwidth={400}
         radius={16}
         shadow={{ radius: 12, y: 4 }}
-        color={tint == null ? undefined : "white"}
-        glasseffect={env.liquidGlass
-          ? { tint, shape: { cornerradius: 16 } }
-          : undefined}
-        background={env.liquidGlass ? undefined : (tint ?? "regularMaterial")}
+        background={tint ?? "systemBackground"}
       >
-        {#if toast.type === "loading"}
-          <progressview></progressview>
-        {:else if icon != null}
-          <sfsymbol name={icon} font="title3"></sfsymbol>
-        {/if}
-        <vstack alignment="leading" spacing={2}>
-          {#if toast.title != null}
-            <txt font="subheadline" weight="semibold">{toast.title}</txt>
+        <hstack
+          spacing={10}
+          padding={{
+            leading: 16,
+            trailing: hasClose ? 8 : 16,
+            top: 12,
+            bottom: 12,
+          }}
+          minheight={44}
+          maxwidth={400}
+          color={tint == null ? undefined : "white"}
+          opacity={stackDepth > 0 ? 0 : 1}
+          glasseffect={env.liquidGlass
+            ? { tint, shape: { cornerradius: 16 } }
+            : undefined}
+          background={env.liquidGlass ? undefined : "regularMaterial"}
+        >
+          {#if toast.type === "loading"}
+            <progressview></progressview>
+          {:else if icon != null}
+            <sfsymbol name={icon} font="title3"></sfsymbol>
           {/if}
-          {#if toast.description != null}
-            <txt font="footnote">{toast.description}</txt>
+          <vstack alignment="leading" spacing={2}>
+            {#if toast.title != null}
+              <txt font="subheadline" weight="semibold">{toast.title}</txt>
+            {/if}
+            {#if toast.description != null}
+              <txt font="footnote">{toast.description}</txt>
+            {/if}
+          </vstack>
+          <spacer minlength={0}></spacer>
+          {#if action != null}
+            <btn variant="borderless" onclick={() => runAction(action)}>
+              {action.label}
+            </btn>
           {/if}
-        </vstack>
-        <spacer minlength={0}></spacer>
-        {#if action != null}
-          <btn variant="borderless" onclick={() => runAction(action)}>
-            {action.label}
-          </btn>
-        {/if}
-        {#if cancel != null}
-          <btn variant="borderless" onclick={() => runAction(cancel)}>
-            {cancel.label}
-          </btn>
-        {/if}
-        {#if hasClose}
-          <btn variant="plain" onclick={close}>
-            <sfsymbol name="xmark" font="footnote" weight="semibold"></sfsymbol>
-          </btn>
-        {/if}
+          {#if cancel != null}
+            <btn variant="borderless" onclick={() => runAction(cancel)}>
+              {cancel.label}
+            </btn>
+          {/if}
+          {#if hasClose}
+            <btn variant="plain" onclick={close}>
+              <sfsymbol name="xmark" font="footnote" weight="semibold"
+              ></sfsymbol>
+            </btn>
+          {/if}
+        </hstack>
       </hstack>
     {/if}
   </hstack>

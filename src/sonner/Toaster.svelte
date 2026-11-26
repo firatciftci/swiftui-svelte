@@ -47,7 +47,8 @@
       (toast) => !toast.dismiss && toast.toasterId === id,
     ),
   );
-  const isStacked = $derived(!expand && visible.length > 1);
+  let isExpanded = $state(false);
+  const isStacked = $derived(!expand && !isExpanded && visible.length > 1);
   const flow = $derived(
     position.startsWith("top") ? visible : [...visible].reverse(),
   );
@@ -63,6 +64,7 @@
     maxheight="infinity"
     framealignment={alignment}
     colorscheme={scheme}
+    ontap={() => (isExpanded = true)}
   >
     {#each stack as toast (toast.id)}
       <ToastItem
@@ -83,6 +85,7 @@
     maxheight="infinity"
     framealignment={alignment}
     colorscheme={scheme}
+    ontap={() => (isExpanded = false)}
   >
     {#each flow as toast (toast.id)}
       <ToastItem {toast} {position} {duration} {closeButton} {richColors} />
