@@ -5,7 +5,7 @@ public struct SvelteView: View {
     @State private var handle: MountHandle?
     @State private var safeAreaInsets = EdgeInsets()
     @State private var keyboardHeight = 0.0
-    @State private var viewportWidth: CGFloat = 0
+    @State private var viewportSize = CGSize.zero
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,6 +21,7 @@ public struct SvelteView: View {
     @Environment(\.timeZone) private var timeZone
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.displayScale) private var displayScale
     #if os(iOS) || os(visionOS)
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -88,7 +89,7 @@ public struct SvelteView: View {
         .background {
             Color.clear
                 .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { safeAreaInsets = $0 }
-                .onGeometryChange(for: CGFloat.self, of: \.size.width) { viewportWidth = $0 }
+                .onGeometryChange(for: CGSize.self, of: \.size) { viewportSize = $0 }
                 .ignoresSafeArea(.keyboard)
         }
         #if os(iOS)
@@ -129,7 +130,10 @@ public struct SvelteView: View {
             safeAreaInsets: safeAreaInsets,
             keyboardHeight: keyboardHeight
         )
-        snapshot.viewportWidth = viewportWidth
+        snapshot.viewportWidth = viewportSize.width
+        snapshot.viewportHeight = viewportSize.height
+        snapshot.pixelRatio = displayScale
+        snapshot.fontScale = EnvironmentSnapshot.currentFontScale
         snapshot.accessibility = AccessibilitySettings(
             voiceOver: voiceOver,
             switchControl: switchControl,

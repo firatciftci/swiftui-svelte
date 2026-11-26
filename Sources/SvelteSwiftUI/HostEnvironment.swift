@@ -71,6 +71,9 @@ struct EnvironmentSnapshot: Equatable {
     var safeAreaInsets = EdgeInsets()
     var keyboardHeight = 0.0
     var viewportWidth: CGFloat = 0
+    var viewportHeight: CGFloat = 0
+    var pixelRatio: CGFloat = 1
+    var fontScale: CGFloat = 1
 
     var dictionary: [String: Any] {
         [
@@ -99,11 +102,36 @@ struct EnvironmentSnapshot: Equatable {
             ],
             "keyboardHeight": Self.points(keyboardHeight),
             "viewportWidth": Self.points(viewportWidth),
+            "viewportHeight": Self.points(viewportHeight),
+            "pixelRatio": Double(pixelRatio),
+            "fontScale": Double(fontScale),
+            "platform": "ios",
+            "idiom": Self.idiomName,
         ]
     }
 
     private static func points(_ value: CGFloat) -> Double {
         (Double(value) * 100).rounded() / 100
+    }
+
+    static var currentFontScale: CGFloat {
+        #if canImport(UIKit)
+            UIFontMetrics.default.scaledValue(for: 100) / 100
+        #else
+            1
+        #endif
+    }
+
+    static var idiomName: String {
+        #if os(iOS)
+            switch UIDevice.current.userInterfaceIdiom {
+            case .pad: "pad"
+            case .tv: "tv"
+            default: "phone"
+            }
+        #else
+            "phone"
+        #endif
     }
 
     static func name(of size: DynamicTypeSize) -> String {

@@ -5,7 +5,7 @@ import Testing
 
 struct EnvironmentTests {
     @Test func describesTheSwiftUIEnvironmentForJavaScript() throws {
-        let snapshot = EnvironmentSnapshot(
+        var snapshot = EnvironmentSnapshot(
             colorScheme: .dark,
             increaseContrast: true,
             dynamicTypeSize: .accessibility3,
@@ -17,7 +17,14 @@ struct EnvironmentTests {
             safeAreaInsets: EdgeInsets(top: 59, leading: 0, bottom: 34.333_333, trailing: 0),
             keyboardHeight: 335.999_9
         )
+        snapshot.viewportWidth = 390
+        snapshot.viewportHeight = 844
+        snapshot.pixelRatio = 3
+        snapshot.fontScale = 1.5
         let dictionary = snapshot.dictionary
+        #expect(dictionary["viewportHeight"] as? Double == 844)
+        #expect(dictionary["pixelRatio"] as? Double == 3)
+        #expect(dictionary["fontScale"] as? Double == 1.5)
         #expect(dictionary["colorScheme"] as? String == "dark")
         #expect(dictionary["increaseContrast"] as? Bool == true)
         #expect(dictionary["reduceMotion"] as? Bool == false)
@@ -28,6 +35,8 @@ struct EnvironmentTests {
         #expect(dictionary["horizontalSizeClass"] as? String == "regular")
         #expect(dictionary["verticalSizeClass"] is NSNull)
         #expect(dictionary["scenePhase"] as? String == "background")
+        #expect(dictionary["platform"] as? String == "ios")
+        #expect(dictionary["idiom"] as? String == "phone")
         #expect(dictionary["keyboardHeight"] as? Double == 336)
         let insets = try #require(dictionary["safeAreaInsets"] as? [String: Double])
         #expect(insets == ["top": 59, "leading": 0, "bottom": 34.33, "trailing": 0])
