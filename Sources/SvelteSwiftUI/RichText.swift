@@ -89,7 +89,7 @@ struct Span {
     var container: AttributeContainer {
         var container = AttributeContainer()
         var intent: InlinePresentationIntent = []
-        if hasFont || isMonospacedDigit || (weight != nil && weight != .bold) {
+        if hasFont || (isMonospacedDigit && (fontName != nil || size != nil || font != nil)) || (weight != nil && weight != .bold) {
             var resolved = resolvedFont
             if let weight { resolved = resolved.weight(weight) }
             if isItalic { resolved = resolved.italic() }
@@ -118,6 +118,7 @@ struct TextView: View {
     var body: some View {
         let attributes = node.attributes
         Styles.text(node)
+            .gated(attributes["monospaceddigit"]?.isTrue == true) { $0.monospacedDigit() }
             .lineLimit(attributes["lines"]?.number.map { Int($0) })
             .multilineTextAlignment(Self.alignment(attributes["align"]?.string))
             .ifLet(attributes["linespacing"]?.number) { $0.lineSpacing($1) }

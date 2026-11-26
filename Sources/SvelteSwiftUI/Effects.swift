@@ -19,6 +19,8 @@ enum Effects {
         case "saturation": .saturation
         case "color": .color
         case "luminosity": .luminosity
+        case "plus-lighter": .plusLighter
+        case "plus-darker": .plusDarker
         default: nil
         }
     }

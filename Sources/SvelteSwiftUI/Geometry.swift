@@ -57,7 +57,7 @@ struct Sizing: ViewModifier {
 
     private static func fixedAxes(_ value: JSONValue?) -> (horizontal: Bool, vertical: Bool)? {
         switch value?.string {
-        case "true", "both": (true, true)
+        case "", "true", "both": (true, true)
         case "horizontal": (true, false)
         case "vertical": (false, true)
         default: nil

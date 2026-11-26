@@ -59,7 +59,7 @@ struct RichTextTests {
         let first = try #require(run(string, "1"))
         #expect(first.swiftUI.underlineStyle == Text.LineStyle(pattern: .dot, color: .red))
         #expect(first.baselineOffset == -3)
-        #expect(first.swiftUI.font == Font.body.monospacedDigit())
+        #expect(first.swiftUI.font == nil)
         let second = try #require(run(string, "2"))
         #expect(second.swiftUI.underlineStyle == Text.LineStyle(pattern: .dash, color: .red))
         #expect(second.baselineOffset == -3)

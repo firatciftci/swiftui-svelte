@@ -3340,7 +3340,9 @@ type BlendMode =
   | "hue"
   | "saturation"
   | "color"
-  | "luminosity";
+  | "luminosity"
+  | "plus-lighter"
+  | "plus-darker";
 ```
 
 ### `ButtonFeedback`

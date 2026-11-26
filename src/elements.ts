@@ -170,7 +170,9 @@ type BlendMode =
   | "hue"
   | "saturation"
   | "color"
-  | "luminosity";
+  | "luminosity"
+  | "plus-lighter"
+  | "plus-darker";
 type Corners = {
   /** The corner style: `continuous` (the default) or `circular`. */
   corners?: "continuous" | "circular";

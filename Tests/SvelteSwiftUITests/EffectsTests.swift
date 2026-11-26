@@ -53,6 +53,7 @@ struct EffectsTests {
         #expect(Effects.ignoredSafeArea(.array([.string("sideways")])) == nil)
         #expect(Effects.blendMode("multiply") == .multiply)
         #expect(Effects.blendMode("color-dodge") == .colorDodge)
+        #expect(Effects.blendMode("plus-lighter") == .plusLighter)
         #expect(Effects.blendMode("sideways") == nil)
         #expect(Effects.blendMode(nil) == nil)
     }
