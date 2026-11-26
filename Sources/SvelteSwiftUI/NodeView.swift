@@ -330,7 +330,7 @@ private struct Localized: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
-                $0.environment(\.locale, $1)
+                $0.environment(\.locale, $1).typesettingLanguage($1.language)
             }
             .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
     }

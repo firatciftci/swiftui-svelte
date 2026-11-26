@@ -57,6 +57,8 @@ public struct SvelteView: View {
         self.actions = actions
     }
 
+    private static let appLanguage = Bundle.main.preferredLocalizations.first.map { Locale.Language(identifier: $0) }
+
     public var body: some View {
         VStack(spacing: 0) {
             if !runtime.store.isCompatible {
@@ -70,6 +72,7 @@ public struct SvelteView: View {
                 )
             } else if let root = runtime.store.root(for: handle?.id) {
                 NodeView(node: root)
+                    .ifLet(Self.appLanguage) { $0.typesettingLanguage($1) }
             } else {
                 ProgressView()
             }

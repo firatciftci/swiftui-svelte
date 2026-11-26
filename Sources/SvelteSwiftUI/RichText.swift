@@ -60,11 +60,9 @@ struct Span {
         design = inherited.design
         kerning = attributes["kerning"]?.number
         tracking = attributes["tracking"]?.number
-        language = attributes["lang"]?.string ?? Self.appLanguage
+        language = attributes["lang"]?.string
         apply(decorations: attributes)
     }
-
-    static let appLanguage = Bundle.main.preferredLocalizations.first
 
     func merged(_ attributes: [String: JSONValue]) -> Self {
         var span = self
@@ -180,10 +178,7 @@ extension Styles {
     ]
 
     @MainActor static func text(_ node: Node, base: TextBase = TextBase()) -> Text {
-        if let plain = plainText(node) {
-            guard let language = node.attributes["lang"]?.string ?? Span.appLanguage else { return Text(plain) }
-            return Text(AttributedString(plain, attributes: Languages.container(language)))
-        }
+        if let plain = plainText(node) { return Text(plain) }
         return Text(attributedString(node, base: base))
     }
 
@@ -245,18 +240,6 @@ extension Styles {
             }
         }
         return result
-    }
-}
-
-@MainActor private enum Languages {
-    private static var containers: [String: AttributeContainer] = [:]
-
-    static func container(_ identifier: String) -> AttributeContainer {
-        if let container = containers[identifier] { return container }
-        var container = AttributeContainer()
-        container.languageIdentifier = identifier
-        containers[identifier] = container
-        return container
     }
 }
 
