@@ -16,6 +16,12 @@
     oninput={(value) => (email = value)}
   />
   <textfield
+    placeholder="Styled placeholder"
+    placeholdercolor="red"
+    value=""
+    oninput={() => {}}
+  />
+  <textfield
     placeholder="Bio"
     axis="vertical"
     lines={[2, 4]}

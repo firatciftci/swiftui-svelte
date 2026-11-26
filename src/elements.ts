@@ -374,6 +374,8 @@ type Point = { x?: number; y?: number };
 type TextInput = Modifiers & {
   /** The text shown in the field while it's empty. */
   placeholder?: string;
+  /** The color of the placeholder text, such as a named color or a CSS color. Without it, the placeholder uses the system's secondary color. */
+  placeholdercolor?: ShapeStyle;
   /** Whether the field has keyboard focus. Use `bind:focused` with the `TextField` component to bind it. */
   focused?: boolean;
   /** The keyboard to show, such as `email`, `url`, `number`, `decimal`, or `phone`. */

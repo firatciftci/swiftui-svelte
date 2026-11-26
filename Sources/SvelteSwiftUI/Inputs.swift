@@ -229,22 +229,31 @@ struct TextInputControl: View {
 
     @ViewBuilder private var field: some View {
         let attributes = node.attributes
-        let placeholder = attributes["placeholder"]?.string ?? ""
         switch node.name {
         case "texteditor":
             TextEditor(text: $text)
                 .gated(attributes["scrollcontentbackground"]?.string == "hidden") { $0.scrollContentBackground(.hidden) }
         case "securefield":
-            SecureField(placeholder, text: $text).modifier(FieldStyle(variant: attributes["variant"]?.string))
+            SecureField(placeholder, text: $text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
         default:
             if attributes["axis"]?.string == "vertical" {
-                TextField(placeholder, text: $text, axis: .vertical)
+                TextField(placeholder, text: $text, prompt: prompt, axis: .vertical)
                     .ifLet(Inputs.lineLimit(attributes["lines"])) { $0.lineLimit($1) }
                     .modifier(FieldStyle(variant: attributes["variant"]?.string))
             } else {
-                TextField(placeholder, text: $text).modifier(FieldStyle(variant: attributes["variant"]?.string))
+                TextField(placeholder, text: $text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
             }
         }
+    }
+
+    private var placeholder: String {
+        node.attributes["placeholder"]?.string ?? ""
+    }
+
+    private var prompt: Text {
+        let text = Text(placeholder)
+        guard let color = Palette.style(node.attributes["placeholdercolor"]) else { return text }
+        return text.foregroundStyle(color)
     }
 
     private func send() {
