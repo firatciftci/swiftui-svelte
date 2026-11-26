@@ -31,6 +31,8 @@ public final class SvelteRuntime {
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
     @ObservationIgnored private var loadedVersion: String?
+    @ObservationIgnored private var isLoaded = false
+    @ObservationIgnored private var isRecovering = false
     @ObservationIgnored private var isDownloading = false
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored private let frames = FrameMonitor()
@@ -84,12 +86,10 @@ public final class SvelteRuntime {
                 MainActor.assumeIsolated { self?.receiveMemoryWarning() }
             }
         #endif
-        reload()
         #if DEBUG
             if let route = Self.launchRoute { pendingURLs.insert(route, at: 0) }
         #endif
-        for url in pendingURLs { deliver(url) }
-        pendingURLs.removeAll()
+        reload()
         guard reloadsOnChange else { return }
         let source = source
         let initial = loadedVersion
@@ -178,14 +178,27 @@ public final class SvelteRuntime {
         let messages = engine.takeMessages()
         guard !messages.isEmpty else { return }
         let start = CACurrentMediaTime()
+        let generation = generation
+        var isStopped = false
         for message in messages {
+            guard generation == self.generation else { break }
             switch message {
-            case let .commit(json, animation): store.apply(json, animation: animation)
-            case let .action(mount, name, json): perform(mount, name, json)
-            case let .invoke(id, method, json): invoke(id, method, json)
-            case let .nativeCall(id, module, method, json): callModule(id, module, method, json)
+            case let .commit(json, animation) where !isStopped:
+                if !store.apply(json, animation: animation) {
+                    if isRecovering {
+                        stopEngine()
+                        isStopped = true
+                    } else {
+                        isRecovering = true
+                        reload()
+                    }
+                }
+            case let .action(mount, name, json) where !isStopped: perform(mount, name, json)
+            case let .invoke(id, method, json) where !isStopped: invoke(id, method, json)
+            case let .nativeCall(id, module, method, json) where !isStopped: callModule(id, module, method, json)
+            case .requestFrame where !isStopped: isFrameRequested = true
             case let .error(error): report(error)
-            case .requestFrame: isFrameRequested = true
+            default: break
             }
         }
         for id in measureRequests.keys where store.node(id) == nil {
@@ -242,7 +255,7 @@ public final class SvelteRuntime {
             scroll(to: target.id, anchor: isBottom ? .bottom : .top, options)
         case "measure":
             guard let request else { return }
-            if let frame = node.frame, frame.size != .zero {
+            if let frame = node.frame {
                 reply(request, frame: frame)
             } else {
                 measureRequests[id, default: []].append(request)
@@ -263,14 +276,20 @@ public final class SvelteRuntime {
 
     func measured(_ node: Node, frame: CGRect) {
         node.frame = frame
-        guard frame.size != .zero else { return }
         for request in measureRequests.removeValue(forKey: node.id) ?? [] { reply(request, frame: frame) }
     }
 
     private func reply(_ request: Int, frame: CGRect?) {
-        let rect: Any =
-            frame.map { ["x": $0.minX, "y": $0.minY, "width": $0.width, "height": $0.height] } ?? NSNull()
+        var rect: Any = NSNull()
+        if let frame, frame.size != .zero {
+            rect = ["x": frame.minX, "y": frame.minY, "width": frame.width, "height": frame.height]
+        }
         call("__svelteReply", [request, rect], waits: false)
+    }
+
+    private func stopEngine() {
+        let engine = engine
+        engine.queue.sync { engine.stop() }
     }
 
     private func perform(_ mount: Int, _ name: String, _ json: String) {
@@ -287,13 +306,13 @@ public final class SvelteRuntime {
     }
 
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
-        node.attributes[name] = value
+        node.setOwnAttribute(name, value)
         dispatch(node.id, event, payload)
-        let settled = node.attributes[name]
+        let settled = node.ownAttributes[name]
         guard settled != value else { return }
-        node.attributes[name] = value
+        node.setOwnAttribute(name, value)
         Task { @MainActor in
-            if node.attributes[name] == value { node.attributes[name] = settled }
+            if node.ownAttributes[name] == value { node.setOwnAttribute(name, settled) }
         }
     }
 
@@ -314,7 +333,7 @@ public final class SvelteRuntime {
     #endif
 
     public func open(_ url: URL) {
-        if isStarted {
+        if isLoaded {
             deliver(url)
         } else if !pendingURLs.contains(url) {
             pendingURLs.append(url)
@@ -365,7 +384,12 @@ public final class SvelteRuntime {
     }
 
     private func callModule(_ id: Int, _ module: String, _ method: String, _ json: String) {
-        guard let handler = modules[module]?.functions[method] else {
+        guard let registered = modules[module] else {
+            let error = NativeModuleError(code: "unknownModule", message: "There's no native module named \(module).")
+            replyToCall(id, error: error, result: nil)
+            return
+        }
+        guard let handler = registered.functions[method] else {
             let error = NativeModuleError(code: "unknownFunction", message: "There's no native function \(module).\(method).")
             replyToCall(id, error: error, result: nil)
             return
@@ -389,25 +413,29 @@ public final class SvelteRuntime {
     }
 
     private func replyToCall(_ id: Int, error: NativeModuleError?, result: Data?) {
-        let errorJSON = error.flatMap { error in
+        let errorJSON = error.map { error in
             (try? JSONEncoder().encode(["code": error.code, "message": error.message])).flatMap {
                 String(bytes: $0, encoding: .utf8)
-            }
+            } ?? #"{"code":"native","message":"The native error couldn't be encoded."}"#
         }
         let resultJSON = result.flatMap { String(bytes: $0, encoding: .utf8) }
         call("__svelteNativeReply", [id, errorJSON ?? NSNull(), resultJSON ?? NSNull()])
     }
 
     func restart() {
+        isRecovering = false
         reload()
     }
 
     private func reload(ifNewerThan version: String) {
-        if !isDownloading, version != loadedVersion { reload() }
+        guard !isDownloading, version != loadedVersion else { return }
+        isRecovering = false
+        reload()
     }
 
     private func reload() {
         generation += 1
+        isLoaded = false
         guard !source.isFileURL else {
             load(BundleLoader.load(source))
             return
@@ -427,8 +455,9 @@ public final class SvelteRuntime {
         isFrameRequested = false
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
-        store = NodeStore()
-        store.ownedNames = ownedNames
+        for request in measureRequests.values.joined() { reply(request, frame: nil) }
+        measureRequests.removeAll()
+        store.reset(ownedNames: ownedNames)
         error = nil
         let engine = engine
         let bundle: BundleLoader.Bundle
@@ -437,7 +466,6 @@ public final class SvelteRuntime {
             bundle = loaded
         case let .failure(failure):
             engine.queue.sync { engine.stop() }
-            _ = engine.takeMessages()
             report(ScriptError(message: failure.message, frames: []))
             return
         }
@@ -450,6 +478,9 @@ public final class SvelteRuntime {
         engine.queue.sync {
             engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
+        isLoaded = true
+        for url in pendingURLs { deliver(url) }
+        pendingURLs.removeAll()
         drain()
     }
 }

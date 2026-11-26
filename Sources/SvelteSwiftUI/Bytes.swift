@@ -16,6 +16,11 @@ nonisolated extension JSValue {
     var bytes: Data? {
         withBytes { Data($0) }
     }
+
+    var isTypedArray: Bool {
+        guard let reference = jsValueRef, let context = context?.jsGlobalContextRef else { return false }
+        return JSValueGetTypedArrayType(context, reference, nil) != kJSTypedArrayTypeNone
+    }
 }
 
 nonisolated extension JSContext {

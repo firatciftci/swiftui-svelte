@@ -5,7 +5,7 @@ import Testing
 
 struct RemoteBundleTests {
     private func script(_ text: String) -> String {
-        #"__nativeCommit(JSON.stringify([0, 1, 2, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 1, -3, "\#(text)"]));"#
+        #"__nativeCommit(JSON.stringify([0, 1, 3, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 1, -3, "\#(text)"]));"#
     }
 
     private func text(_ runtime: SvelteRuntime) -> String? {

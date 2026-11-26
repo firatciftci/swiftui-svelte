@@ -135,8 +135,10 @@ enum BuiltInModules {
     static var links: NativeModule {
         NativeModule("links")
             .function("open") { (address: String) -> Bool in
-                guard let url = URL(string: address), url.scheme != nil else {
-                    throw NativeModuleError(code: "invalidArguments", message: "\(address) isn't a URL.")
+                guard let url = URL(string: address), let scheme = url.scheme?.lowercased(),
+                    ["http", "https", "mailto", "tel"].contains(scheme)
+                else {
+                    throw NativeModuleError(code: "invalidArguments", message: "\(address) isn't a web, mail, or phone link.")
                 }
                 #if os(macOS)
                     return NSWorkspace.shared.open(url)
@@ -181,7 +183,8 @@ enum BuiltInModules {
                 FileManager.default.fileExists(atPath: try AppFiles.url(for: path).path(percentEncoded: false))
             }
             .function("list") { (path: String?) -> Array<String> in
-                let url = try AppFiles.url(for: path ?? "")
+                var url = AppFiles.root
+                if let path, !path.isEmpty { url = try AppFiles.url(for: path) }
                 let names = (try? FileManager.default.contentsOfDirectory(atPath: url.path(percentEncoded: false))) ?? []
                 return names.sorted()
             }
@@ -195,7 +198,7 @@ enum AppFiles {
 
     static func url(for path: String) throws -> URL {
         let parts = path.split(separator: "/", omittingEmptySubsequences: true)
-        guard !path.hasPrefix("/"), !parts.contains(where: { $0 == ".." || $0 == "." }) else {
+        guard !parts.isEmpty, !path.hasPrefix("/"), !parts.contains(where: { $0 == ".." || $0 == "." }) else {
             throw NativeModuleError(code: "invalidPath", message: "\(path) must be a relative path inside the app's files.")
         }
         var url = root

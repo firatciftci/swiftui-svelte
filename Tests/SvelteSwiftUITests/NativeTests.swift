@@ -10,7 +10,7 @@ struct NativeTests {
     }
 
     private let mount = """
-        __nativeCommit(JSON.stringify([0, 1, 2, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
+        __nativeCommit(JSON.stringify([0, 1, 3, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
         let names = 1;
         const attr = (id, name, value) => __nativeCommit(JSON.stringify([7, name, 4, id, names++, value]));
         globalThis.__svelteNativeReply = (id, error, json) => attr(2, `reply${id}`, { error, json });
@@ -81,7 +81,7 @@ struct NativeTests {
         #expect(try await code(1) == "nope")
         #expect(try await code(2) == "invalidArguments")
         #expect(try await code(3) == "unknownFunction")
-        #expect(try await code(4) == "unknownFunction")
+        #expect(try await code(4) == "unknownModule")
     }
 
     @Test func emitsModuleEventsToJavaScript() throws {
@@ -90,7 +90,7 @@ struct NativeTests {
         runtime.emit("reset", from: "geometry")
         runtime.settle()
         #expect(runtime.store.node(2)?.attributes["geometry.moved"] == .string(#"{"x":1,"y":2}"#))
-        #expect(runtime.store.node(2)?.attributes["geometry.reset"] == .null)
+        #expect(runtime.store.node(2)?.attributes["geometry.reset"] == nil)
     }
 
     @Test func keepsFilesInsideTheAppContainer() throws {

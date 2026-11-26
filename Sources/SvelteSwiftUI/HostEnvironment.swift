@@ -31,18 +31,20 @@ enum HostEnvironment {
         #endif
         let languages = Locale.preferredLanguages.isEmpty ? ["en-US"] : Locale.preferredLanguages
         let localization = Locale.Language(identifier: Bundle.main.preferredLocalizations.first ?? "en")
-        return [
-            "colorScheme": isDark ? "dark" : "light",
-            "reduceMotion": reduceMotion,
-            "reduceTransparency": reduceTransparency,
-            "increaseContrast": increaseContrast,
+        var snapshot = EnvironmentSnapshot()
+        snapshot.colorScheme = isDark ? .dark : .light
+        snapshot.systemColorScheme = snapshot.colorScheme
+        snapshot.reduceMotion = reduceMotion
+        snapshot.reduceTransparency = reduceTransparency
+        snapshot.increaseContrast = increaseContrast
+        snapshot.locale = .current
+        snapshot.timeZone = .current
+        snapshot.layoutDirection = localization.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight
+        return snapshot.dictionary.merging([
             "languages": languages,
-            "locale": Locale.current.identifier(.bcp47),
-            "timeZone": TimeZone.current.identifier,
-            "layoutDirection": localization.characterDirection == .rightToLeft ? "rightToLeft" : "leftToRight",
             "onLine": true,
             "userAgent": "swiftui-svelte (\(platform) \(system))",
-        ]
+        ]) { _, host in host }
     }
 }
 
@@ -114,13 +116,21 @@ struct EnvironmentSnapshot: Equatable {
             "viewportHeight": Self.points(viewportHeight),
             "pixelRatio": Double(pixelRatio),
             "fontScale": Double(fontScale),
-            "platform": "ios",
+            "platform": Self.platformName,
             "idiom": Self.idiomName,
         ]
     }
 
     private static func points(_ value: CGFloat) -> Double {
         (Double(value) * 100).rounded() / 100
+    }
+
+    static var platformName: String {
+        #if os(macOS)
+            "macos"
+        #else
+            "ios"
+        #endif
     }
 
     static var currentFontScale: CGFloat {

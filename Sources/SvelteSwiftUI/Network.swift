@@ -151,11 +151,11 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         }
     }
 
-    func closeSocket(id: Int, code: Int, reason: String) {
+    func closeSocket(id: Int, code: Int?, reason: String) {
         guard var socket = sockets[id], !socket.isClosed else { return }
-        socket.expectsNoStatus = code == 1005
+        socket.expectsNoStatus = code == nil
         sockets[id] = socket
-        let closeCode = URLSessionWebSocketTask.CloseCode(rawValue: code == 1005 ? 1000 : code) ?? .normalClosure
+        let closeCode = URLSessionWebSocketTask.CloseCode(rawValue: code ?? 1000) ?? .normalClosure
         socket.task.cancel(with: closeCode, reason: reason.isEmpty ? nil : Data(reason.utf8))
     }
 

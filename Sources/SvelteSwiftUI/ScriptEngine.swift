@@ -85,6 +85,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         timers = [:]
         network.reset()
         context = nil
+        outbox.withLock { $0.messages = [] }
     }
 
     func collectGarbage() {
@@ -189,26 +190,40 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let sendSocket: @convention(block) (Int, JSValue) -> Void = { [weak self] id, data in
             self?.network.send(id: id, data: data)
         }
-        let closeSocket: @convention(block) (Int, Int, String) -> Void = { [weak self] id, code, reason in
-            self?.network.closeSocket(id: id, code: code, reason: reason)
+        let closeSocket: @convention(block) (Int, JSValue, String) -> Void = { [weak self] id, code, reason in
+            self?.network.closeSocket(id: id, code: code.isNull ? nil : Int(code.toInt32()), reason: reason)
         }
         let randomFill: @convention(block) (JSValue) -> Void = { bytes in
-            _ = bytes.withBytes { buffer in
-                guard let base = buffer.baseAddress else { return }
-                _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, base)
+            guard let context = JSContext.current() else { return }
+            guard bytes.isTypedArray else {
+                context.exception = JSValue(newErrorFromMessage: "The argument must be a TypedArray.", in: context)
+                return
+            }
+            let status =
+                bytes.withBytes { buffer -> OSStatus in
+                    guard let base = buffer.baseAddress else { return errSecSuccess }
+                    return SecRandomCopyBytes(kSecRandomDefault, buffer.count, base)
+                } ?? errSecSuccess
+            if status != errSecSuccess {
+                context.exception = JSValue(newErrorFromMessage: "The platform's random source failed (\(status)).", in: context)
             }
         }
         let digest: @convention(block) (String, JSValue) -> JSValue = { algorithm, value in
-            let context = JSContext.current() ?? value.context
+            guard let context = JSContext.current() ?? value.context else { return JSValue() }
+            guard value.isTypedArray else {
+                context.exception = JSValue(newErrorFromMessage: "The data must be a TypedArray.", in: context)
+                return JSValue(nullIn: context)
+            }
             let data = value.bytes ?? Data()
-            let output: Data =
-                switch algorithm {
-                case "SHA-1": Data(Insecure.SHA1.hash(data: data))
-                case "SHA-384": Data(SHA384.hash(data: data))
-                case "SHA-512": Data(SHA512.hash(data: data))
-                default: Data(SHA256.hash(data: data))
-                }
-            return context?.bytes(output) ?? JSValue()
+            switch algorithm {
+            case "SHA-1": return context.bytes(Data(Insecure.SHA1.hash(data: data)))
+            case "SHA-256": return context.bytes(Data(SHA256.hash(data: data)))
+            case "SHA-384": return context.bytes(Data(SHA384.hash(data: data)))
+            case "SHA-512": return context.bytes(Data(SHA512.hash(data: data)))
+            default:
+                context.exception = JSValue(newErrorFromMessage: "Unsupported digest algorithm \(algorithm).", in: context)
+                return JSValue(nullIn: context)
+            }
         }
         let globals: [String: Any] = [
             "__nativeFetch": fetch,
@@ -225,7 +240,9 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     private func schedule(_ callback: JSValue, after delay: JSValue, repeats: Bool) -> Int {
         let id = nextTimerID
         nextTimerID += 1
-        let interval = DispatchTimeInterval.milliseconds(max(Int(delay.toInt32()), repeats ? 1 : 0))
+        let milliseconds = delay.toDouble()
+        let requested = milliseconds > 0 ? Int(min(milliseconds, Double(Int32.max))) : 0
+        let interval = DispatchTimeInterval.milliseconds(max(requested, repeats ? 1 : 0))
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + interval, repeating: repeats ? interval : .never, leeway: .milliseconds(1))
         let extra = Array((JSContext.currentArguments() as? Array<JSValue> ?? []).dropFirst(2))

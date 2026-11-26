@@ -29,7 +29,7 @@ struct RuntimeTests {
     }
 
     private let mount = """
-        __nativeCommit(JSON.stringify([0, 1, 2, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
+        __nativeCommit(JSON.stringify([0, 1, 3, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
         let names = 1;
         const attr = (id, name, value) => __nativeCommit(JSON.stringify([7, name, 4, id, names++, value]));
         globalThis.__svelteDispatch = (id, type, payload) => attr(id, type, payload);
@@ -61,11 +61,11 @@ struct RuntimeTests {
     @Test func passesMemoryWarningsToJavaScript() throws {
         let runtime = try runtime(
             mount + """
-                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, payload);
+                globalThis.__svelteAppEvent = (type) => attr(2, type, true);
                 """)
         runtime.receiveMemoryWarning()
         runtime.settle()
-        #expect(runtime.store.node(2)?.attributes["memorywarning"] == .null)
+        #expect(runtime.store.node(2)?.attributes["memorywarning"] == .bool(true))
     }
 
     #if canImport(UIKit)
@@ -122,7 +122,7 @@ struct RuntimeTests {
     @Test func answersMeasurementsOnceTheElementIsLaidOut() throws {
         let runtime = try runtime(
             mount + """
-                globalThis.__svelteReply = (request, rect) => attr(2, `reply${request}`, rect);
+                globalThis.__svelteReply = (request, rect) => attr(2, `reply${request}`, rect ?? "none");
                 __nativeInvoke(2, "measure", JSON.stringify({ request: 1 }));
                 __nativeInvoke(99, "measure", JSON.stringify({ request: 2 }));
                 """)
@@ -130,14 +130,13 @@ struct RuntimeTests {
         let node = try #require(runtime.store.node(2))
         #expect(node.isMeasured)
         #expect(node.attributes["reply1"] == nil)
-        #expect(node.attributes["reply2"] == .null)
+        #expect(node.attributes["reply2"] == .string("none"))
         runtime.measured(node, frame: .zero)
         runtime.settle()
-        #expect(node.attributes["reply1"] == nil)
+        #expect(node.attributes["reply1"] == .string("none"))
         runtime.measured(node, frame: CGRect(x: 16, y: 120, width: 370, height: 44))
         runtime.settle()
         let rect: JSONValue = .object(["x": .number(16), "y": .number(120), "width": .number(370), "height": .number(44)])
-        #expect(node.attributes["reply1"] == rect)
         _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
         runtime.settle()
         #expect(node.attributes["reply3"] == rect)
@@ -317,19 +316,20 @@ struct RuntimeTests {
         #expect(runtime.store.node(2)?.attributes["click"] == .bool(true))
     }
 
-    @Test func convertsDelaysLikeBrowsers() async throws {
+    @Test func clampsDelaysLikeBrowsers() async throws {
         let runtime = try runtime(
             mount + """
                 let fired = 0;
-                for (const delay of [NaN, undefined, "soon", "10", -5, Infinity, 2 ** 32]) {
+                for (const delay of [NaN, undefined, "soon", "10", -5]) {
                   setTimeout(() => attr(2, "fired", ++fired), delay);
                 }
-                setTimeout(() => attr(2, "late", true), 2 ** 31 - 1);
+                setTimeout(() => attr(2, "far", true), Infinity);
+                setTimeout(() => attr(2, "far", true), 2 ** 32);
                 setTimeout((a, b) => attr(2, "sum", a + b), 0, 2, 3);
                 """)
-        try await eventually { runtime.store.node(2)?.attributes["fired"] == .number(7) }
+        try await eventually { runtime.store.node(2)?.attributes["fired"] == .number(5) }
         #expect(runtime.store.node(2)?.attributes["sum"] == .number(5))
-        #expect(runtime.store.node(2)?.attributes["late"] == nil)
+        #expect(runtime.store.node(2)?.attributes["far"] == nil)
     }
 
     @Test func reportsBridgeErrors() throws {
