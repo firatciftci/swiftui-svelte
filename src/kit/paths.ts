@@ -11,11 +11,16 @@ export function resolve(
     .split("/")
     .filter((segment) => !/^\(.+\)$/.test(segment))
     .map((segment) =>
-      segment.replaceAll(PARAMETER, (_match, name: string) => params[name] ?? ""),
+      segment.replaceAll(
+        PARAMETER,
+        (_match, name: string) => params[name] ?? "",
+      ),
     )
     .filter((segment, index) => index === 0 || segment !== "");
   const path = segments.join("/");
-  return base + (route.startsWith("/") && !path.startsWith("/") ? `/${path}` : path);
+  return (
+    base + (route.startsWith("/") && !path.startsWith("/") ? `/${path}` : path)
+  );
 }
 
 export function asset(file: string): string {

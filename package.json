@@ -106,7 +106,7 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "bench": "vite build --mode bench",
-    "package": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json && publint --strict && attw --pack --profile esm-only --exclude-entrypoints ./components ./sonner ./mode-watcher ./tailwind/theme.css",
+    "package": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json && publint --strict && attw --pack --profile esm-only --exclude-entrypoints ./components ./kit ./sonner ./mode-watcher ./tailwind/theme.css",
     "prepack": "svelte-package -i src -o dist --tsconfig tsconfig.lib.json",
     "ios:project": "xcodegen generate --spec example/ios/project.yml",
     "check": "pnpm run compile-paraglide && node scripts/routes.ts && svelte-check --tsconfig ./tsconfig.json",

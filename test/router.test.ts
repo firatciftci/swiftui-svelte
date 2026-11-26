@@ -10,11 +10,7 @@ import {
   parseSegments,
   resolveRoute,
 } from "swiftui-svelte/kit/match";
-import {
-  back,
-  goto,
-  invalidate,
-} from "swiftui-svelte/kit/navigation";
+import { back, goto, invalidate } from "swiftui-svelte/kit/navigation";
 import { resolve } from "swiftui-svelte/kit/paths";
 import { page } from "swiftui-svelte/kit/state";
 import Router from "../src/kit/Router.svelte";
