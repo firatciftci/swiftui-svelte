@@ -209,6 +209,8 @@ export const modifierGroups: Array<{
       "animated",
       "animation",
       "disablesanimations",
+      "namespace",
+      "matchedid",
       "transition",
       "in",
       "out",

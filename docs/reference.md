@@ -2688,14 +2688,16 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Animation and transitions
 
-| Attribute            | Type               | Description                                                                                                                                                        |
-| -------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `animated`           | `boolean`          | Animates the element's children as they're added, removed, or reordered, using the curve from `animation`.                                                         |
-| `animation`          | `AnimationOptions` | The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`. |
-| `disablesanimations` | `boolean`          | Turns off animations for the element and everything inside it, so its changes happen at once.                                                                      |
-| `transition`         | `Transition`       | The transition that plays when the element is added and removed, such as `scale opacity` or `move-top`.                                                            |
-| `in`                 | `Transition`       | The transition that plays only when the element is added.                                                                                                          |
-| `out`                | `Transition`       | The transition that plays only when the element is removed.                                                                                                        |
+| Attribute            | Type               | Description                                                                                                                                                                 |
+| -------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `animated`           | `boolean`          | Animates the element's children as they're added, removed, or reordered, using the curve from `animation`.                                                                  |
+| `animation`          | `AnimationOptions` | The animation curve for `animated` and `transition`: a curve name, or an object with `type`, `duration`, `delay`, `bounce`, `speed`, `repeat`, and `autoreverses`.          |
+| `disablesanimations` | `boolean`          | Turns off animations for the element and everything inside it, so its changes happen at once.                                                                               |
+| `namespace`          | `boolean`          | Starts a namespace for the `matchedid` elements inside this element. Elements with the same `matchedid` animate from one position to the other when one replaces the other. |
+| `matchedid`          | `string`           | Matches this element with the element that has the same `matchedid` in the same namespace, so the two animate between their positions when one replaces the other.          |
+| `transition`         | `Transition`       | The transition that plays when the element is added and removed, such as `scale opacity` or `move-top`.                                                                     |
+| `in`                 | `Transition`       | The transition that plays only when the element is added.                                                                                                                   |
+| `out`                | `Transition`       | The transition that plays only when the element is removed.                                                                                                                 |
 
 ```svelte
 <script lang="ts">
@@ -2760,6 +2762,27 @@ Every element takes these attributes, except the few whose entries say they don'
       offset={{ x: shifted ? 120 : 0 }}>Instant</txt
     >
   </hstack>
+  <vstack spacing={12} namespace>
+    {#if shifted}
+      <txt
+        matchedid="badge"
+        font="title"
+        color="white"
+        background="purple"
+        radius={16}
+        padding={16}>Badge</txt
+      >
+    {:else}
+      <txt
+        matchedid="badge"
+        font="caption"
+        color="white"
+        background="purple"
+        radius={8}
+        padding={4}>Badge</txt
+      >
+    {/if}
+  </vstack>
   {#if saved}
     <txt
       in="move-top"

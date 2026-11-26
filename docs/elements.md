@@ -259,6 +259,8 @@ To set your own easing, use `type: "timingCurve"` with `curve`, which takes the 
 
 A button can show feedback while it's pressed or while the pointer is over it. Set `pressed` or `hovered` to an object with any of `scale`, `opacity`, `brightness`, `background`, `color`, `shadow`, and `animation`. Each value applies to the button's label, and the state's `animation` plays when the state starts. A button with either attribute uses the plain style, so draw its chrome with the label's own modifiers, such as `background` and `radius` on a `txt` inside the button. The press state comes from the button style, so it doesn't wait for a round trip to Svelte.
 
+Shared-element transitions take two steps. Put `namespace` on a container, such as a `vstack`, and give the elements that trade places inside it the same `matchedid`. When one replaces the other in a state change wrapped in `withAnimation`, the element animates from its old frame to its new one. Use this to move a thumbnail into a detail view or a badge into a larger one.
+
 ### Animating a state change
 
 To animate everything that one state change does to the screen, wrap the change in `withAnimation`, the way you would in SwiftUI:

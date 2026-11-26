@@ -60,6 +60,27 @@
       offset={{ x: shifted ? 120 : 0 }}>Instant</txt
     >
   </hstack>
+  <vstack spacing={12} namespace>
+    {#if shifted}
+      <txt
+        matchedid="badge"
+        font="title"
+        color="white"
+        background="purple"
+        radius={16}
+        padding={16}>Badge</txt
+      >
+    {:else}
+      <txt
+        matchedid="badge"
+        font="caption"
+        color="white"
+        background="purple"
+        radius={8}
+        padding={4}>Badge</txt
+      >
+    {/if}
+  </vstack>
   {#if saved}
     <txt
       in="move-top"

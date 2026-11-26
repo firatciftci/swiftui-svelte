@@ -23,6 +23,7 @@ struct ModifierSet: OptionSet, Hashable {
     static let safeArea = Self(rawValue: 1 << 19)
     static let pointer = Self(rawValue: 1 << 20)
     static let scrolling = Self(rawValue: 1 << 21)
+    static let shared = Self(rawValue: 1 << 22)
 
     static let byAttribute: [String: Self] = {
         let groups: [Self: Array<String>] = [
@@ -50,6 +51,7 @@ struct ModifierSet: OptionSet, Hashable {
             .availability: ["disabled", "hidden", "ignoressafearea", "allowshittesting"],
             .animated: ["animated", "animation", "disablesanimations"],
             .scrolling: ["visibilitythreshold"],
+            .shared: ["namespace", "matchedid"],
             .rowTraits: [
                 "transition", "in", "out", "zindex", "deletedisabled", "movedisabled", "rowbackground", "rowinsets", "rowseparator",
                 "rowseparatortint", "tag",

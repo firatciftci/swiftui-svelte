@@ -260,8 +260,9 @@ private struct Shaping: ViewModifier {
             .gated(modifiers.contains(.appearance)) { $0.modifier(Appearance(attributes: attributes)) }
             .gated(modifiers.contains(.decorations)) { $0.modifier(Decorations(node: node)) }
             .gated(modifiers.contains(.glass)) { $0.modifier(GlassSurface(attributes: attributes)) }
-            .gated(modifiers.contains(.transforms)) { $0.modifier(Transforms(attributes: attributes)) }
             .gated(modifiers.contains(.layers)) { $0.modifier(Layers(node: node)) }
+            .gated(modifiers.contains(.transforms)) { $0.modifier(Transforms(attributes: attributes)) }
+            .gated(modifiers.contains(.appearance)) { $0.modifier(Compositing(attributes: attributes)) }
     }
 }
 
@@ -277,6 +278,7 @@ private struct Behaving: ViewModifier {
             .gated(modifiers.contains(.gestures)) { $0.modifier(GestureHandlers(node: node)) }
             .gated(modifiers.contains(.pointer)) { $0.modifier(PointerEvents(node: node)) }
             .gated(modifiers.contains(.scrolling)) { $0.modifier(ScrollVisibility(node: node)) }
+            .gated(modifiers.contains(.shared)) { $0.modifier(SharedNamespace(node: node)).modifier(MatchedGeometry(node: node)) }
             .gated(modifiers.contains(.measured)) { $0.modifier(Measured(node: node)) }
             .gated(modifiers.contains(.gridCell)) { $0.modifier(GridCell(attributes: attributes)) }
             .gated(modifiers.contains(.resizing)) { $0.modifier(Resizing(node: node)) }
@@ -352,6 +354,14 @@ private struct Appearance: ViewModifier {
         content
             .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
             .ifLet(attributes["radius"]?.number) { $0.clipShape(.rect(cornerRadius: $1)) }
+    }
+}
+
+private struct Compositing: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        content
             .opacity(attributes["opacity"]?.number ?? 1)
             .ifLet(attributes["brightness"]?.number) { $0.brightness($1) }
             .ifLet(Palette.color(attributes["colormultiply"]?.string)) { $0.colorMultiply($1) }

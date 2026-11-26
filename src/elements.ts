@@ -840,6 +840,10 @@ type Modifiers = {
   dragdistance?: number;
   /** Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. */
   onhover?: (event: HoverEvent) => void;
+  /** Starts a namespace for the `matchedid` elements inside this element. Elements with the same `matchedid` animate from one position to the other when one replaces the other. */
+  namespace?: boolean;
+  /** Matches this element with the element that has the same `matchedid` in the same namespace, so the two animate between their positions when one replaces the other. */
+  matchedid?: string;
   /** Runs when the element scrolls into or out of view in its `scrollview` or `list`, with `visible`. */
   onscrollvisibility?: (event: { visible: boolean }) => void;
   /** The share of the element that must be on screen to count as visible, from 0 to 1. Defaults to 0, which counts any part of the element. */

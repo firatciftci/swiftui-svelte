@@ -5,19 +5,20 @@ import Testing
 
 struct ModifierSetTests {
     private static let groups: [String: ModifierSet] = [
-        "Framing": .framing, "Typography": .typography, "Appearance": .appearance, "Decorations": .decorations,
+        "Framing": .framing, "Typography": .typography, "Appearance": .appearance, "Compositing": .appearance, "Decorations": .decorations,
         "GlassSurface": .glass, "Transforms": .transforms, "Layers": .layers, "Accessible": .accessible,
         "AccessibleDescription": .accessible, "AccessibleActions": .accessible, "Lifecycle": .lifecycle,
         "GestureHandlers": .gestures, "Taps": .gestures, "Drags": .gestures, "Pinches": .gestures, "GridCell": .gridCell,
         "Resizing": .resizing, "Localized": .localized, "Preferences": .preferences, "Availability": .availability,
         "AnimatedChildren": .animated, "Attachments": .attachments, "RowTraits": .rowTraits, "RowOptions": .rowTraits,
-        "SafeAreaInsets": .safeArea, "PointerEvents": .pointer, "ScrollVisibility": .scrolling, "Sizing": .framing,
+        "SafeAreaInsets": .safeArea, "PointerEvents": .pointer, "ScrollVisibility": .scrolling, "SharedNamespace": .shared,
+        "MatchedGeometry": .shared, "Sizing": .framing,
     ]
     nonisolated private static let modifiers = [
-        "Framing", "Typography", "Appearance", "Decorations", "GlassSurface", "Transforms", "Layers", "Accessible",
+        "Framing", "Typography", "Appearance", "Compositing", "Decorations", "GlassSurface", "Transforms", "Layers", "Accessible",
         "AccessibleDescription", "AccessibleActions", "Lifecycle", "GestureHandlers", "Taps", "Drags", "Pinches", "GridCell",
         "Resizing", "Localized", "Preferences", "Availability", "AnimatedChildren", "Attachments", "RowTraits", "RowOptions",
-        "SafeAreaInsets", "PointerEvents", "ScrollVisibility", "Sizing",
+        "SafeAreaInsets", "PointerEvents", "ScrollVisibility", "SharedNamespace", "MatchedGeometry", "Sizing",
     ]
 
     private static func source() throws -> String {
