@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from "svelte";
   import { root } from "virtual:swiftui-svelte/routes";
   import type { AnimationOptions } from "../elements.ts";
   import Sheet from "../components/Sheet.svelte";
@@ -9,17 +10,22 @@
     hosts = [],
     transition = "push",
     animation = true,
+    restore = true,
   }: {
     hosts?: Array<string>;
     transition?: "push" | "fade";
     animation?: AnimationOptions;
+    restore?: boolean;
   } = $props();
 
   $effect.pre(() => {
     router.animation = transition === "fade" ? animation : true;
   });
 
-  start(() => hosts);
+  start(
+    () => hosts,
+    untrack(() => restore),
+  );
 
   const RootLayout = root.layout;
   const top = $derived(router.stack.at(-1));

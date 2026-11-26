@@ -94,4 +94,4 @@ The screens share a namespace, so elements with the same `matchedid` on two scre
 - The stack lives in one tab. Each sheet renders a single page inside its own navigation stack.
 - `preloadData`, `pushState`, `replaceState`, and `page.form` are not available.
 
-The app restores the stack when it launches, so a user who closes the app on a detail screen returns to that screen.
+The app restores the stack when it launches, so a user who closes the app on a detail screen returns to that screen. Pass `restore={false}` to `<Router>` so that the app starts on the root screen at every launch instead.

@@ -462,10 +462,13 @@ export function resolveHref(href: string | URL): URL {
   return new SvelteURL(href, router.top?.url ?? origin);
 }
 
-export function start(hosts: () => ReadonlyArray<string> = () => []): void {
+export function start(
+  hosts: () => ReadonlyArray<string> = () => [],
+  shouldRestore = true,
+): void {
   if (lifecycle.started) return;
   lifecycle.started = true;
-  const paths = [...saved.value];
+  const paths = shouldRestore ? [...saved.value] : [];
   void reloadRoot()
     .then(async () => navigate(new SvelteURL("/", origin), "enter", false))
     .then(async () => {
