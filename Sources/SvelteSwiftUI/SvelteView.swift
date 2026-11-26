@@ -6,6 +6,7 @@ public struct SvelteView: View {
     @State private var safeAreaInsets = EdgeInsets()
     @State private var keyboardHeight = 0.0
     @State private var viewportSize = CGSize.zero
+    @State private var systemScheme = ColorScheme.light
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -92,6 +93,7 @@ public struct SvelteView: View {
                 .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { safeAreaInsets = $0 }
                 .onGeometryChange(for: CGSize.self, of: \.size) { viewportSize = $0 }
                 .ignoresSafeArea(.keyboard)
+            SystemColorSchemeObserver { systemScheme = $0 }
         }
         #if os(iOS)
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) {
@@ -120,7 +122,7 @@ public struct SvelteView: View {
     private var environment: EnvironmentSnapshot {
         var snapshot = EnvironmentSnapshot(
             colorScheme: runtime.appearance ?? colorScheme,
-            systemColorScheme: colorScheme,
+            systemColorScheme: systemScheme,
             increaseContrast: contrast == .increased,
             reduceMotion: reduceMotion,
             reduceTransparency: reduceTransparency,
