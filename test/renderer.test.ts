@@ -29,6 +29,7 @@ import Lifecycle from "./components/Lifecycle.svelte";
 import { log, signals } from "./components/lifecycle.ts";
 import Lists from "./components/Lists.svelte";
 import NativeMap from "./components/NativeMap.svelte";
+import NestedAnimation from "./components/NestedAnimation.svelte";
 import "./components/native-elements.ts";
 import Refresh from "./components/Refresh.svelte";
 import { pending } from "./components/refresh.ts";
@@ -683,6 +684,16 @@ describe("withAnimation", () => {
     reset();
     withAnimation(() => (state.show = false), false);
     expect(animations).toEqual(["false"]);
+  });
+
+  it("applies a withAnimation from an effect of the change after the change, with its own animation", async () => {
+    await render(NestedAnimation);
+    reset();
+    const result = withAnimation(() => (state.show = false), "smooth");
+    expect(result).toBe(false);
+    expect(animations).toEqual(['"smooth"', '"snappy"']);
+    expect(find("txt")).toBeUndefined();
+    expect(find("circle")?.attributes.get("opacity")).toBe(0);
   });
 
   it("leaves later commits unanimated", async () => {

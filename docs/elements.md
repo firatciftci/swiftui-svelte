@@ -283,7 +283,8 @@ To animate everything that one state change does to the screen, wrap the change 
 - `withAnimation` runs the callback, flushes the updates it causes right away, and sends them to SwiftUI inside an animation. Changed attributes, text, and added or removed elements all animate together. Updates that were already waiting go out first, without animation.
 - The second argument takes the same values as the `animation` attribute. Leave it out for SwiftUI's default animation, or pass `false` to turn animations off for that change.
 - It returns whatever the callback returns. Only changes made synchronously in the callback animate, so for async work, call `withAnimation` again once the data arrives.
-- Call it from event handlers, timers, and other callbacks, not from inside `$effect` or `$derived`.
+- A `withAnimation` that runs while another one is applying its changes, for example from an `$effect` that the outer change triggers, waits until those changes have gone out. Its callback then runs with its own animation, the way an `onChange` animation in SwiftUI applies on top of the change that triggered it. The inner call returns `undefined`.
+- Call it from event handlers, timers, and other callbacks, not from inside `$derived`.
 
 ## Header, footer, label, background, and overlay
 

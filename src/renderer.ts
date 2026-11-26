@@ -328,14 +328,27 @@ export function move<T>(
   items.splice(Math.min(Math.max(target, 0), items.length), 0, ...moving);
 }
 
+const animating = { isApplying: false, later: [] as Array<() => void> };
+
 export function withAnimation<T>(
   fn: () => T,
   animation: AnimationOptions = true,
-): T {
+): T | undefined {
+  if (animating.isApplying) {
+    animating.later.push(() => withAnimation(fn, animation));
+    return undefined;
+  }
   flushSync();
   commit();
-  const result = flushSync(fn);
+  animating.isApplying = true;
+  let result: T;
+  try {
+    result = flushSync(fn);
+  } finally {
+    animating.isApplying = false;
+  }
   commit(animation);
+  while (animating.later.length > 0) animating.later.shift()?.();
   return result;
 }
 
