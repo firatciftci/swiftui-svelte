@@ -79,11 +79,12 @@ struct Scrollable: ViewModifier {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
     @State private var position = ScrollPosition()
+    @State private var isPositioned = false
 
     func body(content: Content) -> some View {
         ScrollViewReader { proxy in
             content
-                .scrollPosition($position)
+                .modifier(PositionTracking(isOn: isPositioned, position: $position))
                 .onChange(of: runtime.scrollRequest) { _, request in
                     guard let request else { return }
                     DispatchQueue.main.async {
@@ -96,6 +97,7 @@ struct Scrollable: ViewModifier {
                 }
                 .onChange(of: runtime.scrollOffsetRequest) { _, request in
                     guard let request, request.container == node.id else { return }
+                    isPositioned = true
                     DispatchQueue.main.async {
                         if request.isAnimated {
                             withAnimation { scroll(to: request) }
@@ -110,6 +112,19 @@ struct Scrollable: ViewModifier {
     private func scroll(to request: ScrollOffsetRequest) {
         if let x = request.x { position.scrollTo(x: CGFloat(x)) }
         if let y = request.y { position.scrollTo(y: CGFloat(y)) }
+    }
+}
+
+private struct PositionTracking: ViewModifier {
+    let isOn: Bool
+    let position: Binding<ScrollPosition>
+
+    func body(content: Content) -> some View {
+        if isOn {
+            content.scrollPosition(position)
+        } else {
+            content
+        }
     }
 }
 
