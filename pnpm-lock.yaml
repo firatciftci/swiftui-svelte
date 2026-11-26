@@ -256,6 +256,9 @@ importers:
       oxfmt:
         specifier: 0.79.0
         version: 0.79.0(svelte@5.59.1(@typescript-eslint/types@8.74.0))
+      postcss:
+        specifier: 8.5.33
+        version: 8.5.33
       publint:
         specifier: ^0.3.25
         version: 0.3.25
@@ -271,6 +274,9 @@ importers:
       svelte-eslint-parser:
         specifier: ^1.12.0
         version: 1.12.0(svelte@5.59.1(@typescript-eslint/types@8.74.0))
+      tailwindcss:
+        specifier: 4.3.5
+        version: 4.3.5
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -3209,6 +3215,9 @@ packages:
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
     engines: {node: '>=20'}
+
+  tailwindcss@4.3.5:
+    resolution: {integrity: sha512-FcQk9BuffmEHJP2G0XmB2SplU1aLTI7j07Kunk+U74Ny+XiWOtzXz9aujFZ/avntw1e2cOv/3PkgzflQ7gX2vQ==}
 
   tapable@2.3.4:
     resolution: {integrity: sha512-NHFiWnAbMJxNNpBwiO7jJVGDuqMxT9/oV8v57RR+fgBQShkJil5inGD8/xWy0hjLyHQyX1tu27QANhlz3KBqCg==}
@@ -6450,6 +6459,8 @@ snapshots:
       '@pkgr/core': 0.3.6
 
   tagged-tag@1.0.0: {}
+
+  tailwindcss@4.3.5: {}
 
   tapable@2.3.4: {}
 

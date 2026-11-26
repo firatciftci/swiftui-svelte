@@ -87,6 +87,9 @@ export const env: Readonly<HostEnvironment> = {
   get keyboardHeight() {
     return read("keyboardHeight");
   },
+  get viewportWidth() {
+    return read("viewportWidth");
+  },
   get onLine() {
     return read("onLine");
   },

@@ -4,7 +4,16 @@ import { flushSync, mount, unmount } from "svelte";
 import { SvelteMap } from "svelte/reactivity";
 import { createRenderer } from "svelte/renderer";
 import type { AnimationOptions } from "./elements.ts";
-import { checkAttribute, checkElement } from "./dev.ts";
+import type {
+  Attributes,
+  State as ClassState,
+  Resolution,
+} from "./tailwind/runtime.ts";
+import { checkAttribute, checkElement, warnOnce } from "./dev.ts";
+import { resolveWith } from "./tailwind/runtime.ts";
+import { environment, observeEnvironment } from "./web/environment.ts";
+
+export { registerClasses } from "./tailwind/runtime.ts";
 
 type Handler = (payload: unknown) => unknown;
 type Container = { first: ChildNode | null; last: ChildNode | null };
@@ -26,6 +35,9 @@ type ElementNode = Container &
     name: string;
     attributes: Map<string, unknown>;
     listeners: Map<string, Set<Handler>>;
+    classValue: string | null;
+    derived: Map<string, unknown>;
+    reactive: boolean;
   };
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
@@ -160,6 +172,11 @@ function encode(node: ChildNode, record: Array<unknown>): void {
     record.push(nameRef(name), value);
     (record[attributeCount] as number)++;
   }
+  for (const [name, value] of node.derived) {
+    if (typeof value === "function" || node.attributes.has(name)) continue;
+    record.push(nameRef(name), value);
+    (record[attributeCount] as number)++;
+  }
   const childCount = record.length;
   record.push(0);
   for (let child = node.first; child != null; child = child.next) {
@@ -169,11 +186,17 @@ function encode(node: ChildNode, record: Array<unknown>): void {
   }
 }
 
+function effective(element: ElementNode, name: string): unknown {
+  return element.attributes.has(name)
+    ? element.attributes.get(name)
+    : element.derived.get(name);
+}
+
 function flushAttributes(): void {
   for (const [element, changed] of changedAttributes) {
     if (element.state !== State.Native) continue;
     for (const name of changed) {
-      const value = element.attributes.get(name);
+      const value = effective(element, name);
       const ref = nameRef(name);
       if (value === undefined || typeof value === "function") {
         send(opcodes.unattr, element.id, ref);
@@ -470,6 +493,90 @@ function updateListens(element: ElementNode): void {
   changeAttribute(element, "listens");
 }
 
+const reactiveElements = new Map<number, WeakRef<ElementNode>>();
+const noClasses: Resolution = {
+  attrs: {},
+  reactive: false,
+  unmatched: [],
+  misplaced: [],
+};
+
+function classState(element: ElementNode): ClassState {
+  const disabled = element.attributes.get("disabled");
+  return {
+    dark: environment.colorScheme === "dark",
+    width: environment.viewportWidth,
+    reduceMotion: environment.reduceMotion,
+    rtl: environment.layoutDirection === "rightToLeft",
+    disabled: disabled != null && disabled !== false,
+  };
+}
+
+function reportClass(tag: string, resolution: Resolution): void {
+  for (const token of resolution.unmatched) {
+    warnOnce(
+      `class ${token}`,
+      `class "${token}" isn't a Tailwind utility in this build. Add the file that uses it to tailwind({ sources }), or check the spelling.`,
+    );
+  }
+  for (const token of resolution.misplaced) {
+    warnOnce(
+      `<${tag}> class ${token}`,
+      `class "${token}" has no effect on <${tag}>.`,
+    );
+  }
+}
+
+function reportResolution(name: string, resolution: Resolution): void {
+  reportClass(name, resolution);
+  for (const key of Object.keys(resolution.attrs)) checkAttribute(name, key);
+}
+
+function applyClass(element: ElementNode, value: string | null): void {
+  element.classValue = value;
+  const resolution =
+    value == null || value === ""
+      ? noClasses
+      : resolveWith(element.name, value, classState(element));
+  if (isDevelopment && value != null)
+    reportResolution(element.name, resolution);
+  element.reactive = resolution.reactive;
+  if (element.reactive) reactiveElements.set(element.id, new WeakRef(element));
+  else reactiveElements.delete(element.id);
+  updateDerived(element, resolution.attrs);
+}
+
+function updateDerived(element: ElementNode, attrs: Attributes): void {
+  const next = new Map<string, unknown>();
+  for (const [key, attr] of Object.entries(attrs)) {
+    if (attr !== undefined) next.set(key, attr);
+  }
+  const changed: Array<string> = [];
+  for (const key of element.derived.keys())
+    if (!next.has(key)) changed.push(key);
+  for (const [key, attr] of next)
+    if (element.derived.get(key) !== attr) changed.push(key);
+  element.derived = next;
+  for (const key of changed)
+    if (!element.attributes.has(key)) changeAttribute(element, key);
+}
+
+observeEnvironment((previous) => {
+  if (
+    previous.colorScheme === environment.colorScheme &&
+    previous.viewportWidth === environment.viewportWidth &&
+    previous.reduceMotion === environment.reduceMotion &&
+    previous.layoutDirection === environment.layoutDirection
+  ) {
+    return;
+  }
+  for (const [id, reference] of reactiveElements) {
+    const element = reference.deref();
+    if (!element?.reactive) reactiveElements.delete(id);
+    else applyClass(element, element.classValue);
+  }
+});
+
 const renderer = createRenderer<{
   fragment: FragmentNode;
   element: ElementNode;
@@ -496,6 +603,9 @@ const renderer = createRenderer<{
       last: null,
       attributes: new Map(),
       listeners: new Map(),
+      classValue: null,
+      derived: new Map(),
+      reactive: false,
     };
     elements.set(node.id, new WeakRef(node));
     return track(node);
@@ -529,20 +639,35 @@ const renderer = createRenderer<{
   },
 
   getAttribute(element, name) {
+    if (name === "class") return element.classValue;
     const value = element.attributes.get(name);
     return value == null ? null : String(value);
   },
   setAttribute(element, name, value: unknown) {
+    if (name === "class") {
+      applyClass(element, value == null ? null : String(value));
+      return;
+    }
     if (isDevelopment) checkAttribute(element.name, name);
     element.attributes.set(name, value);
     changeAttribute(element, name);
+    if (name === "disabled" && element.reactive)
+      applyClass(element, element.classValue);
   },
   removeAttribute(element, name) {
+    if (name === "class") {
+      applyClass(element, null);
+      return;
+    }
     element.attributes.delete(name);
     changeAttribute(element, name);
+    if (name === "disabled" && element.reactive)
+      applyClass(element, element.classValue);
   },
   hasAttribute(element, name) {
-    return element.attributes.has(name);
+    return name === "class"
+      ? element.classValue != null
+      : element.attributes.has(name);
   },
 
   getFirstChild(node) {

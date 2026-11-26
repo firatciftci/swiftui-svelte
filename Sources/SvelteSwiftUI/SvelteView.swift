@@ -5,6 +5,7 @@ public struct SvelteView: View {
     @State private var handle: MountHandle?
     @State private var safeAreaInsets = EdgeInsets()
     @State private var keyboardHeight = 0.0
+    @State private var viewportWidth: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -87,6 +88,7 @@ public struct SvelteView: View {
         .background {
             Color.clear
                 .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { safeAreaInsets = $0 }
+                .onGeometryChange(for: CGFloat.self, of: \.size.width) { viewportWidth = $0 }
                 .ignoresSafeArea(.keyboard)
         }
         #if os(iOS)
@@ -127,6 +129,7 @@ public struct SvelteView: View {
             safeAreaInsets: safeAreaInsets,
             keyboardHeight: keyboardHeight
         )
+        snapshot.viewportWidth = viewportWidth
         snapshot.accessibility = AccessibilitySettings(
             voiceOver: voiceOver,
             switchControl: switchControl,

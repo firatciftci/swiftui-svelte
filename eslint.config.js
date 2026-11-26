@@ -12,6 +12,7 @@ export default antfu({
     "Tests/SvelteSwiftUITests/Fixtures/**",
     "test/web/wpt/**",
     "example/src/paraglide/**",
+    "example/src/app.css",
     "template/**",
   ],
   stylistic: false,
@@ -111,10 +112,14 @@ export default antfu({
   },
   { files: ["example/src/Bench.svelte"], rules: { "no-console": "off" } },
   {
-    files: ["scripts/docs.ts", "test/catalog.test.ts"],
+    files: ["scripts/docs.ts", "test/catalog.test.ts", "test/vite.test.ts"],
     rules: { "no-restricted-imports": "off" },
   },
   ...swiftuiSvelte.map((config) => ({ ...config, files: ["example/src/**"] })),
+  {
+    files: ["src/tailwind/vite.ts"],
+    rules: { "unicorn/no-this-outside-of-class": "off" },
+  },
   {
     files: ["src/host.ts", "src/renderer.ts"],
     rules: { "unicorn/no-global-object-property-assignment": "off" },

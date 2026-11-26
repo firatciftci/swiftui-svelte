@@ -125,6 +125,7 @@ To add swiftui-svelte to an app you already have, follow [Getting started](docs/
 - [Web APIs](docs/web-apis.md): `fetch`, `WebSocket`, `localStorage`, and the other browser APIs that the app provides.
 - [Native modules and components](docs/native-modules.md): calling Swift from JavaScript, the built-in modules, and SwiftUI views as new elements.
 - [Embedding in a Swift app](docs/embedding.md): props, actions, several components in one bundle, and views that share one runtime.
+- [Tailwind CSS](docs/tailwind.md): applying Tailwind utility classes to elements, the variants for dark mode and window width, and which utilities have a native equivalent.
 - [Performance](docs/performance.md): keeping the app fast, and how to measure it on a device.
 - [Debugging](docs/debugging.md): live reload, logging, Safari's Web Inspector, errors, and common problems.
 - [Releasing to the App Store](docs/app-store.md): release builds, versions, privacy, and testing before you submit.

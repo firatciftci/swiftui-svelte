@@ -40,6 +40,7 @@ export type HostEnvironment = {
     trailing: number;
   }>;
   keyboardHeight: number;
+  viewportWidth: number;
   onLine: boolean;
   userAgent: string;
 };
@@ -65,6 +66,7 @@ export const environment: HostEnvironment = {
   scenePhase: "active",
   safeAreaInsets: { top: 0, leading: 0, bottom: 0, trailing: 0 },
   keyboardHeight: 0,
+  viewportWidth: 0,
   onLine: true,
   userAgent: "swiftui-svelte",
 };

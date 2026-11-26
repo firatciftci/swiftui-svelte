@@ -1,6 +1,6 @@
 import type { IncomingMessage } from "node:http";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { get } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -9,6 +9,7 @@ import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
+import { buildClassTable } from "../src/tailwind/build.ts";
 
 const budget = { minified: 184_000, gzipped: 57_000 };
 
@@ -167,5 +168,42 @@ describe("the Vite plugin", () => {
     } finally {
       await server.close();
     }
+  }, 60_000);
+});
+
+describe("tailwind class table", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-tailwind-"));
+  writeFileSync(
+    path.join(dir, "app.css"),
+    '@import "tailwindcss";\n@custom-variant dark (&:where(.dark, .dark *));\n',
+  );
+  writeFileSync(
+    path.join(dir, "App.svelte"),
+    '<vstack class="p-4 bg-white dark:bg-black md:p-2 transition-opacity grid-cols-2"></vstack>\n',
+  );
+
+  it("maps utilities to attributes, conditions, and breakpoints", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    expect(table.tokens["p-4"]?.[0]?.attrs).toMatchObject({
+      padding: { top: 16, leading: 16, bottom: 16, trailing: 16 },
+    });
+    expect(table.tokens["bg-white"]?.[0]?.attrs).toEqual({
+      background: "#ffffff",
+    });
+    expect(table.tokens["dark:bg-black"]?.[0]).toMatchObject({
+      when: ["dark"],
+    });
+    expect(table.tokens["md:p-2"]?.[0]).toMatchObject({ when: [">=768"] });
+    expect(table.breakpoints).toContain(768);
+    expect(warnings).toEqual([
+      expect.stringMatching(
+        /^Tailwind class "grid-cols-2" in .*App\.svelte isn't supported by swiftui-svelte: .+\.$/,
+      ),
+    ]);
   }, 60_000);
 });
