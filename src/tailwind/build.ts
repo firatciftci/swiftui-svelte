@@ -621,8 +621,7 @@ export async function buildClassTable(
     problems,
   );
   const isIgnored = ignoredBy(options.ignore ?? []);
-  for (const token of universe)
-    if (isIgnored(token)) silent.add(token);
+  for (const token of universe) if (isIgnored(token)) silent.add(token);
   for (const token of silent) tokens[token] ??= [{ order: 0, attrs: {} }];
   const table: ClassTable = {
     tokens,

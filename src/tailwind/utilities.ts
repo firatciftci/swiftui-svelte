@@ -420,9 +420,10 @@ const HANDLERS = new Map<string, Handler>([
   [
     "flex-direction",
     (_value, _context, raw) => {
-      if (raw === "column")
-        return [{ attrs: { css: true }, only: VERTICAL }];
-      return raw === "row" ? [{ attrs: { css: true }, only: HORIZONTAL }] : null;
+      if (raw === "column") return [{ attrs: { css: true }, only: VERTICAL }];
+      return raw === "row"
+        ? [{ attrs: { css: true }, only: HORIZONTAL }]
+        : null;
     },
   ],
   [
@@ -470,8 +471,10 @@ const HANDLERS = new Map<string, Handler>([
       };
       const side = sides[raw];
       if (side == null) return null;
-      const vertical = side === "start" ? "top" : side === "end" ? "bottom" : "center";
-      const horizontal = side === "start" ? "leading" : side === "end" ? "trailing" : "center";
+      const vertical =
+        side === "start" ? "top" : side === "end" ? "bottom" : "center";
+      const horizontal =
+        side === "start" ? "leading" : side === "end" ? "trailing" : "center";
       return [
         { attrs: { framealignment: vertical }, only: VERTICAL },
         { attrs: { framealignment: horizontal }, only: HORIZONTAL },
@@ -624,7 +627,9 @@ const HANDLERS = new Map<string, Handler>([
     (value, context) => {
       const quantity = quantityOf(resolved(value, context), context.fontSize);
       if (quantity.unit === "" && typeof quantity.value === "number")
-        return [{ attrs: { linebox: times(quantity.value, context.fontSize) } }];
+        return [
+          { attrs: { linebox: times(quantity.value, context.fontSize) } },
+        ];
       return [{ attrs: { linebox: points(value, context) } }];
     },
   ],
@@ -1006,7 +1011,9 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
     {
       attrs: {
         [key]:
-          typeof length === "number" && !Number.isFinite(length) ? 9999 : length,
+          typeof length === "number" && !Number.isFinite(length)
+            ? 9999
+            : length,
       },
     },
   ];
@@ -1072,7 +1079,12 @@ function boxShadow(value: string, context: Context): Array<Patch> {
   if (ring != null)
     patches.push({
       attrs: {
-        $borderWidth: { top: ring.spread, leading: ring.spread, bottom: ring.spread, trailing: ring.spread },
+        $borderWidth: {
+          top: ring.spread,
+          leading: ring.spread,
+          bottom: ring.spread,
+          trailing: ring.spread,
+        },
       },
     });
   if (drop != null) patches.push({ attrs: { shadow: shadowOf(drop) } });

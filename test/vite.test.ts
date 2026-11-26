@@ -331,9 +331,7 @@ describe("native Tailwind utilities", () => {
     });
     expect(table.tokens.hairline?.[0]).toMatchObject({
       dynamic: true,
-      attrs: {
-        $borderWidth: { top: { op: "hairlineWidth", args: [] } },
-      },
+      attrs: { $borderWidth: { top: { op: "hairlineWidth", args: [] } } },
     });
   }, 60_000);
 
@@ -437,7 +435,9 @@ describe("Tailwind layout, lengths, and containers", () => {
     expect(table.tokens["table-fixed"]?.[0]?.attrs).toEqual({});
     expect(table.tokens["border-collapse"]?.[0]?.attrs).toEqual({});
     expect(warnings).toEqual([
-      expect.stringMatching(/^Tailwind class "justify-between" .+ distribution/),
+      expect.stringMatching(
+        /^Tailwind class "justify-between" .+ distribution/,
+      ),
       expect.stringMatching(/^Tailwind class "decoration-2" .+/),
     ]);
   }, 60_000);
@@ -479,19 +479,16 @@ describe("Tailwind layout, lengths, and containers", () => {
     expect(table.tokens["w-[50vw]"]?.[0]).toMatchObject({
       dynamic: true,
       attrs: {
-        width: {
-          op: "*",
-          args: [0.5, { op: "viewportWidth", args: [] }],
-        },
+        width: { op: "*", args: [0.5, { op: "viewportWidth", args: [] }] },
       },
     });
     expect(table.tokens["text-sm"]?.at(-1)).toMatchObject({
       dynamic: true,
       attrs: { linebox: { op: "*" } },
     });
-    expect(table.tokens["rounded-[roundToNearestPixel(10px)]"]?.[0]?.attrs).toEqual(
-      { radius: { op: "roundToNearestPixel", args: [10] } },
-    );
+    expect(
+      table.tokens["rounded-[roundToNearestPixel(10px)]"]?.[0]?.attrs,
+    ).toEqual({ radius: { op: "roundToNearestPixel", args: [10] } });
   }, 60_000);
 
   it("resolves expressions, container conditions, and text balance at runtime", async () => {
@@ -523,11 +520,9 @@ describe("Tailwind layout, lengths, and containers", () => {
         containers: { "": 300 },
       }).attrs,
     ).toEqual({});
-    expect(
-      resolveClasses(table, "txt", "text-balance", base).attrs,
-    ).toEqual({ balanced: true });
-    expect(
-      resolveClasses(table, "txt", "text-pretty", base).attrs,
-    ).toEqual({});
+    expect(resolveClasses(table, "txt", "text-balance", base).attrs).toEqual({
+      balanced: true,
+    });
+    expect(resolveClasses(table, "txt", "text-pretty", base).attrs).toEqual({});
   }, 60_000);
 });

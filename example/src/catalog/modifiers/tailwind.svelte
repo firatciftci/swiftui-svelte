@@ -22,7 +22,11 @@
     />
   </btn>
 </hstack>
-<vstack class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700" css container="">
+<vstack
+  class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700"
+  css
+  container=""
+>
   <txt
     margin={{ leading: "auto", trailing: "auto" }}
     balanced

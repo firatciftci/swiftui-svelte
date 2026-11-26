@@ -819,7 +819,11 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     return;
   }
   const element = elements.get(id)?.deref();
-  if (type === "resize" && element != null && effective(element, "container") != null)
+  if (
+    type === "resize" &&
+    element != null &&
+    effective(element, "container") != null
+  )
     containerResized(element, payload);
   const handlers = element?.listeners.get(type);
   if (element == null || handlers == null || handlers.size === 0) {

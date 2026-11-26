@@ -290,10 +290,7 @@ function animate(result: Attributes, duration: number): void {
   }
 }
 
-function borderOf(
-  widths: Attributes,
-  color: unknown,
-): Attributes | null {
+function borderOf(widths: Attributes, color: unknown): Attributes | null {
   const drawn = Object.values(widths).some((width) => width !== 0);
   if (!drawn) return null;
   const border: Attributes = { width: widths };
