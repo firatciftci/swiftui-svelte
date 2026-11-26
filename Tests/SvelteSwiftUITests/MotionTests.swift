@@ -28,6 +28,9 @@ struct MotionTests {
         #expect(MotionCurve(.string("wobbly")) == nil)
         #expect(MotionCurve(.bool(false)) == nil)
         #expect(MotionCurve(nil) == nil)
+        #expect(MotionCurve.from(.bool(false)) == nil)
+        #expect(MotionCurve.from(.bool(true)) == MotionCurve())
+        #expect(MotionCurve.from(nil) == MotionCurve())
     }
 
     @Test func readsAnimationOptionsInMilliseconds() throws {

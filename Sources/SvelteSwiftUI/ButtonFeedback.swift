@@ -2,12 +2,12 @@ import SwiftUI
 
 struct ButtonFeedback {
     let overrides: [String: JSONValue]
-    let animation: Animation
+    let animation: Animation?
 
     init?(_ value: JSONValue?) {
         guard case let .object(options) = value else { return nil }
         overrides = options.filter { $0.key != "animation" }
-        animation = (MotionCurve(options["animation"]) ?? MotionCurve()).animation
+        animation = MotionCurve.from(options["animation"])?.animation
     }
 }
 
@@ -19,8 +19,9 @@ struct ButtonPress: Equatable {
         isPressed ? pressed : (isHovered ? hovered : nil)
     }
 
-    static func animation(from old: ButtonFeedback?, to new: ButtonFeedback?) -> Animation {
-        (new ?? old)?.animation ?? .easeInOut(duration: 0.2)
+    static func animation(from old: ButtonFeedback?, to new: ButtonFeedback?) -> Animation? {
+        guard let feedback = new ?? old else { return .easeInOut(duration: 0.2) }
+        return feedback.animation
     }
 }
 

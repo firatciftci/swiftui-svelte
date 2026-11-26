@@ -40,7 +40,7 @@ final class Node: Identifiable {
         set { ownAttributes = newValue }
     }
     var owned: Set<String> = []
-    private var ownAttributes: [String: JSONValue] = [:] {
+    private(set) var ownAttributes: [String: JSONValue] = [:] {
         didSet { enable(ModifierSet(attributes: ownAttributes)) }
     }
     var labelFeedback: [String: JSONValue] = [:] {
@@ -103,6 +103,11 @@ final class Node: Identifiable {
         "sectionview": ["header", "footer"],
     ]
 
+    func setOwnAttribute(_ name: String, _ value: JSONValue?) {
+        guard ownAttributes[name] != value else { return }
+        ownAttributes[name] = value
+    }
+
     private func enable(_ set: ModifierSet) {
         if !modifiers.isSuperset(of: set) { modifiers.formUnion(set) }
     }
@@ -125,7 +130,7 @@ final class Node: Identifiable {
 
 @Observable
 final class NodeStore {
-    static let protocolVersion = 2
+    static let protocolVersion = 3
 
     private(set) var roots: [Int: Node] = [:]
     private(set) var bundleProtocolVersion: Int?
@@ -138,7 +143,7 @@ final class NodeStore {
     @ObservationIgnored private var presentationIDs: Set<Int> = []
     @ObservationIgnored private var hostIDs: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
-    @ObservationIgnored var ownedNames: [String: Set<String>] = [:]
+    @ObservationIgnored private var ownedNames: [String: Set<String>] = [:]
 
     var nodeCount: Int { nodes.count }
 
@@ -150,17 +155,29 @@ final class NodeStore {
         error = nil
     }
 
-    func apply(_ json: String, animation: String? = nil) {
-        guard let animation, let value = try? JSONValue(parsing: animation) else {
-            commit(json)
-            return
-        }
-        var transaction = Transaction(animation: MotionCurve(value)?.animation)
-        transaction.disablesAnimations = value == .bool(false)
-        withTransaction(transaction) { commit(json) }
+    func reset(ownedNames: [String: Set<String>]) {
+        roots = [:]
+        bundleProtocolVersion = nil
+        isCompatible = true
+        nodes = [:]
+        names = []
+        dirty = []
+        transitions = [:]
+        presentationIDs = []
+        hostIDs = []
+        needsHosting = false
+        self.ownedNames = ownedNames
     }
 
-    private func commit(_ json: String) {
+    @discardableResult
+    func apply(_ json: String, animation: String? = nil) -> Bool {
+        guard let animation, let value = try? JSONValue(parsing: animation) else { return commit(json) }
+        var transaction = Transaction(animation: MotionCurve(value)?.animation)
+        transaction.disablesAnimations = value == .bool(false)
+        return withTransaction(transaction) { commit(json) }
+    }
+
+    private func commit(_ json: String) -> Bool {
         var json = json
         let failure: BridgeError? = json.withUTF8 { bytes in
             var reader = BridgeReader(bytes)
@@ -179,7 +196,9 @@ final class NodeStore {
         if let failure {
             print("[bridge] \(failure)")
             error = failure.description
+            return false
         }
+        if error != nil { error = nil }
         if needsHosting { assignHosts() }
         for id in dirty {
             guard let parent = nodes[id] else { continue }
@@ -192,6 +211,7 @@ final class NodeStore {
         }
         dirty.removeAll(keepingCapacity: true)
         transitions.removeAll(keepingCapacity: true)
+        return true
     }
 
     private func children(of parent: Node) -> Array<Node> {
@@ -250,11 +270,11 @@ final class NodeStore {
             let id = try reader.int()
             let name = try name(try reader.int())
             let value = try reader.value()
-            if let node = nodes[id], node.attributes[name] != value { node.attributes[name] = value }
+            nodes[id]?.setOwnAttribute(name, value == .null ? nil : value)
         case 5:
             let id = try reader.int()
             let name = try name(try reader.int())
-            if let node = nodes[id], node.attributes[name] != nil { node.attributes[name] = nil }
+            nodes[id]?.setOwnAttribute(name, nil)
         case 6:
             let id = try reader.int()
             let text = try reader.string()
@@ -329,6 +349,7 @@ final class NodeStore {
     }
 
     private func insert(_ node: Node, into parent: Node, before next: Node?) {
+        guard next !== node else { return }
         detach(node)
         let next = next?.parentID == parent.id ? next : nil
         let previousID = next.map(\.previousID) ?? parent.lastID

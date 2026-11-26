@@ -16,6 +16,11 @@ struct MotionCurve: Equatable {
 
     init() {}
 
+    static func from(_ value: JSONValue?) -> MotionCurve? {
+        guard value != .bool(false) else { return nil }
+        return MotionCurve(value) ?? MotionCurve()
+    }
+
     init?(_ value: JSONValue?) {
         switch value {
         case let .string(name):
@@ -140,7 +145,7 @@ struct MotionTransition: Equatable {
     static func curve(for attributes: [String: JSONValue]) -> MotionCurve? {
         guard Self(attributes["transition"]) != nil || Self(attributes["in"]) != nil || Self(attributes["out"]) != nil
         else { return nil }
-        return MotionCurve(attributes["animation"]) ?? MotionCurve()
+        return MotionCurve.from(attributes["animation"])
     }
 
     static func transition(for attributes: [String: JSONValue]) -> AnyTransition? {
@@ -148,11 +153,10 @@ struct MotionTransition: Equatable {
         let insertion = Self(attributes["in"]) ?? both
         let removal = Self(attributes["out"]) ?? both
         guard insertion != nil || removal != nil else { return nil }
-        let curve = MotionCurve(attributes["animation"]) ?? MotionCurve()
         return AnyTransition.asymmetric(
             insertion: insertion?.transition ?? .identity,
             removal: removal?.transition ?? .identity
         )
-        .animation(curve.animation)
+        .animation(MotionCurve.from(attributes["animation"])?.animation)
     }
 }

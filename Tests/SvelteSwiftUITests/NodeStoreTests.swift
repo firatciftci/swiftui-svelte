@@ -37,7 +37,7 @@ struct NodeStoreTests {
         #expect(store.error == nil)
     }
 
-    @Test(arguments: [1, 3])
+    @Test(arguments: [2, 4])
     func refusesAnIncompatibleBundle(version: Int) {
         let store = NodeStore()
         store.apply(batch([0, 1, version, 7, "vstack", 1, 1, 0, 2, 0, 0, 0]))
@@ -110,7 +110,7 @@ struct NodeStoreTests {
         let store = store([4, 2, 1, 8, 4, 2, 2, "x", 5, 2, 2, 4, 2, 3, NSNull(), 4, 2, 4, ["a": [1, true]]])
         #expect(
             store.node(2)?.attributes == [
-                "spacing": .number(8), "sheet": .null, "hstack": .object(["a": .array([.number(1), .bool(true)])]),
+                "spacing": .number(8), "hstack": .object(["a": .array([.number(1), .bool(true)])]),
             ])
     }
 
@@ -324,5 +324,29 @@ extension NodeStoreTests {
         let store = self.store([7, "screen", 1, 999, 0, 20, 3, 0, 0])
         #expect(store.node(20) == nil)
         #expect(store.root?.presented.isEmpty == true)
+    }
+
+    @Test func keepsOwnedAttributesThroughJavaScriptEdits() {
+        let store = NodeStore()
+        store.reset(ownedNames: ["vstack": ["spacing"]])
+        store.apply(batch(base))
+        store.apply(batch([4, 2, 1, 8, 4, 2, 2, "x", 5, 2, 2, 4, 2, 2, NSNull()]))
+        #expect(store.node(2)?.nativeAttributes["spacing"] == .number(8))
+        #expect(store.node(2)?.attributes["label"] == nil)
+        store.apply(batch([5, 2, 1]))
+        #expect(store.node(2)?.nativeAttributes["spacing"] == nil)
+    }
+
+    @Test func leavesButtonFeedbackOutOfJavaScriptAttributes() {
+        let store = self.store([])
+        let node = store.node(2)
+        node?.labelFeedback = ["background": .string("blue")]
+        store.apply(batch([4, 2, 2, "x"]))
+        #expect(node?.ownAttributes["background"] == nil)
+        #expect(node?.nativeAttributes["background"] == .string("blue"))
+    }
+
+    @Test func ignoresAMoveBeforeItself() {
+        #expect(texts(store([2, 2, 3, 3])) == ["a", "b", "c"])
     }
 }

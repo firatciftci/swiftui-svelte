@@ -57,7 +57,7 @@ private struct Taps: ViewModifier {
 
     func body(content: Content) -> some View {
         let id = node.id
-        let duration = max(node.attributes["longpressduration"]?.number ?? 0.5, 0)
+        let duration = max(node.attributes["longpressduration"]?.number ?? 500, 0) / 1000
         content
             .ifLet(node.listens(to: "longpress") ? id : nil) { view, id in
                 view.onLongPressGesture(minimumDuration: duration) { runtime.dispatch(id, "longpress") }

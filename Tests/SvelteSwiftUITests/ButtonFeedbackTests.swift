@@ -15,6 +15,10 @@ struct ButtonFeedbackTests {
         #expect(feedback.animation == (MotionCurve(.string("snappy")) ?? MotionCurve()).animation)
     }
 
+    @Test func turnsOffTheAnimationWhenItIsFalse() {
+        #expect(ButtonFeedback(.object(["scale": .number(0.95), "animation": .bool(false)]))?.animation == nil)
+    }
+
     @Test func ignoresValuesThatAreNotObjects() {
         #expect(ButtonFeedback(nil) == nil)
         #expect(ButtonFeedback(.string("pressed")) == nil)
