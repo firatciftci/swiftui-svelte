@@ -312,4 +312,9 @@ export const modifierGroups: Array<{
     modifiers: ["completion"],
   },
   { name: "tailwind", title: "Tailwind CSS", modifiers: ["class"] },
+  {
+    name: "tailwind-native",
+    title: "Tailwind native utilities",
+    modifiers: ["class"],
+  },
 ];

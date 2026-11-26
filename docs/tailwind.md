@@ -4,7 +4,7 @@ swiftui-svelte reads Tailwind CSS utility classes on native elements and turns t
 
 ## Set up Tailwind
 
-Add `tailwindcss` and `postcss` as dev dependencies. Create a stylesheet that imports Tailwind, then add the plugin to `vite.config.ts` next to the `swiftui` plugin:
+Add `tailwindcss` and `postcss` as dev dependencies. Create a stylesheet that imports Tailwind and the swiftui-svelte theme, then add the plugin to `vite.config.ts` next to the `swiftui` plugin:
 
 ```ts
 import { tailwind } from "swiftui-svelte/tailwind";
@@ -16,7 +16,10 @@ export default {
 
 ```css
 @import "tailwindcss";
+@import "swiftui-svelte/tailwind/theme.css";
 ```
+
+The theme adds the platform variants and the native utilities described below. The same class strings also work in a browser build, where plain Tailwind applies them.
 
 The plugin takes three options:
 
@@ -52,33 +55,69 @@ This stack has no padding. Inside a class string, later rules win, as they do in
 
 `focus:` is not supported. Using it produces a build warning.
 
-## What maps to native attributes
+### Platform variants
 
-| Utilities                                                | Native attribute                                                                     |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `p-*`, `px-*`, `py-*`, `pt-*`, `pr-*`, `pb-*`, `pl-*`    | `padding`                                                                            |
-| `gap-*`, `space-x-*`, `space-y-*`                        | `spacing`                                                                            |
-| `w-*`, `h-*`, `min-w-*`, `max-w-*`, `min-h-*`, `max-h-*` | Fixed sizes. Percentages are not supported, and `flex-1` fills the space in a stack. |
-| `rounded-*`                                              | Corner radius. `rounded-full` rounds the corners fully.                              |
-| `border`, `border-*`, `border-0`                         | `border`, with width and color                                                       |
-| `ring-*`                                                 | `border`                                                                             |
-| `shadow-*`                                               | `shadow`                                                                             |
-| `text-*` colors and sizes                                | Text color and font size                                                             |
-| `font-*`                                                 | Font size, weight, and family                                                        |
-| `leading-*`                                              | Line height                                                                          |
-| `text-left`, `text-center`, `text-right`                 | Text alignment                                                                       |
-| `bg-*` colors                                            | `background`                                                                         |
-| `bg-linear-to-*` with `from-*`, `via-*`, and `to-*`      | A linear gradient. Only `to` directions are supported.                               |
-| `opacity-*`                                              | `opacity`                                                                            |
-| `items-*`                                                | Alignment within a stack                                                             |
-| `flex-col`                                               | A vertical stack                                                                     |
-| `aspect-*`                                               | `aspectratio`                                                                        |
-| `hidden` and `display: none`                             | `hidden`                                                                             |
-| `overflow-hidden`                                        | Clipping to a rectangle                                                              |
+Platform variants apply based on what the host reports, not on a fixed platform:
 
-Some web-only utilities have no effect on native elements and produce no warning. These include `cursor-*`, `outline-*`, `appearance-*`, `will-change-*`, `text-wrap`, `overflow-wrap`, `scrollbar-width`, and the transition property and timing utilities.
+| Variant    | Applies when                                                 |
+| ---------- | ------------------------------------------------------------ |
+| `ios:`     | The host reports iOS.                                        |
+| `android:` | The host reports Android.                                    |
+| `native:`  | The app runs on a native host, on any platform.              |
+| `tv:`      | The device idiom is TV.                                      |
+| `web:`     | The app runs in a browser. It never applies in a native app. |
 
-Other utilities produce a build warning that names the class and the file. Examples include CSS grid, absolute and fixed positioning, and keyframe animations.
+A host reports its own platform, so the same class strings work on every host. An Android host applies `android:` classes, and an iOS host applies `ios:` classes, without any change to your source.
+
+### Contrast, orientation, and direction
+
+- `contrast-more:` applies when Increase Contrast is on. `contrast-less:` never applies, because no host reports reduced contrast.
+- `portrait:` and `landscape:` compare the window's height and width.
+- `ltr:` and `rtl:` follow the layout direction.
+
+These are standard Tailwind variants, so they behave the same in a browser.
+
+## Safe areas
+
+In SwiftUI, content already sits inside the safe area. An element reaches the edges of the screen only if it sets `ignoressafearea`, so safe-area utilities matter most on those elements:
+
+```svelte
+<vstack ignoressafearea class="pt-safe pb-safe-or-4">
+  <txt>Clear of the notch and the home indicator</txt>
+</vstack>
+```
+
+These utilities read the insets that the host reports, and they update when the insets change:
+
+- `p-safe`, `px-safe`, `py-safe`, `pt-safe`, `pr-safe`, `pb-safe`, `pl-safe`, `ps-safe`, and `pe-safe` add the inset as padding.
+- `m-safe` and the margin forms add the inset as a margin. Margins map to spacing only on the bottom and trailing edges. Other margin edges produce a build warning.
+- `pb-safe-offset-4` adds the inset to a spacing value. `pb-safe-or-4` uses the larger of the inset and the spacing value. Arbitrary values work too, such as `pb-safe-or-[2px]`. The offset and "or" forms exist for `p`, `px`, `py`, `pt`, `pr`, `pb`, `pl`, `m`, `mx`, `my`, `mt`, `mr`, `mb`, and `ml`.
+- `h-screen-safe`, `min-h-screen-safe`, and `max-h-screen-safe` fill the safe area. SwiftUI fills the available space, so the height is not an exact measurement.
+- `inset-safe` and the `top-safe`, `right-safe`, `bottom-safe`, and `left-safe` forms position an element with absolute offsets. SwiftUI doesn't have absolute positioning, so these produce a build warning.
+
+## Native utilities
+
+- `corner-squircle` uses continuous corners, which is already the default for `rounded-*`. `corner-rounded` uses circular corners.
+- `tint-{color}` sets the tint that controls use. It also tints images that use the template rendering mode.
+- `color-{color}` sets the text color, the same as `text-{color}`.
+- `elevation-*` and `ripple-*` apply on Android only. On iOS they are accepted and do nothing, with no warning. An Android host reads them from the same table.
+
+## CSS functions
+
+Use these functions in your own CSS, in a `@utility` or `@theme` value:
+
+- `hairlineWidth()` is the thinnest line the display can draw. It equals 1 divided by the pixel ratio.
+- `pixelRatio()` is the display scale of the device.
+- `fontScale()` is the Dynamic Type scale, which is 1 at the default text size.
+- `roundToNearestPixel(n)` rounds a length to the nearest device pixel.
+- `platformColor(name)` uses a system color, such as `label`, `secondaryLabel`, `systemBackground`, `separator`, or `systemGray` through `systemGray6`. An unknown name produces a build warning.
+
+```css
+@utility hairline {
+  border-width: hairlineWidth();
+  border-style: solid;
+}
+```
 
 ## Fonts
 
@@ -98,4 +137,4 @@ tailwind({
 
 ## Performance
 
-Class names are compiled at build time, so the device doesn't parse CSS. Elements with conditional classes, such as `dark:` or width variants, are recomputed when the environment changes. Other elements don't re-resolve their classes.
+Class names are compiled at build time, so the device doesn't parse CSS. Elements with conditional classes, such as `dark:`, width variants, orientation variants, or safe-area utilities, are recomputed when the environment changes. Other elements don't re-resolve their classes.
