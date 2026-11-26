@@ -92,4 +92,24 @@ declare module "svelte/elements" {
 }
 ```
 
+A native component can also own names that the built-in modifiers use. Pass the names in `attributes` and `events` when you create it:
+
+```swift
+let probe = NativeComponent("probe", attributes: ["color"], events: ["hover"]) { element in
+    ProbeElement(element: element)
+}
+```
+
+For this element, the library drops those names from its modifier chain. A `color` attribute goes to your view and not to the `foregroundStyle` modifier, and a `hover` event goes to your `onhover` handler and not to the library's pointer handler. Every other attribute and event still works as usual. In Svelte, type the element with the same names, and the `NativeElement` helper removes the matching built-in modifiers from its type:
+
+```ts
+import type { NativeElement } from "swiftui-svelte/elements";
+
+declare module "svelte/elements" {
+  interface SvelteHTMLElements {
+    probe: NativeElement<{ color: string }, { hover: { phase: string } }>;
+  }
+}
+```
+
 The example app's `mapview` shows a complete component built on MapKit.

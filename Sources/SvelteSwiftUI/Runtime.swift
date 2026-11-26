@@ -43,6 +43,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private let source: URL
     @ObservationIgnored private(set) var modules: [String: NativeModule] = [:]
     @ObservationIgnored private(set) var components: [String: NativeComponent] = [:]
+    private var ownedNames: [String: Set<String>] { components.mapValues(\.owned) }
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private let reloadsOnChange: Bool
 
@@ -405,6 +406,7 @@ public final class SvelteRuntime {
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
         store = NodeStore()
+        store.ownedNames = ownedNames
         error = nil
         let engine = engine
         let bundle: BundleLoader.Bundle

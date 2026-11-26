@@ -901,12 +901,12 @@ type Modifiers = {
 export type ElementModifiers = Modifiers;
 
 /**
-The type of a native component element. `Attributes` lists its attributes, and each key of `Events` becomes an `on` handler that receives its payload.
+The type of a native component element. `Attributes` lists its attributes, and each key of `Events` becomes an `on` handler that receives its payload. A built-in modifier with the same name as one of them is replaced by the component's own.
 */
 export type NativeElement<
-  Attributes extends Record<string, unknown> = Record<string, never>,
-  Events extends Record<string, unknown> = Record<string, never>,
-> = Modifiers &
+  Attributes extends Record<string, unknown> = Record<never, never>,
+  Events extends Record<string, unknown> = Record<never, never>,
+> = Omit<Modifiers, keyof Attributes | `on${keyof Events & string}`> &
   Attributes & {
     [Event in keyof Events & string as `on${Event}`]?: (
       payload: Events[Event],

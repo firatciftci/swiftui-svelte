@@ -6,5 +6,6 @@ declare module "svelte/elements" {
       { latitude: number; longitude: number },
       { regionchange: { latitude: number; longitude: number } }
     >;
+    probe: NativeElement<{ color: string }, { hover: { phase: string } }>;
   }
 }

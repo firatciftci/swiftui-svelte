@@ -143,23 +143,23 @@ public struct NativeElement {
     public var id: Int { node.id }
 
     public func value(_ name: String) -> Any? {
-        node.attributes[name].map(\.object)
+        node.nativeAttributes[name].map(\.object)
     }
 
     public func string(_ name: String) -> String? {
-        node.attributes[name]?.string
+        node.nativeAttributes[name]?.string
     }
 
     public func number(_ name: String) -> Double? {
-        node.attributes[name]?.number
+        node.nativeAttributes[name]?.number
     }
 
     public func bool(_ name: String) -> Bool {
-        node.attributes[name]?.isTrue ?? false
+        node.nativeAttributes[name]?.isTrue ?? false
     }
 
     public func decode<T: Decodable>(_: T.Type, _ name: String) -> T? {
-        guard let value = node.attributes[name],
+        guard let value = node.nativeAttributes[name],
             JSONSerialization.isValidJSONObject([value.object]),
             let data = try? JSONSerialization.data(withJSONObject: [value.object])
         else { return nil }
@@ -194,10 +194,17 @@ public struct NativeElement {
 @MainActor
 public struct NativeComponent {
     public let name: String
+    let owned: Set<String>
     let body: @MainActor (NativeElement) -> AnyView
 
-    public init(_ name: String, @ViewBuilder body: @escaping @MainActor (NativeElement) -> some View) {
+    public init(
+        _ name: String,
+        attributes: Array<String> = [],
+        events: Array<String> = [],
+        @ViewBuilder body: @escaping @MainActor (NativeElement) -> some View
+    ) {
         self.name = name
+        owned = Set(attributes).union(events)
         self.body = { AnyView(body($0)) }
     }
 }

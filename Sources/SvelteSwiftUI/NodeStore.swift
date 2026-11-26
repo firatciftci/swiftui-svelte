@@ -17,10 +17,21 @@ final class Node: Identifiable {
         }
     }
     private(set) var isBlank: Bool
+    var nativeAttributes: [String: JSONValue] {
+        feedback.isEmpty ? ownAttributes : ownAttributes.merging(feedback) { _, override in override }
+    }
     var attributes: [String: JSONValue] {
-        get { feedback.isEmpty ? ownAttributes : ownAttributes.merging(feedback) { _, override in override } }
+        get {
+            guard !owned.isEmpty else { return nativeAttributes }
+            var visible = nativeAttributes.filter { !owned.contains($0.key) }
+            if case let .array(events) = nativeAttributes["listens"] {
+                visible["listens"] = .array(events.filter { !owned.contains($0.string ?? "") })
+            }
+            return visible
+        }
         set { ownAttributes = newValue }
     }
+    var owned: Set<String> = []
     private var ownAttributes: [String: JSONValue] = [:] {
         didSet { enable(ModifierSet(attributes: ownAttributes)) }
     }
@@ -111,6 +122,7 @@ final class NodeStore {
     @ObservationIgnored private var presentationIDs: Set<Int> = []
     @ObservationIgnored private var hostIDs: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
+    @ObservationIgnored var ownedNames: [String: Set<String>] = [:]
 
     var nodeCount: Int { nodes.count }
 
@@ -246,6 +258,7 @@ final class NodeStore {
             return node
         }
         let node = Node(id: id, kind: .element, name: try name(try reader.int()), text: "")
+        node.owned = ownedNames[node.name] ?? []
         nodes[id] = node
         if Presenting.hoisted.contains(node.name) { presentationIDs.insert(id) }
         var attributes: [String: JSONValue] = [:]
