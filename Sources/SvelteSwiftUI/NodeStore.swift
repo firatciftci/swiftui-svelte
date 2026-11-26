@@ -51,13 +51,13 @@ final class Node: Identifiable {
     }
     var children: Array<Node> = [] {
         didSet {
-            enable(ModifierSet(children: children))
-            if !hostsPresentations, children.contains(where: { $0.kind == .element && Presenting.anchored.contains($0.name) }) {
-                hostsPresentations = true
+            var attached: ModifierSet = []
+            for child in children where child.kind == .element {
+                if let set = ModifierSet.byAttachment[child.name] { attached.formUnion(set) }
+                if !hostsPresentations, Presenting.anchored.contains(child.name) { hostsPresentations = true }
+                if !hasMultiViewChild, Self.multiViewChildren.contains(child.name) { hasMultiViewChild = true }
             }
-            if !hasMultiViewChild, renderedChildren.contains(where: { $0.kind == .element && NodeView.multiView.contains($0.name) }) {
-                hasMultiViewChild = true
-            }
+            enable(attached)
         }
     }
     var presented: Array<Node> = [] {
@@ -94,6 +94,7 @@ final class Node: Identifiable {
         "background", "contextmenu", "maskview", "overlay", "safeareainset", "searchable", "swipeactions", "toolbar",
         "toolbarspacer",
     ])
+    private static let multiViewChildren = NodeView.multiView.subtracting(attachments)
     private static let slots: [String: Set<String>] = [
         "asyncimage": ["placeholder", "failure"], "contextmenu": ["preview"], "controlgroup": ["label"], "labelview": ["icon"],
         "disclosuregroup": ["label"],

@@ -96,9 +96,4 @@ struct ModifierSet: OptionSet, Hashable {
         self = []
         for (name, value) in attributes { formUnion(Self(attribute: name, value: value)) }
     }
-
-    init(children: Array<Node>) {
-        self = []
-        for child in children where child.kind == .element { formUnion(Self.byAttachment[child.name] ?? []) }
-    }
 }
