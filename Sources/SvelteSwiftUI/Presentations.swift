@@ -185,5 +185,33 @@ private struct SheetOptions: ViewModifier {
             .presentationBackgroundInteraction(Presenting.backgroundInteraction(attributes["backgroundinteraction"]))
             .interactiveDismissDisabled(attributes["dismissible"].map { !$0.isTrue } ?? false)
             .ifLet(attributes["cornerradius"]?.number) { $0.presentationCornerRadius($1) }
+            .modifier(PresentationBackdrop(value: attributes["presentationbackground"]))
+    }
+}
+
+private struct PresentationBackdrop: ViewModifier {
+    let value: JSONValue?
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if value?.string == "clear" {
+            content.presentationBackground(.clear)
+        } else if case let .object(options)? = value {
+            content.presentationBackground { GlassBackdrop(variant: options["glass"]?.string) }
+        } else {
+            content.ifLet(Palette.style(value)) { $0.presentationBackground($1) }
+        }
+    }
+}
+
+private struct GlassBackdrop: View {
+    let variant: String?
+
+    var body: some View {
+        if #available(iOS 26, macOS 26, visionOS 26, *) {
+            let glass: Glass = variant == "clear" ? .clear : .regular
+            Color.clear.glassEffect(glass, in: .rect)
+        } else {
+            Rectangle().fill(.regularMaterial)
+        }
     }
 }

@@ -317,15 +317,16 @@ This element doesn't take modifiers.
 
 A `.sheet` presented from the nearest screen, tab, or presentation for as long as it's rendered.
 
-| Attribute               | Type                                                          | Description                                                                                                                                                              |
-| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `detents`               | `Array<Detent>`                                               | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`. |
-| `dragindicator`         | `"automatic" \| "visible" \| "hidden"`                        | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                   |
-| `dismissible`           | `boolean`                                                     | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                     |
-| `backgroundinteraction` | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent` | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                            |
-| `cornerradius`          | `number`                                                      | The corner radius of the presentation in points.                                                                                                                         |
-| `ondismiss`             | `() => void`                                                  | Runs when the user dismisses the presentation, so you can update your state.                                                                                             |
-| `detent`                | `"medium" \| "large"`                                         | A single height: `medium` allows the medium and large heights, and `large` allows only the large height. Use `detents` to set several.                                   |
+| Attribute                | Type                                                          | Description                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detents`                | `Array<Detent>`                                               | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`.                        |
+| `dragindicator`          | `"automatic" \| "visible" \| "hidden"`                        | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                                          |
+| `dismissible`            | `boolean`                                                     | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                                            |
+| `backgroundinteraction`  | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent` | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                                                   |
+| `cornerradius`           | `number`                                                      | The corner radius of the presentation in points.                                                                                                                                                |
+| `presentationbackground` | `ShapeStyle \| "clear" \| { glass?: "regular" \| "clear"; }`  | The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). |
+| `ondismiss`              | `() => void`                                                  | Runs when the user dismisses the presentation, so you can update your state.                                                                                                                    |
+| `detent`                 | `"medium" \| "large"`                                         | A single height: `medium` allows the medium and large heights, and `large` allows only the large height. Use `detents` to set several.                                                          |
 
 ```svelte
 <script lang="ts">
@@ -337,6 +338,7 @@ A `.sheet` presented from the nearest screen, tab, or presentation for as long a
   <sheet
     detents={["medium", "large"]}
     dragindicator="visible"
+    presentationbackground={{ glass: "regular" }}
     ondismiss={() => (open = false)}
   >
     <vstack spacing={12} padding>
@@ -352,10 +354,11 @@ A `.sheet` presented from the nearest screen, tab, or presentation for as long a
 
 A `.fullScreenCover` presented for as long as it's rendered.
 
-| Attribute     | Type         | Description                                                     |
-| ------------- | ------------ | --------------------------------------------------------------- |
-| `dismissible` | `boolean`    | Whether the user can dismiss the cover.                         |
-| `ondismiss`   | `() => void` | Runs when the cover is dismissed, so you can update your state. |
+| Attribute                | Type                                            | Description                                                                                                                        |
+| ------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `presentationbackground` | `PresentationOptions["presentationbackground"]` | The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background. |
+| `dismissible`            | `boolean`                                       | Whether the user can dismiss the cover.                                                                                            |
+| `ondismiss`              | `() => void`                                    | Runs when the cover is dismissed, so you can update your state.                                                                    |
 
 ```svelte
 <script lang="ts">
@@ -364,7 +367,11 @@ A `.fullScreenCover` presented for as long as it's rendered.
 
 <btn variant="bordered" onclick={() => (open = true)}>Show the cover</btn>
 {#if open}
-  <fullscreencover dismissible={false} ondismiss={() => (open = false)}>
+  <fullscreencover
+    dismissible={false}
+    presentationbackground="clear"
+    ondismiss={() => (open = false)}
+  >
     <vstack spacing={16} padding>
       <txt font="title2" weight="semibold">A full-screen cover</txt>
       <btn variant="prominent" onclick={() => (open = false)}>Close</btn>
@@ -377,16 +384,17 @@ A `.fullScreenCover` presented for as long as it's rendered.
 
 A `.popover` anchored to the element it's inside, such as a `btn`.
 
-| Attribute               | Type                                                                 | Description                                                                                                                                                              |
-| ----------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `detents`               | `Array<Detent>`                                                      | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`. |
-| `dragindicator`         | `"automatic" \| "visible" \| "hidden"`                               | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                   |
-| `dismissible`           | `boolean`                                                            | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                     |
-| `backgroundinteraction` | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent`        | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                            |
-| `cornerradius`          | `number`                                                             | The corner radius of the presentation in points.                                                                                                                         |
-| `ondismiss`             | `() => void`                                                         | Runs when the user dismisses the presentation, so you can update your state.                                                                                             |
-| `arrowedge`             | `Edge`                                                               | The edge of the anchor that the arrow points from: `top`, `bottom`, `leading`, or `trailing`.                                                                            |
-| `adaptation`            | `"automatic" \| "none" \| "popover" \| "sheet" \| "fullScreenCover"` | How the popover adapts on iPhone, where it opens as a sheet by default: `automatic`, `none`, `popover`, `sheet`, or `fullScreenCover`.                                   |
+| Attribute                | Type                                                                 | Description                                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detents`                | `Array<Detent>`                                                      | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`.                        |
+| `dragindicator`          | `"automatic" \| "visible" \| "hidden"`                               | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                                          |
+| `dismissible`            | `boolean`                                                            | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                                            |
+| `backgroundinteraction`  | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent`        | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                                                   |
+| `cornerradius`           | `number`                                                             | The corner radius of the presentation in points.                                                                                                                                                |
+| `presentationbackground` | `ShapeStyle \| "clear" \| { glass?: "regular" \| "clear"; }`         | The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). |
+| `ondismiss`              | `() => void`                                                         | Runs when the user dismisses the presentation, so you can update your state.                                                                                                                    |
+| `arrowedge`              | `Edge`                                                               | The edge of the anchor that the arrow points from: `top`, `bottom`, `leading`, or `trailing`.                                                                                                   |
+| `adaptation`             | `"automatic" \| "none" \| "popover" \| "sheet" \| "fullScreenCover"` | How the popover adapts on iPhone, where it opens as a sheet by default: `automatic`, `none`, `popover`, `sheet`, or `fullScreenCover`.                                                          |
 
 ```svelte
 <script lang="ts">
@@ -413,15 +421,16 @@ A `.popover` anchored to the element it's inside, such as a `btn`.
 
 An `.inspector` shown as a column beside the content on iPad and as a sheet on iPhone, for as long as it's rendered.
 
-| Attribute               | Type                                                          | Description                                                                                                                                                              |
-| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `detents`               | `Array<Detent>`                                               | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`. |
-| `dragindicator`         | `"automatic" \| "visible" \| "hidden"`                        | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                   |
-| `dismissible`           | `boolean`                                                     | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                     |
-| `backgroundinteraction` | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent` | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                            |
-| `cornerradius`          | `number`                                                      | The corner radius of the presentation in points.                                                                                                                         |
-| `ondismiss`             | `() => void`                                                  | Runs when the user dismisses the presentation, so you can update your state.                                                                                             |
-| `columnwidth`           | `ColumnWidth`                                                 | The width of the inspector column on iPad, in points, or `{ min, ideal, max }`.                                                                                          |
+| Attribute                | Type                                                          | Description                                                                                                                                                                                     |
+| ------------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `detents`                | `Array<Detent>`                                               | The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`.                        |
+| `dragindicator`          | `"automatic" \| "visible" \| "hidden"`                        | Shows the drag handle at the top: `visible`, `hidden`, or `automatic`.                                                                                                                          |
+| `dismissible`            | `boolean`                                                     | Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open.                                                                                            |
+| `backgroundinteraction`  | `boolean \| "automatic" \| "enabled" \| "disabled" \| Detent` | Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height.                                                   |
+| `cornerradius`           | `number`                                                      | The corner radius of the presentation in points.                                                                                                                                                |
+| `presentationbackground` | `ShapeStyle \| "clear" \| { glass?: "regular" \| "clear"; }`  | The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). |
+| `ondismiss`              | `() => void`                                                  | Runs when the user dismisses the presentation, so you can update your state.                                                                                                                    |
+| `columnwidth`            | `ColumnWidth`                                                 | The width of the inspector column on iPad, in points, or `{ min, ideal, max }`.                                                                                                                 |
 
 ```svelte
 <script lang="ts">
@@ -3477,6 +3486,35 @@ type Pinned = "headers" | "footers" | "both";
 
 ```ts
 type Point = { x?: number; y?: number };
+```
+
+### `PresentationOptions`
+
+```ts
+type PresentationOptions = {
+  /** The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`. */
+  detents?: Array<Detent>;
+  /** Shows the drag handle at the top: `visible`, `hidden`, or `automatic`. */
+  dragindicator?: "automatic" | "visible" | "hidden";
+  /** Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open. */
+  dismissible?: boolean;
+  /** Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height. */
+  backgroundinteraction?:
+    | boolean
+    | "automatic"
+    | "enabled"
+    | "disabled"
+    | Detent;
+  /** The corner radius of the presentation in points. */
+  cornerradius?: number;
+  /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). */
+  presentationbackground?:
+    | ShapeStyle
+    | "clear"
+    | { glass?: "regular" | "clear" };
+  /** Runs when the user dismisses the presentation, so you can update your state. */
+  ondismiss?: () => void;
+};
 ```
 
 ### `RotateEvent`

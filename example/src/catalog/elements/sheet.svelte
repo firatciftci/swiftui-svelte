@@ -7,6 +7,7 @@
   <sheet
     detents={["medium", "large"]}
     dragindicator="visible"
+    presentationbackground={{ glass: "regular" }}
     ondismiss={() => (open = false)}
   >
     <vstack spacing={12} padding>

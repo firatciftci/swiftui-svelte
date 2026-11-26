@@ -346,6 +346,8 @@ These elements aren't drawn where they appear. Instead, they attach to the eleme
 </navstack>
 ```
 
+A sheet or full-screen cover can set its background with `presentationbackground`. It takes a color, material, or gradient. It also takes `clear` for no background, or `{ glass: "regular" }` for a Liquid Glass background. The glass variant `clear` is also available. Before iOS 26, the glass background falls back to a material. A sheet's detents can be a height in points, such as `detents={[320]}`, so a drawer can fit its content.
+
 ## Accessibility
 
 Every element is a SwiftUI view, so VoiceOver, Voice Control, and Switch Control work without extra code. Controls read their own labels and values, and `sfsymbol` and `imageview` take a `label`. These attributes adjust what assistive technologies hear and do on any element:

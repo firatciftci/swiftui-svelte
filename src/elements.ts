@@ -486,6 +486,11 @@ type PresentationOptions = {
     | Detent;
   /** The corner radius of the presentation in points. */
   cornerradius?: number;
+  /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). */
+  presentationbackground?:
+    | ShapeStyle
+    | "clear"
+    | { glass?: "regular" | "clear" };
   /** Runs when the user dismisses the presentation, so you can update your state. */
   ondismiss?: () => void;
 };
@@ -921,6 +926,8 @@ declare module "svelte/elements" {
       };
     /** A `.fullScreenCover` presented for as long as it's rendered. */
     fullscreencover: Modifiers & {
+      /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background. */
+      presentationbackground?: PresentationOptions["presentationbackground"];
       /** Whether the user can dismiss the cover. */
       dismissible?: boolean;
       /** Runs when the cover is dismissed, so you can update your state. */

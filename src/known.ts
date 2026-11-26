@@ -127,8 +127,9 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "dismissible",
     "dragindicator",
     "ondismiss",
+    "presentationbackground",
   ],
-  fullscreencover: ["dismissible", "ondismiss"],
+  fullscreencover: ["dismissible", "ondismiss", "presentationbackground"],
   popover: [
     "adaptation",
     "arrowedge",
@@ -138,6 +139,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "dismissible",
     "dragindicator",
     "ondismiss",
+    "presentationbackground",
   ],
   inspector: [
     "backgroundinteraction",
@@ -147,6 +149,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "dismissible",
     "dragindicator",
     "ondismiss",
+    "presentationbackground",
   ],
   alert: ["ondismiss", "title"],
   confirmationdialog: ["ondismiss", "title", "titlevisibility"],
