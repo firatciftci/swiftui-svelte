@@ -1,15 +1,38 @@
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { appAliases, routesModule, routesModuleId } from "./src/routes.ts";
 import { fixSvelte } from "./src/svelte-fixes.ts";
+
+const source = path.resolve("test/router/src");
+const src = new URL("src", import.meta.url).pathname;
 
 export default defineConfig({
   plugins: [
+    paraglideVitePlugin({
+      project: "./example/project.inlang",
+      outdir: "./example/src/paraglide",
+      strategy: ["preferredLanguage", "baseLocale"],
+    }),
     svelte(),
     { name: "svelte-fixes", transform: (code, id) => fixSvelte(code, id) },
+    {
+      name: "swiftui-svelte-routes",
+      resolveId: (id) =>
+        id === routesModuleId ? `\0${routesModuleId}` : undefined,
+      load: (id) =>
+        id === `\0${routesModuleId}`
+          ? routesModule(import.meta.dirname, source)
+          : undefined,
+    },
   ],
-  define: { __SWIFTUI_SVELTE_DEV__: "true" },
+  define: {
+    __SWIFTUI_SVELTE_DEV__: "true",
+    __SWIFTUI_SVELTE_VERSION__: JSON.stringify("test"),
+  },
   resolve: {
-    alias: { "swiftui-svelte": new URL("src", import.meta.url).pathname },
+    alias: [...appAliases, { find: "swiftui-svelte", replacement: src }],
     conditions: ["svelte-custom-renderer", "browser"],
   },
   test: {

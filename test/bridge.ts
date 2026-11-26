@@ -1,6 +1,7 @@
 import type { Component } from "svelte";
 import { mountApp } from "swiftui-svelte";
 import { opcodes, protocol } from "swiftui-svelte/renderer";
+import { createStorage } from "swiftui-svelte/web/storage";
 
 type Kind = "fragment" | "element" | "text";
 type MirrorNode = {
@@ -394,6 +395,7 @@ export function lastMount(): number {
 
 export function installBridge(): void {
   Object.assign(globalThis, {
+    localStorage: createStorage([]),
     __nativeCommit(json: string, animation?: string): void {
       commits.push(json);
       animations.push(animation);

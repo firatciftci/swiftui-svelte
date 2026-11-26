@@ -6,9 +6,12 @@ const config: KnipConfig = {
     "test/native.ts",
     "test/web/native.ts",
     "test/size/main.ts",
+    "example/src/routes/**/*.{svelte,ts}",
+    "test/router/src/**/*.{svelte,ts}",
   ],
   ignoreDependencies: ["typescript-eslint"],
   ignoreBinaries: ["swiftlint", "xcodegen"],
+  ignoreUnresolved: [/^\$app\//, /\$types$/],
   ignoreFiles: [
     "template/**",
     "changelogithub.config.ts",

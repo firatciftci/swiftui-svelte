@@ -118,7 +118,7 @@ export default antfu({
   },
   ...swiftuiSvelte.map((config) => ({ ...config, files: ["example/src/**"] })),
   {
-    files: ["src/tailwind/vite.ts"],
+    files: ["src/tailwind/vite.ts", "src/vite.ts"],
     rules: { "unicorn/no-this-outside-of-class": "off" },
   },
   {
@@ -153,6 +153,21 @@ export default antfu({
     },
   },
   { files: ["src/web/events.ts"], rules: { "no-console": "off" } },
+  {
+    files: [
+      "src/kit/**",
+      "example/src/routes/**",
+      "scripts/routes.ts",
+      "test/router.test.ts",
+      "test/router/**",
+    ],
+    rules: { "no-restricted-imports": "off" },
+  },
+  {
+    files: ["src/kit/environment.ts", "test/router/src/params/digits.ts"],
+    rules: { "unicorn/consistent-boolean-name": "off" },
+  },
+  { files: ["test/router.test.ts"], rules: { "ts/no-unsafe-argument": "off" } },
   {
     files: ["src/web/index.ts", "test/web/native.ts"],
     rules: { "unicorn/no-global-object-property-assignment": "off" },
