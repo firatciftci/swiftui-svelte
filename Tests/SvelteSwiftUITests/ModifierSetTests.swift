@@ -11,13 +11,13 @@ struct ModifierSetTests {
         "GestureHandlers": .gestures, "Taps": .gestures, "Drags": .gestures, "Pinches": .gestures, "GridCell": .gridCell,
         "Resizing": .resizing, "Localized": .localized, "Preferences": .preferences, "Availability": .availability,
         "AnimatedChildren": .animated, "Attachments": .attachments, "RowTraits": .rowTraits, "RowOptions": .rowTraits,
-        "SafeAreaInsets": .safeArea, "PointerEvents": .pointer,
+        "SafeAreaInsets": .safeArea, "PointerEvents": .pointer, "Sizing": .framing,
     ]
     nonisolated private static let modifiers = [
         "Framing", "Typography", "Appearance", "Decorations", "GlassSurface", "Transforms", "Layers", "Accessible",
         "AccessibleDescription", "AccessibleActions", "Lifecycle", "GestureHandlers", "Taps", "Drags", "Pinches", "GridCell",
         "Resizing", "Localized", "Preferences", "Availability", "AnimatedChildren", "Attachments", "RowTraits", "RowOptions",
-        "SafeAreaInsets", "PointerEvents",
+        "SafeAreaInsets", "PointerEvents", "Sizing",
     ]
 
     private static func source() throws -> String {

@@ -115,6 +115,8 @@ private struct SingleElement: View {
             ShapeElement(node: node)
         case "zstack":
             ZStack(alignment: Styles.alignment(alignment)) { children }
+        case "flowstack":
+            FlowElement(node: node)
         case "scrollview":
             ScrollView(Self.axes(node.attributes["axes"]?.string)) {
                 if node.attributes["snap"]?.string == "view" {
@@ -253,6 +255,7 @@ private struct Shaping: ViewModifier {
         content
             .gated(modifiers.contains(.safeArea)) { $0.modifier(SafeAreaInsets(node: node)) }
             .gated(modifiers.contains(.framing)) { $0.modifier(Framing(attributes: attributes)) }
+            .gated(modifiers.contains(.framing)) { $0.modifier(Sizing(attributes: attributes)) }
             .gated(modifiers.contains(.typography)) { $0.modifier(Typography(attributes: attributes)) }
             .gated(modifiers.contains(.appearance)) { $0.modifier(Appearance(attributes: attributes)) }
             .gated(modifiers.contains(.decorations)) { $0.modifier(Decorations(node: node)) }

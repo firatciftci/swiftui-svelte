@@ -7,7 +7,7 @@ Every element also takes the [modifiers](#modifiers), unless its entry says it d
 - [Navigation](#navigation): [`navstack`](#navstack), [`screen`](#screen), [`navsplitview`](#navsplitview), [`tabview`](#tabview), [`tab`](#tab), [`tabsection`](#tabsection)
 - [Toolbars and search](#toolbars-and-search): [`toolbar`](#toolbar), [`toolbarspacer`](#toolbarspacer), [`searchable`](#searchable)
 - [Presentations](#presentations): [`sheet`](#sheet), [`fullscreencover`](#fullscreencover), [`popover`](#popover), [`inspector`](#inspector), [`alert`](#alert), [`confirmationdialog`](#confirmationdialog), [`contextmenu`](#contextmenu), [`preview`](#preview)
-- [Stacks and grids](#stacks-and-grids): [`vstack`](#vstack), [`hstack`](#hstack), [`zstack`](#zstack), [`spacer`](#spacer), [`divider`](#divider), [`grid`](#grid), [`gridrow`](#gridrow), [`viewthatfits`](#viewthatfits), [`group`](#group), [`safeareainset`](#safeareainset)
+- [Stacks and grids](#stacks-and-grids): [`vstack`](#vstack), [`hstack`](#hstack), [`zstack`](#zstack), [`spacer`](#spacer), [`divider`](#divider), [`grid`](#grid), [`gridrow`](#gridrow), [`viewthatfits`](#viewthatfits), [`group`](#group), [`safeareainset`](#safeareainset), [`flowstack`](#flowstack)
 - [Scrolling and lazy containers](#scrolling-and-lazy-containers): [`scrollview`](#scrollview), [`lazyvstack`](#lazyvstack), [`lazyhstack`](#lazyhstack), [`lazyvgrid`](#lazyvgrid), [`lazyhgrid`](#lazyhgrid)
 - [Lists and forms](#lists-and-forms): [`list`](#list), [`sectionview`](#sectionview), [`swipeactions`](#swipeactions), [`formview`](#formview), [`labeledcontent`](#labeledcontent), [`disclosuregroup`](#disclosuregroup), [`groupbox`](#groupbox), [`controlgroup`](#controlgroup)
 - [Text and images](#text-and-images): [`txt`](#txt), [`sfsymbol`](#sfsymbol), [`labelview`](#labelview), [`icon`](#icon), [`imageview`](#imageview), [`asyncimage`](#asyncimage), [`placeholder`](#placeholder), [`failure`](#failure), [`contentunavailableview`](#contentunavailableview)
@@ -780,6 +780,58 @@ This element doesn't take modifiers.
     </txt>
   </safeareainset>
 </scrollview>
+```
+
+### `flowstack`
+
+A wrapping layout: it puts its children in rows and starts a new row when the next child doesn't fit the width, the way words wrap in a paragraph. `spacing` sets the gap between children in a row, `linespacing` sets the gap between rows, and `alignment` sets how each row is aligned.
+
+| Attribute     | Type                                  | Description                                                         |
+| ------------- | ------------------------------------- | ------------------------------------------------------------------- |
+| `spacing`     | `number`                              | The space between children in a row, in points. Defaults to 8.      |
+| `linespacing` | `number`                              | The space between rows, in points. Defaults to `spacing`.           |
+| `alignment`   | `"leading" \| "center" \| "trailing"` | How each row sits in the width: `leading`, `center`, or `trailing`. |
+
+```svelte
+<script lang="ts">
+  const tags = [
+    "Svelte",
+    "SwiftUI",
+    "JavaScriptCore",
+    "Layout",
+    "Flow",
+    "Wrapping rows",
+    "Spacing",
+    "Alignment",
+  ];
+</script>
+
+<vstack spacing={16} alignment="leading">
+  <flowstack spacing={8} linespacing={12}>
+    {#each tags as tag (tag)}
+      <txt
+        padding={{ horizontal: 10, vertical: 6 }}
+        background="blue"
+        color="white"
+        radius={8}
+      >
+        {tag}
+      </txt>
+    {/each}
+  </flowstack>
+  <flowstack spacing={8} alignment="center">
+    {#each tags.slice(0, 5) as tag (tag)}
+      <txt
+        padding={{ horizontal: 10, vertical: 6 }}
+        background="teal"
+        color="white"
+        radius={8}
+      >
+        {tag}
+      </txt>
+    {/each}
+  </flowstack>
+</vstack>
 ```
 
 ## Scrolling and lazy containers
@@ -2424,23 +2476,25 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Frame and layout
 
-| Attribute         | Type               | Description                                                                                                                                                                    |
-| ----------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `padding`         | `Insets`           | Pads the element. A number pads every edge by that many points, an object such as `{ horizontal: 20, top: 4 }` pads each edge separately, and a bare `padding` adds 16 points. |
-| `width`           | `number`           | A fixed width in points.                                                                                                                                                       |
-| `height`          | `number`           | A fixed height in points.                                                                                                                                                      |
-| `minwidth`        | `Length`           | The minimum width in points, or `infinity` to fill the available width.                                                                                                        |
-| `idealwidth`      | `Length`           | The ideal width in points, or `infinity`, used as the preferred size in a flexible frame.                                                                                      |
-| `maxwidth`        | `Length`           | The maximum width in points, or `infinity` to grow to fill the available width.                                                                                                |
-| `minheight`       | `Length`           | The minimum height in points, or `infinity` to fill the available height.                                                                                                      |
-| `idealheight`     | `Length`           | The ideal height in points, or `infinity`, used as the preferred size in a flexible frame.                                                                                     |
-| `maxheight`       | `Length`           | The maximum height in points, or `infinity` to grow to fill the available height.                                                                                              |
-| `framealignment`  | `LayerAlignment`   | Where the content sits inside a flexible frame, such as `center` or `topLeading`.                                                                                              |
-| `aspectratio`     | `number`           | The ratio of width to height that the element keeps.                                                                                                                           |
-| `contentmode`     | `"fit" \| "fill"`  | Fits the element inside its space (`fit`), or fills the space (`fill`), keeping the aspect ratio.                                                                              |
-| `ignoressafearea` | `SafeAreaIgnoring` | Lets the element extend under the safe area: `true` for every edge, `keyboard` or `container` for only that region, an edge, an array of edges, or `{ regions, edges }`.       |
-| `zindex`          | `number`           | The stacking order of the element among its siblings. Higher values draw in front.                                                                                             |
-| `hidden`          | `boolean`          | Hides the element but keeps its space in the layout.                                                                                                                           |
+| Attribute         | Type                                    | Description                                                                                                                                                                    |
+| ----------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `padding`         | `Insets`                                | Pads the element. A number pads every edge by that many points, an object such as `{ horizontal: 20, top: 4 }` pads each edge separately, and a bare `padding` adds 16 points. |
+| `width`           | `number`                                | A fixed width in points.                                                                                                                                                       |
+| `height`          | `number`                                | A fixed height in points.                                                                                                                                                      |
+| `minwidth`        | `Length`                                | The minimum width in points, or `infinity` to fill the available width.                                                                                                        |
+| `idealwidth`      | `Length`                                | The ideal width in points, or `infinity`, used as the preferred size in a flexible frame.                                                                                      |
+| `maxwidth`        | `Length`                                | The maximum width in points, or `infinity` to grow to fill the available width.                                                                                                |
+| `minheight`       | `Length`                                | The minimum height in points, or `infinity` to fill the available height.                                                                                                      |
+| `idealheight`     | `Length`                                | The ideal height in points, or `infinity`, used as the preferred size in a flexible frame.                                                                                     |
+| `maxheight`       | `Length`                                | The maximum height in points, or `infinity` to grow to fill the available height.                                                                                              |
+| `fixedsize`       | `boolean \| "horizontal" \| "vertical"` | Keeps the element at its ideal size instead of letting its parent shrink it: `true` for both axes, or `horizontal` or `vertical`.                                              |
+| `layoutpriority`  | `number`                                | The priority the element has when its parent doesn't have room for every child. Higher values keep their size first.                                                           |
+| `framealignment`  | `LayerAlignment`                        | Where the content sits inside a flexible frame, such as `center` or `topLeading`.                                                                                              |
+| `aspectratio`     | `number`                                | The ratio of width to height that the element keeps.                                                                                                                           |
+| `contentmode`     | `"fit" \| "fill"`                       | Fits the element inside its space (`fit`), or fills the space (`fill`), keeping the aspect ratio.                                                                              |
+| `ignoressafearea` | `SafeAreaIgnoring`                      | Lets the element extend under the safe area: `true` for every edge, `keyboard` or `container` for only that region, an edge, an array of edges, or `{ regions, edges }`.       |
+| `zindex`          | `number`                                | The stacking order of the element among its siblings. Higher values draw in front.                                                                                             |
+| `hidden`          | `boolean`                               | Hides the element but keeps its space in the layout.                                                                                                                           |
 
 ```svelte
 <script lang="ts">
@@ -2451,6 +2505,9 @@ Every element takes these attributes, except the few whose entries say they don'
   <rectangle fill="secondarySystemBackground" ignoressafearea />
   <vstack spacing={12} padding={{ horizontal: 20, vertical: 12 }}>
     <txt width={200} height={44} background="mint">200 by 44 points</txt>
+    <txt fixedsize layoutpriority={1} background="green"
+      >Keeps its ideal size</txt
+    >
     <txt
       maxwidth="infinity"
       framealignment="leading"
@@ -2658,6 +2715,7 @@ Every element takes these attributes, except the few whose entries say they don'
 | `onmagnify`         | `(magnify: MagnifyEvent) => void`  | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                 |
 | `onrotate`          | `(rotate: RotateEvent) => void`    | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                |
 | `onhover`           | `(event: HoverEvent) => void`      | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. |
+| `allowshittesting`  | `boolean`                          | Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind.                                                                    |
 
 ```svelte
 <script lang="ts">
@@ -2670,6 +2728,23 @@ Every element takes these attributes, except the few whose entries say they don'
 
 <vstack spacing={20} padding>
   <txt font="headline">{last}</txt>
+  <zstack>
+    <txt
+      padding
+      background="yellow"
+      radius={8}
+      ontap={() => (last = "Under the cover")}>Tap under the cover</txt
+    >
+    <rectangle
+      fill="red"
+      width={180}
+      height={44}
+      radius={8}
+      opacity={0.3}
+      allowshittesting={false}
+      ontap={() => (last = "Cover")}
+    />
+  </zstack>
   <txt
     padding
     width={240}

@@ -8,6 +8,23 @@
 
 <vstack spacing={20} padding>
   <txt font="headline">{last}</txt>
+  <zstack>
+    <txt
+      padding
+      background="yellow"
+      radius={8}
+      ontap={() => (last = "Under the cover")}>Tap under the cover</txt
+    >
+    <rectangle
+      fill="red"
+      width={180}
+      height={44}
+      radius={8}
+      opacity={0.3}
+      allowshittesting={false}
+      ontap={() => (last = "Cover")}
+    />
+  </zstack>
   <txt
     padding
     width={240}

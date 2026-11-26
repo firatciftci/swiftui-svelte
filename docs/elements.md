@@ -79,6 +79,8 @@ For text from Markdown, set `markdown` to the source, or set it with no value to
 
 Only inline Markdown works: bold, italic, strikethrough, code, and links. Headings, lists, and other blocks show up as plain text, and line breaks are kept. With `markdown`, nested `txt` elements are ignored.
 
+A `flowstack` lays its children out in rows and starts a new row when the next child doesn't fit, the way words wrap in a paragraph. Use it for tags, chips, and other items that have their own widths. Children keep their ideal size, so pair the flow with `fixedsize` on any child that shouldn't shrink. Set `spacing` for the gap between children in a row, `linespacing` for the gap between rows, and `alignment` to `center` or `trailing` to align each row.
+
 ## Colors and shapes
 
 `color`, `background`, `fill`, and `stroke` take any of these:

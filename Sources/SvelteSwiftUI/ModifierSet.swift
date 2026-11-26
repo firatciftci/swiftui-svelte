@@ -27,7 +27,7 @@ struct ModifierSet: OptionSet, Hashable {
         let groups: [Self: Array<String>] = [
             .framing: [
                 "framealignment", "width", "height", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight", "maxheight",
-                "aspectratio", "contentmode", "padding",
+                "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
             ],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
             .appearance: ["background", "opacity", "radius"],
@@ -46,7 +46,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "colorscheme", "dynamictypesize", "feedbacktrigger", "preferredcolorscheme", "scrolldismisseskeyboard",
                 "sensoryfeedback",
             ],
-            .availability: ["disabled", "hidden", "ignoressafearea"],
+            .availability: ["disabled", "hidden", "ignoressafearea", "allowshittesting"],
             .animated: ["animated", "animation", "disablesanimations"],
             .rowTraits: [
                 "transition", "in", "out", "zindex", "deletedisabled", "movedisabled", "rowbackground", "rowinsets", "rowseparator",

@@ -45,6 +45,7 @@ export const sections: Array<{
       "viewthatfits",
       "group",
       "safeareainset",
+      "flowstack",
     ],
   },
   {
@@ -173,6 +174,8 @@ export const modifierGroups: Array<{
       "minheight",
       "idealheight",
       "maxheight",
+      "fixedsize",
+      "layoutpriority",
       "framealignment",
       "aspectratio",
       "contentmode",
@@ -220,6 +223,7 @@ export const modifierGroups: Array<{
       "onmagnify",
       "onrotate",
       "onhover",
+      "allowshittesting",
     ],
   },
   {

@@ -156,6 +156,7 @@ struct Availability: ViewModifier {
         content
             .ifLet(attributes["disabled"]) { $0.disabled($1.isTrue) }
             .ifLet(attributes["hidden"]?.isTrue == true ? true : nil) { view, _ in view.hidden() }
+            .ifLet(attributes["allowshittesting"].map(\.isTrue)) { $0.allowsHitTesting($1) }
             .ifLet(Effects.ignoredSafeArea(attributes["ignoressafearea"])) { $0.ignoresSafeArea($1.regions, edges: $1.edges) }
     }
 }

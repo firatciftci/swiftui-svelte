@@ -674,6 +674,12 @@ type Modifiers = {
   aspectratio?: number;
   /** Fits the element inside its space (`fit`), or fills the space (`fill`), keeping the aspect ratio. */
   contentmode?: "fit" | "fill";
+  /** Keeps the element at its ideal size instead of letting its parent shrink it: `true` for both axes, or `horizontal` or `vertical`. */
+  fixedsize?: boolean | "horizontal" | "vertical";
+  /** The priority the element has when its parent doesn't have room for every child. Higher values keep their size first. */
+  layoutpriority?: number;
+  /** Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind. */
+  allowshittesting?: boolean;
   /** Moves the element by `{ x, y }` points without changing the layout around it. */
   offset?: Point;
   /** Places the element's center at `{ x, y }` points in its parent's coordinate space. */
@@ -1068,6 +1074,15 @@ declare module "svelte/elements" {
       spacing?: number;
       /** The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. */
       alignment?: VerticalAlignment;
+    };
+    /** A wrapping layout: it puts its children in rows and starts a new row when the next child doesn't fit the width, the way words wrap in a paragraph. `spacing` sets the gap between children in a row, `linespacing` sets the gap between rows, and `alignment` sets how each row is aligned. */
+    flowstack: Modifiers & {
+      /** The space between children in a row, in points. Defaults to 8. */
+      spacing?: number;
+      /** The space between rows, in points. Defaults to `spacing`. */
+      linespacing?: number;
+      /** How each row sits in the width: `leading`, `center`, or `trailing`. */
+      alignment?: "leading" | "center" | "trailing";
     };
     /** A `ZStack`: layers its children on top of each other. */
     zstack: Modifiers & {
