@@ -12,10 +12,10 @@ import {
 } from "swiftui-svelte/kit/match";
 import {
   back,
-  beforeNavigate,
   goto,
   invalidate,
 } from "swiftui-svelte/kit/navigation";
+import { resolve } from "swiftui-svelte/kit/paths";
 import { page } from "swiftui-svelte/kit/state";
 import Router from "../src/kit/Router.svelte";
 import { routesModule } from "../src/routes.ts";
@@ -81,6 +81,16 @@ describe("route patterns", () => {
       "/[[x]]",
       "/[...rest]",
     ]);
+  });
+
+  it("resolves route IDs to paths", () => {
+    expect(resolve("/items/[id]", { id: "7" })).toBe("/items/7");
+    expect(resolve("/(static)/about")).toBe("/about");
+    expect(resolve("/[[lang]]/files/[...path]", { path: "a/b" })).toBe(
+      "/files/a/b",
+    );
+    expect(resolve("/")).toBe("/");
+    expect(resolve("arama/sonuc?sources=TDK")).toBe("arama/sonuc?sources=TDK");
   });
 
   it("resolves the first route that matches", () => {
@@ -255,13 +265,17 @@ describe("router", () => {
     expect(titles()).toEqual(["Home", "Item 3"]);
   });
 
-  it("cancels a navigation from beforeNavigate", async () => {
-    beforeNavigate((navigation) => {
-      if (navigation.to.url.pathname === "/items/1") navigation.cancel();
-    });
+  it("cancels a navigation from beforeNavigate until the screen that added it closes", async () => {
+    await goto("/guarded");
+    await tick();
     await goto("/items/1");
     await tick();
-    expect(titles()).toEqual(["Home"]);
+    expect(titles()).toEqual(["Home", "Guarded"]);
+    back();
+    await tick();
+    await goto("/items/1");
+    await tick();
+    expect(titles()).toEqual(["Home", "Item 1"]);
   });
 
   it("unmounts cleanly", () => {

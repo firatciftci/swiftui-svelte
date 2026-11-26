@@ -1,3 +1,4 @@
+import { onDestroy } from "svelte";
 import type { AfterNavigate, BeforeNavigate, OnNavigate } from "./types.ts";
 import {
   hooks,
@@ -19,22 +20,27 @@ export function back(): void {
   router.back();
 }
 
+function register<T>(set: Set<T>, callback: T): void {
+  set.add(callback);
+  onDestroy(() => set.delete(callback));
+}
+
 export function beforeNavigate(
   callback: (navigation: BeforeNavigate) => void,
 ): void {
-  hooks.before.add(callback);
+  register(hooks.before, callback);
 }
 
 export function afterNavigate(
   callback: (navigation: AfterNavigate) => void,
 ): void {
-  hooks.after.add(callback);
+  register(hooks.after, callback);
 }
 
 export function onNavigate(
   callback: (navigation: OnNavigate) => void | Promise<void>,
 ): void {
-  hooks.onNavigate.add(callback);
+  register(hooks.onNavigate, callback);
 }
 
 export async function invalidate(depends: string | URL): Promise<void> {

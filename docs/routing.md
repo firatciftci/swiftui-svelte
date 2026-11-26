@@ -71,7 +71,7 @@ An opened URL routes to the matching screen. The path after the app's scheme map
 
 - The app has no server. There are no `+page.server.ts`, `+server.ts`, `hooks`, or form actions. Fetch data from the device or from your own API.
 - Screens are native. Nested layouts render inside each screen, so they remount when the user pushes a page instead of staying mounted across navigations.
-- `$app/paths` exports only `base` and `assets`, and both are empty strings.
+- `$app/paths` exports `base` and `assets`, which are both empty strings, plus `resolve` and `asset`. `resolve("/items/[id]", { id })` fills in the parameters and drops `(group)` segments, as it does in SvelteKit.
 - `page.data` is typed as `Record<string, unknown>` because the data from every level merges into one object.
 - The stack lives in one tab. Each sheet renders a single page inside its own navigation stack.
 - `preloadData`, `pushState`, `replaceState`, and `page.form` are not available.
