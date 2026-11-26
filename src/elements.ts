@@ -599,6 +599,8 @@ type Modifiers = {
   font?: Font;
   /** The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style. */
   fontname?: string;
+  /** PostScript names of fonts to try, in order, for characters that `fontname` doesn't have, such as an Arabic font for Arabic text. Each fallback is used when the font before it lacks the character. */
+  fontfallbacks?: Array<string>;
   /** A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. */
   size?: number;
   /** The font design: `default`, `rounded`, `serif`, or `monospaced`. */

@@ -28,7 +28,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "framealignment", "width", "height", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight", "maxheight",
                 "aspectratio", "contentmode", "padding",
             ],
-            .typography: ["font", "fontname", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
+            .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
             .appearance: ["background", "opacity", "radius"],
             .decorations: ["clipshape", "border", "shadow", "blur", "contentshape"],
             .glass: ["glasseffect", "glassid", "glassunion"],

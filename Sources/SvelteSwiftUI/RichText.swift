@@ -3,6 +3,7 @@ import SwiftUI
 struct Span {
     var font: String?
     var fontName: String?
+    var fontFallbacks: Array<String> = []
     var size: Double?
     var design: Font.Design?
     var hasFont = false
@@ -19,6 +20,7 @@ struct Span {
     init(root attributes: [String: JSONValue]) {
         font = attributes["font"]?.string
         fontName = attributes["fontname"]?.string
+        fontFallbacks = Styles.names(attributes["fontfallbacks"])
         size = attributes["size"]?.number
         design = Styles.design(attributes["design"]?.string)
         kerning = attributes["kerning"]?.number
@@ -32,12 +34,14 @@ struct Span {
         let fontName = attributes["fontname"]?.string
         let size = attributes["size"]?.number
         span.fontName = fontName ?? span.fontName
+        let fallbacks = Styles.names(attributes["fontfallbacks"])
+        if !fallbacks.isEmpty { span.fontFallbacks = fallbacks }
         if font != nil || size != nil {
             span.font = font ?? span.font
             span.size = size
             span.hasFont = true
         }
-        if fontName != nil { span.hasFont = true }
+        if fontName != nil || !fallbacks.isEmpty { span.hasFont = true }
         if let design = Styles.design(attributes["design"]?.string) {
             span.design = design
             span.hasFont = true
@@ -59,7 +63,7 @@ struct Span {
     }
 
     private var resolvedFont: Font {
-        if let fontName { return Styles.custom(fontName, size: size, style: font) }
+        if let fontName { return Fonts.custom(fontName, size: size, style: font, fallbacks: fontFallbacks) }
         if let size { return .system(size: size, design: design) }
         if let design { return .system(Styles.textStyle(font) ?? .body, design: design) }
         return Styles.font(font) ?? .body

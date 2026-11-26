@@ -8,4 +8,10 @@
   <txt fontname="Georgia" font="body" italic
     >Georgia italic, scaled with Dynamic Type</txt
   >
+  <txt fontname="Georgia" size={24} weight="bold"
+    >Georgia family, weight bold</txt
+  >
+  <txt fontname="Georgia" size={20} fontfallbacks={["GeezaPro"]}
+    >Georgia with a fallback: مرحبا</txt
+  >
 </vstack>

@@ -20,7 +20,9 @@ enum Styles {
 
     static func font(_ attributes: [String: JSONValue]) -> Font? {
         if let name = attributes["fontname"]?.string {
-            return custom(name, size: attributes["size"]?.number, style: attributes["font"]?.string)
+            return Fonts.custom(
+                name, size: attributes["size"]?.number, style: attributes["font"]?.string,
+                fallbacks: names(attributes["fontfallbacks"]))
         }
         if let size = attributes["size"]?.number {
             return .system(size: size, design: design(attributes["design"]?.string))
@@ -28,17 +30,10 @@ enum Styles {
         return font(attributes["font"]?.string)
     }
 
-    static func custom(_ name: String, size: Double?, style: String?) -> Font {
-        guard let style, let textStyle = textStyle(style) else {
-            return size.map { .custom(name, fixedSize: CGFloat($0)) } ?? .custom(name, size: 17, relativeTo: .body)
-        }
-        return .custom(name, size: CGFloat(size ?? textStyleSizes[style, default: 17]), relativeTo: textStyle)
+    static func names(_ value: JSONValue?) -> Array<String> {
+        guard case let .array(values)? = value else { return [] }
+        return values.compactMap(\.string)
     }
-
-    private static let textStyleSizes: [String: Double] = [
-        "largeTitle": 34, "title": 28, "title2": 22, "title3": 20, "headline": 17, "subheadline": 15, "body": 17,
-        "callout": 16, "footnote": 13, "caption": 12, "caption2": 11,
-    ]
 
     static func padding(_ value: JSONValue?) -> CGFloat {
         switch value {

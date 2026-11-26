@@ -2315,14 +2315,15 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Typography
 
-| Attribute  | Type                                                | Description                                                                                                                                                                                                                        |
-| ---------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `font`     | `Font`                                              | The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element.                                                                                                           |
-| `fontname` | `string`                                            | The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style.                      |
-| `size`     | `number`                                            | A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. |
-| `design`   | `"default" \| "rounded" \| "serif" \| "monospaced"` | The font design: `default`, `rounded`, `serif`, or `monospaced`.                                                                                                                                                                   |
-| `weight`   | `Weight`                                            | The font weight, from `ultraLight` through `black`.                                                                                                                                                                                |
-| `italic`   | `boolean`                                           | Draws the text in italics.                                                                                                                                                                                                         |
+| Attribute       | Type                                                | Description                                                                                                                                                                                                                        |
+| --------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `font`          | `Font`                                              | The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element.                                                                                                           |
+| `fontname`      | `string`                                            | The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style.                      |
+| `fontfallbacks` | `Array<string>`                                     | PostScript names of fonts to try, in order, for characters that `fontname` doesn't have, such as an Arabic font for Arabic text. Each fallback is used when the font before it lacks the character.                                |
+| `size`          | `number`                                            | A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. |
+| `design`        | `"default" \| "rounded" \| "serif" \| "monospaced"` | The font design: `default`, `rounded`, `serif`, or `monospaced`.                                                                                                                                                                   |
+| `weight`        | `Weight`                                            | The font weight, from `ultraLight` through `black`.                                                                                                                                                                                |
+| `italic`        | `boolean`                                           | Draws the text in italics.                                                                                                                                                                                                         |
 
 ```svelte
 <vstack alignment="leading" spacing={8} padding>
@@ -2334,6 +2335,12 @@ Every element takes these attributes, except the few whose entries say they don'
   <txt fontname="Georgia-Bold" size={24}>Georgia Bold at 24 points</txt>
   <txt fontname="Georgia" font="body" italic
     >Georgia italic, scaled with Dynamic Type</txt
+  >
+  <txt fontname="Georgia" size={24} weight="bold"
+    >Georgia family, weight bold</txt
+  >
+  <txt fontname="Georgia" size={20} fontfallbacks={["GeezaPro"]}
+    >Georgia with a fallback: مرحبا</txt
   >
 </vstack>
 ```

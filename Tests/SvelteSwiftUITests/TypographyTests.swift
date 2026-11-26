@@ -60,4 +60,10 @@ struct TypographyTests {
         #expect(try #require(run(string, "Named")).swiftUI.font == .custom("Georgia", fixedSize: 20))
         #expect(try #require(run(string, "Title")).swiftUI.font == .title)
     }
+
+    @Test func cascadesFallbackFontsInOrder() {
+        let descriptor = Fonts.descriptor("Georgia", size: 20, fallbacks: ["GeezaPro", "Papyrus"])
+        let cascade = descriptor.fontAttributes[.cascadeList] as? Array<PlatformFontDescriptor>
+        #expect(cascade?.compactMap(\.postscriptName) == ["GeezaPro", "Papyrus"])
+    }
 }

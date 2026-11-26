@@ -34,6 +34,7 @@ export const modifiers: ReadonlySet<string> = new Set([
   "dynamictypesize",
   "feedbacktrigger",
   "font",
+  "fontfallbacks",
   "fontname",
   "framealignment",
   "glasseffect",
