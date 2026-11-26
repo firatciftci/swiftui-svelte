@@ -121,6 +121,7 @@ enum NodeShape {
         case "rectangle", "roundedrectangle", "unevenroundedrectangle", "circleshape", "ellipseshape", "capsule", "pathshape":
             return ShapeElement(node: node)
         case "flowstack": return FlowElement(node: node)
+        case "reflowstack": return ReflowElement(node: node)
         case "scrollview": return ScrollElement(node: node)
         case "list": return ListElement(node: node)
         case "glasseffectcontainer": return GlassContainer(node: node)

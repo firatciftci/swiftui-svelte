@@ -7,7 +7,7 @@ Every element also takes the [modifiers](#modifiers), unless its entry says it d
 - [Navigation](#navigation): [`navstack`](#navstack), [`screen`](#screen), [`navsplitview`](#navsplitview), [`tabview`](#tabview), [`tab`](#tab), [`tabsection`](#tabsection)
 - [Toolbars and search](#toolbars-and-search): [`toolbar`](#toolbar), [`toolbarspacer`](#toolbarspacer), [`searchable`](#searchable)
 - [Presentations](#presentations): [`sheet`](#sheet), [`fullscreencover`](#fullscreencover), [`popover`](#popover), [`inspector`](#inspector), [`alert`](#alert), [`confirmationdialog`](#confirmationdialog), [`contextmenu`](#contextmenu), [`preview`](#preview)
-- [Stacks and grids](#stacks-and-grids): [`vstack`](#vstack), [`hstack`](#hstack), [`zstack`](#zstack), [`spacer`](#spacer), [`divider`](#divider), [`grid`](#grid), [`gridrow`](#gridrow), [`viewthatfits`](#viewthatfits), [`group`](#group), [`safeareainset`](#safeareainset), [`flowstack`](#flowstack)
+- [Stacks and grids](#stacks-and-grids): [`vstack`](#vstack), [`hstack`](#hstack), [`zstack`](#zstack), [`spacer`](#spacer), [`divider`](#divider), [`grid`](#grid), [`gridrow`](#gridrow), [`viewthatfits`](#viewthatfits), [`group`](#group), [`safeareainset`](#safeareainset), [`flowstack`](#flowstack), [`reflowstack`](#reflowstack)
 - [Scrolling and lazy containers](#scrolling-and-lazy-containers): [`scrollview`](#scrollview), [`lazyvstack`](#lazyvstack), [`lazyhstack`](#lazyhstack), [`lazyvgrid`](#lazyvgrid), [`lazyhgrid`](#lazyhgrid)
 - [Lists and forms](#lists-and-forms): [`list`](#list), [`sectionview`](#sectionview), [`swipeactions`](#swipeactions), [`formview`](#formview), [`labeledcontent`](#labeledcontent), [`disclosuregroup`](#disclosuregroup), [`groupbox`](#groupbox), [`controlgroup`](#controlgroup)
 - [Text and images](#text-and-images): [`txt`](#txt), [`sfsymbol`](#sfsymbol), [`labelview`](#labelview), [`icon`](#icon), [`imageview`](#imageview), [`asyncimage`](#asyncimage), [`placeholder`](#placeholder), [`failure`](#failure), [`contentunavailableview`](#contentunavailableview)
@@ -840,6 +840,48 @@ A wrapping layout: it puts its children in rows and starts a new row when the ne
       </txt>
     {/each}
   </flowstack>
+</vstack>
+```
+
+### `reflowstack`
+
+A layout that puts its children in one row when their ideal widths fit the width, and in a column otherwise. It keeps one set of children, so a child with a `matchedid` keeps morphing when the layout switches, which a `viewthatfits` with two copies of the children can't do.
+
+| Attribute   | Type             | Description                                                                                                                                                                                          |
+| ----------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spacing`   | `number`         | The space between children in either direction, in points. Defaults to 8.                                                                                                                            |
+| `alignment` | `LayerAlignment` | Where the children sit: the vertical part, such as `top` or `bottom`, aligns them in a row, and the horizontal part, such as `leading` or `trailing`, aligns them in a column. Defaults to `center`. |
+
+```svelte
+<vstack spacing={16} alignment="leading">
+  <reflowstack spacing={8}>
+    <txt
+      padding={{ horizontal: 10, vertical: 6 }}
+      background="blue"
+      color="white"
+      radius={8}>Fits</txt
+    >
+    <txt
+      padding={{ horizontal: 10, vertical: 6 }}
+      background="blue"
+      color="white"
+      radius={8}>in a row</txt
+    >
+  </reflowstack>
+  <reflowstack spacing={8} alignment="leading">
+    <txt
+      padding={{ horizontal: 10, vertical: 6 }}
+      background="teal"
+      color="white"
+      radius={8}>A label that is too long to share a row</txt
+    >
+    <txt
+      padding={{ horizontal: 10, vertical: 6 }}
+      background="teal"
+      color="white"
+      radius={8}>so the stack becomes a column</txt
+    >
+  </reflowstack>
 </vstack>
 ```
 

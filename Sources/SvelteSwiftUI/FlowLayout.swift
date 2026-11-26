@@ -76,3 +76,67 @@ struct FlowElement: View {
         }
     }
 }
+
+struct ReflowLayout: SwiftUI.Layout {
+    var spacing: CGFloat
+    var anchor: UnitPoint
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout ()) -> CGSize {
+        let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
+        let width = rowWidth(ideals)
+        guard width > (proposal.width ?? .infinity) + 0.5 else {
+            return CGSize(width: width, height: ideals.map(\.height).max() ?? 0)
+        }
+        var size = CGSize(width: 0, height: spacing * CGFloat(max(ideals.count - 1, 0)))
+        for (subview, ideal) in zip(subviews, ideals) {
+            let fitted = subview.sizeThatFits(ProposedViewSize(width: min(ideal.width, proposal.width ?? ideal.width), height: nil))
+            size.width = max(size.width, fitted.width)
+            size.height += fitted.height
+        }
+        return size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout ()) {
+        let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
+        if rowWidth(ideals) <= bounds.width + 0.5 {
+            var x = bounds.minX
+            for (subview, ideal) in zip(subviews, ideals) {
+                let y = bounds.minY + bounds.height * anchor.y
+                subview.place(at: CGPoint(x: x, y: y), anchor: UnitPoint(x: 0, y: anchor.y), proposal: ProposedViewSize(ideal))
+                x += ideal.width + spacing
+            }
+        } else {
+            var y = bounds.minY
+            for (subview, ideal) in zip(subviews, ideals) {
+                let proposal = ProposedViewSize(width: min(ideal.width, bounds.width), height: nil)
+                let x = bounds.minX + bounds.width * anchor.x
+                subview.place(at: CGPoint(x: x, y: y), anchor: UnitPoint(x: anchor.x, y: 0), proposal: proposal)
+                y += subview.sizeThatFits(proposal).height + spacing
+            }
+        }
+    }
+
+    private func rowWidth(_ ideals: Array<CGSize>) -> CGFloat {
+        var width = spacing * CGFloat(max(ideals.count - 1, 0))
+        for ideal in ideals { width += ideal.width }
+        return width
+    }
+}
+
+struct ReflowElement: View {
+    let node: Node
+
+    var body: some View {
+        let attributes = node.attributes
+        ReflowLayout(spacing: CGFloat(attributes["spacing"]?.number ?? 8), anchor: Self.anchor(attributes["alignment"]?.string)) {
+            Children(node: node)
+        }
+    }
+
+    private static func anchor(_ name: String?) -> UnitPoint {
+        let name = name?.lowercased() ?? ""
+        let x: CGFloat = name.contains("leading") ? 0 : (name.contains("trailing") ? 1 : 0.5)
+        let y: CGFloat = name.hasPrefix("top") ? 0 : (name.hasPrefix("bottom") ? 1 : 0.5)
+        return UnitPoint(x: x, y: y)
+    }
+}

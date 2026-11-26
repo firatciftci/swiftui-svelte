@@ -1126,6 +1126,13 @@ declare module "svelte/elements" {
       /** How each row sits in the width: `leading`, `center`, or `trailing`. */
       alignment?: "leading" | "center" | "trailing";
     };
+    /** A layout that puts its children in one row when their ideal widths fit the width, and in a column otherwise. It keeps one set of children, so a child with a `matchedid` keeps morphing when the layout switches, which a `viewthatfits` with two copies of the children can't do. */
+    reflowstack: Modifiers & {
+      /** The space between children in either direction, in points. Defaults to 8. */
+      spacing?: number;
+      /** Where the children sit: the vertical part, such as `top` or `bottom`, aligns them in a row, and the horizontal part, such as `leading` or `trailing`, aligns them in a column. Defaults to `center`. */
+      alignment?: LayerAlignment;
+    };
     /** A `ZStack`: layers its children on top of each other. */
     zstack: Modifiers & {
       /** The alignment of the children on both axes, such as `center`, `topLeading`, or `leadingFirstTextBaseline`. */

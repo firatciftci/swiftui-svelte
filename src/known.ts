@@ -197,6 +197,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   vstack: ["alignment", "spacing"],
   hstack: ["alignment", "spacing"],
   flowstack: ["alignment", "linespacing", "spacing"],
+  reflowstack: ["alignment", "spacing"],
   zstack: ["alignment"],
   rectangle: [
     "dash",

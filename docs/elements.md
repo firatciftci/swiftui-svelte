@@ -81,6 +81,8 @@ Only inline Markdown works: bold, italic, strikethrough, code, and links. Headin
 
 A `flowstack` lays its children out in rows and starts a new row when the next child doesn't fit, the way words wrap in a paragraph. Use it for tags, chips, and other items that have their own widths. Children keep their ideal size, so pair the flow with `fixedsize` on any child that shouldn't shrink. Set `spacing` for the gap between children in a row, `linespacing` for the gap between rows, and `alignment` to `center` or `trailing` to align each row.
 
+A `reflowstack` puts its children in one row when their ideal widths fit, and stacks them in a column when they don't. Unlike `viewthatfits`, it lays out a single set of children, so an element inside it keeps its identity when the layout switches and can use a `matchedid` for a shared-element transition. In a column, each child gets at most the stack's width. Set `spacing` for the gap between children, and `alignment` for where they sit: its vertical part, such as `top`, applies to a row, and its horizontal part, such as `leading`, applies to a column. The default, `center`, centers children in both.
+
 `baselineoffset` moves `txt` text up or down from the baseline in points, which is useful for footnote markers and fractions. `underlinestyle` (`solid`, `dotted`, or `dashed`) and `underlinecolor` change how an underline looks when `underline` is set. `monospaceddigit` gives the digits the same width, so a counter or a column of numbers doesn't shift as its value changes.
 
 ## Colors and shapes
