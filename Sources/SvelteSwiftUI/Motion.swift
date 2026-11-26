@@ -16,9 +16,9 @@ struct MotionCurve: Equatable {
 
     init() {}
 
-    static func from(_ value: JSONValue?) -> MotionCurve? {
+    static func from(_ value: JSONValue?) -> Self? {
         guard value != .bool(false) else { return nil }
-        return MotionCurve(value) ?? MotionCurve()
+        return Self(value) ?? Self()
     }
 
     init?(_ value: JSONValue?) {

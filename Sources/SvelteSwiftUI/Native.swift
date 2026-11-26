@@ -221,3 +221,44 @@ struct CustomElement: View {
         }
     }
 }
+
+extension SvelteRuntime {
+    func callModule(_ id: Int, _ module: String, _ method: String, _ json: String) {
+        guard let registered = modules[module] else {
+            let error = NativeModuleError(code: "unknownModule", message: "There's no native module named \(module).")
+            replyToCall(id, error: error, result: nil)
+            return
+        }
+        guard let handler = registered.functions[method] else {
+            let error = NativeModuleError(code: "unknownFunction", message: "There's no native function \(module).\(method).")
+            replyToCall(id, error: error, result: nil)
+            return
+        }
+        let generation = generation
+        Task {
+            let outcome: Result<Data?, NativeModuleError>
+            do {
+                outcome = .success(try await handler(Data(json.utf8)))
+            } catch let error as NativeModuleError {
+                outcome = .failure(error)
+            } catch {
+                outcome = .failure(NativeModuleError(code: "native", message: error.localizedDescription))
+            }
+            guard generation == self.generation else { return }
+            switch outcome {
+            case let .success(data): replyToCall(id, error: nil, result: data)
+            case let .failure(error): replyToCall(id, error: error, result: nil)
+            }
+        }
+    }
+
+    private func replyToCall(_ id: Int, error: NativeModuleError?, result: Data?) {
+        let errorJSON = error.map { error in
+            (try? JSONEncoder().encode(["code": error.code, "message": error.message])).flatMap {
+                String(bytes: $0, encoding: .utf8)
+            } ?? #"{"code":"native","message":"The native error couldn't be encoded."}"#
+        }
+        let resultJSON = result.flatMap { String(bytes: $0, encoding: .utf8) }
+        call("__svelteNativeReply", [id, errorJSON ?? NSNull(), resultJSON ?? NSNull()])
+    }
+}
