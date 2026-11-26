@@ -46,9 +46,9 @@ struct WebAPITests {
         let runtime = SvelteRuntime(source: url)
         runtime.start()
         let query = "matchMedia('(prefers-color-scheme: dark)').matches"
-        runtime.updateEnvironment(["colorScheme": "light", "reduceMotion": false])
+        runtime.updateEnvironment(["colorScheme": "light", "systemColorScheme": "light", "reduceMotion": false])
         #expect(evaluate(runtime, query) == "false")
-        runtime.updateEnvironment(["colorScheme": "dark", "reduceMotion": true])
+        runtime.updateEnvironment(["colorScheme": "dark", "systemColorScheme": "dark", "reduceMotion": true])
         #expect(evaluate(runtime, query) == "true")
         #expect(evaluate(runtime, "matchMedia('(prefers-reduced-motion: reduce)').matches") == "true")
         #expect(evaluate(runtime, "navigator.languages.length > 0") == "true")

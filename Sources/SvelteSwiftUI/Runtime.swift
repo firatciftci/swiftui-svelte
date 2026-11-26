@@ -21,6 +21,7 @@ public final class SvelteRuntime {
 
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
+    private(set) var appearance: ColorScheme?
     private(set) var scrollRequest: ScrollRequest?
     private(set) var scrollOffsetRequest: ScrollOffsetRequest?
 
@@ -207,6 +208,15 @@ public final class SvelteRuntime {
         }
         if method == "announce" {
             Accessibility.announce(options["message"]?.string, priority: options["priority"]?.string)
+            return
+        }
+        if method == "colorScheme" {
+            appearance =
+                switch options["value"]?.string {
+                case "light": .light
+                case "dark": .dark
+                default: nil
+                }
             return
         }
         guard let node = store.node(id) else {

@@ -57,6 +57,7 @@ struct AccessibilitySettings: Equatable {
 
 struct EnvironmentSnapshot: Equatable {
     var colorScheme = ColorScheme.light
+    var systemColorScheme = ColorScheme.light
     var increaseContrast = false
     var reduceMotion = false
     var reduceTransparency = false
@@ -75,9 +76,15 @@ struct EnvironmentSnapshot: Equatable {
     var pixelRatio: CGFloat = 1
     var fontScale: CGFloat = 1
 
+    static var supportsLiquidGlass: Bool {
+        if #available(iOS 26, macOS 26, visionOS 26, *) { true } else { false }
+    }
+
     var dictionary: [String: Any] {
         [
             "colorScheme": colorScheme == .dark ? "dark" : "light",
+            "systemColorScheme": systemColorScheme == .dark ? "dark" : "light",
+            "liquidGlass": Self.supportsLiquidGlass,
             "increaseContrast": increaseContrast,
             "reduceMotion": reduceMotion,
             "reduceTransparency": reduceTransparency,

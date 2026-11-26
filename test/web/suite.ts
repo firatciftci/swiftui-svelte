@@ -1220,14 +1220,17 @@ hostTest(
     const listener = (event: MediaQueryListEvent): void =>
       void changes.push(event.matches);
     dark.addEventListener("change", listener as (event: Event) => void);
-    environment.setEnvironment({ colorScheme: "dark" });
+    environment.setEnvironment({ systemColorScheme: "dark" });
     equal(dark.matches, true);
     environment.setEnvironment({ reduceMotion: true });
-    environment.setEnvironment({ colorScheme: "light" });
+    environment.setEnvironment({ systemColorScheme: "light" });
     dark.removeEventListener("change", listener as (event: Event) => void);
-    environment.setEnvironment({ colorScheme: "dark" });
+    environment.setEnvironment({ systemColorScheme: "dark" });
     deep(changes, [true, false]);
-    environment.setEnvironment({ colorScheme: "light", reduceMotion: false });
+    environment.setEnvironment({
+      systemColorScheme: "light",
+      reduceMotion: false,
+    });
   },
 );
 

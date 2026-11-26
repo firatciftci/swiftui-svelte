@@ -4,6 +4,8 @@ type SizeClass = "compact" | "regular";
 
 export type HostEnvironment = {
   colorScheme: "light" | "dark";
+  systemColorScheme: "light" | "dark";
+  liquidGlass: boolean;
   reduceMotion: boolean;
   reduceTransparency: boolean;
   increaseContrast: boolean;
@@ -52,6 +54,8 @@ export type HostEnvironment = {
 
 export const environment: HostEnvironment = {
   colorScheme: "light",
+  systemColorScheme: "light",
+  liquidGlass: false,
   reduceMotion: false,
   reduceTransparency: false,
   increaseContrast: false,
@@ -107,7 +111,7 @@ function feature(name: string, value: string | undefined): boolean | null {
     case "prefers-color-scheme": {
       if (value === undefined) return true;
       return value === "light" || value === "dark"
-        ? value === environment.colorScheme
+        ? value === environment.systemColorScheme
         : null;
     }
     case "prefers-reduced-motion": {

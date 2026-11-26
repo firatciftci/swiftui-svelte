@@ -30,6 +30,12 @@ export const env: Readonly<HostEnvironment> = {
   get colorScheme() {
     return read("colorScheme");
   },
+  get systemColorScheme() {
+    return read("systemColorScheme");
+  },
+  get liquidGlass() {
+    return read("liquidGlass");
+  },
   get reduceMotion() {
     return read("reduceMotion");
   },

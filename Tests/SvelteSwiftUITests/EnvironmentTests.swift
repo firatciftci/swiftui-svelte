@@ -4,6 +4,16 @@ import Testing
 @testable import SvelteSwiftUI
 
 struct EnvironmentTests {
+    @Test func reportsTheSystemColorSchemeSeparatelyFromTheAppearance() {
+        var snapshot = EnvironmentSnapshot(colorScheme: .dark, systemColorScheme: .light)
+        let dictionary = snapshot.dictionary
+        #expect(dictionary["colorScheme"] as? String == "dark")
+        #expect(dictionary["systemColorScheme"] as? String == "light")
+        #expect(dictionary["liquidGlass"] as? Bool == EnvironmentSnapshot.supportsLiquidGlass)
+        snapshot.systemColorScheme = .dark
+        #expect(snapshot.dictionary["systemColorScheme"] as? String == "dark")
+    }
+
     @Test func describesTheSwiftUIEnvironmentForJavaScript() throws {
         var snapshot = EnvironmentSnapshot(
             colorScheme: .dark,

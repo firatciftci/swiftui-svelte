@@ -79,6 +79,7 @@ public struct SvelteView: View {
                 ProgressView()
             }
         }
+        .preferredColorScheme(runtime.appearance)
         .overlay(alignment: .bottom) {
             #if DEBUG
                 if let error = runtime.error ?? runtime.store.error.map({ ScriptError(message: $0, frames: []) }) {
@@ -118,7 +119,8 @@ public struct SvelteView: View {
 
     private var environment: EnvironmentSnapshot {
         var snapshot = EnvironmentSnapshot(
-            colorScheme: colorScheme,
+            colorScheme: runtime.appearance ?? colorScheme,
+            systemColorScheme: colorScheme,
             increaseContrast: contrast == .increased,
             reduceMotion: reduceMotion,
             reduceTransparency: reduceTransparency,
