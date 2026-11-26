@@ -188,6 +188,13 @@ const ALIGNMENTS: Record<string, { horizontal: string; vertical: string }> = {
   "flex-end": { horizontal: "trailing", vertical: "bottom" },
 };
 
+function stack(
+  axis: "horizontal" | "vertical",
+  only?: Array<string>,
+): Array<Patch> {
+  return [{ attrs: { css: true, axis }, only }];
+}
+
 const ALIGN_CONTENT = new Set([
   "start",
   "end",
@@ -324,8 +331,10 @@ const HANDLERS = new Map<string, Handler>([
     "display",
     (_value, _context, raw) => {
       if (raw === "none") return [{ attrs: { hidden: true } }];
-      if (["flex", "inline-flex", "grid", "inline-grid"].includes(raw))
-        return [{ attrs: { css: true }, only: STACKS }];
+      if (["flex", "inline-flex"].includes(raw))
+        return stack("horizontal", STACKS);
+      if (["grid", "inline-grid"].includes(raw))
+        return stack("vertical", STACKS);
       return ["block", "inline", "inline-block", "contents"].includes(raw)
         ? [{ attrs: {} }]
         : null;
@@ -420,25 +429,23 @@ const HANDLERS = new Map<string, Handler>([
   [
     "flex-direction",
     (_value, _context, raw) => {
-      if (raw === "column") return [{ attrs: { css: true }, only: VERTICAL }];
-      return raw === "row"
-        ? [{ attrs: { css: true }, only: HORIZONTAL }]
-        : null;
+      if (raw === "column") return stack("vertical", VERTICAL);
+      return raw === "row" ? stack("horizontal", HORIZONTAL) : null;
     },
   ],
   [
     "grid-template-columns",
     (_value, _context, raw) => {
       return compact(raw).replaceAll(" ", "") === "repeat(1,minmax(0,1fr))"
-        ? [{ attrs: { css: true }, only: VERTICAL }]
+        ? stack("vertical", VERTICAL)
         : null;
     },
   ],
   [
     "grid-auto-flow",
     (_value, _context, raw) => {
-      if (raw === "column") return [{ attrs: { css: true }, only: HORIZONTAL }];
-      return raw === "row" ? [{ attrs: { css: true }, only: VERTICAL }] : null;
+      if (raw === "column") return stack("horizontal", HORIZONTAL);
+      return raw === "row" ? stack("vertical", VERTICAL) : null;
     },
   ],
   [
@@ -939,7 +946,7 @@ function customProperty(
       ];
     }
     case "--tw-ring-color": {
-      return [{ attrs: { $borderColor: colorOf(value, context) } }];
+      return [{ attrs: { $ringColor: colorOf(value, context) } }];
     }
     case "--tw-shadow-color": {
       return [{ attrs: { $shadowColor: colorOf(value, context) } }];
@@ -1011,14 +1018,14 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
   const key = prefix === "" ? axis : `${prefix}${axis}`;
   if (raw === "auto" && prefix === "") return [{ attrs: { [key]: null } }];
   if (raw === "none" && prefix === "max")
-    return [{ attrs: { [key]: "infinity" } }];
+    return [{ attrs: { [key]: "infinity", boxsizing: "border-box" } }];
   const value = compact(raw);
   if (
     value === "100%" ||
     /^100[dsl]?v[hw]$/.test(value) ||
     SCREEN_SAFE.test(value)
   )
-    return [{ attrs: { [key]: "infinity" } }];
+    return [{ attrs: { [key]: "infinity", boxsizing: "border-box" } }];
   const quantity = quantityOf(resolved(raw, context), context.fontSize);
   if (quantity.unit === "%")
     throw new Unsupported(`${property}: ${raw} isn't a fixed size`);
@@ -1030,6 +1037,7 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
           typeof length === "number" && !Number.isFinite(length)
             ? 9999
             : length,
+        boxsizing: "border-box",
       },
     },
   ];
@@ -1054,7 +1062,7 @@ function layers(
     let isInset = false;
     for (const part of parts) {
       if (part === "inset") isInset = true;
-      else if (/^-?[\d.]+(?:px|em|rem)?$/.test(part))
+      else if (/^(?:-?[\d.]|(?:calc|min|max|clamp|round)\()/.test(part))
         lengths.push(fixedPixels(part, context.fontSize));
       else layerColor = parseColor(part);
     }
@@ -1092,17 +1100,7 @@ function boxShadow(value: string, context: Context): Array<Patch> {
     .filter((layer) => layer !== ring)
     .toSorted((a, b) => b.blur - a.blur)[0];
   const patches: Array<Patch> = [];
-  if (ring != null)
-    patches.push({
-      attrs: {
-        $borderWidth: {
-          top: ring.spread,
-          leading: ring.spread,
-          bottom: ring.spread,
-          trailing: ring.spread,
-        },
-      },
-    });
+  if (ring != null) patches.push({ attrs: { $ringWidth: ring.spread } });
   if (drop != null) patches.push({ attrs: { shadow: shadowOf(drop) } });
   return patches.length > 0 ? patches : [{ attrs: { shadow: false } }];
 }
@@ -1125,9 +1123,10 @@ function filters(value: string, context: Context): Array<Patch> {
   const text = resolved(value, context).trim();
   if (text === "none") return [{ attrs: {} }];
   const patches: Array<Patch> = [];
-  for (const match of text.matchAll(/([a-z-]+)\(([^()]*)\)/g)) {
-    const name = match[1] ?? "";
-    const argument = (match[2] ?? "").trim();
+  for (const token of spread(text)) {
+    const open = token.indexOf("(");
+    const name = open === -1 ? token : token.slice(0, open);
+    const argument = open === -1 ? "" : token.slice(open + 1, -1).trim();
     switch (name) {
       case "blur": {
         patches.push({ attrs: { blur: pixels(argument, context.fontSize) } });

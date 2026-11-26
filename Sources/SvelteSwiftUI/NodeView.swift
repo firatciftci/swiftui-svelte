@@ -32,12 +32,16 @@ struct Children: View {
         if node.hasMultiViewChild {
             ForEach(node.renderedChildren) { child in
                 let placement = CSSPlacement.of(child, in: node)
-                NodeView(node: child, placement: placement).layoutValue(key: CSSPlacementKey.self, value: placement)
+                NodeView(node: child, placement: placement)
+                    .layoutValue(key: CSSPlacementKey.self, value: placement)
+                    .layoutValue(key: CSSGrowthKey.self, value: CSSGrowth.of(child))
             }
         } else {
             ForEach(node.renderedChildren) { child in
                 let placement = CSSPlacement.of(child, in: node)
-                SingleNodeView(node: child, placement: placement).layoutValue(key: CSSPlacementKey.self, value: placement)
+                SingleNodeView(node: child, placement: placement)
+                    .layoutValue(key: CSSPlacementKey.self, value: placement)
+                    .layoutValue(key: CSSGrowthKey.self, value: CSSGrowth.of(child))
             }
         }
     }

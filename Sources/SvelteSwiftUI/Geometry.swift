@@ -69,11 +69,20 @@ struct Framing: ViewModifier {
 
     func body(content: Content) -> some View {
         let alignment = Styles.alignment(attributes["framealignment"]?.string)
-        let width = attributes["width"]?.number.map { CGFloat(max($0, 0)) }
-        let height = attributes["height"]?.number.map { CGFloat(max($0, 0)) }
-        let bounds = ["minwidth", "idealwidth", "maxwidth", "minheight", "idealheight", "maxheight"].map {
-            Geometry.length(attributes[$0])
-        }
+        let width = Geometry.length(attributes["width"])
+        let height = Geometry.length(attributes["height"])
+        let bounds: Array<CGFloat?> = [
+            Geometry.length(attributes["minwidth"]), Geometry.length(attributes["idealwidth"]),
+            Geometry.length(attributes["maxwidth"]) ?? (width == .infinity ? .infinity : nil),
+            Geometry.length(attributes["minheight"]), Geometry.length(attributes["idealheight"]),
+            Geometry.length(attributes["maxheight"]) ?? (height == .infinity ? .infinity : nil),
+        ]
+        let frame = Frame(
+            alignment: alignment,
+            width: width.flatMap { $0.isFinite ? $0 : nil },
+            height: height.flatMap { $0.isFinite ? $0 : nil },
+            bounds: bounds
+        )
         let ratio = attributes["aspectratio"]?.number.flatMap { $0 > 0 ? CGFloat($0) : nil }
         let mode: ContentMode? =
             switch attributes["contentmode"]?.string {
@@ -81,9 +90,25 @@ struct Framing: ViewModifier {
             case "fit": .fit
             default: ratio == nil ? nil : .fit
             }
+        let isBorderBox = attributes["boxsizing"]?.string == "border-box"
+        let border = isBorderBox ? (Effects.border(attributes["border"])?.widths ?? EdgeInsets()) : EdgeInsets()
         content
             .ifLet(attributes["linebox"]?.number) { view, height in LineBoxLayout(height: CGFloat(max(height, 0))) { view } }
             .ifLet(mode) { $0.aspectRatio(ratio, contentMode: $1) }
+            .gated(!isBorderBox) { $0.modifier(frame) }
+            .padding(Geometry.insets(attributes["padding"]) ?? EdgeInsets())
+            .gated(isBorderBox) { $0.padding(border).modifier(frame) }
+    }
+}
+
+private struct Frame: ViewModifier {
+    let alignment: Alignment
+    let width: CGFloat?
+    let height: CGFloat?
+    let bounds: Array<CGFloat?>
+
+    func body(content: Content) -> some View {
+        content
             .ifLet(width != nil || height != nil ? alignment : nil) { $0.frame(width: width, height: height, alignment: $1) }
             .ifLet(bounds.contains { $0 != nil } ? alignment : nil) {
                 $0.frame(
@@ -92,7 +117,6 @@ struct Framing: ViewModifier {
                     alignment: $1
                 )
             }
-            .padding(Geometry.insets(attributes["padding"]) ?? EdgeInsets())
     }
 }
 

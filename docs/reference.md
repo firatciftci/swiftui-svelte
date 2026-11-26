@@ -1949,7 +1949,6 @@ A `TextField`: an editable text field, or a number field when `format` is set.
 | `oninput`          | `((value: string) => void) \| ((value: number \| null) => void)`                                                                                                                                                                                                                                                                                               | Runs with the new text on each keystroke, or after the `debounce` delay. Runs when the user presses Return or leaves the field, with the parsed number, or `null` if they cleared it. |
 | `format`           | `NumberFormat`                                                                                                                                                                                                                                                                                                                                                 | Leave out `format` for a text field. How the number is formatted: `number`, `integer`, `percent`, or `{ currency }` with an ISO currency code, such as `EUR`.                         |
 | `variant`          | `FieldVariant`                                                                                                                                                                                                                                                                                                                                                 | The look of the field: `automatic`, `plain`, or `roundedBorder`.                                                                                                                      |
-| `axis`             | `"horizontal" \| "vertical"`                                                                                                                                                                                                                                                                                                                                   | Set to `vertical` to let the field grow as the user types more lines, up to `lines`.                                                                                                  |
 | `lines`            | `number \| [ number, number ]`                                                                                                                                                                                                                                                                                                                                 | The maximum number of lines when `axis` is `vertical`, such as `4`, or a range such as `[2, 4]` for a minimum and a maximum.                                                          |
 
 ```svelte
@@ -2601,6 +2600,7 @@ Every element takes these attributes, except the few whose entries say they don'
 | `lighten`          | `number`                                                                                  | Brightens the element by blending a copy of it over itself with the plus-lighter mode at this opacity, from 0 to 1. Unlike brightness, which adds the same amount to every color, the copy's opacity sets the strength, so 0.125 adds an eighth of the element's color again.                            |
 | `insetshadow`      | `boolean`                                                                                 | Draws a soft inner edge along the element's `clipshape`, or along the rounded corners set by `radius` when there is no `clipshape`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed. |
 | `border`           | `Color \| { color?: ShapeStyle; width?: number; }`                                        | Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1.                                                                                                                                                                                                       |
+| `ring`             | `{ width: number; color?: ShapeStyle; }`                                                  | Draws a ring around the element, outside its bounds, in `color` (the current color by default) with the given `width` in points. The ring takes no space in the layout, as a CSS ring doesn't. The ring-* classes set this.                                                                              |
 | `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has.                                                                                              |
 | `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                                                                                                              |
 | `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                                                                                                              |
@@ -2659,6 +2659,7 @@ Every element takes these attributes, except the few whose entries say they don'
     <txt>Lightened on hover</txt>
     <rectangle background="clear" radius={12} insetshadow />
   </hstack>
+  <txt ring={{ width: 2, color: "orange" }} radius={8} padding={8}>Ringed</txt>
   <txt compositinggroup opacity={0.5}>
     <span color="red">Grouped</span> <span color="blue">spans</span>
   </txt>
@@ -3428,6 +3429,8 @@ Every element takes these attributes, except the few whose entries say they don'
 | `margin`    | `{ top?: number \| "auto"; leading?: number \| "auto"; bottom?: number \| "auto"; trailing?: number \| "auto"; }` | The space outside the element on each edge, in points, or "auto" to share the free space and center the element along that axis. Margin sits outside the background, border, and shadow, unlike padding.                                                                                              |
 | `container` | `string`                                                                                                          | Makes the element a query container for                                                                                                                                                                                                                                                               |
 | `css`       | `boolean`                                                                                                         | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.                                                                                                                                                               |
+| `axis`      | `"horizontal" \| "vertical"`                                                                                      | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this.                                                                                                                                                           |
+| `boxsizing` | `"content-box" \| "border-box"`                                                                                   | How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`.                                                                            |
 | `selfalign` | `"start" \| "center" \| "end" \| "stretch"`                                                                       | How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this.                                                                                                                                                                             |
 | `balanced`  | `boolean`                                                                                                         | Balances the lines of a text element, so they come out an even width. The text-balance class sets this.                                                                                                                                                                                               |
 
@@ -3459,8 +3462,16 @@ Every element takes these attributes, except the few whose entries say they don'
 <vstack
   class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700"
   css
+  axis="vertical"
   container=""
 >
+  <txt
+    boxsizing="border-box"
+    width={160}
+    border={{ width: 2, color: "orange" }}
+  >
+    Sized with its border inside
+  </txt>
   <txt
     margin={{ leading: "auto", trailing: "auto" }}
     balanced

@@ -49,6 +49,7 @@
     <txt>Lightened on hover</txt>
     <rectangle background="clear" radius={12} insetshadow />
   </hstack>
+  <txt ring={{ width: 2, color: "orange" }} radius={8} padding={8}>Ringed</txt>
   <txt compositinggroup opacity={0.5}>
     <span color="red">Grouped</span> <span color="blue">spans</span>
   </txt>

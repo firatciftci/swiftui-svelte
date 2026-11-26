@@ -9,10 +9,11 @@ import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
-import { tailwind } from "../src/tailwind/vite.ts";
 import type { State } from "../src/tailwind/runtime.ts";
 import { buildClassTable } from "../src/tailwind/build.ts";
-import { resolveClasses } from "../src/tailwind/runtime.ts";
+import { arithmetic, resolveClasses } from "../src/tailwind/runtime.ts";
+import { parseColor } from "../src/tailwind/values.ts";
+import { tailwind } from "../src/tailwind/vite.ts";
 
 const budget = { minified: 188_000, gzipped: 59_000 };
 
@@ -231,7 +232,7 @@ describe("tailwind class table", () => {
   );
 
   it("maps utilities to attributes, conditions, and breakpoints", async () => {
-    const { table, warnings } = await buildClassTable({
+    const { table, warnings, files } = await buildClassTable({
       root: process.cwd(),
       css: path.join(dir, "app.css"),
       sources: [dir],
@@ -248,6 +249,7 @@ describe("tailwind class table", () => {
     });
     expect(table.tokens["md:p-2"]?.[0]).toMatchObject({ when: [">=768"] });
     expect(table.breakpoints).toContain(768);
+    expect(files).toContain(dir);
     expect(warnings).toEqual([
       expect.stringMatching(
         /^Tailwind class "grid-cols-2" in .*App\.svelte isn't supported by swiftui-svelte: .+\.$/,
@@ -328,6 +330,7 @@ describe("native Tailwind utilities", () => {
     });
     expect(table.tokens["h-screen-safe"]?.[0]?.attrs).toEqual({
       height: "infinity",
+      boxsizing: "border-box",
     });
     expect(table.tokens.hairline?.[0]).toMatchObject({
       dynamic: true,
@@ -369,12 +372,13 @@ describe("tailwind layout, lengths, and containers", () => {
 @theme {
   --text-sm: calc(0.875rem * clamp(0.8, fontScale(), 2));
   --text-sm--line-height: calc(1.25 / 0.875);
+  --font-brand: "Avenir", sans-serif;
 }
 `,
   );
   writeFileSync(
     path.join(dir, "Layout.svelte"),
-    '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n',
+    '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse ring-2 ring-red-500 drop-shadow-md"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n<vstack class="flex flex-col gap-2"></vstack>\n<hstack class="grid gap-1"></hstack>\n<vstack class="w-40 border-2 h-full"></vstack>\n',
   );
   const base: State = {
     dark: false,
@@ -465,6 +469,65 @@ describe("tailwind layout, lengths, and containers", () => {
     ]);
   }, 60_000);
 
+  it("sets the axis of a CSS stack from its display and flex direction", async () => {
+    const { table } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    expect(resolveClasses(table, "hstack", "grid gap-1", base).attrs).toEqual({
+      css: true,
+      axis: "vertical",
+      spacing: 4,
+    });
+    expect(resolveClasses(table, "vstack", "flex", base).attrs).toEqual({
+      css: true,
+      axis: "horizontal",
+    });
+    expect(
+      resolveClasses(table, "vstack", "flex flex-col gap-2", base).attrs,
+    ).toEqual({ css: true, axis: "vertical", spacing: 8 });
+    expect(
+      resolveClasses(table, "hstack", "flex flex-col", base).attrs,
+    ).toEqual({ css: true, axis: "horizontal" });
+  }, 60_000);
+
+  it("sizes with border-box and draws rings and shadows without layout space", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    expect(
+      resolveClasses(table, "vstack", "w-40 border-2", base).attrs,
+    ).toMatchObject({
+      width: 160,
+      boxsizing: "border-box",
+      border: { width: { top: 2, leading: 2, bottom: 2, trailing: 2 } },
+    });
+    expect(resolveClasses(table, "vstack", "h-full", base).attrs).toEqual({
+      height: "infinity",
+      boxsizing: "border-box",
+    });
+    expect(
+      resolveClasses(table, "vstack", "ring-2 ring-red-500", base).attrs,
+    ).toEqual({ ring: { width: 2, color: "#fb2c36" } });
+    expect(resolveClasses(table, "vstack", "ring-2", base).attrs).toEqual({
+      ring: { width: 2 },
+    });
+    expect(
+      resolveClasses(table, "vstack", "drop-shadow-md", base).attrs,
+    ).toMatchObject({ shadow: { radius: 3, y: 3 } });
+    expect(warnings).toEqual([
+      expect.stringMatching(
+        /^Tailwind class "justify-between" .+ distribution/,
+      ),
+      expect.stringMatching(/^Tailwind class "decoration-2" .+/),
+    ]);
+  }, 60_000);
+
   it("keeps static lengths static and marks runtime expressions dynamic", async () => {
     const { table } = await buildClassTable({
       root: process.cwd(),
@@ -474,7 +537,7 @@ describe("tailwind layout, lengths, and containers", () => {
       ignore: [],
     });
     expect(table.tokens["w-[calc(10px*2)]"]?.map((rule) => rule.attrs)).toEqual(
-      [{ width: 20 }],
+      [{ width: 20, boxsizing: "border-box" }],
     );
     expect(table.tokens["w-[50vw]"]?.[0]).toMatchObject({
       dynamic: true,
@@ -525,4 +588,68 @@ describe("tailwind layout, lengths, and containers", () => {
     });
     expect(resolveClasses(table, "txt", "text-pretty", base).attrs).toEqual({});
   }, 60_000);
+
+  it("turns an ignored class into a no-op at runtime, even when it has a mapping", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+      ignore: ["@sm:p-*"],
+    });
+    const resolved = resolveClasses(table, "vstack", "@sm:p-4", {
+      ...base,
+      containers: { "": 500 },
+    });
+    expect(resolved.attrs).toEqual({});
+    expect(resolved.unmatched).toEqual([]);
+    expect(warnings.some((warning) => warning.includes("@sm:p-4"))).toBe(false);
+  }, 60_000);
+});
+
+describe("tailwind font families", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-fonts-"));
+  writeFileSync(
+    path.join(dir, "app.css"),
+    `@import "tailwindcss";
+@import "${path.resolve("src/tailwind/theme.css")}";
+@theme {
+  --font-brand: "Avenir", sans-serif;
+}
+`,
+  );
+  writeFileSync(
+    path.join(dir, "Fonts.svelte"),
+    '<txt class="font-brand"></txt>\n',
+  );
+
+  it("maps a theme font by its first family name", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: { Avenir: "Avenir-Medium" },
+    });
+    expect(table.tokens["font-brand"]?.[0]?.attrs).toEqual({
+      fontname: "Avenir-Medium",
+    });
+    expect(warnings).toEqual([]);
+  }, 60_000);
+});
+
+describe("tailwind value functions", () => {
+  it("returns the minimum of clamp() when its bounds are inverted, as CSS does", () => {
+    expect(arithmetic("clamp", [16, 10, 4])).toBe(16);
+    expect(arithmetic("clamp", [0, 10, 4])).toBe(4);
+    expect(arithmetic("clamp", [0, 2, 4])).toBe(2);
+  });
+
+  it("scales the alpha of a color-mix whose weights sum to less than 100%", () => {
+    expect(
+      parseColor("color-mix(in srgb, #ff0000 30%, #0000ff 30%)"),
+    ).toMatchObject({ a: 0.6 });
+    expect(parseColor("color-mix(in srgb, #ff0000, #0000ff)")).toMatchObject({
+      a: 1,
+    });
+  });
 });

@@ -29,7 +29,9 @@ struct EffectsTests {
 
     @Test func readsBordersAndShadows() {
         #expect(Effects.border(.string("red"))?.widths == EdgeInsets(top: 1, leading: 1, bottom: 1, trailing: 1))
-        #expect(Effects.border(.object(["color": .string("blue"), "width": .number(3)]))?.widths == EdgeInsets(top: 3, leading: 3, bottom: 3, trailing: 3))
+        #expect(
+            Effects.border(.object(["color": .string("blue"), "width": .number(3)]))?.widths
+                == EdgeInsets(top: 3, leading: 3, bottom: 3, trailing: 3))
         #expect(Effects.border(.object(["width": .number(-2)]))?.widths == EdgeInsets())
         #expect(Effects.border(.number(2)) == nil)
         let fallback = Color.black.opacity(0.33)
@@ -56,6 +58,23 @@ struct EffectsTests {
         #expect(Effects.blendMode("plus-lighter") == .plusLighter)
         #expect(Effects.blendMode("sideways") == nil)
         #expect(Effects.blendMode(nil) == nil)
+    }
+
+    @Test func roundsTheInnerEdgeOfRoundedBorders() {
+        let uniform = EdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2)
+        let rounded = BorderRing(widths: uniform, radius: 10, style: .circular).path(in: rect)
+        #expect(rounded.contains(CGPoint(x: 3.5, y: 3.5), eoFill: true))
+        #expect(!rounded.contains(CGPoint(x: 0.5, y: 0.5), eoFill: true))
+        let square = BorderRing(widths: uniform, radius: 0, style: .circular).path(in: rect)
+        #expect(!square.contains(CGPoint(x: 3.5, y: 3.5), eoFill: true))
+    }
+
+    @Test func readsRingsAndDrawsThemOutsideTheirBounds() {
+        #expect(Effects.ring(.object(["width": .number(2), "color": .string("red")]))?.width == 2)
+        #expect(Effects.ring(.object(["width": .number(0)])) == nil)
+        #expect(Effects.ring(.number(2)) == nil)
+        let ring = RingStroke(width: 2, radius: 0, style: .continuous).path(in: rect).boundingRect
+        #expect(ring == rect.insetBy(dx: -1, dy: -1))
     }
 
     @Test func readsBorderWidthsPerEdge() {

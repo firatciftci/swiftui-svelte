@@ -67,6 +67,29 @@ struct LayoutTests {
         #expect(Styles.padding(nil) == 0)
     }
 
+    @Test func readsTheAxisOfACSSStack() {
+        let row = Node(id: 1, kind: .element, name: "hstack", text: "")
+        #expect(!CSSStack.isColumn(row))
+        row.attributes = ["axis": .string("vertical")]
+        #expect(CSSStack.isColumn(row))
+        let column = Node(id: 2, kind: .element, name: "vstack", text: "")
+        #expect(CSSStack.isColumn(column))
+        column.attributes = ["axis": .string("horizontal")]
+        #expect(!CSSStack.isColumn(column))
+        let child = Node(id: 3, kind: .element, name: "txt", text: "")
+        row.attributes["css"] = .bool(true)
+        #expect(CSSPlacement.of(child, in: row) == .stretch(.horizontal))
+    }
+
+    @Test func sharesLeftoverSpaceAmongGrowingTracks() {
+        let spaced = CSSTrack.sizes(300, ideal: [50, 40, 30], minimum: [10, 10, 10], grows: [false, true, true], spacing: 10)
+        #expect(spaced == [50, 115, 115])
+        #expect(CSSTrack.sizes(nil, ideal: [50, 40], minimum: [10, 10], grows: [false, true], spacing: 0) == [50, 40])
+        #expect(CSSTrack.sizes(60, ideal: [50, 40], minimum: [10, 10], grows: [false, true], spacing: 0) == [50, 10])
+        #expect(CSSTrack.sizes(100, ideal: [20, 20], minimum: [20, 20], grows: [false, true], spacing: 0) == [20, 80])
+        #expect(CSSTrack.sizes(50, ideal: [40, 40], minimum: [0, 0], grows: [false, false], spacing: 0) == [25, 25])
+    }
+
     @Test func placesCSSChildrenByTheirFlowAlignment() {
         let parent = Node(id: 1, kind: .element, name: "vstack", text: "")
         parent.attributes = ["css": .bool(true)]
@@ -77,6 +100,8 @@ struct LayoutTests {
         child.attributes = ["selfalign": .string("stretch")]
         #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
         parent.attributes["alignment"] = .string("center")
+        #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
+        child.attributes = [:]
         #expect(CSSPlacement.of(child, in: parent) == .align(UnitPoint(x: 0.5, y: 0)))
         let row = Node(id: 3, kind: .element, name: "hstack", text: "")
         row.attributes = ["css": .bool(true)]

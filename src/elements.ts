@@ -656,6 +656,10 @@ type Modifiers = {
   container?: string;
   /** Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this. */
   css?: boolean;
+  /** The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. */
+  axis?: "horizontal" | "vertical";
+  /** How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`. */
+  boxsizing?: "content-box" | "border-box";
   /** How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this. */
   selfalign?: "start" | "center" | "end" | "stretch";
   /** Balances the lines of a text element, so they come out an even width. The text-balance class sets this. */
@@ -754,6 +758,8 @@ type Modifiers = {
   contentshape?: ClipShape;
   /** Draws a border in a color, or as `{ color, width }`, where `width` is in points and defaults to 1. */
   border?: Color | { color?: ShapeStyle; width?: number };
+  /** Draws a ring around the element, outside its bounds, in `color` (the current color by default) with the given `width` in points. The ring takes no space in the layout, as a CSS ring doesn't. The ring-* classes set this. */
+  ring?: { width: number; color?: ShapeStyle };
   /** Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has. */
   shadow?:
     | false

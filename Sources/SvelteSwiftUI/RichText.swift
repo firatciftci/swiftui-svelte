@@ -175,18 +175,25 @@ struct TextView: View {
 }
 
 struct BalancedLayout: SwiftUI.Layout {
+    struct Balance {
+        let limit: CGFloat?
+        let width: CGFloat
+    }
+
     let alignment: TextAlignment
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
+    func makeCache(subviews _: SwiftUI.Layout.Subviews) -> Balance? { nil }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache: inout Balance?) -> CGSize {
         guard let text = subviews.first else { return .zero }
-        let width = Self.width(of: text, within: proposal.width)
+        let width = Self.width(of: text, within: proposal.width, cache: &cache)
         let size = text.sizeThatFits(ProposedViewSize(width: width, height: nil))
         return CGSize(width: proposal.width ?? size.width, height: size.height)
     }
 
-    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) {
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache: inout Balance?) {
         guard let text = subviews.first else { return }
-        let width = Self.width(of: text, within: bounds.width)
+        let width = Self.width(of: text, within: bounds.width, cache: &cache)
         let proposal = ProposedViewSize(width: width, height: nil)
         let (x, anchor): (CGFloat, UnitPoint) =
             switch alignment {
@@ -197,13 +204,22 @@ struct BalancedLayout: SwiftUI.Layout {
         text.place(at: CGPoint(x: x, y: bounds.minY), anchor: anchor, proposal: proposal)
     }
 
-    private static func width(of text: SwiftUI.LayoutSubview, within limit: CGFloat?) -> CGFloat {
+    private static func width(of text: SwiftUI.LayoutSubview, within limit: CGFloat?, cache: inout Balance?) -> CGFloat {
+        if let cache, cache.limit == limit { return cache.width }
         let natural = text.sizeThatFits(ProposedViewSize(width: limit, height: nil))
+        let width = balancedWidth(of: natural) { text.sizeThatFits(ProposedViewSize(width: $0, height: nil)) }
+        cache = Balance(limit: limit, width: width)
+        return width
+    }
+
+    static func balancedWidth(of natural: CGSize, measuring: (CGFloat) -> CGSize) -> CGFloat {
+        guard natural.width.isFinite else { return natural.width }
         var narrowest: CGFloat = 0
         var widest = natural.width
-        while widest - narrowest > 0.5 {
+        for _ in 0..<32 {
+            guard widest - narrowest > 0.5 else { break }
             let middle = (narrowest + widest) / 2
-            if text.sizeThatFits(ProposedViewSize(width: middle, height: nil)).height <= natural.height {
+            if measuring(middle).height <= natural.height {
                 widest = middle
             } else {
                 narrowest = middle

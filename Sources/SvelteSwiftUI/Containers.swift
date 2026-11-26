@@ -175,8 +175,9 @@ nonisolated enum CSSPlacement: Hashable {
 extension CSSPlacement {
     static func of(_ child: Node, in parent: Node) -> CSSPlacement? {
         guard parent.attributes["css"]?.isTrue == true else { return nil }
-        let cross: Axis = parent.name == "hstack" ? .vertical : .horizontal
+        let cross: Axis = CSSStack.isColumn(parent) ? .horizontal : .vertical
         let selfAlign = child.attributes["selfalign"]?.string
+        if selfAlign == "stretch" { return .stretch(cross) }
         let explicit = selfAlign.flatMap { ["start", "center", "end"].contains($0) ? $0 : nil }
         guard let item = explicit ?? parent.attributes["alignment"]?.string else { return .stretch(cross) }
         return .align(point(item, cross: cross))
@@ -185,6 +186,24 @@ extension CSSPlacement {
 
 nonisolated struct CSSPlacementKey: LayoutValueKey {
     static let defaultValue: CSSPlacement? = nil
+}
+
+nonisolated struct CSSGrowth: Hashable {
+    var width = false
+    var height = false
+}
+
+extension CSSGrowth {
+    static func of(_ node: Node) -> CSSGrowth {
+        CSSGrowth(
+            width: Geometry.length(node.attributes["maxwidth"]) == .infinity,
+            height: Geometry.length(node.attributes["maxheight"]) == .infinity
+        )
+    }
+}
+
+nonisolated struct CSSGrowthKey: LayoutValueKey {
+    static let defaultValue = CSSGrowth()
 }
 
 struct StretchFrame: ViewModifier {
@@ -207,13 +226,47 @@ struct CSSStack: View {
     var body: some View {
         let spacing = CGFloat(node.attributes["spacing"]?.number ?? 0)
         let fills = placement == .stretch(.horizontal)
-        if node.name == "vstack" {
+        if Self.isColumn(node) {
             let column = CSSColumn(spacing: spacing, fills: fills)
             column { Children(node: node) }
         } else {
             let row = CSSRow(spacing: spacing, fills: fills)
             row { Children(node: node) }
         }
+    }
+
+    static func isColumn(_ node: Node) -> Bool {
+        switch node.attributes["axis"]?.string {
+        case "vertical": true
+        case "horizontal": false
+        default: node.name == "vstack"
+        }
+    }
+}
+
+nonisolated enum CSSTrack {
+    static func sizes(
+        _ limit: CGFloat?, ideal: Array<CGFloat>, minimum: Array<CGFloat>, grows: Array<Bool>, spacing: CGFloat
+    ) -> Array<CGFloat> {
+        guard let limit else { return ideal }
+        let gaps = spacing * CGFloat(max(ideal.count - 1, 0))
+        let fixed = sum(zip(ideal, grows).filter { !$0.1 }.map(\.0))
+        let growing = grows.count(where: \.self)
+        if growing > 0, limit - gaps >= fixed {
+            let share = (limit - gaps - fixed) / CGFloat(growing)
+            return grows.indices.map { index in grows[index] ? max(minimum[index], share) : ideal[index] }
+        }
+        guard limit < sum(ideal) + gaps else { return ideal }
+        let flex = sum(zip(ideal, minimum).map { $0 - $1 })
+        let slack = max(limit - gaps - sum(minimum), 0)
+        let ratio = flex > 0 ? min(slack / flex, 1) : 0
+        return zip(ideal, minimum).map { $1 + ($0 - $1) * ratio }
+    }
+
+    static func sum(_ values: Array<CGFloat>) -> CGFloat {
+        var total: CGFloat = 0
+        for value in values { total += value }
+        return total
     }
 }
 
@@ -224,23 +277,33 @@ struct CSSColumn: SwiftUI.Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
         let content = subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
         let width = fills ? (proposal.width ?? content) : min(content, proposal.width ?? content)
-        var height: CGFloat = 0
-        for subview in subviews {
-            height += subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
-        }
-        return CGSize(width: width, height: height + spacing * CGFloat(max(subviews.count - 1, 0)))
+        let heights = Self.heights(proposal.height, subviews, width: width, spacing: spacing)
+        return CGSize(width: width, height: CSSTrack.sum(heights) + spacing * CGFloat(max(subviews.count - 1, 0)))
     }
 
     func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) {
+        let heights = Self.heights(bounds.height, subviews, width: bounds.width, spacing: spacing)
         var y = bounds.minY
-        for subview in subviews {
-            let proposal = ProposedViewSize(width: bounds.width, height: nil)
+        for (subview, height) in zip(subviews, heights) {
+            let grows = subview[CSSGrowthKey.self].height
+            let proposal = ProposedViewSize(width: bounds.width, height: grows ? height : nil)
             let size = subview.sizeThatFits(proposal)
             let point = subview[CSSPlacementKey.self]?.point ?? .zero
             subview.place(
                 at: CGPoint(x: bounds.minX + (bounds.width - size.width) * point.x, y: y), anchor: .topLeading, proposal: proposal)
-            y += size.height + spacing
+            y += height + spacing
         }
+    }
+
+    private static func heights(_ limit: CGFloat?, _ subviews: SwiftUI.Layout.Subviews, width: CGFloat, spacing: CGFloat) -> Array<CGFloat>
+    {
+        var ideal: Array<CGFloat> = []
+        var grows: Array<Bool> = []
+        for subview in subviews {
+            ideal.append(subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height)
+            grows.append(subview[CSSGrowthKey.self].height)
+        }
+        return CSSTrack.sizes(limit, ideal: ideal, minimum: ideal, grows: grows, spacing: spacing)
     }
 }
 
@@ -250,7 +313,7 @@ struct CSSRow: SwiftUI.Layout {
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout Void) -> CGSize {
         let widths = Self.widths(proposal.width, subviews, spacing: spacing)
-        let total = Self.sum(widths) + spacing * CGFloat(max(widths.count - 1, 0))
+        let total = CSSTrack.sum(widths) + spacing * CGFloat(max(widths.count - 1, 0))
         let width = fills ? (proposal.width ?? total) : min(total, proposal.width ?? total)
         return CGSize(width: width, height: Self.height(widths, subviews))
     }
@@ -273,16 +336,13 @@ struct CSSRow: SwiftUI.Layout {
     private static func widths(_ limit: CGFloat?, _ subviews: SwiftUI.Layout.Subviews, spacing: CGFloat) -> Array<CGFloat> {
         var ideal: Array<CGFloat> = []
         var minimum: Array<CGFloat> = []
+        var grows: Array<Bool> = []
         for subview in subviews {
             ideal.append(subview.sizeThatFits(.unspecified).width)
             minimum.append(subview.sizeThatFits(ProposedViewSize(width: 0, height: nil)).width)
+            grows.append(subview[CSSGrowthKey.self].width)
         }
-        let gaps = spacing * CGFloat(max(subviews.count - 1, 0))
-        guard let limit, limit < sum(ideal) + gaps else { return ideal }
-        let flex = sum(zip(ideal, minimum).map { $0 - $1 })
-        let slack = max(limit - gaps - sum(minimum), 0)
-        let ratio = flex > 0 ? min(slack / flex, 1) : 0
-        return zip(ideal, minimum).map { $1 + ($0 - $1) * ratio }
+        return CSSTrack.sizes(limit, ideal: ideal, minimum: minimum, grows: grows, spacing: spacing)
     }
 
     private static func height(_ widths: Array<CGFloat>, _ subviews: SwiftUI.Layout.Subviews) -> CGFloat {
@@ -291,11 +351,5 @@ struct CSSRow: SwiftUI.Layout {
             height = max(height, subview.sizeThatFits(ProposedViewSize(width: width, height: nil)).height)
         }
         return height
-    }
-
-    private static func sum(_ values: Array<CGFloat>) -> CGFloat {
-        var total: CGFloat = 0
-        for value in values { total += value }
-        return total
     }
 }

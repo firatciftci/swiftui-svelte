@@ -94,9 +94,9 @@ Auto margins become flexible frames. In a horizontal stack, several flexible chi
 
 A stack can take the layout classes of CSS grid and flex when they describe the layout it already has:
 
-- `grid`, `flex`, `inline-grid`, and `inline-flex` are accepted on both stacks.
+- `flex` and `inline-flex` lay out a stack's children in a row. `grid` and `inline-grid` lay them out in a column. Both work on either stack, and they set its direction, so `<hstack class="grid gap-1">` stacks its children in a column, as CSS does.
 - `grid-cols-1` and `flex-col` on a `vstack` match its column layout. `flex-row` and `grid-flow-col` on an `hstack` match its row layout.
-- Any other combination produces a warning, such as `grid-flow-col` on a `vstack`. Use a `grid`, `lazyvgrid`, or `lazyhgrid` element for multi-column grids.
+- Any other combination has no effect. A development build logs a warning for it, such as `grid-flow-col` on a `vstack`. Use a `grid`, `lazyvgrid`, or `lazyhgrid` element for multi-column grids.
 
 Once a stack carries one of these classes, it follows the CSS defaults for children. Its children stretch across the cross axis, so a `vstack` child takes the stack's full content width and its background, border, and shadow fill that width. An `hstack` child stretches to the height of the tallest child. The stack's own width follows its parent: if the parent stretches it, it fills the width, and if the parent centers or aligns it, it is only as wide as its content.
 
@@ -114,7 +114,9 @@ Alignment follows these rules:
 
 `border`, `border-t`, `border-b`, `border-l`, `border-r`, `border-x`, `border-y`, `border-s`, and `border-e` set the width of the edges they name, and `border-{color}` colors whichever edges are set. Like padding, a border takes space: the content sits inside it. The stroke is drawn in that band, so a row with `border-t py-1.5` is 1 point of border, 6 points of padding, the content, and 6 points of padding tall.
 
-All-edge `border` follows the same model, so a bordered element is now larger by the width of its border on each side. Before this change, a border drew over the edge of the element without taking any space.
+All-edge `border` follows the same model. A class-sized element keeps its size with the border inside it, as CSS does with Tailwind's `border-box` sizing: `w-40 border-2` is 160 points wide, including the 2-point border on each side. An element sized with attributes, such as `width={160}`, keeps SwiftUI's sizing, so its border is added outside the width, unless you set `boxsizing="border-box"`.
+
+`ring-*` draws a ring outside the element's bounds, in the color that `ring-{color}` sets. Like a CSS ring, it takes no space, so the element and its neighbors don't move.
 
 ## Container queries
 
@@ -206,13 +208,13 @@ Use the same functions in your own CSS, in a `@utility` or `@theme` value:
 
 ## Fonts
 
-A `font-*` family must be a generic family or a name you map in the `fonts` option. The option maps a family name to the PostScript name of the font:
+A `font-*` family must be a generic family or a name you map in the `fonts` option. Key the option by the first family name in the font stack, and set its value to the PostScript name of the font. For a theme font such as `--font-brand: "Avenir", sans-serif;`, the key is `Avenir`.
 
 ```ts
 tailwind({
   css: "src/app.css",
   sources: ["src"],
-  fonts: { sans: "Avenir-Medium" },
+  fonts: { Avenir: "Avenir-Medium" },
 });
 ```
 
@@ -237,3 +239,5 @@ Each entry is an exact class name, or a pattern with `*` standing for any run of
 ## Performance
 
 Class names are compiled at build time, so the device doesn't parse CSS. Elements with conditional classes are recomputed when the environment changes. Those classes include `dark:`, width variants, container variants, orientation variants, safe-area utilities, or device lengths. Other elements don't re-resolve their classes.
+
+A container resize re-resolves only the elements inside that container.

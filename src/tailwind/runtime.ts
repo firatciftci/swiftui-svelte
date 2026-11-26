@@ -124,7 +124,7 @@ export function arithmetic(op: Operator, values: Array<number>): number {
       return Math.max(...values);
     }
     case "clamp": {
-      return Math.min(Math.max(second, first), third);
+      return Math.max(first, Math.min(second, third));
     }
     case "round": {
       return second !== 0 && values.length > 1
@@ -304,6 +304,8 @@ function finish(output: Attributes): Attributes {
   const {
     $borderWidth,
     $borderColor,
+    $ringWidth,
+    $ringColor,
     $shadowColor,
     $stop,
     $direction,
@@ -313,6 +315,11 @@ function finish(output: Attributes): Attributes {
   const result: Attributes = rest;
   if (isPlain($borderWidth))
     result.border = borderOf($borderWidth, $borderColor);
+  if (typeof $ringWidth === "number" && $ringWidth > 0)
+    result.ring =
+      typeof $ringColor === "string"
+        ? { width: $ringWidth, color: $ringColor }
+        : { width: $ringWidth };
   if (typeof $shadowColor === "string" && isPlain(result.shadow))
     result.shadow = { ...result.shadow, color: $shadowColor };
   if (isPlain($stop) && isPlain($direction)) {

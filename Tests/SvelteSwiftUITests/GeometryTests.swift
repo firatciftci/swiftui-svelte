@@ -28,6 +28,24 @@ struct GeometryTests {
         #expect(Geometry.scale(nil) == nil)
     }
 
+    @Test func sizesBorderBoxElementsAroundTheirBorderAndPadding() {
+        func rendered(_ attributes: [String: JSONValue]) -> CGSize? {
+            let node = Node(id: 1, kind: .element, name: "vstack", text: "")
+            node.attributes = attributes
+            let renderer = ImageRenderer(content: AnyView(NodeShape.view(of: node)))
+            renderer.scale = 1
+            return renderer.cgImage.map { CGSize(width: $0.width, height: $0.height) }
+        }
+        let border: JSONValue = .object(["width": .number(2)])
+        let box: JSONValue = .string("border-box")
+        #expect(
+            rendered(["width": .number(160), "height": .number(40), "border": border, "boxsizing": box]) == CGSize(width: 160, height: 40))
+        #expect(
+            rendered(["width": .number(160), "height": .number(40), "padding": .number(4), "boxsizing": box])
+                == CGSize(width: 160, height: 40))
+        #expect(rendered(["width": .number(160), "height": .number(40), "border": border]) == CGSize(width: 164, height: 44))
+    }
+
     @Test func readsMarginEdgesAndAutoAlignment() {
         let margin = Margin(.object(["top": .number(-4), "trailing": .string("auto")]))
         #expect(margin.insets == EdgeInsets(top: -4, leading: 0, bottom: 0, trailing: 0))

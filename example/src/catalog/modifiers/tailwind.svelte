@@ -25,8 +25,16 @@
 <vstack
   class="mt-2 gap-2 rounded-lg border-t border-neutral-300 pt-2 dark:border-neutral-700"
   css
+  axis="vertical"
   container=""
 >
+  <txt
+    boxsizing="border-box"
+    width={160}
+    border={{ width: 2, color: "orange" }}
+  >
+    Sized with its border inside
+  </txt>
   <txt
     margin={{ leading: "auto", trailing: "auto" }}
     balanced

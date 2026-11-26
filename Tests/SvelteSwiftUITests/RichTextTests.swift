@@ -4,6 +4,15 @@ import Testing
 @testable import SvelteSwiftUI
 
 struct RichTextTests {
+    @Test func balancesWithinAFiniteCappedSearch() {
+        let lines = { (width: CGFloat) in CGSize(width: width, height: width >= 60 ? 20 : 40) }
+        let balanced = BalancedLayout.balancedWidth(of: CGSize(width: 100, height: 20), measuring: lines)
+        #expect(abs(balanced - 60) <= 0.5)
+        #expect(BalancedLayout.balancedWidth(of: CGSize(width: CGFloat.infinity, height: 20), measuring: lines) == CGFloat.infinity)
+        let never = BalancedLayout.balancedWidth(of: CGSize(width: 100, height: 20)) { _ in CGSize(width: 1, height: 40) }
+        #expect(never <= 100)
+    }
+
     private func text(_ value: String) -> Node {
         Node(id: 0, kind: .text, name: "", text: value)
     }

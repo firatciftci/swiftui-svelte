@@ -489,6 +489,7 @@ function colorMix(inner: string): Rgba {
   const p1 = first.weight ?? (second.weight == null ? 0.5 : 1 - second.weight);
   const p2 = second.weight ?? 1 - p1;
   const total = p1 + p2;
+  if (total <= 0) return { r: 0, g: 0, b: 0, a: 0 };
   const w1 = p1 / total;
   const w2 = p2 / total;
   const a = first.color.a * w1 + second.color.a * w2;
@@ -507,7 +508,7 @@ function colorMix(inner: string): Rgba {
   });
   const [x = 0, y = 0, z = 0] = mixed;
   const rgba = space === "oklab" ? fromOklab(x, y, z) : { r: x, g: y, b: z };
-  return { ...rgba, a };
+  return { ...rgba, a: a * Math.min(total, 1) };
 }
 
 function weighted(text: string): { color: Rgba; weight: number | undefined } {

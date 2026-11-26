@@ -162,6 +162,7 @@ export const modifierGroups: Array<{
       "lighten",
       "insetshadow",
       "border",
+      "ring",
       "shadow",
       "blur",
       "radius",
@@ -315,7 +316,16 @@ export const modifierGroups: Array<{
   {
     name: "tailwind",
     title: "Tailwind CSS",
-    modifiers: ["class", "margin", "container", "css", "selfalign", "balanced"],
+    modifiers: [
+      "class",
+      "margin",
+      "container",
+      "css",
+      "axis",
+      "boxsizing",
+      "selfalign",
+      "balanced",
+    ],
   },
   {
     name: "tailwind-native",

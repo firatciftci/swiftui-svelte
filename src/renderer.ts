@@ -523,6 +523,7 @@ function classState(element: ElementNode): ClassState {
   const disabled = element.attributes.get("disabled");
   const isRtl = environment.layoutDirection === "rightToLeft";
   const { top, bottom, leading, trailing } = environment.safeAreaInsets;
+  let containers: Record<string, number> | null = null;
   return {
     dark: environment.colorScheme === "dark",
     width: environment.viewportWidth,
@@ -541,7 +542,10 @@ function classState(element: ElementNode): ClassState {
     },
     pixelRatio: environment.pixelRatio,
     fontScale: environment.fontScale,
-    containers: containersOf(element),
+    get containers() {
+      containers ??= containersOf(element);
+      return containers;
+    },
   };
 }
 
@@ -608,11 +612,22 @@ function updateDerived(element: ElementNode, attrs: Attributes): void {
     if (!element.attributes.has(key)) changeAttribute(element, key);
 }
 
-function reapplyReactive(): void {
+function isDescendant(element: ElementNode, ancestor: ElementNode): boolean {
+  for (
+    let node: ParentNode | null = element.parent;
+    node != null && isElement(node);
+    node = node.parent
+  )
+    if (node === ancestor) return true;
+  return false;
+}
+
+function reapplyReactive(container?: ElementNode): void {
   for (const [id, reference] of reactiveElements) {
     const element = reference.deref();
     if (!element?.reactive) reactiveElements.delete(id);
-    else applyClass(element, element.classValue);
+    else if (container == null || isDescendant(element, container))
+      applyClass(element, element.classValue);
   }
 }
 
@@ -631,7 +646,7 @@ function containerResized(element: ElementNode, payload: unknown): void {
   )
     return;
   element.containerWidth = payload.width;
-  reapplyReactive();
+  reapplyReactive(element);
 }
 
 const renderer = createRenderer<{

@@ -31,7 +31,7 @@ struct ModifierSet: OptionSet, Hashable {
         let groups: [Self: Array<String>] = [
             .framing: [
                 "framealignment", "width", "height", "linebox", "minwidth", "idealwidth", "maxwidth", "minheight", "idealheight",
-                "maxheight", "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority",
+                "maxheight", "aspectratio", "contentmode", "padding", "fixedsize", "layoutpriority", "boxsizing", "border",
             ],
             .margins: ["margin"],
             .typography: ["font", "fontname", "fontfallbacks", "size", "design", "weight", "italic", "color", "tint", "controlsize"],
@@ -39,7 +39,9 @@ struct ModifierSet: OptionSet, Hashable {
                 "background", "opacity", "radius", "cornerstyle", "brightness", "colormultiply", "blendmode", "compositinggroup", "lighten",
                 "insetshadow",
             ],
-            .decorations: ["clipshape", "border", "shadow", "blur", "contentshape"],
+            .decorations: [
+                "clipshape", "border", "shadow", "blur", "contentshape", "ring", "boxsizing", "radius", "cornerstyle",
+            ],
             .glass: ["glasseffect", "glassid", "glassunion"],
             .transforms: ["offset", "position", "rotation", "rotationanchor", "scale", "scaleanchor"],
             .accessible: [

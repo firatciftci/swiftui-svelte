@@ -614,9 +614,10 @@ export async function buildClassTable(
   options: BuildOptions,
 ): Promise<BuildResult> {
   const cssPath = path.resolve(options.root, options.css);
-  const sourceList = sourceFiles(
-    options.sources.map((directory) => path.resolve(options.root, directory)),
+  const directories = options.sources.map((directory) =>
+    path.resolve(options.root, directory),
   );
+  const sourceList = sourceFiles(directories);
   const { contexts, universe } = scanSources(sourceList, options.root);
   const root = await compileStyles(cssPath, options.root, universe);
   const globals = lookupFor(collectGlobals(root));
@@ -629,8 +630,9 @@ export async function buildClassTable(
     problems,
   );
   const isIgnored = ignoredBy(options.ignore ?? []);
-  for (const token of universe) if (isIgnored(token)) silent.add(token);
   for (const token of silent) tokens[token] ??= [{ order: 0, attrs: {} }];
+  for (const token of universe)
+    if (isIgnored(token)) tokens[token] = [{ order: 0, attrs: {} }];
   const table: ClassTable = {
     tokens,
     statics: {},
@@ -642,7 +644,7 @@ export async function buildClassTable(
     warnings: [
       ...new Set(warningsFor(contexts, universe, seen, problems, isIgnored)),
     ],
-    files: [cssPath, ...sourceList],
+    files: [cssPath, ...directories, ...sourceList],
   };
 }
 

@@ -64,6 +64,16 @@ enum Effects {
         let widths: EdgeInsets
     }
 
+    struct Ring {
+        let style: AnyShapeStyle
+        let width: CGFloat
+    }
+
+    static func ring(_ value: JSONValue?) -> Ring? {
+        guard case let .object(options) = value, let width = options["width"]?.number, width > 0 else { return nil }
+        return Ring(style: Palette.style(options["color"]) ?? AnyShapeStyle(.foreground), width: CGFloat(width))
+    }
+
     static func border(_ value: JSONValue?) -> Border? {
         switch value {
         case .string:
@@ -182,6 +192,16 @@ struct Decorations: ViewModifier {
                 view.mask(alignment: Styles.alignment(mask.attributes["alignment"]?.string)) { Children(node: mask) }
             }
             .ifLet(Effects.shape(attributes["contentshape"])) { $0.contentShape($1) }
+            .ifLet(Effects.ring(attributes["ring"])) { view, ring in
+                view.overlay {
+                    RingStroke(
+                        width: ring.width, radius: max(CGFloat(attributes["radius"]?.number ?? 0), 0),
+                        style: Effects.cornerStyle(attributes["cornerstyle"])
+                    )
+                    .stroke(ring.style, lineWidth: ring.width)
+                    .allowsHitTesting(false)
+                }
+            }
     }
 }
 
@@ -284,28 +304,52 @@ struct BorderBand: ViewModifier {
     let attributes: [String: JSONValue]
 
     func body(content: Content) -> some View {
+        let isBorderBox = attributes["boxsizing"]?.string == "border-box"
         content.ifLet(Effects.border(attributes["border"])) { view, border in
-            view.padding(border.widths).overlay {
-                BorderRing(widths: border.widths)
+            view
+                .gated(!isBorderBox) { $0.padding(border.widths) }
+                .overlay {
+                    BorderRing(
+                        widths: border.widths, radius: max(CGFloat(attributes["radius"]?.number ?? 0), 0),
+                        style: Effects.cornerStyle(attributes["cornerstyle"])
+                    )
                     .fill(border.style, style: FillStyle(eoFill: true))
                     .allowsHitTesting(false)
-            }
+                }
         }
     }
 }
 
 struct BorderRing: Shape {
     let widths: EdgeInsets
+    let radius: CGFloat
+    let style: RoundedCornerStyle
 
     nonisolated func path(in rect: CGRect) -> Path {
-        var path = Path(rect)
-        path.addRect(
-            CGRect(
-                x: rect.minX + widths.leading,
-                y: rect.minY + widths.top,
-                width: rect.width - widths.leading - widths.trailing,
-                height: rect.height - widths.top - widths.bottom
-            ))
+        var path = Path(roundedRect: rect, cornerSize: CGSize(width: radius, height: radius), style: style)
+        let inner = CGRect(
+            x: rect.minX + widths.leading,
+            y: rect.minY + widths.top,
+            width: rect.width - widths.leading - widths.trailing,
+            height: rect.height - widths.top - widths.bottom
+        )
+        let inset = CGSize(
+            width: max(radius - max(widths.leading, widths.trailing), 0),
+            height: max(radius - max(widths.top, widths.bottom), 0)
+        )
+        path.addPath(Path(roundedRect: inner, cornerSize: inset, style: style))
         return path
+    }
+}
+
+struct RingStroke: Shape {
+    let width: CGFloat
+    let radius: CGFloat
+    let style: RoundedCornerStyle
+
+    nonisolated func path(in rect: CGRect) -> Path {
+        Path(
+            roundedRect: rect.insetBy(dx: -width / 2, dy: -width / 2),
+            cornerSize: CGSize(width: radius + width / 2, height: radius + width / 2), style: style)
     }
 }
