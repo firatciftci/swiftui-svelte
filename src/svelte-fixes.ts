@@ -54,7 +54,10 @@ const linearReverse: Array<readonly [string, string]> = [
   ["for (effect of seen) {", "for (effect of seen.keys()) {"],
 ];
 
-export function fixSvelte(code: string, id: string): string | null {
+export function fixSvelte(
+  code: string,
+  id: string,
+): { code: string; map: null } | null {
   if (!keyedEach.test(id.split("?", 1)[0] ?? "")) return null;
   let fixed = code;
   for (const [before, after] of linearReverse) {
@@ -62,5 +65,5 @@ export function fixSvelte(code: string, id: string): string | null {
     if (index === -1 || fixed.includes(before, index + 1)) return null;
     fixed = fixed.slice(0, index) + after + fixed.slice(index + before.length);
   }
-  return fixed;
+  return { code: fixed, map: null };
 }

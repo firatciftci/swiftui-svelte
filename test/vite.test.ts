@@ -1,6 +1,6 @@
 import type { IncomingMessage } from "node:http";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { get } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -105,6 +105,15 @@ describe("the Vite plugin", () => {
     expect(code).toContain("new Map()).set(current, stashed.length)");
     expect(code).not.toContain("new Set()).add(current)");
   }, 60_000);
+
+  it("returns the patched each block without a source map", () => {
+    const file = path.resolve(
+      "node_modules/svelte/src/internal/client/dom/blocks/each.js",
+    );
+    const fixed = fixSvelte(readFileSync(file, "utf8"), file);
+    expect(fixed?.map).toBeNull();
+    expect(fixed?.code).toContain("new Map()).set(current, stashed.length)");
+  });
 
   it("leaves other files and changed each blocks alone", () => {
     const each = "/node_modules/svelte/src/internal/client/dom/blocks/each.js";
