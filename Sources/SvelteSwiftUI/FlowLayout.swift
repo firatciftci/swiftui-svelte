@@ -84,7 +84,7 @@ struct ReflowLayout: SwiftUI.Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: SwiftUI.Layout.Subviews, cache _: inout ()) -> CGSize {
         let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
         let width = rowWidth(ideals)
-        guard width > (proposal.width ?? .infinity) + 0.5 else {
+        guard width > (proposal.width ?? .infinity) else {
             return CGSize(width: width, height: ideals.map(\.height).max() ?? 0)
         }
         var size = CGSize(width: 0, height: spacing * CGFloat(max(ideals.count - 1, 0)))
