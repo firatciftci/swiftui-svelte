@@ -101,6 +101,13 @@ function decode(segment: string): string {
   }
 }
 
+export function routePath(url: URL): string {
+  const isWeb = url.protocol === "http:" || url.protocol === "https:";
+  return isWeb || url.host === ""
+    ? url.pathname
+    : `/${url.host}${url.pathname}`;
+}
+
 function segments(url: URL): Array<string> {
   const path = url.pathname.split("/").filter((segment) => segment !== "");
   const isWeb = url.protocol === "http:" || url.protocol === "https:";
