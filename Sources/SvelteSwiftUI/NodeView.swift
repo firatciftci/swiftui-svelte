@@ -328,9 +328,11 @@ private struct Localized: ViewModifier {
     let attributes: [String: JSONValue]
 
     func body(content: Content) -> some View {
+        let lang = attributes["lang"]?.string
         content
-            .ifLet(attributes["lang"]?.string.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) {
-                $0.environment(\.locale, $1).typesettingLanguage($1.language)
+            .ifLet(lang.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) { $0.environment(\.locale, $1) }
+            .ifLet(lang.map { $0.isEmpty ? TypesettingLanguage.automatic : .explicit(Locale.Language(identifier: $0)) }) {
+                $0.typesettingLanguage($1)
             }
             .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
     }

@@ -141,7 +141,7 @@ struct Span {
         if let kerning { container.swiftUI.kern = kerning }
         if let tracking { container.swiftUI.tracking = tracking }
         if let link { container.link = link }
-        if let language { container.languageIdentifier = language }
+        if let language, !language.isEmpty { container.languageIdentifier = language }
         return container
     }
 }

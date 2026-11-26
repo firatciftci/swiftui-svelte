@@ -860,7 +860,7 @@ type Modifiers = {
   ontask?: (signal: AbortSignal) => unknown;
   /** Runs `ontask` again whenever this value changes. The previous run is canceled first. */
   taskid?: string | number | boolean | null;
-  /** The locale of the element and everything inside it, such as `ar` or `en-US`. SwiftUI uses it to format dates and numbers, and text inside the element is shaped for that language, so that Turkish `f` and dotted `i` stay apart. */
+  /** The locale of the element and everything inside it, such as `ar` or `en-US`. SwiftUI uses it to format dates and numbers, and text inside the element is shaped for that language, so that Turkish `f` and dotted `i` stay apart. Without `lang`, text is shaped for the app's preferred localization, as SwiftUI shapes a string literal. An empty `lang=""` shapes text without a language, as SwiftUI shapes `Text(verbatim:)` and text from a `String` variable, so the font can join `f` and `i` into a ligature. */
   lang?: string;
   /** The layout direction of the element and everything inside it: `ltr` or `rtl`. */
   dir?: "ltr" | "rtl";
