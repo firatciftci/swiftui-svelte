@@ -3,6 +3,7 @@
     mode,
     ModeWatcher,
     setMode,
+    systemPrefersMode,
     userPrefersMode,
   } from "swiftui-svelte/mode-watcher";
 
@@ -28,5 +29,8 @@
   {/each}
   <txt font="footnote" color="secondary">
     The app is showing {mode.current ?? "light"} mode.
+  </txt>
+  <txt font="footnote" color="secondary">
+    The device is set to {systemPrefersMode.current ?? "light"} mode.
   </txt>
 </vstack>
