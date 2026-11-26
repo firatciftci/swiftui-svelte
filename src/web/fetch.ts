@@ -862,7 +862,9 @@ export type NativeFetchBridge = {
     body: Uint8Array<ArrayBuffer> | null,
     onResponse: (meta: string) => void,
     onData: (chunk: Uint8Array) => void,
-    onEnd: (error: string | null) => void,
+    onEnd: (
+      failure: { message: string; code?: number; name?: string } | null,
+    ) => void,
   ) => void;
   cancel: (id: number) => void;
 };
@@ -984,18 +986,16 @@ export function createFetch(native: NativeFetchBridge) {
       (chunk) => {
         if (!isFinished && chunk.byteLength > 0) controller?.enqueue(chunk);
       },
-      (error) => {
+      (failure) => {
         if (isFinished) return;
         isFinished = true;
         signal.removeEventListener("abort", onAbort);
-        if (error == null) {
+        if (failure == null) {
           controller?.close();
         } else {
-          const failure = new TypeError("fetch failed", {
-            cause: new Error(error),
-          });
-          reject(failure);
-          controller?.error(failure);
+          const error = new TypeError("fetch failed", { cause: failure });
+          reject(error);
+          controller?.error(error);
         }
       },
     );

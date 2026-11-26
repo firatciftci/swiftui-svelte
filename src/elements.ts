@@ -1721,7 +1721,9 @@ declare global {
     body: Uint8Array<ArrayBuffer> | null,
     onResponse: (meta: string) => void,
     onData: (chunk: Uint8Array) => void,
-    onEnd: (error: string | null) => void,
+    onEnd: (
+      failure: { message: string; code?: number; name?: string } | null,
+    ) => void,
   ): void;
   function __nativeFetchCancel(id: number): void;
   function __nativeWebSocketOpen(

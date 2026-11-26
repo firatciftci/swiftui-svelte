@@ -71,7 +71,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         guard let request = try? JSONDecoder().decode(FetchRequest.self, from: Data(json.utf8)),
             let url = URL(string: request.url)
         else {
-            onEnd.call(withArguments: ["Invalid request"])
+            onEnd.call(withArguments: [["message": "Invalid request"]])
             return
         }
         var urlRequest = URLRequest(url: url)
@@ -93,6 +93,25 @@ nonisolated final class NetworkClient: @unchecked Sendable {
             id: id, onResponse: callbacks.onResponse, onData: callbacks.onData, onEnd: onEnd, redirect: request.redirect)
         fetchTasks[id] = task
         task.resume()
+    }
+
+    static func failure(_ error: any Error) -> [String: Any] {
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else {
+            return ["message": nsError.localizedDescription, "code": nsError.code, "name": "unknown"]
+        }
+        let name =
+            switch URLError.Code(rawValue: nsError.code) {
+            case .cannotConnectToHost: "cannotConnectToHost"
+            case .cannotFindHost: "cannotFindHost"
+            case .networkConnectionLost: "networkConnectionLost"
+            case .notConnectedToInternet: "notConnectedToInternet"
+            case .dnsLookupFailed: "dnsLookupFailed"
+            case .timedOut: "timedOut"
+            case .cancelled: "cancelled"
+            default: "unknown"
+            }
+        return ["message": nsError.localizedDescription, "code": nsError.code, "name": name]
     }
 
     func cancelFetch(id: Int) {
@@ -202,7 +221,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         case "error":
             fetches[task.taskIdentifier] = nil
             fetchTasks[fetch.id] = nil
-            fetch.onEnd.call(withArguments: ["unexpected redirect"])
+            fetch.onEnd.call(withArguments: [["message": "unexpected redirect"]])
             task.cancel()
             return nil
         default:
@@ -215,7 +234,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     func didComplete(task: URLSessionTask, error: (any Error)?) {
         if let fetch = fetches.removeValue(forKey: task.taskIdentifier) {
             fetchTasks[fetch.id] = nil
-            fetch.onEnd.call(withArguments: [error.map { $0.localizedDescription as Any } ?? NSNull()])
+            fetch.onEnd.call(withArguments: [error.map { Self.failure($0) as Any } ?? NSNull()])
             return
         }
         guard let id = socketIDs.removeValue(forKey: task.taskIdentifier), var socket = sockets[id] else { return }

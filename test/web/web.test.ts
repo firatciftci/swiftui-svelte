@@ -82,7 +82,7 @@ const fetchBridge: NativeFetchBridge = {
             onData(new Uint8Array(chunk));
         onEnd(null);
       } catch (error) {
-        if (!controller.signal.aborted) onEnd(String(error));
+        if (!controller.signal.aborted) onEnd({ message: String(error) });
       } finally {
         fetches.delete(id);
       }

@@ -70,4 +70,14 @@ struct WebAPITests {
         try await Task.sleep(for: .milliseconds(20))
         #expect(UserDefaults.standard.string(forKey: key) == #"{"count":"2"}"#)
     }
+
+    @Test func namesURLErrorsSoAppsCanTellOfflineFromOtherFailures() {
+        let refused = NetworkClient.failure(URLError(.cannotConnectToHost))
+        #expect(refused["name"] as? String == "cannotConnectToHost")
+        #expect(refused["code"] as? Int == URLError.cannotConnectToHost.rawValue)
+        #expect(NetworkClient.failure(URLError(.notConnectedToInternet))["name"] as? String == "notConnectedToInternet")
+        #expect(NetworkClient.failure(URLError(.dnsLookupFailed))["name"] as? String == "dnsLookupFailed")
+        #expect(NetworkClient.failure(URLError(.badURL))["name"] as? String == "unknown")
+        #expect(NetworkClient.failure(CocoaError(.fileNoSuchFile))["name"] as? String == "unknown")
+    }
 }
