@@ -4,6 +4,7 @@
   let zoom = $state(1);
   let angle = $state(0);
   let hovered = $state("Move the pointer over the box");
+  let shown = $state(0);
 </script>
 
 <vstack spacing={20} padding>
@@ -81,4 +82,21 @@
       rotation={angle}
     />
   </zstack>
+  <scrollview axes="horizontal" height={56} indicators={false}>
+    <hstack spacing={8} padding>
+      {#each Array.from({ length: 12 }, (_, index) => index + 1) as item (item)}
+        <txt
+          padding
+          background="blue"
+          color="white"
+          radius={8}
+          visibilitythreshold={0.5}
+          onscrollvisibility={(event) => {
+            shown = event.visible ? item : shown;
+          }}>{item}</txt
+        >
+      {/each}
+    </hstack>
+  </scrollview>
+  <txt font="caption" color="secondary">Last chip seen: {shown}</txt>
 </vstack>

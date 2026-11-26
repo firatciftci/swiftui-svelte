@@ -51,6 +51,10 @@ export type Ref = ((node: unknown) => () => void) & {
     edge: "top" | "bottom",
     options?: Omit<ScrollOptions, "anchor">,
   ): void;
+  scrollTo(
+    offset: { x?: number; y?: number },
+    options?: Omit<ScrollOptions, "anchor">,
+  ): void;
   measure(): Promise<Rect | null>;
 };
 type ChildNode = ElementNode | TextNode;
@@ -286,9 +290,16 @@ export function ref(): Ref {
     scrollIntoView: (options: ScrollOptions = {}) =>
       invoke(element, "scrollIntoView", options),
     scrollTo: (
-      edge: "top" | "bottom",
+      target: "top" | "bottom" | { x?: number; y?: number },
       options: Omit<ScrollOptions, "anchor"> = {},
-    ) => invoke(element, "scrollTo", { ...options, edge }),
+    ) =>
+      invoke(
+        element,
+        "scrollTo",
+        typeof target === "string"
+          ? { ...options, edge: target }
+          : { ...options, ...target },
+      ),
     measure: async (): Promise<Rect | null> => {
       if (element == null) return null;
       const request = scheduler.nextRequest++;
@@ -429,6 +440,8 @@ const observedEvents = new Set([
   "resize",
   "rotate",
   "scroll",
+  "scrollphase",
+  "scrollvisibility",
   "selectionchange",
   "tap",
   "task",

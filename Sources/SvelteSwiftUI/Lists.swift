@@ -17,7 +17,7 @@ struct ListElement: View {
 
     var body: some View {
         styled
-            .modifier(Scrollable())
+            .modifier(Scrollable(node: node))
             .modifier(ScrollOptions(node: node))
             .modifier(SectionIndex(visibility: Bars.visibility(node.attributes["sectionindex"])))
             .modifier(Editing(node: node))

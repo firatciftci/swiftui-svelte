@@ -840,18 +840,22 @@ A wrapping layout: it puts its children in rows and starts a new row when the ne
 
 A `ScrollView`: scrolls its children, vertically by default.
 
-| Attribute    | Type                                                         | Description                                                                                                                                    |
-| ------------ | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `indicators` | `boolean \| "automatic" \| "visible" \| "hidden" \| "never"` | Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them.                       |
-| `bounce`     | `"automatic" \| "always" \| "basedOnSize"`                   | When the content bounces past its edges: `automatic`, `always`, or `basedOnSize`, which bounces only when the content is larger than the view. |
-| `anchor`     | `UnitPointName`                                              | The point the scroll starts at, as a unit point such as `bottom`, which suits a chat.                                                          |
-| `onscroll`   | `(scroll: ScrollGeometry) => void`                           | Runs as the content scrolls, with the scroll position and sizes in points.                                                                     |
-| `onrefresh`  | `() => Promise<unknown> \| void`                             | Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles.                                     |
-| `axes`       | `"vertical" \| "horizontal" \| "both"`                       | The directions in which the content scrolls: `vertical` (the default), `horizontal`, or `both`.                                                |
-| `snap`       | `"paging" \| "view"`                                         | Stops scrolling at each screen-sized page with `paging`, or at the start of each child of the stack inside it with `view`.                     |
+| Attribute        | Type                                                         | Description                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `indicators`     | `boolean \| "automatic" \| "visible" \| "hidden" \| "never"` | Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them.                          |
+| `bounce`         | `"automatic" \| "always" \| "basedOnSize"`                   | When the content bounces past its edges: `automatic`, `always`, or `basedOnSize`, which bounces only when the content is larger than the view.    |
+| `anchor`         | `UnitPointName`                                              | The point the scroll starts at, as a unit point such as `bottom`, which suits a chat.                                                             |
+| `onscroll`       | `(scroll: ScrollGeometry) => void`                           | Runs as the content scrolls, with the scroll position and sizes in points.                                                                        |
+| `onrefresh`      | `() => Promise<unknown> \| void`                             | Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles.                                        |
+| `scrolldisabled` | `boolean`                                                    | Stops the content from scrolling, and keeps it in place.                                                                                          |
+| `onscrollphase`  | `(event: ScrollPhaseEvent) => void`                          | Runs when the scroll phase changes, with `phase`: `idle`, `tracking` (a finger is on the content), `interacting`, `decelerating`, or `animating`. |
+| `axes`           | `"vertical" \| "horizontal" \| "both"`                       | The directions in which the content scrolls: `vertical` (the default), `horizontal`, or `both`.                                                   |
+| `snap`           | `"paging" \| "view"`                                         | Stops scrolling at each screen-sized page with `paging`, or at the start of each child of the stack inside it with `view`.                        |
 
 ```svelte
 <script lang="ts">
+  import { ref } from "swiftui-svelte";
+
   const colors = [
     "red",
     "orange",
@@ -861,6 +865,10 @@ A `ScrollView`: scrolls its children, vertically by default.
     "purple",
   ] as const;
   let offset = $state(0);
+  const column = ref();
+  let locked = $state(false);
+  let phase = $state("idle");
+  let lastShown = $state(0);
 </script>
 
 <vstack spacing={12}>
@@ -882,6 +890,39 @@ A `ScrollView`: scrolls its children, vertically by default.
     </hstack>
   </scrollview>
   <txt font="caption" color="secondary">Scrolled {offset} points</txt>
+  <hstack spacing={12}>
+    <btn variant="bordered" onclick={() => column.scrollTo({ y: 0 })}>Top</btn>
+    <btn
+      variant="bordered"
+      onclick={() => column.scrollTo({ y: 400 }, { animated: false })}
+      >Offset 400</btn
+    >
+    <btn variant="bordered" onclick={() => (locked = !locked)}>
+      {locked ? "Unlock" : "Lock"}
+    </btn>
+  </hstack>
+  <scrollview
+    {@attach column}
+    height={160}
+    scrolldisabled={locked}
+    onscrollphase={(event) => (phase = event.phase)}
+  >
+    <vstack spacing={8} padding>
+      {#each Array.from({ length: 20 }, (_, index) => index + 1) as row (row)}
+        <txt
+          padding
+          background="secondarySystemBackground"
+          radius={8}
+          onscrollvisibility={(event) => {
+            if (event.visible) lastShown = row;
+          }}>Row {row}</txt
+        >
+      {/each}
+    </vstack>
+  </scrollview>
+  <txt font="caption" color="secondary">
+    Phase: {phase}. Last row shown: {lastShown}.
+  </txt>
 </vstack>
 ```
 
@@ -1025,22 +1066,24 @@ A `LazyHGrid`: a grid of rows that creates its children as they scroll into view
 
 A `List`: a scrolling list of rows that can be selected, edited, and refreshed.
 
-| Attribute           | Type                                                                                                | Description                                                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `indicators`        | `boolean \| "automatic" \| "visible" \| "hidden" \| "never"`                                        | Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them.                       |
-| `bounce`            | `"automatic" \| "always" \| "basedOnSize"`                                                          | When the content bounces past its edges: `automatic`, `always`, or `basedOnSize`, which bounces only when the content is larger than the view. |
-| `anchor`            | `UnitPointName`                                                                                     | The point the scroll starts at, as a unit point such as `bottom`, which suits a chat.                                                          |
-| `onscroll`          | `(scroll: ScrollGeometry) => void`                                                                  | Runs as the content scrolls, with the scroll position and sizes in points.                                                                     |
-| `onrefresh`         | `() => Promise<unknown> \| void`                                                                    | Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles.                                     |
-| `ondelete`          | `(indices: Array<number>) => void`                                                                  | Runs when the user deletes rows, with the positions of the deleted rows among the element's children.                                          |
-| `onmove`            | `(move: RowMove) => void`                                                                           | Runs when the user moves a row, with the rows that moved and the position they moved to.                                                       |
-| `multiple`          | `false \| true`                                                                                     | Set to `false`, or leave it out, to allow only one selected row. Set to `true` to let the user select several rows.                            |
-| `selection`         | `string \| number \| null \| Array<string \| number>`                                               | The `tag` of the selected row, or `null` when nothing is selected. The `tag`s of the selected rows.                                            |
-| `onselectionchange` | `((selection: string \| number \| null) => void) \| ((selection: Array<string \| number>) => void)` | Runs when the selection changes, with the selected row's `tag`, or `null`. Runs when the selection changes, with the array of selected `tag`s. |
-| `variant`           | `"automatic" \| "plain" \| "inset" \| "grouped" \| "insetGrouped" \| "sidebar"`                     | The list style: `automatic`, `plain`, `inset`, `grouped`, `insetGrouped`, or `sidebar`.                                                        |
-| `editing`           | `boolean`                                                                                           | Turns edit mode on or off. Use `bind:editing` with the `List` component to bind it.                                                            |
-| `oneditingchange`   | `(editing: boolean) => void`                                                                        | Runs when SwiftUI turns edit mode on or off, with the new `editing` value.                                                                     |
-| `sectionindex`      | `BarVisibility`                                                                                     | Shows or hides the section index along the trailing edge, for sections that have an `indexlabel`.                                              |
+| Attribute           | Type                                                                                                | Description                                                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `indicators`        | `boolean \| "automatic" \| "visible" \| "hidden" \| "never"`                                        | Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them.                          |
+| `bounce`            | `"automatic" \| "always" \| "basedOnSize"`                                                          | When the content bounces past its edges: `automatic`, `always`, or `basedOnSize`, which bounces only when the content is larger than the view.    |
+| `anchor`            | `UnitPointName`                                                                                     | The point the scroll starts at, as a unit point such as `bottom`, which suits a chat.                                                             |
+| `onscroll`          | `(scroll: ScrollGeometry) => void`                                                                  | Runs as the content scrolls, with the scroll position and sizes in points.                                                                        |
+| `onrefresh`         | `() => Promise<unknown> \| void`                                                                    | Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles.                                        |
+| `scrolldisabled`    | `boolean`                                                                                           | Stops the content from scrolling, and keeps it in place.                                                                                          |
+| `onscrollphase`     | `(event: ScrollPhaseEvent) => void`                                                                 | Runs when the scroll phase changes, with `phase`: `idle`, `tracking` (a finger is on the content), `interacting`, `decelerating`, or `animating`. |
+| `ondelete`          | `(indices: Array<number>) => void`                                                                  | Runs when the user deletes rows, with the positions of the deleted rows among the element's children.                                             |
+| `onmove`            | `(move: RowMove) => void`                                                                           | Runs when the user moves a row, with the rows that moved and the position they moved to.                                                          |
+| `multiple`          | `false \| true`                                                                                     | Set to `false`, or leave it out, to allow only one selected row. Set to `true` to let the user select several rows.                               |
+| `selection`         | `string \| number \| null \| Array<string \| number>`                                               | The `tag` of the selected row, or `null` when nothing is selected. The `tag`s of the selected rows.                                               |
+| `onselectionchange` | `((selection: string \| number \| null) => void) \| ((selection: Array<string \| number>) => void)` | Runs when the selection changes, with the selected row's `tag`, or `null`. Runs when the selection changes, with the array of selected `tag`s.    |
+| `variant`           | `"automatic" \| "plain" \| "inset" \| "grouped" \| "insetGrouped" \| "sidebar"`                     | The list style: `automatic`, `plain`, `inset`, `grouped`, `insetGrouped`, or `sidebar`.                                                           |
+| `editing`           | `boolean`                                                                                           | Turns edit mode on or off. Use `bind:editing` with the `List` component to bind it.                                                               |
+| `oneditingchange`   | `(editing: boolean) => void`                                                                        | Runs when SwiftUI turns edit mode on or off, with the new `editing` value.                                                                        |
+| `sectionindex`      | `BarVisibility`                                                                                     | Shows or hides the section index along the trailing edge, for sections that have an `indexlabel`.                                                 |
 
 ```svelte
 <script lang="ts">
@@ -2731,18 +2774,20 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Gestures
 
-| Attribute           | Type                               | Description                                                                                                                                                                                       |
-| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ontap`             | `(location: GesturePoint) => void` | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.                                                                                                 |
-| `tapcount`          | `number`                           | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                                                                                                                  |
-| `onlongpress`       | `() => void`                       | Runs when the user holds a finger down on the element for `longpressduration` seconds.                                                                                                            |
-| `longpressduration` | `number`                           | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5.                                                                                                |
-| `ondrag`            | `(drag: DragEvent) => void`        | Runs as the user drags the element, with the drag's phase, position, and velocity.                                                                                                                |
-| `dragdistance`      | `number`                           | The distance in points the finger must move before a drag starts. Defaults to 10.                                                                                                                 |
-| `onmagnify`         | `(magnify: MagnifyEvent) => void`  | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                 |
-| `onrotate`          | `(rotate: RotateEvent) => void`    | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                |
-| `onhover`           | `(event: HoverEvent) => void`      | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. |
-| `allowshittesting`  | `boolean`                          | Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind.                                                                    |
+| Attribute             | Type                                     | Description                                                                                                                                                                                       |
+| --------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ontap`               | `(location: GesturePoint) => void`       | Runs when the element is tapped, with the tap's `{ x, y }` position in the element's coordinates.                                                                                                 |
+| `tapcount`            | `number`                                 | The number of taps that trigger `ontap`. Defaults to 1, so 2 means a double tap.                                                                                                                  |
+| `onlongpress`         | `() => void`                             | Runs when the user holds a finger down on the element for `longpressduration` seconds.                                                                                                            |
+| `longpressduration`   | `number`                                 | How long the user must hold a finger down, in seconds, before `onlongpress` runs. Defaults to 0.5.                                                                                                |
+| `ondrag`              | `(drag: DragEvent) => void`              | Runs as the user drags the element, with the drag's phase, position, and velocity.                                                                                                                |
+| `dragdistance`        | `number`                                 | The distance in points the finger must move before a drag starts. Defaults to 10.                                                                                                                 |
+| `onmagnify`           | `(magnify: MagnifyEvent) => void`        | Runs during a pinch gesture, with the pinch's phase, magnification, and velocity.                                                                                                                 |
+| `onrotate`            | `(rotate: RotateEvent) => void`          | Runs during a two-finger rotation, with the rotation's phase, angle, and velocity.                                                                                                                |
+| `onhover`             | `(event: HoverEvent) => void`            | Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. |
+| `onscrollvisibility`  | `(event: { visible: boolean; }) => void` | Runs when the element scrolls into or out of view in its `scrollview` or `list`, with `visible`.                                                                                                  |
+| `visibilitythreshold` | `number`                                 | The share of the element that must be on screen to count as visible, from 0 to 1. Defaults to 0, which counts any part of the element.                                                            |
+| `allowshittesting`    | `boolean`                                | Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind.                                                                    |
 
 ```svelte
 <script lang="ts">
@@ -2751,6 +2796,7 @@ Every element takes these attributes, except the few whose entries say they don'
   let zoom = $state(1);
   let angle = $state(0);
   let hovered = $state("Move the pointer over the box");
+  let shown = $state(0);
 </script>
 
 <vstack spacing={20} padding>
@@ -2828,6 +2874,23 @@ Every element takes these attributes, except the few whose entries say they don'
       rotation={angle}
     />
   </zstack>
+  <scrollview axes="horizontal" height={56} indicators={false}>
+    <hstack spacing={8} padding>
+      {#each Array.from({ length: 12 }, (_, index) => index + 1) as item (item)}
+        <txt
+          padding
+          background="blue"
+          color="white"
+          radius={8}
+          visibilitythreshold={0.5}
+          onscrollvisibility={(event) => {
+            shown = event.visible ? item : shown;
+          }}>{item}</txt
+        >
+      {/each}
+    </hstack>
+  </scrollview>
+  <txt font="caption" color="secondary">Last chip seen: {shown}</txt>
 </vstack>
 ```
 
@@ -3704,6 +3767,17 @@ type ScrollGeometry = {
   contentWidth: number;
   /** The height of the scrollable content. */
   contentHeight: number;
+};
+```
+
+### `ScrollPhaseEvent`
+
+The payload of `onscrollphase`: the scroll phase the content is in now.
+
+```ts
+type ScrollPhaseEvent = {
+  /** The phase: `idle`, `tracking`, `interacting`, `decelerating`, or `animating`. */
+  phase: "idle" | "tracking" | "interacting" | "decelerating" | "animating";
 };
 ```
 

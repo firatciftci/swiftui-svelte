@@ -227,6 +227,8 @@ export const modifierGroups: Array<{
       "onmagnify",
       "onrotate",
       "onhover",
+      "onscrollvisibility",
+      "visibilitythreshold",
       "allowshittesting",
     ],
   },

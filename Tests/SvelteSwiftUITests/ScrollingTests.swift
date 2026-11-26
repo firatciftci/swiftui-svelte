@@ -23,5 +23,7 @@ struct ScrollingTests {
         #expect(ScrollOptions.indicators(nil) == .automatic)
         #expect(ScrollOptions.bounce("basedOnSize") != nil)
         #expect(ScrollOptions.bounce(nil) == nil)
+        #expect(ScrollOptions.phase(.decelerating) == "decelerating")
+        #expect(ScrollOptions.phase(.idle) == "idle")
     }
 }

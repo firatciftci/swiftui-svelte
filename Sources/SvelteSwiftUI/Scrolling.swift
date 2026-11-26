@@ -21,6 +21,7 @@ struct ScrollOptions: ViewModifier {
             .scrollIndicators(Self.indicators(attributes["indicators"]))
             .ifLet(Self.bounce(attributes["bounce"]?.string)) { $0.scrollBounceBehavior($1) }
             .ifLet(UnitPoint(anchor: attributes["anchor"]?.string)) { $0.defaultScrollAnchor($1) }
+            .scrollDisabled(attributes["scrolldisabled"]?.isTrue ?? false)
             .modifier(SnapBehavior(snap: attributes["snap"]?.string))
             .modifier(Refreshing(node: node))
             .ifLet(node.listens(to: "scroll") ? node.id : nil) { view, id in
@@ -30,6 +31,21 @@ struct ScrollOptions: ViewModifier {
                     action: { _, payload in runtime.dispatch(id, "scroll", payload.dictionary, waits: false) }
                 )
             }
+            .ifLet(node.listens(to: "scrollphase") ? node.id : nil) { view, id in
+                view.onScrollPhaseChange { _, phase in
+                    runtime.dispatch(id, "scrollphase", ["phase": Self.phase(phase)], waits: false)
+                }
+            }
+    }
+
+    static func phase(_ phase: ScrollPhase) -> String {
+        switch phase {
+        case .idle: "idle"
+        case .tracking: "tracking"
+        case .interacting: "interacting"
+        case .decelerating: "decelerating"
+        case .animating: "animating"
+        }
     }
 
     static func indicators(_ value: JSONValue?) -> ScrollIndicatorVisibility {
@@ -59,6 +75,23 @@ private struct SnapBehavior: ViewModifier {
         case "paging": content.scrollTargetBehavior(.paging)
         case "view": content.scrollTargetBehavior(.viewAligned)
         default: content
+        }
+    }
+}
+
+struct ScrollVisibility: ViewModifier {
+    let node: Node
+    @Environment(SvelteRuntime.self) private var runtime
+
+    func body(content: Content) -> some View {
+        if node.listens(to: "scrollvisibility") {
+            let id = node.id
+            let threshold = CGFloat(node.attributes["visibilitythreshold"]?.number ?? 0)
+            content.onScrollVisibilityChange(threshold: threshold) { visible in
+                runtime.dispatch(id, "scrollvisibility", ["visible": visible], waits: false)
+            }
+        } else {
+            content
         }
     }
 }

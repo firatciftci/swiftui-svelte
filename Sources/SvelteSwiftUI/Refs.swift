@@ -12,6 +12,14 @@ struct ScrollRequest: Equatable {
     let serial: Int
 }
 
+struct ScrollOffsetRequest: Equatable {
+    let container: Int
+    let x: Double?
+    let y: Double?
+    let isAnimated: Bool
+    let serial: Int
+}
+
 extension UnitPoint {
     init?(anchor name: String?) {
         switch name {
@@ -68,21 +76,40 @@ struct Measured: ViewModifier {
 }
 
 struct Scrollable: ViewModifier {
+    let node: Node
     @Environment(SvelteRuntime.self) private var runtime
+    @State private var position = ScrollPosition()
 
     func body(content: Content) -> some View {
         ScrollViewReader { proxy in
-            content.onChange(of: runtime.scrollRequest) { _, request in
-                guard let request else { return }
-                DispatchQueue.main.async {
-                    if request.isAnimated {
-                        withAnimation { proxy.scrollTo(request.target, anchor: request.anchor) }
-                    } else {
-                        proxy.scrollTo(request.target, anchor: request.anchor)
+            content
+                .scrollPosition($position)
+                .onChange(of: runtime.scrollRequest) { _, request in
+                    guard let request else { return }
+                    DispatchQueue.main.async {
+                        if request.isAnimated {
+                            withAnimation { proxy.scrollTo(request.target, anchor: request.anchor) }
+                        } else {
+                            proxy.scrollTo(request.target, anchor: request.anchor)
+                        }
                     }
                 }
-            }
+                .onChange(of: runtime.scrollOffsetRequest) { _, request in
+                    guard let request, request.container == node.id else { return }
+                    DispatchQueue.main.async {
+                        if request.isAnimated {
+                            withAnimation { scroll(to: request) }
+                        } else {
+                            scroll(to: request)
+                        }
+                    }
+                }
         }
+    }
+
+    private func scroll(to request: ScrollOffsetRequest) {
+        if let x = request.x { position.scrollTo(x: CGFloat(x)) }
+        if let y = request.y { position.scrollTo(y: CGFloat(y)) }
     }
 }
 

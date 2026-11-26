@@ -361,4 +361,20 @@ struct RuntimeTests {
         runtime.start()
         #expect(runtime.error?.message.contains("Couldn't load") == true)
     }
+
+    @Test func scrollsTheContainerToAnOffset() throws {
+        let runtime = try runtime(
+            mount + """
+                __nativeCommit(JSON.stringify([1, 2, 0, 8, 0, 0, 0, 1, 2, 0, 9, 0, 0, 0]));
+                """)
+        runtime.settle()
+        _ = runtime.evaluate {
+            $0.evaluateScript(#"__nativeInvoke(2, "scrollTo", JSON.stringify({ y: 120, animated: false }))"#)
+        }
+        runtime.settle()
+        #expect(runtime.scrollOffsetRequest?.container == 2)
+        #expect(runtime.scrollOffsetRequest?.x == nil)
+        #expect(runtime.scrollOffsetRequest?.y == 120)
+        #expect(runtime.scrollOffsetRequest?.isAnimated == false)
+    }
 }

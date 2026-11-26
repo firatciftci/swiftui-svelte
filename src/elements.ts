@@ -323,6 +323,15 @@ type ScrollOptions = {
   onscroll?: (scroll: ScrollGeometry) => void;
   /** Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles. */
   onrefresh?: () => Promise<unknown> | void;
+  /** Stops the content from scrolling, and keeps it in place. */
+  scrolldisabled?: boolean;
+  /** Runs when the scroll phase changes, with `phase`: `idle`, `tracking` (a finger is on the content), `interacting`, `decelerating`, or `animating`. */
+  onscrollphase?: (event: ScrollPhaseEvent) => void;
+};
+/** The payload of `onscrollphase`: the scroll phase the content is in now. */
+export type ScrollPhaseEvent = {
+  /** The phase: `idle`, `tracking`, `interacting`, `decelerating`, or `animating`. */
+  phase: "idle" | "tracking" | "interacting" | "decelerating" | "animating";
 };
 /** The rows that moved in an `onmove` call: the positions they came from, and the position they moved to. */
 export type RowMove = {
@@ -831,6 +840,10 @@ type Modifiers = {
   dragdistance?: number;
   /** Runs as the pointer moves over the element: `enter` when it arrives, `move` as it moves, and `exit` when it leaves. `location` is the pointer's `{ x, y }` in points, and it's missing on `exit`. */
   onhover?: (event: HoverEvent) => void;
+  /** Runs when the element scrolls into or out of view in its `scrollview` or `list`, with `visible`. */
+  onscrollvisibility?: (event: { visible: boolean }) => void;
+  /** The share of the element that must be on screen to count as visible, from 0 to 1. Defaults to 0, which counts any part of the element. */
+  visibilitythreshold?: number;
   /** Runs during a pinch gesture, with the pinch's phase, magnification, and velocity. */
   onmagnify?: (magnify: MagnifyEvent) => void;
   /** Runs during a two-finger rotation, with the rotation's phase, angle, and velocity. */

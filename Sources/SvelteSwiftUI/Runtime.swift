@@ -22,6 +22,7 @@ public final class SvelteRuntime {
     private(set) var store = NodeStore()
     private(set) var error: ScriptError?
     private(set) var scrollRequest: ScrollRequest?
+    private(set) var scrollOffsetRequest: ScrollOffsetRequest?
 
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
@@ -217,6 +218,9 @@ public final class SvelteRuntime {
             node.focusRequest = FocusRequest(isFocused: method == "focus", serial: requestSerial)
         case "scrollIntoView":
             scroll(to: id, anchor: UnitPoint(anchor: options["anchor"]?.string), options)
+        case "scrollTo" where options["edge"] == nil:
+            scrollOffsetRequest = ScrollOffsetRequest(
+                container: id, x: options["x"]?.number, y: options["y"]?.number, isAnimated: isAnimated(options), serial: requestSerial)
         case "scrollTo":
             let isBottom = options["edge"]?.string == "bottom"
             let children = node.renderedChildren
@@ -236,8 +240,11 @@ public final class SvelteRuntime {
     }
 
     private func scroll(to target: Int, anchor: UnitPoint?, _ options: [String: JSONValue]) {
-        let isAnimated = options["animated"].map { $0 != .bool(false) } ?? true
-        scrollRequest = ScrollRequest(target: target, anchor: anchor, isAnimated: isAnimated, serial: requestSerial)
+        scrollRequest = ScrollRequest(target: target, anchor: anchor, isAnimated: isAnimated(options), serial: requestSerial)
+    }
+
+    private func isAnimated(_ options: [String: JSONValue]) -> Bool {
+        options["animated"].map { $0 != .bool(false) } ?? true
     }
 
     func measured(_ node: Node, frame: CGRect) {

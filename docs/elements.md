@@ -205,9 +205,12 @@ Svelte's compiler rejects `bind:this` in custom renderer components, so swiftui-
 | `focus()`, `blur()`                    | Moves keyboard focus to the element, or takes it away                                                                                                                                                                       |
 | `scrollIntoView({ anchor, animated })` | Scrolls the nearest `scrollview` or `list` until the element is visible. `anchor` is `top`, `center`, `bottom`, `leading`, `trailing`, or a corner such as `topLeading`. Scrolling is animated unless `animated` is `false` |
 | `scrollTo(edge, { animated })`         | On a `scrollview` or `list`, scrolls to its first child (`"top"`) or last child (`"bottom"`)                                                                                                                                |
+| `scrollTo({ x, y }, { animated })`     | On a `scrollview` or `list`, scrolls to an offset in points from its top leading corner. Pass `x`, `y`, or both, and leave out the axis you don't need.                                                                     |
 | `measure()`                            | Resolves to the element's `{ x, y, width, height }` in window coordinates, in points, once the element is on screen. It resolves to `null` if the element goes away first                                                   |
 
 Calls made before the element reaches SwiftUI wait for it, so you can call `focus()` right after rendering a field. When the element is gone, calls do nothing.
+
+`scrolldisabled` stops a `scrollview` or `list` from scrolling and keeps its content in place. `onscrollphase` reports what the scroll is doing, and `onscrollvisibility` reports when an element enters or leaves the visible part of its scroll view, so you can load more rows as they come into view. Set `visibilitythreshold` to require a larger part of the element to be on screen before it counts as visible.
 
 For declarative focus, `textfield` takes a `focused` attribute and fires `onfocus` and `onblur`. The `TextField` component makes it bindable:
 
