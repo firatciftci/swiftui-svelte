@@ -17,6 +17,7 @@ struct BenchmarkTests {
         "create": 40, "update": 1, "swap": 2, "reverse": 5, "clear": 10,
     ]
     private let slack: Double = isCI ? 3 : 1
+    private let overhead: Double = isCI ? 5 : 0
 
     private func apply(_ runtime: SvelteRuntime, _ operation: String, _ count: Int) -> Double {
         let before = runtime.engine.stats.withLock(\.applyTime)
@@ -34,7 +35,7 @@ struct BenchmarkTests {
         for (operation, milliseconds) in budgets {
             await Task.yield()
             let elapsed = apply(runtime, operation, count)
-            #expect(elapsed <= milliseconds * slack * Double(count) / 1000, "\(operation) took \(elapsed)ms")
+            #expect(elapsed <= overhead + milliseconds * slack * Double(count) / 1000, "\(operation) took \(elapsed)ms")
             #expect(rows() == (operation == "clear" ? 0 : count), "\(operation)")
         }
         #expect(runtime.error == nil)
