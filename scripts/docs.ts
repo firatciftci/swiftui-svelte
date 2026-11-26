@@ -275,12 +275,16 @@ export function generate(): string {
       "",
       `### ${group.title}`,
       "",
-      ...table(
-        group.modifiers.flatMap((name) =>
-          shared.filter((attribute) => attribute.name === name),
-        ),
-      ),
-      "",
+      ...(group.modifiers.length === 0
+        ? []
+        : [
+            ...table(
+              group.modifiers.flatMap((name) =>
+                shared.filter((attribute) => attribute.name === name),
+              ),
+            ),
+            "",
+          ]),
       example("modifiers", group.name, group.modifiers),
     ]),
     "",

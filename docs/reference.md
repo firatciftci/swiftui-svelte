@@ -16,7 +16,7 @@ Every element also takes the [modifiers](#modifiers), unless its entry says it d
 - [Pickers](#pickers): [`picker`](#picker), [`choice`](#choice), [`datepicker`](#datepicker), [`multidatepicker`](#multidatepicker), [`colorpicker`](#colorpicker)
 - [Shapes](#shapes): [`rectangle`](#rectangle), [`roundedrectangle`](#roundedrectangle), [`unevenroundedrectangle`](#unevenroundedrectangle), [`circleshape`](#circleshape), [`ellipseshape`](#ellipseshape), [`capsule`](#capsule), [`pathshape`](#pathshape)
 - [Layers and Liquid Glass](#layers-and-liquid-glass): [`background`](#background), [`overlay`](#overlay), [`maskview`](#maskview), [`glasseffectcontainer`](#glasseffectcontainer)
-- [Modifiers](#modifiers): [typography](#typography), [color and style](#color-and-style), [frame and layout](#frame-and-layout), [transforms and shapes](#transforms-and-shapes), [animation and transitions](#animation-and-transitions), [gestures](#gestures), [appearing, tasks, and size](#appearing-tasks-and-size), [accessibility](#accessibility), [grid cells](#grid-cells), [list rows](#list-rows), [environment and feedback](#environment-and-feedback), [liquid glass](#liquid-glass), [search suggestions](#search-suggestions), [tailwind css](#tailwind-css)
+- [Modifiers](#modifiers): [typography](#typography), [color and style](#color-and-style), [frame and layout](#frame-and-layout), [transforms and shapes](#transforms-and-shapes), [animation and transitions](#animation-and-transitions), [gestures](#gestures), [appearing, tasks, and size](#appearing-tasks-and-size), [accessibility](#accessibility), [grid cells](#grid-cells), [list rows](#list-rows), [environment and feedback](#environment-and-feedback), [liquid glass](#liquid-glass), [search suggestions](#search-suggestions), [tailwind css](#tailwind-css), [tailwind native utilities](#tailwind-native-utilities)
 - [Value types](#value-types)
 
 ## Navigation
@@ -2604,6 +2604,7 @@ Every element takes these attributes, except the few whose entries say they don'
 | `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has.                                                                                              |
 | `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                                                                                                              |
 | `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                                                                                                              |
+| `cornerstyle`      | `"continuous" \| "circular"`                                                              | The style of the corners that `radius` rounds: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs).                                                                                                                                                        |
 | `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                               | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                                                                                                                                                                                                       |
 
 ```svelte
@@ -2627,6 +2628,14 @@ Every element takes these attributes, except the few whose entries say they don'
     radius={12}
     shadow={{ color: "#00000033", radius: 8, y: 4 }}>Shadow</txt
   >
+  <hstack spacing={16}>
+    <txt padding background="yellow" radius={16} cornerstyle="continuous"
+      >Continuous</txt
+    >
+    <txt padding background="yellow" radius={16} cornerstyle="circular"
+      >Circular</txt
+    >
+  </hstack>
   <hstack spacing={16}>
     <txt opacity={0.4}>Faded</txt>
     <txt blur={2}>Blurred</txt>
@@ -3442,6 +3451,38 @@ Every element takes these attributes, except the few whose entries say they don'
     />
   </btn>
 </hstack>
+```
+
+### Tailwind native utilities
+
+```svelte
+<vstack
+  class="gap-3 rounded-xl corner-squircle bg-neutral-100 p-4 dark:bg-neutral-900"
+>
+  <txt class="text-neutral-800 dark:text-neutral-50">Native variants</txt>
+  <txt class="ios:text-blue-600 android:text-green-600 web:text-red-600">
+    Blue on iOS, green on Android
+  </txt>
+  <txt
+    class="contrast-more:font-bold portrait:text-neutral-700 landscape:text-neutral-500 dark:portrait:text-neutral-300 dark:landscape:text-neutral-400"
+  >
+    Bold with Increase Contrast
+  </txt>
+  <txt class="label-color">Label color from platformColor</txt>
+  <hstack class="items-center gap-2">
+    <btn
+      class="cursor-pointer rounded-full bg-brand-500 p-2 text-white elevation-md ripple-brand-500"
+      onclick={() => {}}
+    >
+      <sfsymbol name="star.fill" size={16} label="favorite" />
+    </btn>
+  </hstack>
+  <vstack class="hairline rounded-lg p-3">
+    <txt class="text-sm text-neutral-600 dark:text-neutral-300"
+      >Hairline border</txt
+    >
+  </vstack>
+</vstack>
 ```
 
 ## Value types

@@ -19,6 +19,14 @@
     shadow={{ color: "#00000033", radius: 8, y: 4 }}>Shadow</txt
   >
   <hstack spacing={16}>
+    <txt padding background="yellow" radius={16} cornerstyle="continuous"
+      >Continuous</txt
+    >
+    <txt padding background="yellow" radius={16} cornerstyle="circular"
+      >Circular</txt
+    >
+  </hstack>
+  <hstack spacing={16}>
     <txt opacity={0.4}>Faded</txt>
     <txt blur={2}>Blurred</txt>
   </hstack>
