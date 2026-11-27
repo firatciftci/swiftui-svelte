@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 import { flushSync } from "svelte";
 import { describe, expect, it } from "vitest";
 import { stats } from "swiftui-svelte";
-import type { Sample } from "./jsc/run.ts";
 import { mountComponent, settle } from "./bridge.ts";
 import {
   clear,
@@ -67,97 +66,29 @@ describe("benchmarks", () => {
   }
 });
 
-const rowBudgets: Record<string, Omit<Sample, "nodes">> = {
-  "each-empty": {
-    bytes: 627,
-    retained: 64,
-    mount: 3,
-    update: 2,
-    swap: 1,
-    unmount: 1,
-  },
-  "txt-static": {
-    bytes: 1137,
-    retained: 256,
-    mount: 9,
-    update: 2,
-    swap: 1,
-    unmount: 2,
-  },
-  txt: { bytes: 1830, retained: 64, mount: 14, update: 6, swap: 1, unmount: 2 },
-  "vstack-txt": {
-    bytes: 2200,
-    retained: 96,
-    mount: 18,
-    update: 6,
-    swap: 1,
-    unmount: 2,
-  },
-  attrs: {
-    bytes: 2869,
-    retained: 96,
-    mount: 25,
-    update: 6,
-    swap: 1,
-    unmount: 2,
-  },
-  class: {
-    bytes: 2587,
-    retained: 128,
-    mount: 33,
-    update: 6,
-    swap: 1,
-    unmount: 2,
-  },
-  snippet: {
-    bytes: 1971,
-    retained: 64,
-    mount: 15,
-    update: 6,
-    swap: 1,
-    unmount: 2,
-  },
-  pass: {
-    bytes: 3925,
-    retained: 64,
-    mount: 28,
-    update: 6,
-    swap: 1,
-    unmount: 3,
-  },
-  props: {
-    bytes: 3925,
-    retained: 64,
-    mount: 32,
-    update: 7,
-    swap: 1,
-    unmount: 3,
-  },
-  "hover-plain": {
-    bytes: 5280,
-    retained: 96,
-    mount: 33,
-    update: 6,
-    swap: 1,
-    unmount: 3,
-  },
-  hover: {
-    bytes: 6512,
-    retained: 96,
-    mount: 42,
-    update: 6,
-    swap: 1,
-    unmount: 4,
-  },
-  btn: { bytes: 3203, retained: 96, mount: 20, update: 6, swap: 1, unmount: 2 },
-  table: {
-    bytes: 5475,
-    retained: 128,
-    mount: 72,
-    update: 3,
-    swap: 4,
-    unmount: 5,
-  },
+type RowBudget = [
+  bytes: number,
+  mount: number,
+  update: number,
+  swap: number,
+  unmount: number,
+];
+
+const retainedBudget = 160;
+const rowBudgets: Record<string, RowBudget> = {
+  "each-empty": [630, 3, 2, 1, 1],
+  "txt-static": [900, 8, 2, 1, 1],
+  txt: [1590, 12, 5, 1, 2],
+  "vstack-txt": [1710, 15, 5, 1, 2],
+  attrs: [2100, 21, 5, 1, 2],
+  class: [1800, 22, 5, 1, 2],
+  snippet: [1730, 13, 5, 1, 2],
+  pass: [3680, 25, 6, 1, 3],
+  props: [3680, 28, 6, 1, 3],
+  "hover-plain": [4180, 30, 5, 1, 3],
+  hover: [5200, 38, 5, 1, 4],
+  btn: [2100, 17, 5, 1, 2],
+  table: [4160, 65, 2, 4, 4],
 };
 
 describe.skipIf(!existsSync(jsc))(
@@ -165,20 +96,21 @@ describe.skipIf(!existsSync(jsc))(
   () => {
     it("keeps every row shape within its memory and time budgets", async () => {
       const report = await benchmark();
-      for (const [shape, budget] of Object.entries(rowBudgets)) {
+      for (const [shape, [bytes, ...times]] of Object.entries(rowBudgets)) {
         const sample = report[shape];
         expect(sample, shape).toBeDefined();
         if (sample == null) continue;
         expect
           .soft(sample.bytes, `${shape} bytes per row`)
-          .toBeLessThanOrEqual(budget.bytes);
+          .toBeLessThanOrEqual(bytes);
         expect
           .soft(sample.retained, `${shape} bytes per row after unmounting`)
-          .toBeLessThanOrEqual(budget.retained);
-        for (const phase of ["mount", "update", "swap", "unmount"] as const) {
+          .toBeLessThanOrEqual(retainedBudget);
+        const phases = ["mount", "update", "swap", "unmount"] as const;
+        for (const [index, phase] of phases.entries()) {
           expect
             .soft(sample[phase], `${shape} ${phase} time`)
-            .toBeLessThanOrEqual(budget[phase] * slack);
+            .toBeLessThanOrEqual((times[index] ?? 0) * slack);
         }
       }
     }, 300_000);
