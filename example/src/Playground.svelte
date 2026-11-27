@@ -75,14 +75,18 @@
   }
   let showsTicker = $state(false);
   let ticks = $state(0);
+  let tickerRuns = $state(0);
   let tickerStatus = $state("Not started yet");
 
   async function tick(signal: AbortSignal) {
+    tickerRuns++;
+    const run = tickerRuns;
     ticks = 0;
     while (!signal.aborted) {
       await new Promise((resolve) => setTimeout(resolve, 200));
       if (!signal.aborted) ticks++;
     }
+    tickerStatus = `Run ${run} stopped after ${ticks} ticks`;
   }
   let rating = $state(3);
   let showsContent = $state(false);
@@ -965,11 +969,8 @@
           >Show the ticker</toggle
         >
         {#if showsTicker}
-          <txt
-            testid="ticker"
-            ontask={tick}
-            ondisappear={() => (tickerStatus = `Stopped after ${ticks} ticks`)}
-            >Ticked {ticks} times</txt
+          <txt testid="ticker" ontask={tick}
+            >Ticked {ticks} times in run {tickerRuns}</txt
           >
         {/if}
         <txt font="caption" color="secondary" testid="ticker-status"
