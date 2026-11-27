@@ -99,6 +99,7 @@ export function createPerformance(clock: () => number): HostPerformance {
       let startTime = 0;
       let endTime = now();
       let detail: unknown = null;
+      let duration: number | undefined;
       if (start != null && typeof start === "object") {
         const options = start;
         detail = options.detail ?? null;
@@ -107,14 +108,11 @@ export function createPerformance(clock: () => number): HostPerformance {
           endTime = resolve(options.end);
         } else if (options.start !== undefined) {
           startTime = resolve(options.start);
-          endTime =
-            options.duration === undefined
-              ? now()
-              : startTime + options.duration;
+          duration = options.duration;
         } else if (options.end !== undefined) {
           endTime = resolve(options.end);
-          startTime =
-            options.duration === undefined ? 0 : endTime - options.duration;
+          duration = options.duration;
+          if (duration !== undefined) startTime = endTime - duration;
         }
       } else {
         if (start !== undefined) startTime = resolve(start);
@@ -124,7 +122,7 @@ export function createPerformance(clock: () => number): HostPerformance {
         name,
         "measure",
         startTime,
-        endTime - startTime,
+        duration ?? endTime - startTime,
         detail,
       );
       entries.push(created);
