@@ -1,6 +1,6 @@
 export type Params = Record<string, string | undefined>;
 
-export type Matcher = (value: string) => boolean;
+type Matcher = (value: string) => boolean;
 
 export type Matchers = Record<string, Matcher>;
 

@@ -51,7 +51,7 @@ export type Level = {
   error?: Component<Record<string, never>>;
 };
 
-export type PageDefinition = {
+type PageDefinition = {
   component: Component<PageProps>;
   load?: PageLoad;
   presentation: "page" | "sheet";
@@ -113,4 +113,4 @@ export type Page = {
   state: Data;
 };
 
-export { type Matchers, type Params, type Segment } from "./match.ts";
+export type { Params } from "./match.ts";

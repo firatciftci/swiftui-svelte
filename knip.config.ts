@@ -3,6 +3,7 @@ import type { KnipConfig } from "knip";
 const config: KnipConfig = {
   entry: [
     "example/src/main.ts",
+    "src/create.ts",
     "test/native.ts",
     "test/web/native.ts",
     "test/size/main.ts",
