@@ -3,7 +3,12 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { mdsvex } from "mdsvex";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
-import { appAliases, routesModule, routesModuleId } from "./src/routes.ts";
+import {
+  appAliases,
+  loadLibrary,
+  routesModule,
+  routesModuleId,
+} from "./src/routes.ts";
 import { fixSvelte } from "./src/svelte-fixes.ts";
 
 const source = path.resolve("test/router/src");
@@ -26,7 +31,7 @@ export default defineConfig({
       load: (id) =>
         id === `\0${routesModuleId}`
           ? routesModule(import.meta.dirname, source)
-          : undefined,
+          : loadLibrary(id),
     },
   ],
   define: {

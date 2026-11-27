@@ -22,6 +22,9 @@ export const page: Page = {
   get data(): Data {
     return merged();
   },
+  get form(): unknown {
+    return router.top?.form ?? null;
+  },
   get state(): Data {
     return {};
   },

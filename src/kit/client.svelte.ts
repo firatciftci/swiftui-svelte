@@ -79,6 +79,7 @@ export class Entry {
     backButtonHidden: false,
   });
   view: View = $state.raw(emptyView);
+  form: unknown = $state.raw(null);
   deps = new SvelteSet<string>();
 
   constructor(
@@ -289,6 +290,20 @@ function failureView(
       { kind: "error", component, status, message },
     ],
   };
+}
+
+export function showError(status: number, message: string): void {
+  const top = router.top;
+  if (top == null) return;
+  const step = top.route?.levels.length ?? -1;
+  top.view = failureView(
+    top.route,
+    step,
+    status,
+    message,
+    top.view.steps,
+    top.params,
+  );
 }
 
 async function assemble(

@@ -64,6 +64,10 @@
       "types": "./dist/kit/environment.d.ts",
       "default": "./dist/kit/environment.js"
     },
+    "./kit/forms": {
+      "types": "./dist/kit/forms.d.ts",
+      "default": "./dist/kit/forms.js"
+    },
     "./kit/navigation": {
       "types": "./dist/kit/navigation.d.ts",
       "default": "./dist/kit/navigation.js"
@@ -179,15 +183,18 @@
     "svelte": "5.59.1",
     "svelte-check": "4.7.8",
     "svelte-eslint-parser": "^1.12.0",
+    "sveltekit-superforms": "^3.1.0",
     "tailwindcss": "4.3.5",
     "typescript": "6.0.3",
     "typescript-eslint": "8.74.0",
     "vite": "8.3.8",
     "vitest": "^5.1.1",
-    "ws": "^8.23.0"
+    "ws": "^8.23.0",
+    "zod": "^4.6.7"
   },
   "packageManager": "pnpm@12.23.0",
   "dependencies": {
+    "devalue": "^5.9.4",
     "web-streams-polyfill": "^4.5.1"
   },
   "bin": {

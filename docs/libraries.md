@@ -218,6 +218,43 @@ The `svg` sizes itself the way a browser sizes it. With `width` and `height`, it
 
 Some SVG features don't draw: gradients, patterns, clip paths, masks, filters, markers, `use`, `image`, `foreignObject`, and `tspan` positions. Events work on the `svg` element but not on the shapes inside it. The d3 modules that change the DOM, such as d3-selection, d3-axis, d3-zoom, and d3-brush, don't run, so draw axes with `scale.ticks()` in the markup instead. LayerChart doesn't run either. Its components measure `div` elements and bind to DOM elements, which Svelte's custom renderer doesn't support.
 
+## Superforms and zod
+
+zod runs unchanged, and the client side of [Superforms](https://superforms.rocks) runs too: `superForm`, its stores, and client validation with a schema adapter such as zod's. Use Superforms in SPA mode and bind the fields with the bindable components from `swiftui-svelte/components`:
+
+```svelte
+<script lang="ts">
+  import { defaults, superForm } from "sveltekit-superforms";
+  import { zod } from "sveltekit-superforms/adapters/zod4";
+  import { TextField } from "swiftui-svelte/components";
+  import { z } from "zod";
+
+  const schema = z.object({ name: z.string().min(2), email: z.email() });
+
+  const { form, errors, validateForm } = superForm(defaults(zod(schema)), {
+    SPA: true,
+    validators: zod(schema),
+  });
+
+  async function save() {
+    const result = await validateForm({ update: true });
+    if (result.valid) await api.signUp(result.data);
+  }
+</script>
+
+<formview>
+  <TextField placeholder="Name" bind:value={$form.name} />
+  {#if $errors.name}<txt color="red">{$errors.name[0]}</txt>{/if}
+  <TextField placeholder="Email" bind:value={$form.email} />
+  {#if $errors.email}<txt color="red">{$errors.email[0]}</txt>{/if}
+  <btn onclick={save}>Sign up</btn>
+</formview>
+```
+
+Errors update as the fields change, the way they do on the web. The app has no `<form>` element, so `use:enhance`, `submit()`, and `onUpdate` don't run. Call `validateForm()` and send the valid data yourself, for example with a tRPC or oRPC client. Import the adapter from its own path, such as `sveltekit-superforms/adapters/zod4`. Importing from `sveltekit-superforms/adapters` bundles the other adapters too. That adds about 15 KB.
+
+The Vite plugin swaps Superforms' `SuperDebug` for a native view that shows the data as JSON. `$app/forms` is available too. `deserialize` reads a form action's response, and `applyAction` sets `page.form`, follows a redirect, or shows the error page. `enhance` throws, because it needs a `<form>` element.
+
 ## svelte-sonner and mode-watcher
 
 swiftui-svelte has native versions of [svelte-sonner](https://github.com/wobsoriano/svelte-sonner) and [mode-watcher](https://mode-watcher.sveco.dev). The Vite plugin redirects imports of `svelte-sonner` to `swiftui-svelte/sonner` and imports of `mode-watcher` to `swiftui-svelte/mode-watcher`, so web code that uses them runs unchanged. The real packages render DOM elements and read `document`, so they can't run in the app.

@@ -339,4 +339,5 @@ export const libraries: Array<string> = [
   "mode-watcher",
   "mdsvex",
   "d3",
+  "superforms",
 ];

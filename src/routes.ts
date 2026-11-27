@@ -16,10 +16,27 @@ const kit = path.join(import.meta.dirname, "kit");
 
 export const appAliases = [
   {
-    find: /^\$app\/(environment|navigation|paths|state)$/,
+    find: /^\$app\/(environment|forms|navigation|paths|state)$/,
     replacement: `${kit}/$1`,
   },
 ];
+
+const superDebug = path.join(
+  import.meta.dirname,
+  "superforms",
+  "SuperDebug.svelte",
+);
+
+export function loadLibrary(id: string): string | undefined {
+  const file = id.split("?", 1)[0] ?? id;
+  if (
+    !/\/sveltekit-superforms\/dist\/client\/SuperDebug(?:Runed)?\.svelte$/.test(
+      file,
+    )
+  )
+    return undefined;
+  return readFileSync(superDebug, "utf8");
+}
 
 type Directory = {
   path: string;
@@ -357,6 +374,9 @@ declare module "$app/state" {
 }
 declare module "$app/environment" {
   export * from "swiftui-svelte/kit/environment";
+}
+declare module "$app/forms" {
+  export * from "swiftui-svelte/kit/forms";
 }
 declare module "$app/paths" {
   export * from "swiftui-svelte/kit/paths";

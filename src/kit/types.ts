@@ -110,6 +110,7 @@ export type Page = {
   status: number;
   error: AppError | null;
   data: Data;
+  form: unknown;
   state: Data;
 };
 

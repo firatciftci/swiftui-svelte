@@ -5,6 +5,7 @@ import process from "node:process";
 import { build } from "vite";
 import {
   appAliases,
+  loadLibrary,
   routesModule,
   routesModuleId,
   routesWatchPath,
@@ -79,7 +80,7 @@ export function swiftui({
     resolveId: (id) =>
       id === routesModuleId ? `\0${routesModuleId}` : undefined,
     load(id) {
-      if (id !== `\0${routesModuleId}`) return;
+      if (id !== `\0${routesModuleId}`) return loadLibrary(id);
       this.addWatchFile(routesWatchPath(source()));
       return routesModule(root, source());
     },

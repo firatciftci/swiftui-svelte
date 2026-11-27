@@ -4,6 +4,7 @@ const config: KnipConfig = {
   entry: [
     "example/src/main.ts",
     "src/create.ts",
+    "src/superforms/SuperDebug.svelte",
     "test/native.ts",
     "test/web/native.ts",
     "test/size/main.ts",
