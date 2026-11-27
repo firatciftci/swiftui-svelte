@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { withAnimation } from "swiftui-svelte";
+  import { stats, withAnimation } from "swiftui-svelte";
   import { announce, onBackground } from "swiftui-svelte/app";
   import {
     ColorPicker,
@@ -129,6 +129,8 @@
   let hidesBackButton = $state(false);
   let colorsNavBar = $state(false);
   let slide = $state<string | number>("first");
+  let soakStatus = $state("Not soaked");
+  const diagnostics = nativeModule("diagnostics");
 
   const cards = [
     { value: "first", title: "First", color: "indigo" },
@@ -169,6 +171,44 @@
       if (signal?.aborted === true) return;
       fetchError = error instanceof Error ? error.message : String(error);
     }
+  }
+
+  async function soak(rounds: number) {
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const pushAndPop = async (count: number) => {
+      for (let round = 0; round < count; round++) {
+        showsSearch = true;
+        await wait(600);
+        showsSearch = false;
+        await wait(600);
+      }
+    };
+    const sample = async (target = Infinity) => {
+      let memory = 0;
+      for (let pass = 0; pass < 20; pass++) {
+        __nativeGC();
+        const garbage: Array<Array<number>> = [];
+        for (let index = 0; index < 50; index++)
+          garbage.push(new Array(10_000).fill(index));
+        await wait(250);
+        if (pass < 5) continue;
+        if (pass === 5) memory = await diagnostics.memory();
+        if (stats.live <= target) break;
+      }
+      return { nodes: __nativeStats().nodes, live: stats.live, memory };
+    };
+    soakStatus = "Soaking";
+    await pushAndPop(3);
+    const before = await sample();
+    await pushAndPop(rounds);
+    const after = await sample(before.live);
+    soakStatus = [
+      `Soaked ${rounds} times:`,
+      `native ${before.nodes} → ${after.nodes},`,
+      `js ${before.live} → ${after.live},`,
+      `${before.memory.toFixed(1)} → ${after.memory.toFixed(1)} MB`,
+    ].join(" ");
   }
 
   async function refresh() {
@@ -779,6 +819,8 @@
         </btn>
         <btn onclick={() => (showsMail = true)}>Open a split view</btn>
         <btn onclick={() => (showsSearch = true)}>Open a search screen</btn>
+        <btn onclick={() => soak(30)}>Push and pop a screen 30 times</btn>
+        <txt testid="soak" font="caption" color="secondary">{soakStatus}</txt>
         <btn onclick={() => (longList = "list")}>Open 10,000 rows in a list</btn
         >
         <btn onclick={() => (longList = "lazyvstack")}>

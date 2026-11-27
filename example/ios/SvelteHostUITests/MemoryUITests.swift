@@ -31,4 +31,23 @@ extension SvelteHostUITests {
             waitFor(section)
         }
     }
+
+    func testPushingAndPoppingAScreenKeepsMemoryFlat() {
+        tab("Playground")
+        let section = app.buttons["Navigation"]
+        scroll(to: section)
+        section.tap()
+        let start = app.buttons["Push and pop a screen 30 times"]
+        scroll(to: start)
+        start.tap()
+        let label = app.staticTexts["soak"]
+        let soaked = NSPredicate(format: "label BEGINSWITH 'Soaked'")
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: soaked, object: label)], timeout: 120), .completed)
+        let numbers = label.label.split(whereSeparator: { !"0123456789.".contains($0) }).compactMap { Double($0) }
+        XCTAssertEqual(numbers.count, 7, label.label)
+        guard numbers.count == 7 else { return }
+        XCTAssertEqual(numbers[1], numbers[2], "Native nodes leaked: \(label.label)")
+        XCTAssertLessThanOrEqual(numbers[4] - numbers[3], 20, "JS nodes leaked: \(label.label)")
+        XCTAssertLessThan(numbers[6] - numbers[5], 10, "Memory grew: \(label.label)")
+    }
 }
