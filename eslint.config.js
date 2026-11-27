@@ -115,6 +115,7 @@ export default antfu({
   { files: ["example/src/Bench.svelte"], rules: { "no-console": "off" } },
   {
     files: [
+      "bin/swiftui-svelte.js",
       "scripts/docs.ts",
       "scripts/jsc-bench.ts",
       "test/catalog.test.ts",
@@ -162,6 +163,10 @@ export default antfu({
     },
   },
   { files: ["src/web/events.ts"], rules: { "no-console": "off" } },
+  {
+    files: ["src/globals.d.ts"],
+    rules: { "no-var": "off", "vars-on-top": "off" },
+  },
   {
     files: [
       "src/kit/**",
