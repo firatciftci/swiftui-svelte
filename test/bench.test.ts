@@ -1,6 +1,8 @@
+import { existsSync } from "node:fs";
 import { flushSync } from "svelte";
 import { describe, expect, it } from "vitest";
 import { stats } from "swiftui-svelte";
+import type { Sample } from "./jsc/run.ts";
 import { mountComponent, settle } from "./bridge.ts";
 import {
   clear,
@@ -10,6 +12,7 @@ import {
   update,
 } from "./components/bench.svelte.ts";
 import Table from "./components/Table.svelte";
+import { benchmark, jsc } from "./jsc/run.ts";
 
 type Budget = { ops: number; ms: number };
 
@@ -63,3 +66,121 @@ describe("benchmarks", () => {
     }, 120_000);
   }
 });
+
+const rowBudgets: Record<string, Sample> = {
+  "each-empty": {
+    bytes: 627,
+    retained: 64,
+    mount: 3,
+    update: 2,
+    swap: 1,
+    unmount: 1,
+  },
+  "txt-static": {
+    bytes: 1137,
+    retained: 256,
+    mount: 9,
+    update: 2,
+    swap: 1,
+    unmount: 2,
+  },
+  txt: { bytes: 1830, retained: 64, mount: 14, update: 6, swap: 1, unmount: 2 },
+  "vstack-txt": {
+    bytes: 2200,
+    retained: 96,
+    mount: 18,
+    update: 6,
+    swap: 1,
+    unmount: 2,
+  },
+  attrs: {
+    bytes: 2869,
+    retained: 96,
+    mount: 25,
+    update: 6,
+    swap: 1,
+    unmount: 2,
+  },
+  class: {
+    bytes: 2587,
+    retained: 128,
+    mount: 33,
+    update: 6,
+    swap: 1,
+    unmount: 2,
+  },
+  snippet: {
+    bytes: 1971,
+    retained: 64,
+    mount: 15,
+    update: 6,
+    swap: 1,
+    unmount: 2,
+  },
+  pass: {
+    bytes: 3925,
+    retained: 64,
+    mount: 28,
+    update: 6,
+    swap: 1,
+    unmount: 3,
+  },
+  props: {
+    bytes: 3925,
+    retained: 64,
+    mount: 32,
+    update: 7,
+    swap: 1,
+    unmount: 3,
+  },
+  "hover-plain": {
+    bytes: 5280,
+    retained: 96,
+    mount: 33,
+    update: 6,
+    swap: 1,
+    unmount: 3,
+  },
+  hover: {
+    bytes: 6512,
+    retained: 96,
+    mount: 42,
+    update: 6,
+    swap: 1,
+    unmount: 4,
+  },
+  btn: { bytes: 3203, retained: 96, mount: 20, update: 6, swap: 1, unmount: 2 },
+  table: {
+    bytes: 5475,
+    retained: 128,
+    mount: 72,
+    update: 3,
+    swap: 4,
+    unmount: 5,
+  },
+};
+
+describe.skipIf(!existsSync(jsc))(
+  "rows in JavaScriptCore without the JIT",
+  () => {
+    it("keeps every row shape within its memory and time budgets", async () => {
+      const report = await benchmark();
+      for (const [shape, budget] of Object.entries(rowBudgets)) {
+        const sample = report[shape];
+        expect(sample, shape).toBeDefined();
+        if (sample == null) continue;
+        expect
+          .soft(sample.bytes, `${shape} bytes per row`)
+          .toBeLessThanOrEqual(budget.bytes);
+        expect
+          .soft(sample.retained, `${shape} bytes per row after unmounting`)
+          .toBeLessThanOrEqual(budget.retained);
+        for (const phase of ["mount", "update", "swap", "unmount"] as const) {
+          expect
+            .soft(sample[phase], `${shape} ${phase} time`)
+            .toBeLessThanOrEqual(budget[phase] * slack);
+        }
+      }
+    }, 300_000);
+  },
+);

@@ -13,6 +13,7 @@ export default antfu({
     "test/web/wpt/**",
     "example/src/paraglide/**",
     "example/src/app.css",
+    "test/jsc/app.css",
     "src/tailwind/theme.css",
     "template/**",
   ],
@@ -113,9 +114,17 @@ export default antfu({
   },
   { files: ["example/src/Bench.svelte"], rules: { "no-console": "off" } },
   {
-    files: ["scripts/docs.ts", "test/catalog.test.ts", "test/vite.test.ts"],
+    files: [
+      "scripts/docs.ts",
+      "scripts/jsc-bench.ts",
+      "test/catalog.test.ts",
+      "test/jsc/main.ts",
+      "test/jsc/run.ts",
+      "test/vite.test.ts",
+    ],
     rules: { "no-restricted-imports": "off" },
   },
+  { files: ["test/jsc/run.ts"], rules: { "node/no-process-env": "off" } },
   ...swiftuiSvelte.map((config) => ({ ...config, files: ["example/src/**"] })),
   {
     files: ["src/tailwind/vite.ts", "src/vite.ts"],
