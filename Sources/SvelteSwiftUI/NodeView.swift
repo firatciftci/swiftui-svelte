@@ -174,6 +174,7 @@ enum NodeShape {
         case "stepper": return StepperControl(node: node)
         case "datepicker": return DatePickerControl(node: node)
         case "progressview": return ProgressControl(node: node)
+        case "svg": return VectorGraphic(node: node)
         case "ul", "ol": return MarkupList(node: node)
         case "table": return MarkupTable(node: node)
         case "img": return MarkupImage(node: node)

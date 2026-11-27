@@ -2,21 +2,14 @@ import { elements, modifiers } from "./known.ts";
 import { textContainers } from "./markup.ts";
 
 const warned = new Set<string>();
+const markupOnly = "hr img ol table tbody tfoot thead tr ul";
+const vectorOnly = "svg g path rect circle ellipse line polyline polygon title";
+
 export function isMarkup(name: string): boolean {
   if (name === "txt") return false;
   return (
     textContainers.has(name) ||
-    [
-      "hr",
-      "img",
-      "ol",
-      "table",
-      "tbody",
-      "tfoot",
-      "thead",
-      "tr",
-      "ul",
-    ].includes(name)
+    `${markupOnly} ${vectorOnly}`.split(" ").includes(name)
   );
 }
 

@@ -1,6 +1,6 @@
 # Libraries
 
-Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page. Markdown files compiled by mdsvex render too, because the host draws the HTML tags that mdsvex writes.
+Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page. Markdown files compiled by mdsvex render too, because the host draws the HTML tags that mdsvex writes. Charts built with d3's scale and shape modules render as well, because the host draws SVG.
 
 ## TanStack Query
 
@@ -189,6 +189,34 @@ Then import a Markdown file like any other component. Put it in a `scrollview` s
 ```
 
 Each block fills the width and starts at the leading edge, as it does on the web, and the `vstack` around the document sets the space between blocks. Headings use the title text styles, and VoiceOver reads them as headings. VoiceOver reads an image's `alt` text as its label, and links open in the browser. Code blocks scroll sideways instead of wrapping. mdsvex's syntax highlighting adds `class` names to the code, but those classes have no styles in the app, so code shows in one color.
+
+## d3 and SVG
+
+d3's scale, shape, and array modules compute numbers and path strings without touching the DOM, so they run unchanged. Use them the way Svelte's own d3 examples do: compute the values in the script and write the SVG in the markup. The host draws an `svg` element and everything inside it with one SwiftUI `Canvas`.
+
+```svelte
+<script lang="ts">
+  import { scaleLinear } from "d3-scale";
+  import { line } from "d3-shape";
+
+  const values = [3, 7, 4, 9];
+  const x = scaleLinear().domain([0, 3]).range([0, 300]);
+  const y = scaleLinear().domain([0, 10]).range([150, 0]);
+  const path = line<number>()
+    .x((_, index) => x(index))
+    .y((value) => y(value))(values);
+</script>
+
+<svg width="300" height="150" viewBox="0 0 300 150" aria-label="Weekly visits">
+  <path d={path} fill="none" stroke="steelblue" stroke-width="2" />
+</svg>
+```
+
+The host draws `path`, `rect` (with `rx` and `ry`), `circle`, `ellipse`, `line`, `polyline`, `polygon`, and `text`, and `g` groups them. `transform` takes `translate`, `scale`, `rotate`, `skewX`, `skewY`, and `matrix`, on groups and on single elements. These presentation attributes work and are inherited by children, as attributes or in `style`: `fill`, `stroke`, `stroke-width`, `fill-opacity`, `stroke-opacity`, `stroke-linecap`, `stroke-linejoin`, `stroke-dasharray`, `stroke-dashoffset`, `fill-rule`, `font-size`, `font-weight`, `font-family`, `text-anchor`, and `dominant-baseline`. `opacity`, `display="none"`, and `visibility="hidden"` work too. Colors can be CSS color names, hex, `rgb()`, `hsl()`, or `currentColor`, which follows the foreground color around the `svg`. `text` takes `x`, `y`, `dx`, and `dy`, including `em` offsets such as `dy="0.32em"`.
+
+The `svg` sizes itself the way a browser sizes it. With `width` and `height`, it has that size. With only a `viewBox`, it fills the width and takes its height from the `viewBox` proportions. The drawing scales into the `viewBox` and is centered, unless `preserveAspectRatio` is `none`. VoiceOver reads `aria-label`, or a `title` child, as the image's label, and skips the drawing when `aria-hidden` is `"true"`.
+
+Some SVG features don't draw: gradients, patterns, clip paths, masks, filters, markers, `use`, `image`, `foreignObject`, and `tspan` positions. Events work on the `svg` element but not on the shapes inside it. The d3 modules that change the DOM, such as d3-selection, d3-axis, d3-zoom, and d3-brush, don't run, so draw axes with `scale.ticks()` in the markup instead. LayerChart doesn't run either. Its components measure `div` elements and bind to DOM elements, which Svelte's custom renderer doesn't support.
 
 ## svelte-sonner and mode-watcher
 

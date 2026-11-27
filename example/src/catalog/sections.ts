@@ -334,4 +334,9 @@ export const modifierGroups: Array<{
   },
 ];
 
-export const libraries: Array<string> = ["sonner", "mode-watcher", "mdsvex"];
+export const libraries: Array<string> = [
+  "sonner",
+  "mode-watcher",
+  "mdsvex",
+  "d3",
+];
