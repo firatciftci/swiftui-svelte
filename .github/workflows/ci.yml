@@ -113,6 +113,13 @@ jobs:
       - name: Check that the element reference is up to date
         run: pnpm run docs && git diff --exit-code -- docs/reference.md
 
+      - name: Check that the JS and Swift protocol versions match
+        run: |
+          js=$(sed -nE 's/^export const protocol = ([0-9]+);$/\1/p' src/protocol.ts)
+          swift=$(sed -nE 's/^ *static let protocolVersion = ([0-9]+)$/\1/p' Sources/SvelteSwiftUI/NodeStore.swift)
+          echo "JS $js, Swift $swift"
+          [ -n "$js" ] && [ "$js" = "$swift" ]
+
       - name: Check that the template's Xcode project is up to date
         run: pnpm run template && git diff --exit-code -- template
 

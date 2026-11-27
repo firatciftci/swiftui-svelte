@@ -230,22 +230,3 @@ Object.assign(globalThis, {
   __svelteNativeReply: reply,
   __svelteNativeEvent: emit,
 });
-
-declare global {
-  function __nativeCall(
-    id: number,
-    module: string,
-    method: string,
-    json: string,
-  ): void;
-  function __svelteNativeReply(
-    id: number,
-    error: string | null,
-    json: string | null,
-  ): void;
-  function __svelteNativeEvent(
-    module: string,
-    event: string,
-    json: string | null,
-  ): void;
-}

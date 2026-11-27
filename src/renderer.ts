@@ -11,9 +11,11 @@ import type {
 } from "./tailwind/runtime.ts";
 import type { HostEnvironment } from "./web/environment.ts";
 import { checkAttribute, checkElement, warnOnce } from "./dev.ts";
+import { opcodes, protocol } from "./protocol.ts";
 import { resolveWith } from "./tailwind/runtime.ts";
 import { environment, observeEnvironment } from "./web/environment.ts";
 
+export { protocol } from "./protocol.ts";
 export { registerClasses } from "./tailwind/runtime.ts";
 
 type Handler = (payload: unknown) => unknown;
@@ -84,19 +86,6 @@ class ElementNode implements Container, Linked {
     this.name = name;
   }
 }
-
-export const protocol = 3;
-
-export const opcodes = {
-  root: 0,
-  insert: 1,
-  move: 2,
-  remove: 3,
-  attr: 4,
-  unattr: 5,
-  text: 6,
-  name: 7,
-} as const;
 
 declare const __SWIFTUI_SVELTE_DEV__: boolean | undefined;
 

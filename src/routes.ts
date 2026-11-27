@@ -15,8 +15,10 @@ export const routesModuleId = "virtual:swiftui-svelte/routes";
 const kit = path.join(import.meta.dirname, "kit");
 
 export const appAliases = [
-  { find: /^\$app\/env$/, replacement: `${kit}/environment` },
-  { find: /^\$app\/(.+)$/, replacement: `${kit}/$1` },
+  {
+    find: /^\$app\/(environment|navigation|paths|state)$/,
+    replacement: `${kit}/$1`,
+  },
 ];
 
 type Directory = {
@@ -354,9 +356,6 @@ declare module "$app/state" {
   export * from "swiftui-svelte/kit/state";
 }
 declare module "$app/environment" {
-  export * from "swiftui-svelte/kit/environment";
-}
-declare module "$app/env" {
   export * from "swiftui-svelte/kit/environment";
 }
 declare module "$app/paths" {

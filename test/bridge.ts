@@ -1,6 +1,6 @@
 import type { Component } from "svelte";
 import { mountApp } from "swiftui-svelte";
-import { opcodes, protocol } from "swiftui-svelte/renderer";
+import { opcodes, protocol } from "../src/protocol.ts";
 import { createStorage } from "swiftui-svelte/web/storage";
 
 type Kind = "fragment" | "element" | "text";

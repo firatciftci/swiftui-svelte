@@ -60,9 +60,21 @@
       "types": "./dist/kit/index.d.ts",
       "default": "./dist/kit/index.js"
     },
-    "./kit/*": {
-      "types": "./dist/kit/*.d.ts",
-      "default": "./dist/kit/*.js"
+    "./kit/environment": {
+      "types": "./dist/kit/environment.d.ts",
+      "default": "./dist/kit/environment.js"
+    },
+    "./kit/navigation": {
+      "types": "./dist/kit/navigation.d.ts",
+      "default": "./dist/kit/navigation.js"
+    },
+    "./kit/paths": {
+      "types": "./dist/kit/paths.d.ts",
+      "default": "./dist/kit/paths.js"
+    },
+    "./kit/state": {
+      "types": "./dist/kit/state.d.ts",
+      "default": "./dist/kit/state.js"
     },
     "./env": {
       "types": "./dist/env.d.ts",
