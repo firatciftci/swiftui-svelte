@@ -38,11 +38,13 @@ public struct SvelteView: View {
         actions: [String: @MainActor (Any) -> Void] = [:],
         reloadsOnChange: Bool = false,
         modules: Array<NativeModule> = [],
-        components: Array<NativeComponent> = []
+        components: Array<NativeComponent> = [],
+        onError: (@MainActor (ScriptError) -> Void)? = nil
     ) {
         self.init(
             runtime: SvelteRuntime(
-                source: source, reloadsOnChange: reloadsOnChange, modules: modules, components: components),
+                source: source, reloadsOnChange: reloadsOnChange, modules: modules, components: components,
+                onError: onError),
             component: component,
             props: props,
             actions: actions)
@@ -85,7 +87,7 @@ public struct SvelteView: View {
         #endif
         .overlay(alignment: .bottom) {
             #if DEBUG
-                if let error = runtime.error ?? runtime.store.error.map({ ScriptError(message: $0, frames: []) }) {
+                if let error = runtime.error ?? runtime.store.error.map({ ScriptError(kind: .bridge, message: $0, frames: []) }) {
                     ErrorOverlay(error: error, dismiss: runtime.dismissError, reload: runtime.restart)
                 }
             #endif

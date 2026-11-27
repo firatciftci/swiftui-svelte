@@ -372,6 +372,35 @@ struct RuntimeTests {
         #expect(runtime.error?.message.contains("boom") == true)
     }
 
+    @Test func reportsEveryKindOfErrorToTheApp() throws {
+        final class Reports {
+            var errors: Array<ScriptError> = []
+        }
+        let reports = Reports()
+        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
+        try (mount + "Promise.reject(new Error('later')); Promise.reject(1).catch(() => {}); __nativeCommit('[42]');")
+            .write(to: url, atomically: true, encoding: .utf8)
+        let runtime = SvelteRuntime(source: url) { reports.errors.append($0) }
+        runtime.start()
+        let rejections = reports.errors.filter { $0.kind == .unhandledRejection }
+        #expect(!rejections.isEmpty)
+        #expect(rejections.allSatisfy { $0.message == "Error: later" })
+        #expect(reports.errors.contains { $0.kind == .bridge && $0.message.contains("42") })
+        #expect(runtime.error == nil)
+
+        reports.errors = []
+        try "throw new Error('boom')".write(to: url, atomically: true, encoding: .utf8)
+        runtime.restart()
+        #expect(reports.errors.map(\.kind) == [.script])
+        #expect(reports.errors.first?.message == "Error: boom")
+        #expect(reports.errors.first?.frames.isEmpty == false)
+
+        reports.errors = []
+        try FileManager.default.removeItem(at: url)
+        runtime.restart()
+        #expect(reports.errors.map(\.kind) == [.load])
+    }
+
     @Test func dismissesAndRestartsAfterAnError() throws {
         let runtime = try runtime(mount + "__nativeCommit('[42]'); throw new Error('boom');")
         #expect(runtime.error?.message.contains("boom") == true)

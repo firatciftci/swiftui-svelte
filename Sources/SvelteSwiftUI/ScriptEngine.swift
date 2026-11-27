@@ -75,9 +75,26 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
             self?.post(.error(ScriptError(exception: exception, source: source, map: map)))
         }
         install(into: context)
+        trackRejections(in: context, source: source, map: map)
         self.context = context
         context.evaluateScript(script, withSourceURL: source)
         for mount in mounts { call("__svelteMount", mount) }
+    }
+
+    private typealias SetRejectionCallback = @convention(c) (
+        JSGlobalContextRef, JSObjectRef, UnsafeMutablePointer<JSValueRef?>?
+    ) -> Void
+
+    private static let setRejectionCallback = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "JSGlobalContextSetUnhandledRejectionCallback")
+        .map { unsafeBitCast($0, to: SetRejectionCallback.self) }
+
+    private func trackRejections(in context: JSContext, source: URL, map: SourceMap?) {
+        guard let setCallback = Self.setRejectionCallback else { return }
+        let rejected: @convention(block) (JSValue, JSValue) -> Void = { [weak self] _, reason in
+            self?.post(.error(ScriptError(exception: reason, kind: .unhandledRejection, source: source, map: map)))
+        }
+        guard let callback = JSValue(object: rejected, in: context), let function = callback.jsValueRef else { return }
+        setCallback(context.jsGlobalContextRef, function, nil)
     }
 
     func stop() {

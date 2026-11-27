@@ -41,3 +41,24 @@ var body: some View {
 ```
 
 A component stays mounted as long as its `SvelteView` exists, including while it's in a tab that isn't selected, and unmounts when the view goes away.
+
+## Reporting errors
+
+Debug builds show JavaScript errors over your app, and Release builds only print them. To send them somewhere else in every build, such as a crash reporter, pass `onError` to `SvelteView` or to `SvelteRuntime`:
+
+```swift
+SvelteView(source: bundleURL) { error in
+    CrashReporter.record(error.description, kind: "\(error.kind)")
+}
+```
+
+The closure runs on the main thread with a `ScriptError`. `message` is the error's message, and `frames` is the stack, with each frame's `function` and its `location` in your source when `app.js.map` is in the app. `kind` says where the error came from:
+
+| Kind                  | When                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------- |
+| `.script`             | JavaScript threw an exception that nothing caught.                                                       |
+| `.unhandledRejection` | A promise was rejected and had no rejection handler. These don't show the error overlay in Debug builds. |
+| `.bridge`             | The bundle sent a batch of changes that the app couldn't read. `SvelteView` restarts the bundle once.    |
+| `.load`               | The bundle couldn't be loaded, for example because `app.js` is missing or the server didn't answer.      |
+
+Errors that a `<svelte:boundary>` catches don't reach `onError`.

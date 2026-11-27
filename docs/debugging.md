@@ -18,7 +18,7 @@ Release builds don't mark the context as inspectable, so Safari doesn't list the
 
 ## Errors
 
-When the JavaScript throws, Debug builds show the error over your app, with the message, the file and line in your Svelte or TypeScript source, and the stack trace. **Reload** restarts the bundle, and **Dismiss** hides the error and leaves the app as it was. The `swiftui()` Vite plugin writes `app.js.map` next to `app.js`, and `SvelteView` uses it to turn bundle positions into source positions, so add both files to your app target. Release builds don't show the overlay: they print the error to the console and keep the last screen that rendered.
+When the JavaScript throws, Debug builds show the error over your app, with the message, the file and line in your Svelte or TypeScript source, and the stack trace. **Reload** restarts the bundle, and **Dismiss** hides the error and leaves the app as it was. The `swiftui()` Vite plugin writes `app.js.map` next to `app.js`, and `SvelteView` uses it to turn bundle positions into source positions, so add both files to your app target. Release builds don't show the overlay: they print the error to the console and keep the last screen that rendered. To forward errors to a crash reporter, pass `onError` to `SvelteView`, as [Embedding in a Swift app](embedding.md#reporting-errors) shows.
 
 To keep an error in one part of the screen from taking down the rest, wrap that part in `<svelte:boundary>` with a `failed` snippet. Errors that a boundary catches don't show the overlay. [Elements](elements.md) explains how boundaries work. Errors print their stack trace to the console too.
 

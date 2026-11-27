@@ -25,7 +25,7 @@ The template's Info.plist sets `NSAllowsLocalNetworking` and `NSLocalNetworkUsag
 ## What changes in a Release build
 
 - Safari's Web Inspector doesn't list the JavaScript context.
-- Errors don't show the overlay. They print to the console with positions in your source, which `SvelteView` reads from `app.js.map`, and the app keeps the last screen that rendered. Use `<svelte:boundary>` to show your own fallback.
+- Errors don't show the overlay. They print to the console with positions in your source, which `SvelteView` reads from `app.js.map`, and the app keeps the last screen that rendered. Use `<svelte:boundary>` to show your own fallback, and use `onError` on `SvelteView` to send errors to your crash reporter.
 - The checks for misspelled elements and attributes are left out of the bundle.
 
 `app.js.map` contains your source code. To keep it out of the app, set `build.sourcemap` to `false` in your Vite config, or leave the file out of the app target. Errors then show positions in `app.js` instead.

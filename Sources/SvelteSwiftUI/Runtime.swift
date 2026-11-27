@@ -50,15 +50,18 @@ public final class SvelteRuntime {
     private var ownedNames: [String: Set<String>] { components.mapValues(\.owned) }
     @ObservationIgnored private(set) var generation = 0
     @ObservationIgnored private let reloadsOnChange: Bool
+    @ObservationIgnored public var onError: (@MainActor (ScriptError) -> Void)?
 
     public init(
         source: URL,
         reloadsOnChange: Bool = false,
         modules: Array<NativeModule> = [],
-        components: Array<NativeComponent> = []
+        components: Array<NativeComponent> = [],
+        onError: (@MainActor (ScriptError) -> Void)? = nil
     ) {
         self.source = source
         self.reloadsOnChange = reloadsOnChange
+        self.onError = onError
         for module in BuiltInModules.all + modules { self.modules[module.name] = module }
         for component in components { self.components[component.name] = component }
         let drain = Unchecked(value: WeakBox<SvelteRuntime>())
@@ -185,6 +188,7 @@ public final class SvelteRuntime {
             switch message {
             case let .commit(json, animation) where !isStopped:
                 if !store.apply(json, animation: animation) {
+                    onError?(ScriptError(kind: .bridge, message: store.error ?? "The bundle sent a malformed batch.", frames: []))
                     if isRecovering {
                         stopEngine()
                         isStopped = true
@@ -372,8 +376,13 @@ public final class SvelteRuntime {
     }
 
     func report(_ error: ScriptError) {
-        print("[js:exception] \(error)")
-        self.error = error
+        if error.kind == .unhandledRejection {
+            print("[js:unhandledrejection] \(error)")
+        } else {
+            print("[js:exception] \(error)")
+            self.error = error
+        }
+        onError?(error)
     }
 
     func dismissError() {
@@ -434,7 +443,7 @@ public final class SvelteRuntime {
             bundle = loaded
         case let .failure(failure):
             engine.queue.sync { engine.stop() }
-            report(ScriptError(message: failure.message, frames: []))
+            report(ScriptError(kind: .load, message: failure.message, frames: []))
             return
         }
         loadedVersion = bundle.version
@@ -495,26 +504,41 @@ final class FrameMonitor: NSObject {
     }
 }
 
-nonisolated struct ScriptError: Equatable, Sendable, CustomStringConvertible {
-    struct Frame: Equatable {
-        let function: String
-        let location: String
+public nonisolated struct ScriptError: Error, Equatable, Sendable, CustomStringConvertible {
+    public enum Kind: Sendable {
+        case script
+        case unhandledRejection
+        case bridge
+        case load
     }
 
-    let message: String
-    let frames: Array<Frame>
+    public struct Frame: Equatable, Sendable {
+        public let function: String
+        public let location: String
+    }
 
-    var description: String {
+    public let kind: Kind
+    public let message: String
+    public let frames: Array<Frame>
+
+    init(kind: Kind = .script, message: String, frames: Array<Frame>) {
+        self.kind = kind
+        self.message = message
+        self.frames = frames
+    }
+
+    public var description: String {
         ([message] + frames.map { "  at \($0.function.isEmpty ? "<anonymous>" : $0.function) (\($0.location))" })
             .joined(separator: "\n")
     }
 }
 
 nonisolated extension ScriptError {
-    init(exception: JSValue, source: URL, map: SourceMap?) {
+    init(exception: JSValue, kind: Kind = .script, source: URL, map: SourceMap?) {
         let stack = exception.objectForKeyedSubscript("stack")
         let lines = stack?.isString == true ? stack?.toString().split(separator: "\n").map(String.init) ?? [] : []
         self.init(
+            kind: kind,
             message: exception.toString() ?? "Unknown error",
             frames: lines.compactMap { Self.frame($0, source: source, map: map) })
     }
