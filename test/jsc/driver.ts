@@ -151,10 +151,10 @@ export function run(
       nodes: median(samples.map((sample) => sample.nodes)),
       bytes: Math.round(median(samples.map((sample) => sample.bytes))),
       retained: Math.round(median(samples.map((sample) => sample.retained))),
-      mount: median(samples.map((sample) => sample.mount)),
-      update: median(samples.map((sample) => sample.update)),
-      swap: median(samples.map((sample) => sample.swap)),
-      unmount: median(samples.map((sample) => sample.unmount)),
+      mount: Math.min(...samples.map((sample) => sample.mount)),
+      update: Math.min(...samples.map((sample) => sample.update)),
+      swap: Math.min(...samples.map((sample) => sample.swap)),
+      unmount: Math.min(...samples.map((sample) => sample.unmount)),
     };
   }
   return report;

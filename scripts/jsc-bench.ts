@@ -10,7 +10,7 @@ const report = await benchmark({ count });
 const rows = [
   [
     "shape",
-    "nodes/row",
+    "created",
     "B/row",
     "retained",
     "mount ms",
@@ -32,7 +32,7 @@ for (const [shape, sample] of Object.entries(report)) {
   ]);
 }
 process.stdout.write(
-  `JavaScriptCore without the JIT, ${count} rows, median of 5 runs\n`,
+  `JavaScriptCore without the JIT, ${count} rows, median bytes and fastest time of 5 runs\n`,
 );
 for (const row of rows) {
   const cells = row.map((cell, index) =>
