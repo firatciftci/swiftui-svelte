@@ -461,10 +461,6 @@ function insertChild(
   place(parent, node);
 }
 
-function linked(): Linked {
-  return { parent: null, prev: null, next: null, state: State.Local };
-}
-
 const observedEvents = new Set([
   "a11yactivate",
   "a11yadjust",
@@ -672,7 +668,10 @@ const renderer = createRenderer<{
   createElement(name) {
     if (isDevelopment) checkElement(name);
     const node: ElementNode = {
-      ...linked(),
+      parent: null,
+      prev: null,
+      next: null,
+      state: State.Local,
       kind: "element",
       id: scheduler.nextId++,
       name,
@@ -688,11 +687,22 @@ const renderer = createRenderer<{
     return track(node);
   },
   createText(data) {
-    return track({ ...linked(), kind: "text", id: scheduler.nextId++, data });
+    return track({
+      parent: null,
+      prev: null,
+      next: null,
+      state: State.Local,
+      kind: "text",
+      id: scheduler.nextId++,
+      data,
+    });
   },
   createComment(data) {
     return track({
-      ...linked(),
+      parent: null,
+      prev: null,
+      next: null,
+      state: State.Local,
       kind: "comment",
       id: scheduler.nextId++,
       data,
