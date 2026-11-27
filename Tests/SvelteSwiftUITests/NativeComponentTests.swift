@@ -26,6 +26,11 @@ struct NativeComponentTests {
         #expect(node.nativeAttributes["listens"] == .array([.string("hover")]))
     }
 
+    @Test func tellsBuiltInElementNamesFromNativeComponentNames() {
+        for name in ["toggle", "txt", "sheet", "overlay", "textfield", "vstack"] { #expect(NodeShape.isBuiltIn(name), "\(name)") }
+        for name in ["mapview", "probe", "chart"] { #expect(!NodeShape.isBuiltIn(name), "\(name)") }
+    }
+
     @Test func declaresOwnedNamesFromItsAttributesAndEvents() {
         let component = NativeComponent("probe", attributes: ["color"], events: ["hover"]) { _ in EmptyView() }
         #expect(component.owned == ["color", "hover"])

@@ -160,7 +160,7 @@ final class Node: Identifiable {
         hostsInspector = name == "screen"
     }
 
-    private static let attachments: Set<String> = Presenting.names.union([
+    static let attachments: Set<String> = Presenting.names.union([
         "background", "contextmenu", "maskview", "overlay", "safeareainset", "searchable", "swipeactions", "toolbar",
         "toolbarspacer",
     ])

@@ -62,8 +62,17 @@ public final class SvelteRuntime {
         self.source = source
         self.reloadsOnChange = reloadsOnChange
         self.onError = onError
-        for module in BuiltInModules.all + modules { self.modules[module.name] = module }
-        for component in components { self.components[component.name] = component }
+        for module in BuiltInModules.all { self.modules[module.name] = module }
+        for module in modules {
+            if self.modules[module.name] != nil { print("[svelte] The native module \(module.name) replaces another module with that name.") }
+            self.modules[module.name] = module
+        }
+        for component in components {
+            if NodeShape.isBuiltIn(component.name) {
+                print("[svelte] The native component \(component.name) never renders, because <\(component.name)> is a built-in element.")
+            }
+            self.components[component.name] = component
+        }
         let drain = Unchecked(value: WeakBox<SvelteRuntime>())
         engine = ScriptEngine {
             DispatchQueue.main.async { MainActor.assumeIsolated { drain.value.object?.drain() } }
