@@ -29,17 +29,15 @@ type FragmentNode = Container & {
   id: number;
   state: NodeState;
 };
+type Classes = { value: string; derived: Attributes; reactive: boolean };
 type ElementNode = Container &
   Linked & {
     kind: "element";
     id: number;
     name: string;
-    attributes: Map<string, unknown>;
-    listeners: Map<string, Set<Handler>>;
-    classValue: string | null;
-    derived: Map<string, unknown>;
-    reactive: boolean;
-    containerWidth?: number;
+    attributes: Attributes | null;
+    listeners: Array<string | Handler> | null;
+    classes: Classes | null;
   };
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
@@ -160,6 +158,29 @@ function anchorId(node: ChildNode): number {
   return next?.id ?? 0;
 }
 
+const noAttributes: Attributes = {};
+
+function isSent(value: unknown): boolean {
+  return value !== undefined && typeof value !== "function";
+}
+
+function encodeAttributes(node: ElementNode, record: Array<unknown>): void {
+  const count = record.length;
+  record.push(0);
+  const attributes = node.attributes ?? noAttributes;
+  for (const [name, value] of Object.entries(attributes)) {
+    if (!isSent(value)) continue;
+    record.push(nameRef(name), value);
+    (record[count] as number)++;
+  }
+  const derived = node.classes?.derived ?? noAttributes;
+  for (const [name, value] of Object.entries(derived)) {
+    if (!isSent(value) || hasOwnAttribute(node, name)) continue;
+    record.push(nameRef(name), value);
+    (record[count] as number)++;
+  }
+}
+
 function encode(node: ChildNode, record: Array<unknown>): void {
   node.state = State.Native;
   if (node.kind !== "element") {
@@ -167,23 +188,7 @@ function encode(node: ChildNode, record: Array<unknown>): void {
     return;
   }
   record.push(node.id, nameRef(node.name));
-  const attributeCount = record.length;
-  record.push(0);
-  for (const [name, value] of node.attributes) {
-    if (value === undefined || typeof value === "function") continue;
-    record.push(nameRef(name), value);
-    (record[attributeCount] as number)++;
-  }
-  for (const [name, value] of node.derived) {
-    if (
-      value === undefined ||
-      typeof value === "function" ||
-      node.attributes.has(name)
-    )
-      continue;
-    record.push(nameRef(name), value);
-    (record[attributeCount] as number)++;
-  }
+  encodeAttributes(node, record);
   const childCount = record.length;
   record.push(0);
   for (let child = node.first; child != null; child = child.next) {
@@ -193,10 +198,21 @@ function encode(node: ChildNode, record: Array<unknown>): void {
   }
 }
 
+function hasOwnAttribute(element: ElementNode, name: string): boolean {
+  return element.attributes != null && Object.hasOwn(element.attributes, name);
+}
+
+function derivedAttribute(element: ElementNode, name: string): unknown {
+  const derived = element.classes?.derived;
+  return derived != null && Object.hasOwn(derived, name)
+    ? derived[name]
+    : undefined;
+}
+
 function effective(element: ElementNode, name: string): unknown {
-  return element.attributes.has(name)
-    ? element.attributes.get(name)
-    : element.derived.get(name);
+  return hasOwnAttribute(element, name)
+    ? element.attributes?.[name]
+    : derivedAttribute(element, name);
 }
 
 function flushAttributes(): void {
@@ -205,7 +221,7 @@ function flushAttributes(): void {
     for (const name of changed) {
       const value = effective(element, name);
       const ref = nameRef(name);
-      if (value === undefined || typeof value === "function") {
+      if (!isSent(value)) {
         send(opcodes.unattr, element.id, ref);
       } else {
         send(opcodes.attr, element.id, ref, value);
@@ -486,17 +502,58 @@ const observedEvents = new Set([
   "task",
 ]);
 
+function handlersOf(element: ElementNode, type: string): Array<Handler> {
+  const found: Array<Handler> = [];
+  const { listeners } = element;
+  if (listeners == null) return found;
+  for (let index = 0; index < listeners.length; index += 2) {
+    const handler = listeners[index + 1];
+    if (typeof handler === "function" && listeners[index] === type)
+      found.push(handler);
+  }
+  return found;
+}
+
+function listenerIndex(
+  element: ElementNode,
+  type: string,
+  handler: Handler,
+): number {
+  const { listeners } = element;
+  if (listeners == null) return -1;
+  for (let index = 0; index < listeners.length; index += 2) {
+    if (listeners[index] === type && listeners[index + 1] === handler)
+      return index;
+  }
+  return -1;
+}
+
+function setOwnAttribute(
+  element: ElementNode,
+  name: string,
+  value: unknown,
+): void {
+  element.attributes ??= Object.create(null) as Attributes;
+  element.attributes[name] = value;
+}
+
+function deleteOwnAttribute(element: ElementNode, name: string): void {
+  if (element.attributes != null)
+    Reflect.deleteProperty(element.attributes, name);
+}
+
 function updateListens(element: ElementNode): void {
   const types: Array<string> = [];
   for (const type of observedEvents) {
-    if ((element.listeners.get(type)?.size ?? 0) > 0) types.push(type);
+    if (handlersOf(element, type).length > 0) types.push(type);
   }
-  if (types.length > 0) element.attributes.set("listens", types);
-  else element.attributes.delete("listens");
+  if (types.length > 0) setOwnAttribute(element, "listens", types);
+  else deleteOwnAttribute(element, "listens");
   changeAttribute(element, "listens");
 }
 
 const reactiveElements = new Map<number, WeakRef<ElementNode>>();
+const containerWidths = new WeakMap<ElementNode, number>();
 const noClasses: Resolution = {
   attrs: {},
   reactive: false,
@@ -512,7 +569,8 @@ function containersOf(element: ElementNode): Record<string, number> {
     const name = effective(node, "container");
     if (typeof name === "string" && !seen.has(name)) {
       seen.add(name);
-      if (node.containerWidth != null) widths[name] = node.containerWidth;
+      const width = containerWidths.get(node);
+      if (width != null) widths[name] = width;
     }
     node = node.parent;
   }
@@ -521,7 +579,7 @@ function containersOf(element: ElementNode): Record<string, number> {
 }
 
 function classState(element: ElementNode): ClassState {
-  const disabled = element.attributes.get("disabled");
+  const disabled = element.attributes?.disabled;
   const isRtl = environment.layoutDirection === "rightToLeft";
   const { top, bottom, leading, trailing } = environment.safeAreaInsets;
   let containers: Record<string, number> | null = null;
@@ -585,32 +643,43 @@ function reportResolution(name: string, resolution: Resolution): void {
 }
 
 function applyClass(element: ElementNode, value: string | null): void {
-  element.classValue = value;
   const resolution =
     value == null || value === ""
       ? noClasses
       : resolveWith(element.name, value, classState(element));
   if (isDevelopment && value != null)
     reportResolution(element.name, resolution);
-  element.reactive = resolution.reactive;
-  if (element.reactive) reactiveElements.set(element.id, new WeakRef(element));
+  if (resolution.reactive)
+    reactiveElements.set(element.id, new WeakRef(element));
   else reactiveElements.delete(element.id);
-  updateDerived(element, resolution.attrs);
+  const previous = element.classes?.derived ?? noAttributes;
+  element.classes =
+    value == null
+      ? null
+      : { value, derived: resolution.attrs, reactive: resolution.reactive };
+  updateDerived(element, previous, resolution.attrs);
 }
 
-function updateDerived(element: ElementNode, attrs: Attributes): void {
-  const next = new Map<string, unknown>();
-  for (const [key, attr] of Object.entries(attrs)) {
-    if (attr !== undefined) next.set(key, attr);
-  }
+function updateDerived(
+  element: ElementNode,
+  previous: Attributes,
+  next: Attributes,
+): void {
+  if (previous === next) return;
   const changed: Array<string> = [];
-  for (const key of element.derived.keys())
-    if (!next.has(key)) changed.push(key);
-  for (const [key, attr] of next)
-    if (element.derived.get(key) !== attr) changed.push(key);
-  element.derived = next;
+  for (const [key, value] of Object.entries(previous)) {
+    if (value !== undefined && derivedAttribute(element, key) !== value)
+      changed.push(key);
+  }
+  for (const [key, value] of Object.entries(next)) {
+    if (
+      value !== undefined &&
+      (Object.hasOwn(previous, key) ? previous[key] : undefined) !== value
+    )
+      changed.push(key);
+  }
   for (const key of changed)
-    if (!element.attributes.has(key)) changeAttribute(element, key);
+    if (!hasOwnAttribute(element, key)) changeAttribute(element, key);
 }
 
 function isDescendant(element: ElementNode, ancestor: ElementNode): boolean {
@@ -626,9 +695,9 @@ function isDescendant(element: ElementNode, ancestor: ElementNode): boolean {
 function reapplyReactive(container?: ElementNode): void {
   for (const [id, reference] of reactiveElements) {
     const element = reference.deref();
-    if (!element?.reactive) reactiveElements.delete(id);
+    if (element?.classes?.reactive !== true) reactiveElements.delete(id);
     else if (container == null || isDescendant(element, container))
-      applyClass(element, element.classValue);
+      applyClass(element, element.classes.value);
   }
 }
 
@@ -643,10 +712,10 @@ function containerResized(element: ElementNode, payload: unknown): void {
     payload == null ||
     !("width" in payload) ||
     typeof payload.width !== "number" ||
-    element.containerWidth === payload.width
+    containerWidths.get(element) === payload.width
   )
     return;
-  element.containerWidth = payload.width;
+  containerWidths.set(element, payload.width);
   reapplyReactive(element);
 }
 
@@ -677,11 +746,9 @@ const renderer = createRenderer<{
       name,
       first: null,
       last: null,
-      attributes: new Map(),
-      listeners: new Map(),
-      classValue: null,
-      derived: new Map(),
-      reactive: false,
+      attributes: null,
+      listeners: null,
+      classes: null,
     };
     elements.set(node.id, new WeakRef(node));
     return track(node);
@@ -726,8 +793,8 @@ const renderer = createRenderer<{
   },
 
   getAttribute(element, name) {
-    if (name === "class") return element.classValue;
-    const value = element.attributes.get(name);
+    if (name === "class") return element.classes?.value ?? null;
+    const value = element.attributes?.[name];
     return value == null ? null : String(value);
   },
   setAttribute(element, name, value: unknown) {
@@ -736,25 +803,25 @@ const renderer = createRenderer<{
       return;
     }
     if (isDevelopment) checkAttribute(element.name, name);
-    element.attributes.set(name, value);
+    setOwnAttribute(element, name, value);
     changeAttribute(element, name);
-    if (name === "disabled" && element.reactive)
-      applyClass(element, element.classValue);
+    if (name === "disabled" && element.classes?.reactive === true)
+      applyClass(element, element.classes.value);
   },
   removeAttribute(element, name) {
     if (name === "class") {
       applyClass(element, null);
       return;
     }
-    element.attributes.delete(name);
+    deleteOwnAttribute(element, name);
     changeAttribute(element, name);
-    if (name === "disabled" && element.reactive)
-      applyClass(element, element.classValue);
+    if (name === "disabled" && element.classes?.reactive === true)
+      applyClass(element, element.classes.value);
   },
   hasAttribute(element, name) {
     return name === "class"
-      ? element.classValue != null
-      : element.attributes.has(name);
+      ? element.classes != null
+      : hasOwnAttribute(element, name);
   },
 
   getFirstChild(node) {
@@ -788,18 +855,19 @@ const renderer = createRenderer<{
   },
 
   addEventListener(element, type, handler: Handler) {
-    let handlers = element.listeners.get(type);
-    if (handlers == null) {
-      handlers = new Set();
-      element.listeners.set(type, handlers);
-    }
-    handlers.add(handler);
-    if (observedEvents.has(type) && handlers.size === 1) updateListens(element);
+    if (listenerIndex(element, type, handler) !== -1) return;
+    if (element.listeners == null) element.listeners = [type, handler];
+    else element.listeners.push(type, handler);
+    if (observedEvents.has(type) && handlersOf(element, type).length === 1)
+      updateListens(element);
   },
   removeEventListener(element, type, handler: Handler) {
-    const handlers = element.listeners.get(type);
-    if (handlers?.delete(handler) !== true) return;
-    if (observedEvents.has(type) && handlers.size === 0) updateListens(element);
+    const index = listenerIndex(element, type, handler);
+    if (index === -1 || element.listeners == null) return;
+    if (element.listeners.length === 2) element.listeners = null;
+    else element.listeners.splice(index, 2);
+    if (observedEvents.has(type) && handlersOf(element, type).length === 0)
+      updateListens(element);
   },
 });
 
@@ -860,21 +928,21 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     effective(element, "container") != null
   )
     containerResized(element, payload);
-  const handlers = element?.listeners.get(type);
-  if (element == null || handlers == null || handlers.size === 0) {
+  const handlers = element == null ? [] : handlersOf(element, type);
+  if (element == null || handlers.length === 0) {
     if (request != null) {
       __nativeInvoke(id, "settled", JSON.stringify({ request }));
     }
     return;
   }
   const argument = type === "task" ? startTask(request) : payload;
-  const results = Array.from(handlers, (handler) => handler(argument));
+  const results = handlers.map((handler) => handler(argument));
   if (request != null) awaitHandlers(element, request, results);
   const name =
     controlledAttributes.get(element.name)?.[type] ??
     (type === "input" || type === "change" ? "value" : undefined);
   if (name == null) return;
-  if (name === "checked" || element.attributes.has(name)) {
+  if (name === "checked" || hasOwnAttribute(element, name)) {
     changeAttribute(element, name);
   }
 };
