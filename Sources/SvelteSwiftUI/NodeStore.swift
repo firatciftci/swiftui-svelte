@@ -7,8 +7,16 @@ final class Node: Identifiable {
         case fragment, element, text
     }
 
+    private final class Extras {
+        var owned: Set<String> = []
+        var labelFeedback: [String: JSONValue] = [:]
+        var stateFeedback: [String: JSONValue] = [:]
+        var presented: Array<Node> = []
+        var focusRequest = FocusRequest()
+        var frame: CGRect?
+    }
+
     let id: Int
-    let kind: Kind
     let name: String
     var text: String {
         didSet {
@@ -16,7 +24,36 @@ final class Node: Identifiable {
             if isBlank != self.isBlank { self.isBlank = isBlank }
         }
     }
+    private(set) var ownAttributes: [String: JSONValue] = [:] {
+        didSet { enable(ModifierSet(attributes: ownAttributes)) }
+    }
+    var children: Array<Node> = [] {
+        didSet {
+            var attached: ModifierSet = []
+            for child in children where child.kind == .element {
+                if let set = ModifierSet.byAttachment[child.name] { attached.formUnion(set) }
+                if !hostsPresentations, Presenting.anchored.contains(child.name) { hostsPresentations = true }
+                if !hasMultiViewChild, Self.multiViewChildren.contains(child.name) { hasMultiViewChild = true }
+            }
+            enable(attached)
+        }
+    }
+    @ObservationIgnored private var extras: Extras?
+    @ObservationIgnored private var parent = 0
+    @ObservationIgnored private var previous = 0
+    @ObservationIgnored private var next = 0
+    @ObservationIgnored private var first = 0
+    @ObservationIgnored private var last = 0
+    private(set) var modifiers: ModifierSet = []
+    let kind: Kind
     private(set) var isBlank: Bool
+    var hostsPresentations: Bool
+    private(set) var hasMultiViewChild = false
+    var hostsInspector: Bool
+    var isMeasured = false {
+        didSet { if isMeasured { enable(.measured) } }
+    }
+
     var nativeAttributes: [String: JSONValue] {
         guard !labelFeedback.isEmpty || !stateFeedback.isEmpty else { return ownAttributes }
         return ownAttributes.merging(labelFeedback) { _, override in override }
@@ -39,46 +76,79 @@ final class Node: Identifiable {
         }
         set { ownAttributes = newValue }
     }
-    var owned: Set<String> = []
-    private(set) var ownAttributes: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: ownAttributes)) }
-    }
-    var labelFeedback: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: labelFeedback)) }
-    }
-    var stateFeedback: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: stateFeedback)) }
-    }
-    var children: Array<Node> = [] {
-        didSet {
-            var attached: ModifierSet = []
-            for child in children where child.kind == .element {
-                if let set = ModifierSet.byAttachment[child.name] { attached.formUnion(set) }
-                if !hostsPresentations, Presenting.anchored.contains(child.name) { hostsPresentations = true }
-                if !hasMultiViewChild, Self.multiViewChildren.contains(child.name) { hasMultiViewChild = true }
-            }
-            enable(attached)
+    var owned: Set<String> {
+        get {
+            access(keyPath: \.owned)
+            return extras?.owned ?? []
+        }
+        set {
+            guard newValue != extras?.owned ?? [] else { return }
+            withMutation(keyPath: \.owned) { extended().owned = newValue }
         }
     }
-    var presented: Array<Node> = [] {
-        didSet {
-            if !hostsInspector, presented.contains(where: { $0.name == "inspector" }) { hostsInspector = true }
+    var labelFeedback: [String: JSONValue] {
+        get {
+            access(keyPath: \.labelFeedback)
+            return extras?.labelFeedback ?? [:]
+        }
+        set {
+            guard newValue != extras?.labelFeedback ?? [:] else { return }
+            withMutation(keyPath: \.labelFeedback) { extended().labelFeedback = newValue }
+            enable(ModifierSet(attributes: newValue))
         }
     }
-    var hostsPresentations: Bool
-    private(set) var hasMultiViewChild = false
-    var hostsInspector: Bool
-    var focusRequest = FocusRequest()
-    var isMeasured = false {
-        didSet { if isMeasured { enable(.measured) } }
+    var stateFeedback: [String: JSONValue] {
+        get {
+            access(keyPath: \.stateFeedback)
+            return extras?.stateFeedback ?? [:]
+        }
+        set {
+            guard newValue != extras?.stateFeedback ?? [:] else { return }
+            withMutation(keyPath: \.stateFeedback) { extended().stateFeedback = newValue }
+            enable(ModifierSet(attributes: newValue))
+        }
     }
-    private(set) var modifiers: ModifierSet = []
-    @ObservationIgnored var frame: CGRect?
-    @ObservationIgnored var parentID: Int?
-    @ObservationIgnored var previousID: Int?
-    @ObservationIgnored var nextID: Int?
-    @ObservationIgnored var firstID: Int?
-    @ObservationIgnored var lastID: Int?
+    var presented: Array<Node> {
+        get {
+            access(keyPath: \.presented)
+            return extras?.presented ?? []
+        }
+        set {
+            withMutation(keyPath: \.presented) { extended().presented = newValue }
+            if !hostsInspector, newValue.contains(where: { $0.name == "inspector" }) { hostsInspector = true }
+        }
+    }
+    var focusRequest: FocusRequest {
+        get {
+            access(keyPath: \.focusRequest)
+            return extras?.focusRequest ?? FocusRequest()
+        }
+        set { withMutation(keyPath: \.focusRequest) { extended().focusRequest = newValue } }
+    }
+    var frame: CGRect? {
+        get { extras?.frame }
+        set { if newValue != nil || extras != nil { extended().frame = newValue } }
+    }
+    var parentID: Int? {
+        get { Self.link(parent) }
+        set { parent = newValue ?? 0 }
+    }
+    var previousID: Int? {
+        get { Self.link(previous) }
+        set { previous = newValue ?? 0 }
+    }
+    var nextID: Int? {
+        get { Self.link(next) }
+        set { next = newValue ?? 0 }
+    }
+    var firstID: Int? {
+        get { Self.link(first) }
+        set { first = newValue ?? 0 }
+    }
+    var lastID: Int? {
+        get { Self.link(last) }
+        set { last = newValue ?? 0 }
+    }
 
     init(id: Int, kind: Kind, name: String, text: String) {
         self.id = id
@@ -106,6 +176,17 @@ final class Node: Identifiable {
     func setOwnAttribute(_ name: String, _ value: JSONValue?) {
         guard ownAttributes[name] != value else { return }
         ownAttributes[name] = value
+    }
+
+    private static func link(_ id: Int) -> Int? {
+        id == 0 ? nil : id
+    }
+
+    private func extended() -> Extras {
+        if let extras { return extras }
+        let extras = Extras()
+        self.extras = extras
+        return extras
     }
 
     private func enable(_ set: ModifierSet) {
@@ -294,7 +375,7 @@ final class NodeStore {
             return node
         }
         let node = Node(id: id, kind: .element, name: try name(try reader.int()), text: "")
-        node.owned = ownedNames[node.name] ?? []
+        if let owned = ownedNames[node.name] { node.owned = owned }
         nodes[id] = node
         if Presenting.hoisted.contains(node.name) { presentationIDs.insert(id) }
         var attributes: [String: JSONValue] = [:]
