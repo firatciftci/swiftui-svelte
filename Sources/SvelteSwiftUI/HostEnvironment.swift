@@ -135,11 +135,17 @@ struct EnvironmentSnapshot: Equatable {
 
     static var currentFontScale: CGFloat {
         #if canImport(UIKit)
-            UIFontMetrics.default.scaledValue(for: 100) / 100
+            fontScale(compatibleWith: nil)
         #else
             1
         #endif
     }
+
+    #if canImport(UIKit)
+        static func fontScale(compatibleWith traits: UITraitCollection?) -> CGFloat {
+            UIFontMetrics.default.scaledValue(for: 17, compatibleWith: traits) / 17
+        }
+    #endif
 
     static var idiomName: String {
         #if os(iOS)

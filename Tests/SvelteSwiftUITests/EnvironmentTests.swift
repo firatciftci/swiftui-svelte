@@ -14,6 +14,14 @@ struct EnvironmentTests {
         #expect(snapshot.dictionary["systemColorScheme"] as? String == "dark")
     }
 
+    #if canImport(UIKit)
+        @Test func scalesTheDefaultBodySizeLikeUIFontMetrics() {
+            let traits = UITraitCollection(preferredContentSizeCategory: .extraLarge)
+            let body = UIFontMetrics.default.scaledValue(for: 17, compatibleWith: traits)
+            #expect(abs(EnvironmentSnapshot.fontScale(compatibleWith: traits) * 17 - body) < 0.001)
+        }
+    #endif
+
     @Test func describesTheSwiftUIEnvironmentForJavaScript() throws {
         var snapshot = EnvironmentSnapshot(
             colorScheme: .dark,

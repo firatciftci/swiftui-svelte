@@ -179,7 +179,7 @@ Lengths can use `calc()`, `min()`, `max()`, `clamp()`, and `round()`, with `+`, 
 
 A length can also depend on the device, and the host measures it when the view appears and whenever it changes:
 
-- `fontScale()` is the Dynamic Type scale, which is 1 at the default text size.
+- `fontScale()` is the Dynamic Type scale, which is 1 at the default text size. On iOS it is the factor by which Dynamic Type scales the default 17-point body size, so `calc(17px * fontScale())` gives the same result as `UIFontMetrics` does at 17 points.
 - `pixelRatio()` is the display scale of the device.
 - `hairlineWidth()` is the thinnest line the display can draw. It equals 1 divided by the pixel ratio.
 - `roundToNearestPixel(n)` rounds a length to the nearest device pixel.
