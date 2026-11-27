@@ -15,3 +15,7 @@ extension SvelteRuntime {
         return result
     }
 }
+
+extension FrameMonitor {
+    var isRunning: Bool { link.map { !$0.isPaused } ?? false }
+}

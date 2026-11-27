@@ -477,12 +477,10 @@ nonisolated private final class WeakBox<Object: AnyObject> {
 
 final class FrameMonitor: NSObject {
     private static let idleTicksBeforePausing = 30
-    private var link: CADisplayLink?
+    private(set) var link: CADisplayLink?
     private var lastTimestamp: CFTimeInterval = 0
     private var idleTicks = 0
     var onFrame: ((CFTimeInterval, Double) -> Bool)?
-
-    var isRunning: Bool { link.map { !$0.isPaused } ?? false }
 
     func resume() {
         idleTicks = 0
