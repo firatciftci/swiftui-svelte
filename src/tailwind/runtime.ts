@@ -330,6 +330,49 @@ function finish(output: Attributes): Attributes {
   return result;
 }
 
+type Parsed = Omit<Resolution, "attrs"> & {
+  rules: Array<Rule>;
+  outputs: Map<string, Attributes>;
+};
+
+const parsedTables = new WeakMap<ClassTable, Map<string, Parsed>>();
+
+function parse(next: ClassTable, tag: string, value: string): Parsed {
+  let cache = parsedTables.get(next);
+  if (cache == null || cache.size > 1000) {
+    cache = new Map();
+    parsedTables.set(next, cache);
+  }
+  const key = classKey(tag, value);
+  const cached = cache.get(key);
+  if (cached != null) return cached;
+  const parsed: Parsed = {
+    rules: [],
+    reactive: false,
+    unmatched: [],
+    misplaced: [],
+    outputs: new Map(),
+  };
+  for (const token of value.split(/\s+/)) {
+    if (token === "") continue;
+    const rules = next.tokens[token];
+    if (rules == null) {
+      parsed.unmatched.push(token);
+      continue;
+    }
+    const applicable = rules.filter(
+      (rule) => rule.only == null || rule.only.includes(tag),
+    );
+    if (applicable.length === 0) parsed.misplaced.push(token);
+    parsed.reactive ||= applicable.some(
+      (rule) => rule.when != null || rule.dynamic === true,
+    );
+    parsed.rules.push(...applicable);
+  }
+  cache.set(key, parsed);
+  return parsed;
+}
+
 export function resolveClasses(
   next: ClassTable,
   tag: string,
@@ -339,32 +382,20 @@ export function resolveClasses(
   const statics = next.statics[classKey(tag, value)];
   if (statics != null)
     return { attrs: statics, reactive: false, unmatched: [], misplaced: [] };
+  const parsed = parse(next, tag, value);
+  const { reactive, unmatched, misplaced, outputs } = parsed;
   const active: Array<Rule> = [];
-  const unmatched: Array<string> = [];
-  const misplaced: Array<string> = [];
-  let isReactive = false;
-  for (const token of value.split(/\s+/)) {
-    if (token === "") continue;
-    const rules = next.tokens[token];
-    if (rules == null) {
-      unmatched.push(token);
-      continue;
-    }
-    const applicable = rules.filter(
-      (rule) => rule.only == null || rule.only.includes(tag),
-    );
-    if (applicable.length === 0) misplaced.push(token);
-    isReactive ||= applicable.some(
-      (rule) => rule.when != null || rule.dynamic === true,
-    );
-    active.push(
-      ...applicable.filter(
-        (rule) =>
-          rule.when == null ||
-          rule.when.every((condition) => isSatisfied(condition, state)),
-      ),
-    );
+  let signature = "";
+  for (const rule of parsed.rules) {
+    const isActive =
+      rule.when == null ||
+      rule.when.every((condition) => isSatisfied(condition, state));
+    signature += isActive ? "1" : "0";
+    if (isActive) active.push(rule);
   }
+  const isDynamic = active.some((rule) => rule.dynamic === true);
+  const known = isDynamic ? undefined : outputs.get(signature);
+  if (known != null) return { attrs: known, reactive, unmatched, misplaced };
   active.sort(
     (a, b) =>
       Number(a.important ?? false) - Number(b.important ?? false) ||
@@ -373,10 +404,10 @@ export function resolveClasses(
   const output: Attributes = {};
   for (const rule of active) apply(output, rule.attrs);
   const attrs = finish(output);
-  const settled = active.some((rule) => rule.dynamic === true)
-    ? settleAll(attrs, state)
-    : attrs;
-  return { attrs: settled, reactive: isReactive, unmatched, misplaced };
+  if (isDynamic)
+    return { attrs: settleAll(attrs, state), reactive, unmatched, misplaced };
+  outputs.set(signature, attrs);
+  return { attrs, reactive, unmatched, misplaced };
 }
 
 export function resolveWith(
