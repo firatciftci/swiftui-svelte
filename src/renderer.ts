@@ -123,7 +123,12 @@ const finalizer = new FinalizationRegistry<number>((id) => {
   elements.delete(id);
   stats.live--;
 });
-const scheduler = { nextId: 1, nextRequest: 1, isScheduled: false };
+const scheduler = {
+  nextId: 1,
+  nextRequest: 1,
+  isScheduled: false,
+  requiresWire: false,
+};
 const invocations: Array<
   [element: ElementNode, method: string, options: Record<string, unknown>]
 > = [];
@@ -133,6 +138,23 @@ function wire(_key: string, value: unknown): unknown {
   if (typeof value === "bigint") return Number(value);
   if (value instanceof Map) return Object.fromEntries(value);
   if (value instanceof Set) return [...value];
+  return value;
+}
+
+function requiresWire(value: unknown): boolean {
+  if (typeof value === "bigint") return true;
+  if (typeof value !== "object" || value == null) return false;
+  if (value instanceof Map || value instanceof Set) return true;
+  const items = Array.isArray(value) ? value : Object.values(value);
+  return items.some((item) => requiresWire(item));
+}
+
+function sendable(value: unknown): unknown {
+  if (
+    !scheduler.requiresWire &&
+    (typeof value === "object" || typeof value === "bigint")
+  )
+    scheduler.requiresWire = requiresWire(value);
   return value;
 }
 
@@ -181,13 +203,13 @@ function encodeAttributes(node: ElementNode, record: Array<unknown>): void {
   const attributes = node.attributes ?? noAttributes;
   for (const [name, value] of Object.entries(attributes)) {
     if (!isSent(value)) continue;
-    record.push(nameRef(name), value);
+    record.push(nameRef(name), sendable(value));
     (record[count] as number)++;
   }
   const derived = node.classes?.derived ?? noAttributes;
   for (const [name, value] of Object.entries(derived)) {
     if (!isSent(value) || hasOwnAttribute(node, name)) continue;
-    record.push(nameRef(name), value);
+    record.push(nameRef(name), sendable(value));
     (record[count] as number)++;
   }
 }
@@ -235,7 +257,7 @@ function flushAttributes(): void {
       if (!isSent(value)) {
         send(opcodes.unattr, element.id, ref);
       } else {
-        send(opcodes.attr, element.id, ref, value);
+        send(opcodes.attr, element.id, ref, sendable(value));
       }
     }
   }
@@ -292,8 +314,9 @@ function commit(animation?: AnimationOptions): void {
     flushInvocations();
     return;
   }
-  const json = JSON.stringify(batch, wire);
+  const json = JSON.stringify(batch, scheduler.requiresWire ? wire : undefined);
   batch.length = 0;
+  scheduler.requiresWire = false;
   const serialized = __nativeNow();
   if (animation === undefined) __nativeCommit(json);
   else __nativeCommit(json, JSON.stringify(animation));
