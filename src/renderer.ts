@@ -576,12 +576,15 @@ function handlersOf(element: ElementNode, type: string): Array<Handler> {
 function listenerIndex(
   element: ElementNode,
   type: string,
-  handler: Handler,
+  handler?: Handler,
 ): number {
   const { listeners } = element;
   if (listeners == null) return -1;
   for (let index = 0; index < listeners.length; index += 2) {
-    if (listeners[index] === type && listeners[index + 1] === handler)
+    if (
+      listeners[index] === type &&
+      (handler == null || listeners[index + 1] === handler)
+    )
       return index;
   }
   return -1;
@@ -604,7 +607,7 @@ function deleteOwnAttribute(element: ElementNode, name: string): void {
 function updateListens(element: ElementNode): void {
   const types: Array<string> = [];
   for (const type of observedEvents) {
-    if (handlersOf(element, type).length > 0) types.push(type);
+    if (listenerIndex(element, type) !== -1) types.push(type);
   }
   if (types.length > 0) setOwnAttribute(element, "listens", types);
   else deleteOwnAttribute(element, "listens");
@@ -903,17 +906,17 @@ const renderer = createRenderer<{
   addEventListener(element, type, handler: Handler) {
     if (listenerIndex(element, type, handler) !== -1) return;
     index(element);
+    const isFirst = listenerIndex(element, type) === -1;
     if (element.listeners == null) element.listeners = [type, handler];
     else element.listeners.push(type, handler);
-    if (observedEvents.has(type) && handlersOf(element, type).length === 1)
-      updateListens(element);
+    if (isFirst && observedEvents.has(type)) updateListens(element);
   },
   removeEventListener(element, type, handler: Handler) {
     const index = listenerIndex(element, type, handler);
     if (index === -1 || element.listeners == null) return;
     if (element.listeners.length === 2) element.listeners = null;
     else element.listeners.splice(index, 2);
-    if (observedEvents.has(type) && handlersOf(element, type).length === 0)
+    if (observedEvents.has(type) && listenerIndex(element, type) === -1)
       updateListens(element);
   },
 });
