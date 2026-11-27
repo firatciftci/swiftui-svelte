@@ -12,7 +12,7 @@ extension SvelteHostUITests {
         XCTAssertTrue(app.staticTexts["Not done yet"].exists)
         attachScreenshot("context menu")
         markDone.tap()
-        XCTAssertTrue(markDone.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(markDone.disappears(timeout: 5))
         XCTAssertEqual(row.value as? String, "1")
     }
 
@@ -34,7 +34,7 @@ extension SvelteHostUITests {
 
         app.images.matching(identifier: "minus.circle.fill").firstMatch.tap()
         app.buttons["Delete"].firstMatch.tap()
-        XCTAssertTrue(second.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(second.disappears(timeout: 5))
         XCTAssertTrue(app.staticTexts["All done"].exists)
         app.buttons["Done"].tap()
         waitFor(app.buttons["Edit"])

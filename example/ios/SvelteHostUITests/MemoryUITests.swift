@@ -11,7 +11,7 @@ extension SvelteHostUITests {
             scroll(to: open)
             open.tap()
             let label = app.staticTexts.matching(NSPredicate(format: "label == 'Not measured' OR label ENDSWITH ' MB'")).firstMatch
-            if !label.waitForExistence(timeout: 60) {
+            if !label.appears(timeout: 60) {
                 print(app.debugDescription)
                 XCTFail("The memory label never appeared")
                 return

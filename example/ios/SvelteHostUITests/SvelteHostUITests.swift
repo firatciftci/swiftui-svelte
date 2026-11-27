@@ -20,7 +20,7 @@ final class SvelteHostUITests: XCTestCase {
     }
 
     func waitFor(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(element.waitForExistence(timeout: 5), "\(element) never appeared", file: file, line: line)
+        XCTAssertTrue(element.appears(timeout: 5), "\(element) never appeared", file: file, line: line)
     }
 
     func testAddsTogglesAndDeletesATodo() {
@@ -39,7 +39,7 @@ final class SvelteHostUITests: XCTestCase {
 
         row.swipeLeft()
         app.buttons["Delete"].tap()
-        XCTAssertTrue(row.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(row.disappears(timeout: 5))
     }
 
     func testKeepsTheKeyboardUpAndScrollsToNewTodos() {
@@ -57,7 +57,7 @@ final class SvelteHostUITests: XCTestCase {
 
         field.typeText("Errand 11")
         app.buttons["Add"].tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.disappears(timeout: 5))
         let last = app.switches["Errand 11"]
         waitFor(last)
         let deadline = Date().addingTimeInterval(5)
@@ -102,7 +102,7 @@ final class SvelteHostUITests: XCTestCase {
         waitFor(alert)
         XCTAssertTrue(alert.staticTexts["1 to-do will be removed."].exists)
         alert.buttons["Clear"].tap()
-        XCTAssertTrue(app.switches["Read the custom renderer docs"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Read the custom renderer docs"].disappears(timeout: 5))
         XCTAssertFalse(app.buttons["Clear done"].exists)
     }
 
@@ -125,8 +125,8 @@ final class SvelteHostUITests: XCTestCase {
         waitFor(app.staticTexts["Hello, Ada Lovelace!"])
         XCTAssertEqual(name.value as? String, "Ada Lovelace")
         app.buttons["Done editing"].tap()
-        XCTAssertTrue(app.buttons["Done editing"].waitForNonExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Done editing"].disappears(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.disappears(timeout: 5))
 
         XCTAssertTrue(app.images["Verified"].exists)
         app.buttons["Show a sheet"].tap()
@@ -136,9 +136,9 @@ final class SvelteHostUITests: XCTestCase {
         app.buttons["Celebrate"].tap()
         waitFor(app.images["Party popper"])
         app.buttons["Calm down"].tap()
-        XCTAssertTrue(app.images["Party popper"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.images["Party popper"].disappears(timeout: 5))
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.staticTexts["Hello from a sheet"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Hello from a sheet"].disappears(timeout: 5))
     }
 
     func testDrivesEveryFormControl() {
@@ -163,7 +163,7 @@ final class SvelteHostUITests: XCTestCase {
 
         let reminder = app.switches["Remind me"]
         flip(reminder)
-        XCTAssertTrue(app.staticTexts["Repeat"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Repeat"].disappears(timeout: 5))
         flip(reminder)
         waitFor(app.staticTexts["Repeat"])
 
@@ -297,7 +297,7 @@ final class SvelteHostUITests: XCTestCase {
         app.swipeUp()
         attachScreenshot("content")
         let caption = app.staticTexts["The image didn't load, so its failure view is showing."]
-        XCTAssertTrue(caption.waitForExistence(timeout: 15), "the failure caption never appeared")
+        XCTAssertTrue(caption.appears(timeout: 15), "the failure caption never appeared")
         XCTAssertTrue(app.images["Image failed to load"].exists)
     }
 }
@@ -334,12 +334,12 @@ extension SvelteHostUITests {
         let price = app.textFields["price"]
         price.tap()
         price.typeText("12.5\n")
-        XCTAssertTrue(app.staticTexts["Price: 12.5"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["Price: 12.5"].appears(timeout: 3))
         for _ in 0..<3 where !app.textViews["journal"].isHittable { app.swipeUp() }
         let journal = app.textViews["journal"]
         journal.tap()
         journal.typeText("Hello")
-        XCTAssertTrue(app.staticTexts["5 characters"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["5 characters"].appears(timeout: 3))
         attachScreenshot("inputs")
     }
 
@@ -446,25 +446,25 @@ extension SvelteHostUITests {
         XCTAssertTrue(coverTitle.exists, "a swipe closed the full-screen cover")
         attachScreenshot("full-screen cover")
         app.buttons["Close"].tap()
-        XCTAssertTrue(coverTitle.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(coverTitle.disappears(timeout: 5))
 
         app.buttons["Show a popover"].tap()
         let popoverText = app.staticTexts["Popovers point at the button that opened them."]
         waitFor(popoverText)
         attachScreenshot("popover")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
-        XCTAssertTrue(popoverText.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(popoverText.disappears(timeout: 5))
         app.buttons["Show a popover"].tap()
         waitFor(popoverText)
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
-        XCTAssertTrue(popoverText.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(popoverText.disappears(timeout: 5))
 
         app.buttons["Show the inspector"].tap()
         let inspectorText = app.staticTexts["On iPad, this opens as a column beside the content."]
         waitFor(inspectorText)
         attachScreenshot("inspector")
         dismissSheet()
-        XCTAssertTrue(inspectorText.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(inspectorText.disappears(timeout: 5))
 
         app.buttons["Delete all photos"].tap()
         let delete = app.buttons["Delete"]
@@ -480,7 +480,7 @@ extension SvelteHostUITests {
         attachScreenshot("short sheet")
         XCTAssertTrue(app.buttons["Show a full-screen cover"].isHittable, "the list behind the short sheet isn't usable")
         dismissSheet(from: sheetText)
-        XCTAssertTrue(sheetText.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(sheetText.disappears(timeout: 5))
     }
 
     func testNavigatesWithToolbarsAndPages() {
@@ -494,15 +494,15 @@ extension SvelteHostUITests {
         scroll(to: carousel, attempts: 3)
         waitFor(carousel.staticTexts["First"])
         carousel.swipeLeft()
-        XCTAssertTrue(app.pageIndicators["carousel"].waitForExistence(timeout: 5))
-        XCTAssertTrue(carousel.staticTexts["Second"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.pageIndicators["carousel"].appears(timeout: 5))
+        XCTAssertTrue(carousel.staticTexts["Second"].appears(timeout: 5))
         XCTAssertEqual(app.pageIndicators["carousel"].value as? String, "page 2 of 3")
         attachScreenshot("page carousel")
         carousel.swipeLeft()
-        XCTAssertTrue(carousel.staticTexts["Third"].waitForExistence(timeout: 5))
+        XCTAssertTrue(carousel.staticTexts["Third"].appears(timeout: 5))
         carousel.swipeRight()
         carousel.swipeRight()
-        XCTAssertTrue(carousel.staticTexts["First"].waitForExistence(timeout: 5))
+        XCTAssertTrue(carousel.staticTexts["First"].appears(timeout: 5))
 
         open.tap()
         let page = app.staticTexts["page"]
@@ -523,16 +523,16 @@ extension SvelteHostUITests {
         app.buttons.matching(NSPredicate(format: "identifier ENDSWITH %@", "OverflowBarButtonItem")).firstMatch.tap()
         app.buttons["Pin"].tap()
         XCTAssertEqual(action.label, "Last action: Pin")
-        XCTAssertTrue(app.buttons["Pin"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Pin"].disappears(timeout: 5))
         attachScreenshot("toolbars")
 
         flip(app.switches["Hide the navigation bar"])
-        XCTAssertTrue(app.navigationBars["Toolbars"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Toolbars"].disappears(timeout: 5))
         attachScreenshot("hidden navigation bar")
         flip(app.switches["Hide the navigation bar"])
         waitFor(app.navigationBars["Toolbars"])
         flip(app.switches["Hide the back button"])
-        XCTAssertTrue(app.navigationBars["Toolbars"].buttons["BackButton"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Toolbars"].buttons["BackButton"].disappears(timeout: 5))
         flip(app.switches["Color the navigation bar"])
         attachScreenshot("colored navigation bar without a back button")
         flip(app.switches["Hide the back button"])
@@ -557,12 +557,12 @@ extension SvelteHostUITests {
         let open = app.switches["Render Svelte with SwiftUI"]
         let done = app.switches["Read the custom renderer docs"]
         waitFor(open)
-        XCTAssertTrue(done.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(done.disappears(timeout: 5))
         attachScreenshot("search with scopes")
         search.buttons["Clear text"].tap()
         waitFor(done)
         app.buttons["Done"].firstMatch.tap()
-        XCTAssertTrue(open.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(open.disappears(timeout: 5))
         XCTAssertTrue(done.exists)
         search.typeText("zzz")
         waitFor(app.staticTexts["No Results for “zzz”"])
@@ -644,7 +644,7 @@ extension SvelteHostUITests {
         waitFor(app.navigationBars["Inbox"])
         if isPad {
             app.staticTexts["No message selected"].tap()
-            XCTAssertTrue(app.navigationBars["Mailboxes"].waitForNonExistence(timeout: 5))
+            XCTAssertTrue(app.navigationBars["Mailboxes"].disappears(timeout: 5))
         }
         app.buttons["Lunch on Friday?"].tap()
         let body = app.staticTexts["message-body"]
@@ -670,21 +670,7 @@ extension SvelteHostUITests {
             waitFor(app.navigationBars["Mailboxes"])
         }
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.navigationBars["Mailboxes"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Mailboxes"].disappears(timeout: 5))
         waitFor(open)
-    }
-}
-
-extension XCUIElement {
-    func waitForLabel(_ label: String, timeout: TimeInterval = 5) -> Bool {
-        let deadline = Date.now.addingTimeInterval(timeout)
-        while self.label != label, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }
-        return self.label == label
-    }
-
-    func waitForHittable(timeout: TimeInterval = 5) -> Bool {
-        let deadline = Date.now.addingTimeInterval(timeout)
-        while !isHittable, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }
-        return isHittable
     }
 }

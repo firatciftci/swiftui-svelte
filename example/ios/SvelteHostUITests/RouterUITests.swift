@@ -13,7 +13,7 @@ final class RouterUITests: XCTestCase {
     }
 
     private func waitFor(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(element.waitForExistence(timeout: 5), file: file, line: line)
+        XCTAssertTrue(element.appears(timeout: 5), file: file, line: line)
     }
 
     private func attachScreenshot(_ name: String) {
