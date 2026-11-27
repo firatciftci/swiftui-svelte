@@ -255,7 +255,7 @@ public final class SvelteRuntime {
             scroll(to: target.id, anchor: isBottom ? .bottom : .top, options)
         case "measure":
             guard let request else { return }
-            if let frame = node.frame {
+            if let frame = node.frame, frame.size != .zero {
                 reply(request, frame: frame)
             } else {
                 measureRequests[id, default: []].append(request)
@@ -276,6 +276,7 @@ public final class SvelteRuntime {
 
     func measured(_ node: Node, frame: CGRect) {
         node.frame = frame
+        guard frame.size != .zero else { return }
         for request in measureRequests.removeValue(forKey: node.id) ?? [] { reply(request, frame: frame) }
     }
 

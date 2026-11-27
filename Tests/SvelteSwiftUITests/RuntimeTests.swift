@@ -133,10 +133,11 @@ struct RuntimeTests {
         #expect(node.attributes["reply2"] == .string("none"))
         runtime.measured(node, frame: .zero)
         runtime.settle()
-        #expect(node.attributes["reply1"] == .string("none"))
+        #expect(node.attributes["reply1"] == nil)
         runtime.measured(node, frame: CGRect(x: 16, y: 120, width: 370, height: 44))
         runtime.settle()
         let rect: JSONValue = .object(["x": .number(16), "y": .number(120), "width": .number(370), "height": .number(44)])
+        #expect(node.attributes["reply1"] == rect)
         _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
         runtime.settle()
         #expect(node.attributes["reply3"] == rect)
