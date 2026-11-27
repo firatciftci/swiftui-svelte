@@ -631,7 +631,8 @@ const HANDLERS = new Map<string, Handler>([
   ],
   [
     "line-height",
-    (value, context) => {
+    (value, context, raw) => {
+      if (raw === "normal") return [{ attrs: { linebox: null } }];
       const quantity = quantityOf(resolved(value, context), context.fontSize);
       if (quantity.unit === "" && typeof quantity.value === "number")
         return [
@@ -1017,9 +1018,9 @@ function sizing(property: string, raw: string, context: Context): Array<Patch> {
       : "";
   const key = prefix === "" ? axis : `${prefix}${axis}`;
   if (raw === "auto" && prefix === "") return [{ attrs: { [key]: null } }];
-  if (raw === "none" && prefix === "max")
-    return [{ attrs: { [key]: "infinity", boxsizing: "border-box" } }];
   const value = compact(raw);
+  if (prefix === "max" && (raw === "none" || value === "100%"))
+    return [{ attrs: { [key]: null } }];
   if (
     value === "100%" ||
     /^100[dsl]?v[hw]$/.test(value) ||

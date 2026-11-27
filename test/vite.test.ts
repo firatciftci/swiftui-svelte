@@ -378,7 +378,7 @@ describe("tailwind layout, lengths, and containers", () => {
   );
   writeFileSync(
     path.join(dir, "Layout.svelte"),
-    '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse ring-2 ring-red-500 drop-shadow-md"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n<vstack class="flex flex-col gap-2"></vstack>\n<hstack class="grid gap-1"></hstack>\n<vstack class="w-40 border-2 h-full"></vstack>\n',
+    '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse ring-2 ring-red-500 drop-shadow-md"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n<vstack class="flex flex-col gap-2"></vstack>\n<hstack class="grid gap-1"></hstack>\n<vstack class="w-40 border-2 h-full"></vstack>\n<txt class="max-w-3xl max-w-full max-w-none text-sm leading-[normal]"></txt>\n',
   );
   const base: State = {
     dark: false,
@@ -514,6 +514,13 @@ describe("tailwind layout, lengths, and containers", () => {
     expect(
       resolveClasses(table, "vstack", "ring-2 ring-red-500", base).attrs,
     ).toEqual({ ring: { width: 2, color: "#fb2c36" } });
+    expect(
+      resolveClasses(table, "txt", "max-w-3xl max-w-full", base).attrs,
+    ).toEqual({ boxsizing: "border-box" });
+    expect(resolveClasses(table, "txt", "max-w-none", base).attrs).toEqual({});
+    expect(
+      resolveClasses(table, "txt", "text-sm leading-[normal]", base).attrs,
+    ).toEqual({ size: 14 });
     expect(resolveClasses(table, "vstack", "ring-2", base).attrs).toEqual({
       ring: { width: 2 },
     });

@@ -145,6 +145,8 @@ After that, `md:` compares the nearest container, not the window. Plain `md:` wi
 - `text-balance` (`text-wrap: balance`) makes the lines of a text element come out an even width. It keeps the same number of lines the text would have at the available width, and it uses the narrowest width that keeps that count.
 - `text-pretty` has no effect. It is accepted without a warning, and text wraps as it does without it.
 - `text-wrap` and `text-nowrap` follow the same rules as the other text classes, and `text-balance` works on text with spans.
+- `leading-[normal]` removes the line height that another class sets, such as the one that comes with `text-sm`, so the text keeps the font's own line height.
+- `max-w-full`, `max-w-none`, `max-h-full`, and `max-h-none` set no maximum, as in CSS, where a maximum of 100% never makes an element grow. They also remove a maximum that an earlier class set.
 
 ## Safe areas
 
