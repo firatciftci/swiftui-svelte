@@ -377,13 +377,10 @@ struct RuntimeTests {
         }
         let reports = Reports()
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
-        try (mount + "Promise.reject(new Error('later')); Promise.reject(1).catch(() => {}); __nativeCommit('[42]');")
+        try (mount + "__nativeCommit('[42]');")
             .write(to: url, atomically: true, encoding: .utf8)
         let runtime = SvelteRuntime(source: url) { reports.errors.append($0) }
         runtime.start()
-        let rejections = reports.errors.filter { $0.kind == .unhandledRejection }
-        #expect(!rejections.isEmpty)
-        #expect(rejections.allSatisfy { $0.message == "Error: later" })
         #expect(reports.errors.contains { $0.kind == .bridge && $0.message.contains("42") })
         #expect(runtime.error == nil)
 

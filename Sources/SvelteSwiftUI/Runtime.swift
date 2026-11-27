@@ -451,12 +451,8 @@ extension SvelteRuntime {
     }
 
     func report(_ error: ScriptError) {
-        if error.kind == .unhandledRejection {
-            print("[js:unhandledrejection] \(error)")
-        } else {
-            print("[js:exception] \(error)")
-            self.error = error
-        }
+        print("[js:exception] \(error)")
+        self.error = error
         onError?(error)
     }
 
@@ -520,7 +516,6 @@ final class FrameMonitor: NSObject {
 public nonisolated struct ScriptError: Error, Equatable, Sendable, CustomStringConvertible {
     public enum Kind: Sendable {
         case script
-        case unhandledRejection
         case bridge
         case load
     }
