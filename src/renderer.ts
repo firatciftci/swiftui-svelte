@@ -30,15 +30,6 @@ type FragmentNode = Container & {
   state: NodeState;
 };
 type Classes = { value: string; derived: Attributes; reactive: boolean };
-type ElementNode = Container &
-  Linked & {
-    kind: "element";
-    id: number;
-    name: string;
-    attributes: Attributes | null;
-    listeners: Array<string | Handler> | null;
-    classes: Classes | null;
-  };
 type TextNode = Linked & { kind: "text" | "comment"; id: number; data: string };
 type ParentNode = FragmentNode | ElementNode;
 type Rect = { x: number; y: number; width: number; height: number };
@@ -73,6 +64,26 @@ type ChildNode = ElementNode | TextNode;
 
 const State = { Local: 0, Pending: 1, Native: 2 } as const;
 type NodeState = (typeof State)[keyof typeof State];
+
+class ElementNode implements Container, Linked {
+  readonly kind = "element";
+  parent: ParentNode | null = null;
+  prev: ChildNode | null = null;
+  next: ChildNode | null = null;
+  state: NodeState = State.Local;
+  first: ChildNode | null = null;
+  last: ChildNode | null = null;
+  attributes: Attributes | null = null;
+  listeners: Array<string | Handler> | null = null;
+  classes: Classes | null = null;
+  readonly id: number;
+  readonly name: string;
+
+  constructor(id: number, name: string) {
+    this.id = id;
+    this.name = name;
+  }
+}
 
 export const protocol = 3;
 
@@ -311,15 +322,12 @@ function invoke(
 }
 
 function isElement(node: unknown): node is ElementNode {
-  return (
-    typeof node === "object" &&
-    node != null &&
-    "kind" in node &&
-    node.kind === "element" &&
-    "id" in node &&
-    typeof node.id === "number" &&
-    elements.get(node.id)?.deref() === node
-  );
+  return node instanceof ElementNode;
+}
+
+function index(element: ElementNode): void {
+  if (elements.get(element.id)?.deref() !== element)
+    elements.set(element.id, new WeakRef(element));
 }
 
 export function ref(): Ref {
@@ -652,6 +660,7 @@ function applyClass(element: ElementNode, value: string | null): void {
   if (resolution.reactive)
     reactiveElements.set(element.id, new WeakRef(element));
   else reactiveElements.delete(element.id);
+  if (resolution.attrs.container !== undefined) index(element);
   const previous = element.classes?.derived ?? noAttributes;
   element.classes =
     value == null
@@ -736,22 +745,7 @@ const renderer = createRenderer<{
   },
   createElement(name) {
     if (isDevelopment) checkElement(name);
-    const node: ElementNode = {
-      parent: null,
-      prev: null,
-      next: null,
-      state: State.Local,
-      kind: "element",
-      id: scheduler.nextId++,
-      name,
-      first: null,
-      last: null,
-      attributes: null,
-      listeners: null,
-      classes: null,
-    };
-    elements.set(node.id, new WeakRef(node));
-    return track(node);
+    return track(new ElementNode(scheduler.nextId++, name));
   },
   createText(data) {
     return track({
@@ -803,6 +797,7 @@ const renderer = createRenderer<{
       return;
     }
     if (isDevelopment) checkAttribute(element.name, name);
+    if (name === "container") index(element);
     setOwnAttribute(element, name, value);
     changeAttribute(element, name);
     if (name === "disabled" && element.classes?.reactive === true)
@@ -856,6 +851,7 @@ const renderer = createRenderer<{
 
   addEventListener(element, type, handler: Handler) {
     if (listenerIndex(element, type, handler) !== -1) return;
+    index(element);
     if (element.listeners == null) element.listeners = [type, handler];
     else element.listeners.push(type, handler);
     if (observedEvents.has(type) && handlersOf(element, type).length === 1)
