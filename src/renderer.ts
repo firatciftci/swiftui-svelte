@@ -330,40 +330,68 @@ function index(element: ElementNode): void {
     elements.set(element.id, new WeakRef(element));
 }
 
-export function ref(): Ref {
-  let element: ElementNode | null = null;
-  const attach = (node: unknown): (() => void) => {
-    if (isElement(node)) element = node;
-    return () => {
-      if (element === node) element = null;
-    };
-  };
-  return Object.assign(attach, {
-    focus: () => invoke(element, "focus"),
-    blur: () => invoke(element, "blur"),
-    scrollIntoView: (options: ScrollOptions = {}) =>
-      invoke(element, "scrollIntoView", options),
-    scrollTo: (
-      target: "top" | "bottom" | { x?: number; y?: number },
-      options: Omit<ScrollOptions, "anchor"> = {},
-    ) =>
-      invoke(
-        element,
-        "scrollTo",
-        typeof target === "string"
-          ? { ...options, edge: target }
-          : { ...options, ...target },
-      ),
-    measure: async (): Promise<Rect | null> => {
-      if (element == null) return null;
-      const request = scheduler.nextRequest++;
-      const rect = new Promise<Rect | null>((resolve) =>
-        replies.set(request, resolve),
-      );
-      invoke(element, "measure", { request });
-      return rect;
+const target = Symbol("element");
+type Attached = Ref & { [target]: ElementNode | null };
+
+async function measure(element: ElementNode | null): Promise<Rect | null> {
+  if (element == null) return null;
+  const request = scheduler.nextRequest++;
+  const rect = new Promise<Rect | null>((resolve) =>
+    replies.set(request, resolve),
+  );
+  invoke(element, "measure", { request });
+  return rect;
+}
+
+const refMethods: object = Object.create(Function.prototype, {
+  focus: {
+    get(this: Attached) {
+      return () => invoke(this[target], "focus");
     },
-  });
+  },
+  blur: {
+    get(this: Attached) {
+      return () => invoke(this[target], "blur");
+    },
+  },
+  scrollIntoView: {
+    get(this: Attached) {
+      return (options: ScrollOptions = {}) =>
+        invoke(this[target], "scrollIntoView", options);
+    },
+  },
+  scrollTo: {
+    get(this: Attached) {
+      return (
+        edge: "top" | "bottom" | { x?: number; y?: number },
+        options: Omit<ScrollOptions, "anchor"> = {},
+      ) =>
+        invoke(
+          this[target],
+          "scrollTo",
+          typeof edge === "string"
+            ? { ...options, edge }
+            : { ...options, ...edge },
+        );
+    },
+  },
+  measure: {
+    get(this: Attached) {
+      return async () => measure(this[target]);
+    },
+  },
+}) as object;
+
+export function ref(): Ref {
+  const attach = ((node: unknown): (() => void) => {
+    if (isElement(node)) attach[target] = node;
+    return () => {
+      if (attach[target] === node) attach[target] = null;
+    };
+  }) as Attached;
+  Object.setPrototypeOf(attach, refMethods);
+  attach[target] = null;
+  return attach;
 }
 
 globalThis.__svelteReply = (request, rect) => settle(request, rect);
