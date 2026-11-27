@@ -92,10 +92,6 @@
       "types": "./dist/vite.d.ts",
       "default": "./dist/vite.js"
     },
-    "./routes": {
-      "types": "./dist/routes.d.ts",
-      "default": "./dist/routes.js"
-    },
     "./tailwind": {
       "types": "./dist/tailwind/vite.d.ts",
       "default": "./dist/tailwind/vite.js"
@@ -104,10 +100,6 @@
     "./eslint": {
       "types": "./dist/eslint.d.ts",
       "default": "./dist/eslint.js"
-    },
-    "./create": {
-      "types": "./dist/create.d.ts",
-      "default": "./dist/create.js"
     },
     "./elements": {
       "types": "./dist/elements.d.ts"

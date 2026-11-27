@@ -20,10 +20,15 @@ enum BuiltInModules {
 
     static var haptics: NativeModule {
         NativeModule("haptics")
-            .function("impact") { (options: ImpactOptions?) in
+            .function("impact") { (options: ImpactOptions?) throws in
+                let name = options?.style ?? "medium"
+                guard ["light", "medium", "heavy", "soft", "rigid"].contains(name) else {
+                    throw NativeModuleError(
+                        code: "invalidArguments", message: "\(name) isn't an impact style. Use light, medium, heavy, soft, or rigid.")
+                }
                 #if os(iOS)
                     let style: UIImpactFeedbackGenerator.FeedbackStyle =
-                        switch options?.style {
+                        switch name {
                         case "light": .light
                         case "heavy": .heavy
                         case "soft": .soft
@@ -35,7 +40,11 @@ enum BuiltInModules {
                     NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
                 #endif
             }
-            .function("notification") { (type: String) in
+            .function("notification") { (type: String) throws in
+                guard ["success", "warning", "error"].contains(type) else {
+                    throw NativeModuleError(
+                        code: "invalidArguments", message: "\(type) isn't a notification type. Use success, warning, or error.")
+                }
                 #if os(iOS)
                     let kind: UINotificationFeedbackGenerator.FeedbackType =
                         switch type {
