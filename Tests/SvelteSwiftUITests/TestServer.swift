@@ -151,8 +151,16 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
             respond(status, [:], status == 204 || status == 304 ? Data() : Data("status \(status)".utf8))
         case let path where files(path) != nil:
             let body = Data((files(path) ?? "").utf8)
-            let tag = SHA256.hash(data: body).prefix(8).map { String(format: "%02x", $0) }.joined()
-            respond(200, ["content-type": "text/javascript", "etag": "\"\(tag)\""], body, sendsBody: method != "HEAD")
+            let tag = "\"" + SHA256.hash(data: body).prefix(8).map { String(format: "%02x", $0) }.joined() + "\""
+            let isPlain = path.hasPrefix("/plain/")
+            if method == "HEAD", isPlain || path.hasPrefix("/nohead/") {
+                respond(405, [:], Data())
+            } else if !isPlain, headers["if-none-match"] == tag {
+                respond(304, ["etag": tag], Data())
+            } else {
+                let validators = isPlain ? [:] : ["etag": tag]
+                respond(200, validators.merging(["content-type": "text/javascript"]) { $1 }, body, sendsBody: method != "HEAD")
+            }
         default:
             respond(404, [:], Data("not found".utf8))
         }

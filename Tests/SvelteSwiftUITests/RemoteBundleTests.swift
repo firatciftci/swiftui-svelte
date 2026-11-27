@@ -34,6 +34,24 @@ struct RemoteBundleTests {
         #expect(runtime.error == nil)
     }
 
+    @Test(arguments: ["/nohead/app.js", "/plain/app.js"])
+    func reloadsWhenTheServerRejectsHeadRequests(path: String) async throws {
+        let server = try TestServer()
+        let port = try await server.start()
+        defer { server.stop() }
+        server.serve(script("first"), at: path)
+        let source = try #require(URL(string: "http://127.0.0.1:\(port)\(path)"))
+        let runtime = SvelteRuntime(source: source, reloadsOnChange: true)
+        runtime.start()
+        try await eventually { text(runtime) == "first" }
+        let generation = runtime.generation
+        try await Task.sleep(for: .seconds(1.2))
+        #expect(runtime.generation == generation)
+        server.serve(script("second"), at: path)
+        try await eventually { text(runtime) == "second" }
+        #expect(runtime.error == nil)
+    }
+
     @Test func reportsABundleThatTheServerDoesNotHave() async throws {
         let server = try TestServer()
         let port = try await server.start()

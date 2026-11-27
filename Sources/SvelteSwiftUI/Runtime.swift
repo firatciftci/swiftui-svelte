@@ -97,7 +97,7 @@ public final class SvelteRuntime {
             var seen = initial
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
-                guard let version = await BundleLoader.version(of: source), version != seen else { continue }
+                guard let version = await BundleLoader.version(of: source, after: seen), version != seen else { continue }
                 seen = version
                 await self?.reload(ifNewerThan: version)
             }
