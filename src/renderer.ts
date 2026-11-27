@@ -10,7 +10,8 @@ import type {
   Resolution,
 } from "./tailwind/runtime.ts";
 import type { HostEnvironment } from "./web/environment.ts";
-import { checkAttribute, checkElement, warnOnce } from "./dev.ts";
+import { checkAttribute, checkElement, isMarkup, warnOnce } from "./dev.ts";
+import { textContainers } from "./markup.ts";
 import { opcodes, protocol } from "./protocol.ts";
 import { resolveWith } from "./tailwind/runtime.ts";
 import { environment, observeEnvironment } from "./web/environment.ts";
@@ -171,7 +172,10 @@ function nameRef(name: string): number {
 
 function isMaterial(node: ChildNode): boolean {
   if (node.kind === "element") return true;
-  return node.kind === "text" && node.data.trim() !== "";
+  if (node.kind !== "text" || node.data === "") return false;
+  if (node.data.trim() !== "") return true;
+  const parent = node.parent;
+  return parent?.kind === "element" && textContainers.has(parent.name);
 }
 
 function anchorId(node: ChildNode): number {
@@ -698,7 +702,7 @@ function applyClass(element: ElementNode, value: string | null): void {
     value == null || value === ""
       ? noClasses
       : resolveWith(element.name, value, classState(element));
-  if (isDevelopment && value != null)
+  if (isDevelopment && value != null && !isMarkup(element.name))
     reportResolution(element.name, resolution);
   if (resolution.reactive)
     reactiveElements.set(element.id, new WeakRef(element));

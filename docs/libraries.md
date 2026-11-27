@@ -1,6 +1,6 @@
 # Libraries
 
-Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page.
+Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page. Markdown files compiled by mdsvex render too, because the host draws the HTML tags that mdsvex writes.
 
 ## TanStack Query
 
@@ -142,6 +142,53 @@ Send the `Origin` header on every request. Better Auth checks the `Origin` of ea
 The focus refetch in Better Auth's client never runs here, because it listens for `visibilitychange` on `document`. The `onActive` line above refetches the session when the app comes to the foreground.
 
 Social sign-in doesn't work yet. Better Auth's client sends the browser to the provider by assigning `window.location`, and the host has no way to open a sign-in page in a web authentication session. `signIn.social` still returns the provider URL, so you can open it yourself, but the callback needs a native module for web authentication sessions, which the host doesn't include yet.
+
+## mdsvex
+
+[mdsvex](https://mdsvex.pngwn.io) compiles Markdown files to Svelte components, and those components run unchanged in the app. The host draws the HTML tags that mdsvex writes with SwiftUI views: headings, paragraphs, lists, block quotes, code blocks, horizontal rules, images, and tables. Add the mdsvex plugin before the Svelte plugin, and give the Svelte plugin the `.md` extension:
+
+```ts
+// vite.config.ts
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { mdsvex } from "mdsvex";
+import { swiftui } from "swiftui-svelte/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    mdsvex({ extensions: [".md"] }),
+    svelte({ extensions: [".svelte", ".md"] }),
+    swiftui({ entry: "src/main.ts", outFile: "ios/MyApp/JavaScript/app.js" }),
+  ],
+});
+```
+
+TypeScript needs a declaration for `.md` imports. Put it in a `.d.ts` file of its own, such as `src/markdown.d.ts`:
+
+```ts
+declare module "*.md" {
+  import type { Component } from "svelte";
+
+  const component: Component;
+  export default component;
+}
+```
+
+Then import a Markdown file like any other component. Put it in a `scrollview` so that a long document scrolls:
+
+```svelte
+<script lang="ts">
+  import Guide from "./guide.md";
+</script>
+
+<scrollview>
+  <vstack spacing={12} padding>
+    <Guide />
+  </vstack>
+</scrollview>
+```
+
+Each block fills the width and starts at the leading edge, as it does on the web, and the `vstack` around the document sets the space between blocks. Headings use the title text styles, and VoiceOver reads them as headings. VoiceOver reads an image's `alt` text as its label, and links open in the browser. Code blocks scroll sideways instead of wrapping. mdsvex's syntax highlighting adds `class` names to the code, but those classes have no styles in the app, so code shows in one color.
 
 ## svelte-sonner and mode-watcher
 

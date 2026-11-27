@@ -249,7 +249,7 @@ extension Styles {
         for child in node.children {
             switch child.kind {
             case .text: result += whitespace.collapse(child.text, isAfterSpace: &isAfterSpace)
-            case .element where child.name == "txt": return nil
+            case .element where Markup.inline.contains(child.name): return nil
             case .element, .fragment: continue
             }
         }
@@ -260,14 +260,7 @@ extension Styles {
     static func attributedString(_ node: Node, base: TextBase = TextBase()) -> AttributedString {
         let span = Span(root: node.attributes, base: base)
         let whitespace = Whitespace(node.attributes["whitespace"]?.string)
-        guard let source = markdown(node) else {
-            var isAfterSpace = true
-            var result = runs(node, span, whitespace: whitespace, isAfterSpace: &isAfterSpace)
-            if whitespace != .pre, let last = result.characters.indices.last, result.characters[last] == " " {
-                result.characters.remove(at: last)
-            }
-            return result
-        }
+        guard let source = markdown(node) else { return flow(node.children, span, whitespace: whitespace) }
         var parsed =
             (try? AttributedString(
                 markdown: whitespace.collapsed(source), options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
@@ -284,15 +277,32 @@ extension Styles {
         }
     }
 
-    private static func runs(_ node: Node, _ span: Span, whitespace: Whitespace, isAfterSpace: inout Bool) -> AttributedString {
+    static func flow(_ children: Array<Node>, _ span: Span, whitespace: Whitespace) -> AttributedString {
+        var isAfterSpace = true
+        var result = runs(children, span, whitespace: whitespace, isAfterSpace: &isAfterSpace)
+        if whitespace == .pre {
+            while result.characters.last?.isNewline == true { result.characters.removeLast() }
+        } else if result.characters.last == " " {
+            result.characters.removeLast()
+        }
+        return result
+    }
+
+    private static func runs(
+        _ children: Array<Node>, _ span: Span, whitespace: Whitespace, isAfterSpace: inout Bool
+    ) -> AttributedString {
         var result = AttributedString()
-        for child in node.children {
+        for child in children {
             switch child.kind {
             case .text:
                 result.append(AttributedString(whitespace.collapse(child.text, isAfterSpace: &isAfterSpace), attributes: span.container))
-            case .element where child.name == "txt":
-                let nested = child.attributes["whitespace"].map { Whitespace($0.string) } ?? whitespace
-                result.append(runs(child, span.merged(child.attributes), whitespace: nested, isAfterSpace: &isAfterSpace))
+            case .element where child.name == "br":
+                result.append(AttributedString("\n", attributes: span.container))
+                isAfterSpace = true
+            case .element where Markup.inline.contains(child.name):
+                let attributes = Markup.attributes(of: child)
+                let nested = attributes["whitespace"].map { Whitespace($0.string) } ?? whitespace
+                result.append(runs(child.children, span.merged(attributes), whitespace: nested, isAfterSpace: &isAfterSpace))
             case .element, .fragment:
                 continue
             }

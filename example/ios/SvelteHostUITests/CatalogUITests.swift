@@ -37,7 +37,7 @@ extension SvelteHostUITests {
         if let end {
             XCTAssertEqual(opened, end - start, "Opened \(seen[start...])")
         } else {
-            XCTAssertEqual(seen.count, 96, "Found \(seen)")
+            XCTAssertEqual(seen.count, 97, "Found \(seen)")
             XCTAssertEqual(opened, seen.count - start)
         }
     }

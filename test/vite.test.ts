@@ -15,7 +15,7 @@ import { arithmetic, resolveClasses } from "../src/tailwind/runtime.ts";
 import { parseColor } from "../src/tailwind/values.ts";
 import { tailwind } from "../src/tailwind/vite.ts";
 
-const budget = { minified: 191_000, gzipped: 59_000 };
+const budget = { minified: 191_000, gzipped: 59_250 };
 
 async function bundle(
   options: { mode?: string; entry?: string } = {},

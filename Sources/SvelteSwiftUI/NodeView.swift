@@ -174,6 +174,12 @@ enum NodeShape {
         case "stepper": return StepperControl(node: node)
         case "datepicker": return DatePickerControl(node: node)
         case "progressview": return ProgressControl(node: node)
+        case "ul", "ol": return MarkupList(node: node)
+        case "table": return MarkupTable(node: node)
+        case "img": return MarkupImage(node: node)
+        case "hr": return Divider()
+        case "br": return EmptyView()
+        case let name where Markup.inline.contains(name) || Markup.blocks.contains(name): return MarkupFlow(node: node)
         default: return CustomElement(node: node)
         }
     }

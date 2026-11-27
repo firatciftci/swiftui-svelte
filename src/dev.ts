@@ -1,6 +1,24 @@
 import { elements, modifiers } from "./known.ts";
+import { textContainers } from "./markup.ts";
 
 const warned = new Set<string>();
+export function isMarkup(name: string): boolean {
+  if (name === "txt") return false;
+  return (
+    textContainers.has(name) ||
+    [
+      "hr",
+      "img",
+      "ol",
+      "table",
+      "tbody",
+      "tfoot",
+      "thead",
+      "tr",
+      "ul",
+    ].includes(name)
+  );
+}
 
 function distance(a: string, b: string): number {
   let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
@@ -43,7 +61,7 @@ export function warnOnce(key: string, message: string): void {
 }
 
 export function checkElement(name: string): void {
-  if (Object.hasOwn(elements, name)) return;
+  if (Object.hasOwn(elements, name) || isMarkup(name)) return;
   const suggestion = closest(name, Object.keys(elements), 1);
   if (suggestion == null) return;
   warnOnce(

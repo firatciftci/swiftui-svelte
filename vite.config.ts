@@ -1,5 +1,6 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { mdsvex } from "mdsvex";
 import { defineConfig } from "vite";
 import { tailwind } from "./src/tailwind/vite.ts";
 import { swiftui } from "./src/vite.ts";
@@ -11,7 +12,8 @@ export default defineConfig({
       outdir: "./example/src/paraglide",
       strategy: ["preferredLanguage", "baseLocale"],
     }),
-    svelte(),
+    mdsvex({ extensions: [".md"] }),
+    svelte({ extensions: [".svelte", ".md"] }),
     tailwind({ css: "example/src/app.css", sources: ["example/src"] }),
     swiftui({
       entry: "example/src/main.ts",

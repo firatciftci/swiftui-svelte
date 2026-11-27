@@ -167,6 +167,7 @@
     "eslint-plugin-sonarjs": "^4.2.2",
     "eslint-plugin-svelte": "^3.24.1",
     "knip": "^6.48.0",
+    "mdsvex": "^1.1.0",
     "oxfmt": "0.79.0",
     "postcss": "8.5.33",
     "publint": "^0.3.25",

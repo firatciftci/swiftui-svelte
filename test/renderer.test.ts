@@ -636,6 +636,7 @@ describe("slots", () => {
           #text "Badge "
           <overlay alignment="topTrailing">
             <sfsymbol name="circle.fill">
+          #text " "
           <background>
             <zstack>"
     `);

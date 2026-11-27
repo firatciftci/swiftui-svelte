@@ -1,5 +1,6 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { mdsvex } from "mdsvex";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 import { appAliases, routesModule, routesModuleId } from "./src/routes.ts";
@@ -15,7 +16,8 @@ export default defineConfig({
       outdir: "./example/src/paraglide",
       strategy: ["preferredLanguage", "baseLocale"],
     }),
-    svelte(),
+    mdsvex({ extensions: [".md"] }),
+    svelte({ extensions: [".svelte", ".md"] }),
     { name: "svelte-fixes", transform: (code, id) => fixSvelte(code, id) },
     {
       name: "swiftui-svelte-routes",
