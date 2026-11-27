@@ -11,8 +11,15 @@ xcodebuild test-without-building $project \
   -test-enumeration-format json \
   -test-enumeration-output-path build/tests.json > build/enumerate.log
 jq -r '.values[].enabledTests[].identifier | rtrimstr("()")' build/tests.json \
-  | LC_ALL=C sort \
-  | awk -v shard="$shard" -v count="$count" '(NR - 1) % count == shard - 1' > build/shard.txt
+  | awk 'NR == FNR { seconds[$2] = $1; next } { print (($0 in seconds) ? seconds[$0] : 30), $0 }' scripts/ui-test-durations.txt - \
+  | LC_ALL=C sort -k1,1nr -k2,2 \
+  | awk -v shard="$shard" -v count="$count" '
+      {
+        best = 1
+        for (i = 2; i <= count; i++) if (load[i] < load[best]) best = i
+        load[best] += $1
+        if (best == shard) print $2
+      }' > build/shard.txt
 
 echo "Shard $shard of $count runs:"
 cat build/shard.txt
