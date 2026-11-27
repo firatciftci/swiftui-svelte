@@ -148,7 +148,6 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   sheet: [
     "backgroundinteraction",
     "cornerradius",
-    "detent",
     "detents",
     "dismissible",
     "dragindicator",
@@ -223,7 +222,6 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   ],
   roundedrectangle: [
     "cornerradius",
-    "corners",
     "dash",
     "dashphase",
     "fill",
@@ -237,7 +235,6 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   unevenroundedrectangle: [
     "bottomleading",
     "bottomtrailing",
-    "corners",
     "dash",
     "dashphase",
     "fill",
@@ -273,7 +270,6 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
     "strokeborder",
   ],
   capsule: [
-    "corners",
     "dash",
     "dashphase",
     "fill",
@@ -340,7 +336,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   spacer: ["minlength"],
   divider: [],
   txt: [
-    "align",
+    "alignment",
     "baselineoffset",
     "href",
     "kerning",
@@ -451,7 +447,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   slider: ["max", "min", "onchange", "oninput", "step", "value"],
   stepper: ["max", "min", "onchange", "step", "value"],
   datepicker: ["components", "max", "min", "onchange", "value", "variant"],
-  progressview: ["total", "value"],
+  progressview: ["max", "value"],
   multidatepicker: ["max", "min", "onchange", "value"],
   colorpicker: ["onchange", "supportsopacity", "value"],
   gauge: ["current", "max", "maxlabel", "min", "minlabel", "value", "variant"],

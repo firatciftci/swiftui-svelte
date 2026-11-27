@@ -175,10 +175,6 @@ type BlendMode =
   | "luminosity"
   | "plus-lighter"
   | "plus-darker";
-type Corners = {
-  /** The corner style: `continuous` (the default) or `circular`. */
-  corners?: "continuous" | "circular";
-};
 type SymbolVariant = "fill" | "slash" | "circle" | "square" | "rectangle";
 type Edge = "top" | "bottom" | "leading" | "trailing";
 type TransitionName =
@@ -688,7 +684,7 @@ type Modifiers = {
   background?: ShapeStyle;
   /** Rounds the corners of the element to this radius in points. */
   radius?: number;
-  /** The style of the corners that `radius` rounds: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs). */
+  /** The style of the corners that `radius` rounds, and of the corners of `roundedrectangle`, `unevenroundedrectangle`, and `capsule`: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs). */
   cornerstyle?: "continuous" | "circular";
   /** The opacity of the element, from 0 (transparent) to 1 (opaque). Defaults to 1. */
   opacity?: number;
@@ -810,7 +806,7 @@ type Modifiers = {
   /** Removes accessibility traits from the element, using the same names as `a11ytraits`. */
   a11yremovetraits?: AccessibilityTrait | Array<AccessibilityTrait>;
   /** Marks the element as a heading: `true` for no specific level, or a level from `1` to `6`. */
-  a11yheading?: true | "unspecified" | 1 | 2 | 3 | 4 | 5 | 6;
+  a11yheading?: true | 1 | 2 | 3 | 4 | 5 | 6;
   /** The VoiceOver order of the element. Elements with higher priorities are visited first. */
   a11ysortpriority?: number;
   /** How the children are grouped for VoiceOver: `combine` merges them into one element, `contain` groups them under the element, and `ignore` hides them behind the element's own label. */
@@ -994,11 +990,7 @@ declare module "svelte/elements" {
       navbarbackground?: ShapeStyle;
     };
     /** A `.sheet` presented from the nearest screen, tab, or presentation for as long as it's rendered. */
-    sheet: Modifiers &
-      PresentationOptions & {
-        /** A single height: `medium` allows the medium and large heights, and `large` allows only the large height. Use `detents` to set several. */
-        detent?: "medium" | "large";
-      };
+    sheet: Modifiers & PresentationOptions;
     /** A `.fullScreenCover` presented for as long as it's rendered. */
     fullscreencover: Modifiers & {
       /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background. */
@@ -1168,29 +1160,27 @@ declare module "svelte/elements" {
     /** A `Rectangle` shape. */
     rectangle: ShapeAttributes;
     /** A `RoundedRectangle` shape. */
-    roundedrectangle: ShapeAttributes &
-      Corners & {
-        /** The corner radius in points. Defaults to 8. */
-        cornerradius?: number;
-      };
+    roundedrectangle: ShapeAttributes & {
+      /** The corner radius in points. Defaults to 8. */
+      cornerradius?: number;
+    };
     /** An `UnevenRoundedRectangle` shape, with its own radius for each corner. */
-    unevenroundedrectangle: ShapeAttributes &
-      Corners & {
-        /** The radius in points of the top leading corner. Defaults to 0. */
-        topleading?: number;
-        /** The radius in points of the top trailing corner. Defaults to 0. */
-        toptrailing?: number;
-        /** The radius in points of the bottom leading corner. Defaults to 0. */
-        bottomleading?: number;
-        /** The radius in points of the bottom trailing corner. Defaults to 0. */
-        bottomtrailing?: number;
-      };
+    unevenroundedrectangle: ShapeAttributes & {
+      /** The radius in points of the top leading corner. Defaults to 0. */
+      topleading?: number;
+      /** The radius in points of the top trailing corner. Defaults to 0. */
+      toptrailing?: number;
+      /** The radius in points of the bottom leading corner. Defaults to 0. */
+      bottomleading?: number;
+      /** The radius in points of the bottom trailing corner. Defaults to 0. */
+      bottomtrailing?: number;
+    };
     /** A `Circle` shape. */
     circleshape: ShapeAttributes;
     /** An `Ellipse` shape. */
     ellipseshape: ShapeAttributes;
     /** A `Capsule` shape, with fully rounded ends. */
-    capsule: ShapeAttributes & Corners;
+    capsule: ShapeAttributes;
     /** A `Path` shape drawn from SVG path data. */
     pathshape: ShapeAttributes & {
       /** SVG path data for the shape. Every path command is supported, including arcs. */
@@ -1320,7 +1310,7 @@ declare module "svelte/elements" {
       /** The maximum number of lines. Leave it out for no limit. */
       lines?: number;
       /** The alignment of wrapped lines: `leading`, `center`, or `trailing`. */
-      align?: "leading" | "center" | "trailing";
+      alignment?: "leading" | "center" | "trailing";
       /** Underlines the text. */
       underline?: boolean;
       /** Draws a line through the text. */
@@ -1638,12 +1628,12 @@ declare module "svelte/elements" {
       /** Runs when the user picks a date, with a `Date`. */
       onchange?: (value: Date) => void;
     };
-    /** A `ProgressView`: shows a bar filled to `value` out of `total`, or a spinner when there's no `value`. */
+    /** A `ProgressView`: shows a bar filled to `value` out of `max`, or a spinner when there's no `value`. */
     progressview: Modifiers & {
-      /** The progress so far, up to `total`. Leave it out for a spinner. */
+      /** The progress so far, up to `max`. Leave it out for a spinner. */
       value?: number;
       /** The value that means complete. Defaults to 1. */
-      total?: number;
+      max?: number;
     };
     /** A `MultiDatePicker`: a calendar where the user taps days on and off. */
     multidatepicker: Modifiers & {

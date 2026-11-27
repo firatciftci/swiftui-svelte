@@ -3,7 +3,7 @@
 </script>
 
 <vstack spacing={16} padding>
-  <progressview value={uploaded} total={10}>
+  <progressview value={uploaded} max={10}>
     <txt>{uploaded} of 10 files</txt>
   </progressview>
   <btn variant="bordered" onclick={() => (uploaded = (uploaded + 1) % 11)}>

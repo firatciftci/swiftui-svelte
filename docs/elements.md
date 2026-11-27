@@ -46,7 +46,7 @@ A few details:
 - **Menus.** A `menuview` opens a menu of its children when tapped. Its label is a `title` with an optional `symbol`, or a `label` child. Inside, use `btn`, `toggle`, `picker`, `divider`, `sectionview` (to group items, with an optional `header`), and nested `menuview` elements for submenus. A `picker` in a menu shows its options in place, and `variant="menu"` turns it into a submenu. With an `onprimaryaction` handler, a tap runs that handler and a long press opens the menu.
 - **Sliders and steppers.** A `slider` goes from `min` to `max`, which default to 0 and 1, and snaps to multiples of `step` when you set it. `oninput` fires while the user drags, and `onchange` fires when they let go. A `stepper` changes `value` by `step`, 1 by default, and stays between `min` and `max` if you set them.
 - **Dates.** A `datepicker` takes a `Date` or an ISO 8601 string for `value`, `min`, and `max`, and `onchange` receives a `Date`. `components` is `date`, `time`, or `datetime`, the default. `variant` is `automatic`, `compact`, `graphical`, or `wheel`.
-- **Progress.** A `progressview` shows a bar filled to `value` out of `total`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
+- **Progress.** A `progressview` shows a bar filled to `value` out of `max`, which defaults to 1, or a spinner when there's no `value`. Its children are its label.
 - **Attribute values.** Attributes reach Swift as JSON, so `null`, booleans, numbers, strings, arrays, and objects keep their types, and functions are never sent. A `Date` becomes an ISO 8601 string, a `BigInt` becomes a number, a `Map` becomes an object, and a `Set` becomes an array. `NaN`, `Infinity`, and `undefined` inside arrays become `null`, and `undefined` properties are dropped. An attribute set to `null` or `undefined` is removed. Where an element expects a number, a numeric string like `spacing="8"` works too. Where it expects a string, a number or boolean is converted. Where it expects a boolean (like `checked` or `animated`), the values `false`, `0`, `null`, and `"false"` are false, and anything else, including the empty string of a bare attribute, is true.
 - **Error boundaries.** `<svelte:boundary>` works as it does on the web. When a child throws while rendering or in an effect, the boundary's `failed` snippet renders in its place. That snippet uses the same elements as the rest of your app. Calling `reset` tries the children again. Errors that a boundary catches don't show the debug error overlay.
 - **Names.** `txt`, `btn`, `sfsymbol`, `imageview`, `labelview`, `linkview`, `menuview`, `formview`, `sectionview`, `progressview`, `circleshape`, `ellipseshape`, and `pathshape` have these names because `text`, `button`, `image`, `symbol`, `label`, `link`, `menu`, `form`, `section`, `progress`, `circle`, `ellipse`, and `path` are already HTML and SVG elements in `svelte/elements`, and their types can't be overridden.
@@ -123,15 +123,15 @@ The shape elements draw SwiftUI shapes, filled with the foreground style unless 
 
 `stroke` draws the outline centered on the shape's edge, so half of its width falls outside the frame. `strokeborder` draws the outline inside the edge, like SwiftUI's `strokeBorder`, which keeps it within the frame. Use `strokeborder` for panel borders and rings that must sit on exact pixels. `strokeborder` takes precedence when both are set.
 
-| Element                                  | SwiftUI                        | Attributes                                                                |
-| ---------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
-| `rectangle`                              | `Rectangle`                    |                                                                           |
-| `roundedrectangle`                       | `RoundedRectangle`             | `cornerradius`, `corners`                                                 |
-| `unevenroundedrectangle`                 | `UnevenRoundedRectangle`       | `topleading`, `toptrailing`, `bottomleading`, `bottomtrailing`, `corners` |
-| `circleshape`, `ellipseshape`, `capsule` | `Circle`, `Ellipse`, `Capsule` | `corners` (on `capsule`)                                                  |
-| `pathshape`                              | A `Path` from SVG path data    | `d`, `viewbox`                                                            |
+| Element                                  | SwiftUI                        | Attributes                                                                    |
+| ---------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `rectangle`                              | `Rectangle`                    |                                                                               |
+| `roundedrectangle`                       | `RoundedRectangle`             | `cornerradius`, `cornerstyle`                                                 |
+| `unevenroundedrectangle`                 | `UnevenRoundedRectangle`       | `topleading`, `toptrailing`, `bottomleading`, `bottomtrailing`, `cornerstyle` |
+| `circleshape`, `ellipseshape`, `capsule` | `Circle`, `Ellipse`, `Capsule` | `cornerstyle` (on `capsule`)                                                  |
+| `pathshape`                              | A `Path` from SVG path data    | `d`, `viewbox`                                                                |
 
-All of them also take `linewidth`, `linecap`, `linejoin`, `dash`, `dashphase`, and `fillrule` (`nonzero` or `evenodd`). `corners` is `continuous`, the default, or `circular`. A `pathshape` reads every SVG path command, including arcs. With a `viewbox`, it scales the path to fit its frame the way an SVG icon does; without one, it draws the path at its own coordinates.
+All of them also take `linewidth`, `linecap`, `linejoin`, `dash`, `dashphase`, and `fillrule` (`nonzero` or `evenodd`). `cornerstyle` is `continuous`, the default, or `circular`. A `pathshape` reads every SVG path command, including arcs. With a `viewbox`, it scales the path to fit its frame the way an SVG icon does; without one, it draws the path at its own coordinates.
 
 `brightness`, `colormultiply`, `blendmode`, and `compositinggroup` change how an element's colors mix with what's behind it. `brightness` is a number from -1 to 1 that lightens or darkens the element. `colormultiply` multiplies the element's colors by a color, which tints it. `blendmode` takes one of the CSS blend mode names, such as `multiply`, `screen`, or `color-dodge`. Set `compositinggroup` to blend an element's children as one layer, so the blend mode and `opacity` apply to the group rather than to each child.
 
@@ -279,7 +279,7 @@ To animate everything that one state change does to the screen, wrap the change 
 </script>
 
 <btn onclick={() => withAnimation(() => count++, "bouncy")}>Add one</btn>
-<progressview value={count} total={10} />
+<progressview value={count} max={10} />
 ```
 
 - `withAnimation` runs the callback, flushes the updates it causes right away, and sends them to SwiftUI inside an animation. Changed attributes, text, and added or removed elements all animate together. Updates that were already waiting go out first, without animation.

@@ -25,7 +25,7 @@ describe("the ESLint preset", () => {
       {
         line: 1,
         message:
-          "Unexpected use of 'document'. There's no DOM in a swiftui-svelte app. Use bind:this for element refs.",
+          "Unexpected use of 'document'. There's no DOM in a swiftui-svelte app. Use ref() for element refs.",
       },
     ]);
   });

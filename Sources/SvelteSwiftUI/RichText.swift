@@ -152,7 +152,7 @@ struct TextView: View {
 
     var body: some View {
         let attributes = node.attributes
-        let alignment = Self.alignment(attributes["align"]?.string)
+        let alignment = Self.alignment(attributes["alignment"]?.string)
         let balancing = BalancedLayout(alignment: alignment)
         Styles.text(node, base: base)
             .gated(attributes["monospaceddigit"]?.isTrue == true) { $0.monospacedDigit() }

@@ -28,7 +28,7 @@
         framealignment="leading"
         padding={{ vertical: 2 }}
       >
-        <txt linespacing={3} align="leading" lang="">{item.label}</txt>
+        <txt linespacing={3} alignment="leading" lang="">{item.label}</txt>
       </vstack>
     {/each}
   {:else if shape === "class"}

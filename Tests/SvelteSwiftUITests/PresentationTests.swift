@@ -6,7 +6,6 @@ import Testing
 struct PresentationTests {
     @Test func readsDetents() {
         #expect(Presenting.detents([:]) == [.large])
-        #expect(Presenting.detents(["detent": .string("medium")]) == [.medium, .large])
         #expect(
             Presenting.detents(["detents": .array([.string("medium"), .number(0.25), .number(300)])])
                 == [.medium, .fraction(0.25), .height(300)])

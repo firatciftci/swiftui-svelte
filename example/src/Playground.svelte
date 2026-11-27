@@ -247,7 +247,7 @@
             <sfsymbol name="plus.circle.fill" label="Increase" font="title" />
           </btn>
         </hstack>
-        <progressview value={Math.min(Math.max(count, 0), 10)} total={10} />
+        <progressview value={Math.min(Math.max(count, 0), 10)} max={10} />
         <txt font="caption" color="secondary">Running for {seconds}s</txt>
         {#if returns > 0}
           <txt font="caption" color="secondary">
@@ -792,7 +792,7 @@
           <vstack spacing={16} padding>
             <sfsymbol name="rectangle.inset.filled" font="largeTitle" />
             <txt font="title2" weight="semibold">A full-screen cover</txt>
-            <txt color="secondary" align="center">
+            <txt color="secondary" alignment="center">
               It covers the whole screen and doesn't close with a swipe.
             </txt>
             <btn variant="prominent" onclick={() => (showsCover = false)}>
@@ -996,7 +996,7 @@
             scale={cardScale}
             rotation={cardRotation}
           >
-            <txt color="white" weight="semibold" align="center" padding
+            <txt color="white" weight="semibold" alignment="center" padding
               >Double tap, long press, drag, pinch, or rotate this card</txt
             >
           </zstack>
@@ -1070,7 +1070,7 @@
         </txt>
       </vstack>
     </Inspector>
-    <Sheet detent="medium" bind:presented={showSheet}>
+    <Sheet detents={["medium", "large"]} bind:presented={showSheet}>
       <vstack spacing={16} padding>
         <sfsymbol name="sparkles" font="largeTitle" color="accent" />
         <txt font="title2" weight="semibold">Hello from a sheet</txt>

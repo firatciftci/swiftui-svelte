@@ -128,6 +128,8 @@ struct EnvironmentSnapshot: Equatable {
     static var platformName: String {
         #if os(macOS)
             "macos"
+        #elseif os(visionOS)
+            "visionos"
         #else
             "ios"
         #endif
@@ -148,14 +150,16 @@ struct EnvironmentSnapshot: Equatable {
     #endif
 
     static var idiomName: String {
-        #if os(iOS)
+        #if os(macOS)
+            "mac"
+        #else
             switch UIDevice.current.userInterfaceIdiom {
             case .pad: "pad"
             case .tv: "tv"
+            case .mac: "mac"
+            case .vision: "vision"
             default: "phone"
             }
-        #else
-            "phone"
         #endif
     }
 

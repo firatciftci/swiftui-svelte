@@ -5,7 +5,7 @@ struct ShapeElement: View {
 
     var body: some View {
         let attributes = node.attributes
-        let corners: RoundedCornerStyle = attributes["corners"]?.string == "circular" ? .circular : .continuous
+        let corners = Effects.cornerStyle(attributes["cornerstyle"])
         switch node.name {
         case "roundedrectangle":
             draw(RoundedRectangle(cornerRadius: attributes["cornerradius"]?.number ?? 8, style: corners))

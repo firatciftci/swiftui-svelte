@@ -54,7 +54,7 @@ struct EnvironmentTests {
         #expect(dictionary["verticalSizeClass"] is NSNull)
         #expect(dictionary["scenePhase"] as? String == "background")
         #expect(dictionary["platform"] as? String == EnvironmentSnapshot.platformName)
-        #expect(dictionary["idiom"] as? String == "phone")
+        #expect(dictionary["idiom"] as? String == EnvironmentSnapshot.idiomName)
         #expect(dictionary["keyboardHeight"] as? Double == 336)
         let insets = try #require(dictionary["safeAreaInsets"] as? [String: Double])
         #expect(insets == ["top": 59, "leading": 0, "bottom": 34.33, "trailing": 0])

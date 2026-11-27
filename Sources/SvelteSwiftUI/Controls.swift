@@ -123,7 +123,7 @@ struct ProgressControl: View {
 
     var body: some View {
         if let value = node.attributes["value"]?.number {
-            let total = node.attributes["total"]?.number ?? 1
+            let total = node.attributes["max"]?.number ?? 1
             if node.renderedChildren.isEmpty {
                 ProgressView(value: min(value, total), total: total)
             } else {

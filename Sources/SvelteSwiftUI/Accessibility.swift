@@ -61,7 +61,7 @@ enum Accessibility {
 
     static func heading(_ value: JSONValue?) -> AccessibilityHeadingLevel? {
         switch value {
-        case .bool(true), .string("unspecified"): .unspecified
+        case .bool(true): .unspecified
         case .number(1): .h1
         case .number(2): .h2
         case .number(3): .h3

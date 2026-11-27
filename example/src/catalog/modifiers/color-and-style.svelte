@@ -51,7 +51,7 @@
   </hstack>
   <txt ring={{ width: 2, color: "orange" }} radius={8} padding={8}>Ringed</txt>
   <txt compositinggroup opacity={0.5}>
-    <span color="red">Grouped</span> <span color="blue">spans</span>
+    <txt color="red">Grouped</txt> <txt color="blue">spans</txt>
   </txt>
   <btn variant="prominent" tint="green" controlsize="large">
     Large green button

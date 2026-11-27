@@ -335,7 +335,6 @@ A `.sheet` presented from the nearest screen, tab, or presentation for as long a
 | `cornerradius`           | `number`                                                      | The corner radius of the presentation in points.                                                                                                                                                |
 | `presentationbackground` | `ShapeStyle \| "clear" \| { glass?: "regular" \| "clear"; }`  | The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). |
 | `ondismiss`              | `() => void`                                                  | Runs when the user dismisses the presentation, so you can update your state.                                                                                                                    |
-| `detent`                 | `"medium" \| "large"`                                         | A single height: `medium` allows the medium and large heights, and `large` allows only the large height. Use `detents` to set several.                                                          |
 
 ```svelte
 <script lang="ts">
@@ -1365,7 +1364,7 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
 | Attribute         | Type                                  | Description                                                                                                                                          |
 | ----------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `lines`           | `number`                              | The maximum number of lines. Leave it out for no limit.                                                                                              |
-| `align`           | `"leading" \| "center" \| "trailing"` | The alignment of wrapped lines: `leading`, `center`, or `trailing`.                                                                                  |
+| `alignment`       | `"leading" \| "center" \| "trailing"` | The alignment of wrapped lines: `leading`, `center`, or `trailing`.                                                                                  |
 | `underline`       | `boolean`                             | Underlines the text.                                                                                                                                 |
 | `strikethrough`   | `boolean`                             | Draws a line through the text.                                                                                                                       |
 | `href`            | `string`                              | Makes the text a link that opens this URL in the browser.                                                                                            |
@@ -1864,12 +1863,12 @@ A `Stepper`: changes a number by `step` with plus and minus buttons.
 
 ### `progressview`
 
-A `ProgressView`: shows a bar filled to `value` out of `total`, or a spinner when there's no `value`.
+A `ProgressView`: shows a bar filled to `value` out of `max`, or a spinner when there's no `value`.
 
-| Attribute | Type     | Description                                                     |
-| --------- | -------- | --------------------------------------------------------------- |
-| `value`   | `number` | The progress so far, up to `total`. Leave it out for a spinner. |
-| `total`   | `number` | The value that means complete. Defaults to 1.                   |
+| Attribute | Type     | Description                                                   |
+| --------- | -------- | ------------------------------------------------------------- |
+| `value`   | `number` | The progress so far, up to `max`. Leave it out for a spinner. |
+| `max`     | `number` | The value that means complete. Defaults to 1.                 |
 
 ```svelte
 <script lang="ts">
@@ -1877,7 +1876,7 @@ A `ProgressView`: shows a bar filled to `value` out of `total`, or a spinner whe
 </script>
 
 <vstack spacing={16} padding>
-  <progressview value={uploaded} total={10}>
+  <progressview value={uploaded} max={10}>
     <txt>{uploaded} of 10 files</txt>
   </progressview>
   <btn variant="bordered" onclick={() => (uploaded = (uploaded + 1) % 11)}>
@@ -2276,7 +2275,6 @@ A `RoundedRectangle` shape.
 | `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
 | `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
 | `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
-| `corners`      | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
 | `cornerradius` | `number`                        | The corner radius in points. Defaults to 8.                                                                                             |
 
 ```svelte
@@ -2305,7 +2303,6 @@ An `UnevenRoundedRectangle` shape, with its own radius for each corner.
 | `dash`           | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
 | `dashphase`      | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
 | `fillrule`       | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
-| `corners`        | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
 | `topleading`     | `number`                        | The radius in points of the top leading corner. Defaults to 0.                                                                          |
 | `toptrailing`    | `number`                        | The radius in points of the top trailing corner. Defaults to 0.                                                                         |
 | `bottomleading`  | `number`                        | The radius in points of the bottom leading corner. Defaults to 0.                                                                       |
@@ -2386,7 +2383,6 @@ A `Capsule` shape, with fully rounded ends.
 | `dash`         | `Array<number>`                 | The lengths in points of the dashes and gaps in the outline, such as `[5, 3]`.                                                          |
 | `dashphase`    | `number`                        | The offset in points into the dash pattern where the outline starts. Defaults to 0.                                                     |
 | `fillrule`     | `"nonzero" \| "evenodd"`        | How the fill decides which areas are inside the shape: `nonzero` or `evenodd`.                                                          |
-| `corners`      | `"continuous" \| "circular"`    | The corner style: `continuous` (the default) or `circular`.                                                                             |
 
 ```svelte
 <capsule fill="green" width={160} height={44}>
@@ -2604,7 +2600,7 @@ Every element takes these attributes, except the few whose entries say they don'
 | `shadow`           | `false \| number \| Color \| { color?: Color; radius?: number; x?: number; y?: number; }` | Draws a shadow. A number sets the blur radius, and an object sets the `color`, `radius`, `x`, and `y` of the shadow in points. `false` draws no shadow, which removes the shadow that a button's label has.                                                                                              |
 | `blur`             | `number`                                                                                  | Blurs the element by this radius in points.                                                                                                                                                                                                                                                              |
 | `radius`           | `number`                                                                                  | Rounds the corners of the element to this radius in points.                                                                                                                                                                                                                                              |
-| `cornerstyle`      | `"continuous" \| "circular"`                                                              | The style of the corners that `radius` rounds: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs).                                                                                                                                                        |
+| `cornerstyle`      | `"continuous" \| "circular"`                                                              | The style of the corners that `radius` rounds, and of the corners of `roundedrectangle`, `unevenroundedrectangle`, and `capsule`: `"continuous"` (the default, Apple's smooth squircle curve) or `"circular"` (quarter-circle arcs).                                                                     |
 | `controlsize`      | `"mini" \| "small" \| "regular" \| "large" \| "extraLarge"`                               | The size of the controls inside the element: `mini`, `small`, `regular`, `large`, or `extraLarge`.                                                                                                                                                                                                       |
 
 ```svelte
@@ -2661,7 +2657,7 @@ Every element takes these attributes, except the few whose entries say they don'
   </hstack>
   <txt ring={{ width: 2, color: "orange" }} radius={8} padding={8}>Ringed</txt>
   <txt compositinggroup opacity={0.5}>
-    <span color="red">Grouped</span> <span color="blue">spans</span>
+    <txt color="red">Grouped</txt> <txt color="blue">spans</txt>
   </txt>
   <btn variant="prominent" tint="green" controlsize="large">
     Large green button
@@ -3108,25 +3104,25 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Accessibility
 
-| Attribute          | Type                                                  | Description                                                                                                                                                                          |
-| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `a11ylabel`        | `string`                                              | The label that VoiceOver reads for the element, in place of its own label.                                                                                                           |
-| `a11yvalue`        | `string \| number`                                    | The value that VoiceOver reads for the element, such as a rating.                                                                                                                    |
-| `a11yhint`         | `string`                                              | A hint that VoiceOver reads after the label, describing what happens when the user activates the element.                                                                            |
-| `a11yinputlabels`  | `Array<string>`                                       | The names that Voice Control accepts for the element, in addition to its label.                                                                                                      |
-| `a11ytraits`       | `AccessibilityTrait \| Array<AccessibilityTrait>`     | Adds accessibility traits, such as `button`, `header`, or `selected`, to the element.                                                                                                |
-| `a11yremovetraits` | `AccessibilityTrait \| Array<AccessibilityTrait>`     | Removes accessibility traits from the element, using the same names as `a11ytraits`.                                                                                                 |
-| `a11yheading`      | `true \| "unspecified" \| 1 \| 2 \| 3 \| 4 \| 5 \| 6` | Marks the element as a heading: `true` for no specific level, or a level from `1` to `6`.                                                                                            |
-| `a11ysortpriority` | `number`                                              | The VoiceOver order of the element. Elements with higher priorities are visited first.                                                                                               |
-| `a11ychildren`     | `"combine" \| "contain" \| "ignore"`                  | How the children are grouped for VoiceOver: `combine` merges them into one element, `contain` groups them under the element, and `ignore` hides them behind the element's own label. |
-| `a11yhidden`       | `boolean`                                             | Hides the element from assistive technologies.                                                                                                                                       |
-| `a11yactions`      | `Array<string>`                                       | The names of custom actions that VoiceOver lists in its Actions rotor. Each one calls `ona11yaction` with its name.                                                                  |
-| `ona11yaction`     | `(name: string) => void`                              | Runs when the user picks one of the `a11yactions` from the VoiceOver rotor, with that action's name.                                                                                 |
-| `ona11yactivate`   | `() => void`                                          | Runs when VoiceOver activates the element by default, such as with a double tap.                                                                                                     |
-| `ona11yescape`     | `() => void`                                          | Runs when the VoiceOver escape gesture is used on the element.                                                                                                                       |
-| `ona11ymagictap`   | `() => void`                                          | Runs when the VoiceOver magic tap gesture is used on the element.                                                                                                                    |
-| `ona11yadjust`     | `(direction: "increment" \| "decrement") => void`     | Runs when the VoiceOver increment or decrement gesture is used on the element, with `increment` or `decrement`.                                                                      |
-| `testid`           | `string`                                              | The accessibility identifier for UI tests. On a container, it applies to the children too, unless `a11ychildren` is `contain`.                                                       |
+| Attribute          | Type                                              | Description                                                                                                                                                                          |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `a11ylabel`        | `string`                                          | The label that VoiceOver reads for the element, in place of its own label.                                                                                                           |
+| `a11yvalue`        | `string \| number`                                | The value that VoiceOver reads for the element, such as a rating.                                                                                                                    |
+| `a11yhint`         | `string`                                          | A hint that VoiceOver reads after the label, describing what happens when the user activates the element.                                                                            |
+| `a11yinputlabels`  | `Array<string>`                                   | The names that Voice Control accepts for the element, in addition to its label.                                                                                                      |
+| `a11ytraits`       | `AccessibilityTrait \| Array<AccessibilityTrait>` | Adds accessibility traits, such as `button`, `header`, or `selected`, to the element.                                                                                                |
+| `a11yremovetraits` | `AccessibilityTrait \| Array<AccessibilityTrait>` | Removes accessibility traits from the element, using the same names as `a11ytraits`.                                                                                                 |
+| `a11yheading`      | `true \| 1 \| 2 \| 3 \| 4 \| 5 \| 6`              | Marks the element as a heading: `true` for no specific level, or a level from `1` to `6`.                                                                                            |
+| `a11ysortpriority` | `number`                                          | The VoiceOver order of the element. Elements with higher priorities are visited first.                                                                                               |
+| `a11ychildren`     | `"combine" \| "contain" \| "ignore"`              | How the children are grouped for VoiceOver: `combine` merges them into one element, `contain` groups them under the element, and `ignore` hides them behind the element's own label. |
+| `a11yhidden`       | `boolean`                                         | Hides the element from assistive technologies.                                                                                                                                       |
+| `a11yactions`      | `Array<string>`                                   | The names of custom actions that VoiceOver lists in its Actions rotor. Each one calls `ona11yaction` with its name.                                                                  |
+| `ona11yaction`     | `(name: string) => void`                          | Runs when the user picks one of the `a11yactions` from the VoiceOver rotor, with that action's name.                                                                                 |
+| `ona11yactivate`   | `() => void`                                      | Runs when VoiceOver activates the element by default, such as with a double tap.                                                                                                     |
+| `ona11yescape`     | `() => void`                                      | Runs when the VoiceOver escape gesture is used on the element.                                                                                                                       |
+| `ona11ymagictap`   | `() => void`                                      | Runs when the VoiceOver magic tap gesture is used on the element.                                                                                                                    |
+| `ona11yadjust`     | `(direction: "increment" \| "decrement") => void` | Runs when the VoiceOver increment or decrement gesture is used on the element, with `increment` or `decrement`.                                                                      |
+| `testid`           | `string`                                          | The accessibility identifier for UI tests. On a container, it applies to the children too, unless `a11ychildren` is `contain`.                                                       |
 
 ```svelte
 <script lang="ts">

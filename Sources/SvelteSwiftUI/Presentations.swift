@@ -7,9 +7,7 @@ enum Presenting {
     static let hosts: Set<String> = ["screen", "tab", "sheet", "fullscreencover", "popover", "inspector"]
 
     static func detents(_ attributes: [String: JSONValue]) -> Set<PresentationDetent> {
-        guard case let .array(items) = attributes["detents"] else {
-            return attributes["detent"]?.string == "medium" ? [.medium, .large] : [.large]
-        }
+        guard case let .array(items) = attributes["detents"] else { return [.large] }
         let detents = Set(items.compactMap(detent))
         return detents.isEmpty ? [.large] : detents
     }

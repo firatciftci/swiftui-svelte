@@ -991,7 +991,7 @@ function textAlign(raw: string): Array<Patch> {
   const alignment = alignments[raw];
   if (alignment == null)
     throw new Unsupported(`text-align: ${raw} has no native equivalent`);
-  return [{ attrs: { align: alignment }, only: ["txt"] }];
+  return [{ attrs: { alignment }, only: ["txt"] }];
 }
 
 function objectFit(raw: string): Array<Patch> | null {

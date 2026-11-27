@@ -84,7 +84,7 @@
         <Stepper bind:value={goal} min={1} max={20}>
           <txt>{m.goal_count({ count: goal })}</txt>
         </Stepper>
-        <progressview value={done} total={goal}>
+        <progressview value={done} max={goal}>
           <txt>{m.goal_progress({ done: Math.min(done, goal), goal })}</txt>
         </progressview>
       </sectionview>

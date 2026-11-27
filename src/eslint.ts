@@ -2,7 +2,7 @@ const dom = "There's no DOM in a swiftui-svelte app.";
 const alert = "Use an alert element instead.";
 
 const unavailable: Record<string, string> = {
-  document: `${dom} Use bind:this for element refs.`,
+  document: `${dom} Use ref() for element refs.`,
   Element: dom,
   HTMLElement: dom,
   Node: dom,
