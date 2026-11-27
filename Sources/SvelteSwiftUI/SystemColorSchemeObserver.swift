@@ -5,6 +5,7 @@ import SwiftUI
     import UIKit
 
     struct SystemColorSchemeObserver: UIViewRepresentable {
+        let appearance: ColorScheme?
         let onChange: (ColorScheme) -> Void
 
         func makeUIView(context _: Context) -> ScreenStyleView {
@@ -13,12 +14,18 @@ import SwiftUI
 
         func updateUIView(_ view: ScreenStyleView, context _: Context) {
             view.onChange = onChange
+            view.appearance = appearance
         }
     }
 
     final class ScreenStyleView: UIView {
         var onChange: (ColorScheme) -> Void
+        var appearance: ColorScheme? {
+            didSet { if appearance != oldValue { applyAppearance() } }
+        }
+        private weak var styledWindow: UIWindow?
         private var activation: AnyCancellable?
+        private var registration: (any UITraitChangeRegistration)?
 
         init(onChange: @escaping (ColorScheme) -> Void) {
             self.onChange = onChange
@@ -33,20 +40,40 @@ import SwiftUI
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            guard activation == nil, window != nil else { return }
+            if window !== styledWindow {
+                styledWindow?.overrideUserInterfaceStyle = .unspecified
+                styledWindow = nil
+            }
+            applyAppearance()
+            guard registration == nil, let scene = window?.windowScene else { return }
             report()
+            registration = scene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { [weak self] (_: UIWindowScene, _) in
+                self?.report()
+            }
             activation = NotificationCenter.default
                 .publisher(for: UIApplication.didBecomeActiveNotification)
                 .sink { [weak self] _ in self?.report() }
         }
 
+        private func applyAppearance() {
+            guard let window else { return }
+            styledWindow = window
+            window.overrideUserInterfaceStyle =
+                switch appearance {
+                case .light: .light
+                case .dark: .dark
+                default: .unspecified
+                }
+        }
+
         private func report() {
-            guard let screen = window?.screen else { return }
-            onChange(screen.traitCollection.userInterfaceStyle == .dark ? .dark : .light)
+            guard let scene = window?.windowScene, scene.activationState == .foregroundActive else { return }
+            onChange(scene.traitCollection.userInterfaceStyle == .dark ? .dark : .light)
         }
     }
 #else
     struct SystemColorSchemeObserver: View {
+        let appearance: ColorScheme?
         let onChange: (ColorScheme) -> Void
 
         var body: some View {

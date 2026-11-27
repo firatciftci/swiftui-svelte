@@ -80,7 +80,9 @@ public struct SvelteView: View {
                 ProgressView()
             }
         }
-        .preferredColorScheme(runtime.appearance)
+        #if !canImport(UIKit)
+            .preferredColorScheme(runtime.appearance)
+        #endif
         .overlay(alignment: .bottom) {
             #if DEBUG
                 if let error = runtime.error ?? runtime.store.error.map({ ScriptError(message: $0, frames: []) }) {
@@ -93,7 +95,7 @@ public struct SvelteView: View {
                 .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { safeAreaInsets = $0 }
                 .onGeometryChange(for: CGSize.self, of: \.size) { viewportSize = $0 }
                 .ignoresSafeArea(.keyboard)
-            SystemColorSchemeObserver { systemScheme = $0 }
+            SystemColorSchemeObserver(appearance: runtime.appearance) { systemScheme = $0 }
         }
         #if os(iOS)
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) {
