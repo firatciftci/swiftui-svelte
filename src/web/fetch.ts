@@ -718,6 +718,13 @@ const nullBodyStatuses = new Set([101, 103, 204, 205, 304]);
 const redirectStatuses = new Set([301, 302, 303, 307, 308]);
 
 type ResponseMeta = { type: ResponseType; url: string; redirected: boolean };
+type NativeResponseMeta = {
+  status: number;
+  url: string;
+  redirected: boolean;
+  headers: Array<[string, string]>;
+  type?: "opaqueredirect";
+};
 const metas = new WeakMap<ResponseShim, ResponseMeta>();
 
 export class ResponseShim extends BodyShim {
@@ -758,12 +765,7 @@ export class ResponseShim extends BodyShim {
   }
 
   static native(
-    meta: {
-      status: number;
-      url: string;
-      redirected: boolean;
-      headers: Array<[string, string]>;
-    },
+    meta: NativeResponseMeta,
     body: ByteStream | Uint8Array<ArrayBuffer> | null,
   ): ResponseShim {
     const response = Object.create(this.prototype) as ResponseShim;
@@ -780,13 +782,14 @@ export class ResponseShim extends BodyShim {
       statusText: reasons.get(meta.status) ?? "",
       headers: HeadersShim.freeze(headers),
     });
+    const isOpaque = meta.type === "opaqueredirect";
     metas.set(response, {
-      type: "basic",
+      type: meta.type ?? "basic",
       url: meta.url,
       redirected: meta.redirected,
     });
     bodies.set(response, {
-      source: nullBodyStatuses.has(meta.status) ? null : body,
+      source: isOpaque || nullBodyStatuses.has(meta.status) ? null : body,
       used: false,
       stream: null,
     });
@@ -969,12 +972,7 @@ export function createFetch(native: NativeFetchBridge) {
       body,
       (json) => {
         if (isFinished) return;
-        const meta = JSON.parse(json) as {
-          status: number;
-          url: string;
-          redirected: boolean;
-          headers: Array<[string, string]>;
-        };
+        const meta = JSON.parse(json) as NativeResponseMeta;
         const stream = new ReadableStream({
           type: "bytes",
           start(streamController) {

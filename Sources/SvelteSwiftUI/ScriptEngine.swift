@@ -62,6 +62,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         dispatchPrecondition(condition: .onQueue(queue))
         stop()
         self.environment = environment
+        network.origin = NetworkClient.origin(of: source)
         guard let context = JSContext() else {
             post(.error(ScriptError(message: "Couldn't create a JavaScript context.", frames: [])))
             return

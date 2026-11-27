@@ -71,6 +71,19 @@ struct WebAPITests {
         #expect(UserDefaults.standard.string(forKey: key) == #"{"count":"2"}"#)
     }
 
+    @Test func sendsCookiesOnlyAsTheCredentialsModeAllows() throws {
+        let api = try #require(URL(string: "https://api.example.com/v1/me"))
+        let other = try #require(URL(string: "https://other.example.com/v1/me"))
+        let origin = NetworkClient.origin(of: try #require(URL(string: "https://API.example.com:443/app.js")))
+        #expect(origin == "https://api.example.com:443")
+        #expect(NetworkClient.origin(of: try #require(URL(string: "file:///app/app.js"))) == nil)
+        #expect(NetworkClient.sendsCookies("same-origin", to: api, from: origin))
+        #expect(!NetworkClient.sendsCookies("same-origin", to: other, from: origin))
+        #expect(!NetworkClient.sendsCookies("same-origin", to: api, from: nil))
+        #expect(!NetworkClient.sendsCookies("omit", to: api, from: origin))
+        #expect(NetworkClient.sendsCookies("include", to: other, from: nil))
+    }
+
     @Test func namesURLErrorsSoAppsCanTellOfflineFromOtherFailures() {
         let refused = NetworkClient.failure(URLError(.cannotConnectToHost))
         #expect(refused["name"] as? String == "cannotConnectToHost")

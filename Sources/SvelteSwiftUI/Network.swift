@@ -17,7 +17,9 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         let onData: JSValue
         let onEnd: JSValue
         let redirect: String
+        let credentials: String
         var redirected = false
+        var isOpaqueRedirect = false
     }
 
     private struct Socket {
@@ -36,6 +38,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     private var fetchTasks: [Int: URLSessionTask] = [:]
     private var sockets: [Int: Socket] = [:]
     private var socketIDs: [Int: Int] = [:]
+    var origin: String?
 
     init(queue: DispatchQueue) {
         self.queue = queue
@@ -80,7 +83,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
             urlRequest.addValue(pair[1], forHTTPHeaderField: pair[0])
         }
         urlRequest.httpBody = body.bytes
-        urlRequest.httpShouldHandleCookies = request.credentials != "omit"
+        urlRequest.httpShouldHandleCookies = Self.sendsCookies(request.credentials, to: url, from: origin)
         urlRequest.cachePolicy =
             switch request.cache {
             case "no-store", "reload", "no-cache": .reloadIgnoringLocalCacheData
@@ -90,9 +93,25 @@ nonisolated final class NetworkClient: @unchecked Sendable {
             }
         let task = currentSession.dataTask(with: urlRequest)
         fetches[task.taskIdentifier] = Fetch(
-            id: id, onResponse: callbacks.onResponse, onData: callbacks.onData, onEnd: onEnd, redirect: request.redirect)
+            id: id, onResponse: callbacks.onResponse, onData: callbacks.onData, onEnd: onEnd, redirect: request.redirect,
+            credentials: request.credentials)
         fetchTasks[id] = task
         task.resume()
+    }
+
+    static func origin(of url: URL) -> String? {
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+            let host = url.host(percentEncoded: false)?.lowercased()
+        else { return nil }
+        return "\(scheme)://\(host):\(url.port ?? (scheme == "https" ? 443 : 80))"
+    }
+
+    static func sendsCookies(_ credentials: String, to url: URL?, from origin: String?) -> Bool {
+        switch credentials {
+        case "omit": false
+        case "include": true
+        default: origin != nil && url.flatMap(Self.origin(of:)) == origin
+        }
     }
 
     static func failure(_ error: any Error) -> [String: Any] {
@@ -182,6 +201,15 @@ nonisolated final class NetworkClient: @unchecked Sendable {
 
     func didReceive(_ response: URLResponse, task: URLSessionTask) {
         guard let fetch = fetches[task.taskIdentifier] else { return }
+        if fetch.isOpaqueRedirect {
+            let meta: [String: Any] = [
+                "status": 0, "type": "opaqueredirect", "url": task.originalRequest?.url?.absoluteString ?? "",
+                "redirected": false, "headers": Array<Array<String>>(),
+            ]
+            guard let data = try? JSONSerialization.data(withJSONObject: meta) else { return }
+            fetch.onResponse.call(withArguments: [String(bytes: data, encoding: .utf8) ?? "{}"])
+            return
+        }
         var headers: Array<Array<String>> = []
         let status: Int
         if let response = response as? HTTPURLResponse {
@@ -209,7 +237,7 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     }
 
     func didReceive(_ data: Data, task: URLSessionTask) {
-        guard let fetch = fetches[task.taskIdentifier], let context = fetch.onData.context else { return }
+        guard let fetch = fetches[task.taskIdentifier], !fetch.isOpaqueRedirect, let context = fetch.onData.context else { return }
         fetch.onData.call(withArguments: [context.bytes(data)])
     }
 
@@ -217,6 +245,8 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         guard var fetch = fetches[task.taskIdentifier] else { return request }
         switch fetch.redirect {
         case "manual":
+            fetch.isOpaqueRedirect = true
+            fetches[task.taskIdentifier] = fetch
             return nil
         case "error":
             fetches[task.taskIdentifier] = nil
@@ -227,6 +257,8 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         default:
             fetch.redirected = true
             fetches[task.taskIdentifier] = fetch
+            var request = request
+            request.httpShouldHandleCookies = Self.sendsCookies(fetch.credentials, to: request.url, from: origin)
             return request
         }
     }

@@ -496,15 +496,17 @@ __nativeFetchCancel(id)
 - `url` is an absolute `http`, `https`, or `file` URL.
 - `method` is the request method, as the bundle normalizes it.
 - `headers` is an array of `[lowercased name, value]` pairs. Repeated names are joined with `", "`, except `set-cookie`, which stays separate.
-- `redirect` is `"follow"`, `"error"`, or `"manual"`. Under `"manual"`, the host returns the redirect response itself.
-- `credentials` is `"omit"`, `"same-origin"`, or `"include"`. Cookies are sent only when it is not `"omit"`, and under `"same-origin"` only for the request's own origin.
+- `redirect` is `"follow"`, `"error"`, or `"manual"`. Under `"manual"`, the host does not follow the redirect, and it answers with an opaque redirect response, as described below.
+- `credentials` is `"omit"`, `"same-origin"`, or `"include"`. It controls whether the host sends cookies with the request and stores the cookies that the response sets. Under `"include"`, the host always does. Under `"omit"`, it never does. Under `"same-origin"`, it does only when the request's origin is the app's origin. The host must check each redirect again against the same rule.
 - `cache` is one of the fetch cache modes that the host understands.
+
+The app's origin is the origin of the bundle's source URL when the host loads the bundle over `http` or `https`, such as from a dev server or a remote bundle. A bundle that the host loads from a file has no origin, and then `"same-origin"` never matches, so only `"include"` sends cookies. Two origins match when their schemes, hosts, and ports are equal, with the default port for the scheme when the URL has none.
 
 `body` is the full request body as bytes, or `null`. The bundle buffers streamed bodies before the call, so the host never receives a stream.
 
 The host calls the callbacks in this order:
 
-1. `onResponse(metaJSON)` once, with `{ "status", "url", "redirected", "headers" }`. `headers` is an array of `[name, value]` pairs. Under `redirect: "manual"`, the status is `0` and the type is `opaqueredirect`, as it is on the web.
+1. `onResponse(metaJSON)` once, with `{ "status", "url", "redirected", "headers", "type"? }`. `headers` is an array of `[name, value]` pairs. Under `redirect: "manual"`, the status is `0` and the type is `opaqueredirect`, as it is on the web.
 2. `onData(bytes)` zero or more times, with raw `Uint8Array` chunks. A host must not send empty chunks, and it may send chunks of any size.
 3. `onEnd(null)` once on success, or `onEnd({ "message", "code"?, "name"? })` once on failure.
 

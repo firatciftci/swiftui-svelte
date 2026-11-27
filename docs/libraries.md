@@ -54,7 +54,7 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-`httpSubscriptionLink` uses the host's `EventSource`, which reconnects after a dropped connection and sends `Last-Event-ID` with each reconnect, so tracked events resume where they stopped. The host has no page, so there's no cross-site rule to apply. A subscription request sends the same cookies as any other request to that server.
+`httpSubscriptionLink` uses the host's `EventSource`, which reconnects after a dropped connection and sends `Last-Event-ID` with each reconnect, so tracked events resume where they stopped. A subscription request sends cookies only when the `EventSource` has `withCredentials: true`, which you set through the link's `eventSourceOptions`. [Web APIs](web-apis.md) explains which requests send cookies.
 
 ## oRPC
 

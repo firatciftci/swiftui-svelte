@@ -754,21 +754,31 @@ test("fetch reports HTTP errors without rejecting", async (web, server) => {
   equal(unavailable.statusText, "Service Unavailable");
 });
 
-test("fetch follows, exposes, and refuses redirects", async (web, server) => {
+test("fetch follows and refuses redirects", async (web, server) => {
   const followed = await web.fetch(`${server.http}/redirect?to=/json`);
   equal(followed.status, 200);
   equal(followed.redirected, true);
   equal(followed.url, `${server.http}/json`);
-  const manual = await web.fetch(`${server.http}/redirect?to=/json`, {
-    redirect: "manual",
-  });
-  equal(manual.status, 302);
-  equal(manual.headers.get("location"), "/json");
   await rejects(
     web.fetch(`${server.http}/redirect?to=/json`, { redirect: "error" }),
     "TypeError",
   );
 });
+
+hostTest(
+  "fetch answers redirect: manual with an opaque redirect",
+  async (web, server) => {
+    const manual = await web.fetch(`${server.http}/redirect?to=/json`, {
+      redirect: "manual",
+    });
+    equal(manual.type, "opaqueredirect");
+    equal(manual.status, 0);
+    equal(manual.ok, false);
+    equal(manual.url, `${server.http}/redirect?to=/json`);
+    equal(manual.headers.get("location"), null);
+    equal(manual.body, null);
+  },
+);
 
 test("fetch exposes response headers", async (web, server) => {
   const response = await web.fetch(`${server.http}/headers`);
@@ -946,16 +956,26 @@ test("WebSocket fires error and close when the connection fails", async (web, se
 });
 
 hostTest(
-  "fetch sends an Origin header and keeps cookies between requests",
+  "fetch sends an Origin header and sends cookies only when credentials allow them",
   async (web, server) => {
-    const cookie = await web.fetch(`${server.http}/cookie`);
+    const cookie = await web.fetch(`${server.http}/cookie`, {
+      credentials: "include",
+    });
     await cookie.text();
-    const response = await web.fetch(`${server.http}/echo`, {
+    const echo = async (init: RequestInit): Promise<Record<string, string>> => {
+      const response = await web.fetch(`${server.http}/echo`, init);
+      return ((await response.json()) as { headers: Record<string, string> })
+        .headers;
+    };
+    const included = await echo({
+      credentials: "include",
       headers: { Origin: "https://app.example" },
     });
-    const echo = (await response.json()) as { headers: Record<string, string> };
-    equal(echo.headers.origin, "https://app.example");
-    equal(echo.headers.cookie, "swiftui_test=kept");
+    equal(included.origin, "https://app.example");
+    equal(included.cookie, "swiftui_test=kept");
+    equal((await echo({})).cookie, undefined);
+    equal((await echo({ credentials: "same-origin" })).cookie, undefined);
+    equal((await echo({ credentials: "omit" })).cookie, undefined);
   },
 );
 
