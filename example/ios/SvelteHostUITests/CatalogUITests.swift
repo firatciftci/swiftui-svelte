@@ -1,42 +1,74 @@
 import XCTest
 
 extension SvelteHostUITests {
-    func testOpensEveryCatalogExample() {
+    func testOpensTheFirstHalfOfTheCatalog() {
+        openCatalog(from: 0, to: 48)
+    }
+
+    func testOpensTheSecondHalfOfTheCatalog() {
+        openCatalog(from: 48)
+    }
+
+    private func openCatalog(from start: Int, to end: Int? = nil) {
         tab("Catalog")
-        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'catalog-' AND identifier != 'catalog-close'"))
-        waitFor(rows.firstMatch)
-        let bar = app.tabBars.firstMatch
-        let covered = bar.exists ? bar.frame : .null
-        var opened = Set<String>()
+        waitFor(app.navigationBars["Catalog"])
+        var seen: Array<String> = []
+        var opened = 0
         var stalled = 0
-        while stalled < 2 {
-            let next = rows.allElementsBoundByIndex.first {
-                !opened.contains($0.identifier) && $0.isHittable && !$0.frame.intersects(covered)
-            }
-            guard let next else {
-                let before = rows.allElementsBoundByIndex.map(\.identifier)
+        while stalled < 2, end.map({ seen.count < $0 }) ?? true {
+            let visible = visibleCatalogRows()
+            let fresh = visible.filter { !seen.contains($0) }
+            guard !fresh.isEmpty else {
                 let window = app.windows.firstMatch
                 window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
                     .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
-                stalled = rows.allElementsBoundByIndex.map(\.identifier) == before ? stalled + 1 : 0
+                stalled = visibleCatalogRows() == visible ? stalled + 1 : 0
                 continue
             }
             stalled = 0
-            let identifier = next.identifier
-            opened.insert(identifier)
-            next.tap()
-            open(identifier)
+            for identifier in fresh {
+                seen.append(identifier)
+                guard seen.count > start, end.map({ seen.count <= $0 }) ?? true else { continue }
+                app.buttons[identifier].tap()
+                open(identifier)
+                opened += 1
+            }
         }
-        XCTAssertEqual(opened.count, 96, "Opened \(opened.sorted())")
+        if let end {
+            XCTAssertEqual(opened, end - start, "Opened \(seen[start...])")
+        } else {
+            XCTAssertEqual(seen.count, 96, "Found \(seen)")
+            XCTAssertEqual(opened, seen.count - start)
+        }
+    }
+
+    private func visibleCatalogRows() -> Array<String> {
+        guard let root = try? app.snapshot() else { return [] }
+        var rows: Array<(identifier: String, frame: CGRect)> = []
+        var bars: Array<CGRect> = []
+        var pending = [root]
+        while let node = pending.popLast() {
+            switch node.elementType {
+            case .navigationBar, .tabBar:
+                bars.append(node.frame)
+            case .button where node.identifier.hasPrefix("catalog-") && node.identifier != "catalog-close":
+                rows.append((node.identifier, node.frame))
+            default:
+                break
+            }
+            pending.append(contentsOf: node.children)
+        }
+        return
+            rows
+            .filter { row in root.frame.contains(row.frame) && !bars.contains { $0.intersects(row.frame) } }
+            .sorted { $0.frame.minY < $1.frame.minY }
+            .map(\.identifier)
     }
 
     private func open(_ identifier: String) {
         let close = app.buttons["catalog-close"]
         let back = app.navigationBars.buttons["Catalog"]
-        let shown = NSPredicate { _, _ in close.exists || back.exists }
-        expectation(for: shown, evaluatedWith: nil)
-        waitForExpectations(timeout: 5)
-        XCTAssertTrue(close.exists || back.exists, "\(identifier) didn't open")
+        XCTAssertTrue(soon { close.exists || back.exists }, "\(identifier) didn't open")
         XCTAssertFalse(
             app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'Unknown element'")).firstMatch.exists,
             "\(identifier) has an unknown element")
@@ -45,6 +77,15 @@ extension SvelteHostUITests {
         } else {
             back.tap()
         }
-        XCTAssertTrue(app.navigationBars["Catalog"].waitForExistence(timeout: 5), "\(identifier) didn't close")
+        XCTAssertTrue(app.navigationBars["Catalog"].appears(), "\(identifier) didn't close")
+    }
+
+    private func soon(_ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition() {
+            guard Date() < deadline else { return false }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+        return true
     }
 }
