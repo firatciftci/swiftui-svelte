@@ -30,6 +30,18 @@ enum Styles {
         return font(attributes["font"]?.string)
     }
 
+    static func font(_ attributes: [String: JSONValue], inheriting base: TextBase) -> Font? {
+        guard attributes["fontname"]?.string == nil, base.fontName != nil,
+            attributes["size"]?.number != nil || attributes["font"]?.string != nil
+        else { return font(attributes) }
+        let merged = base.merged(attributes)
+        var inherited: [String: JSONValue] = ["fontname": .string(merged.fontName ?? "")]
+        if let size = merged.size { inherited["size"] = .number(size) }
+        if let style = merged.font { inherited["font"] = .string(style) }
+        if !merged.fontFallbacks.isEmpty { inherited["fontfallbacks"] = .array(merged.fontFallbacks.map(JSONValue.string)) }
+        return font(inherited)
+    }
+
     static func names(_ value: JSONValue?) -> Array<String> {
         guard case let .array(values)? = value else { return [] }
         return values.compactMap(\.string)

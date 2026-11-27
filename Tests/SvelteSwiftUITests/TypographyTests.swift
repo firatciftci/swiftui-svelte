@@ -61,6 +61,18 @@ struct TypographyTests {
         #expect(try #require(run(string, "Title")).swiftUI.font == .title)
     }
 
+    @Test func keepsTheInheritedFontNameWhenAContainerSetsOnlyASize() {
+        var base = TextBase()
+        base.fontName = "Georgia"
+        base.size = 16
+        #expect(Styles.font(["size": .number(24)], inheriting: base) == .custom("Georgia", fixedSize: 24))
+        #expect(
+            Styles.font(["size": .number(24), "fontname": .string("Georgia-Bold")], inheriting: base)
+                == .custom("Georgia-Bold", fixedSize: 24))
+        #expect(Styles.font(["weight": .string("bold")], inheriting: base) == nil)
+        #expect(Styles.font(["size": .number(24)], inheriting: TextBase()) == .system(size: 24))
+    }
+
     @Test func cascadesFallbackFontsInOrder() {
         let descriptor = Fonts.descriptor("Georgia", size: 20, fallbacks: ["GeezaPro", "Papyrus"])
         let cascade = descriptor.fontAttributes[.cascadeList] as? Array<PlatformFontDescriptor>

@@ -302,10 +302,11 @@ private struct RowTraits: ViewModifier {
 
 private struct Typography: ViewModifier {
     let attributes: [String: JSONValue]
+    @Environment(\.textBase) private var textBase
 
     func body(content: Content) -> some View {
         content
-            .ifLet(Styles.font(attributes)) { $0.font($1) }
+            .ifLet(Styles.font(attributes, inheriting: textBase)) { $0.font($1) }
             .gated(TextBase.keys.contains { (attributes[$0] ?? .null) != .null }) { view in
                 view.transformEnvironment(\.textBase) { $0 = $0.merged(attributes) }
             }
