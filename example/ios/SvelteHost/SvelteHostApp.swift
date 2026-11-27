@@ -25,11 +25,11 @@ struct SvelteHostApp: App {
         #endif
     }
 
-    private static var props: [String: Any] {
+    private static var props: [String: JSONValue] {
         #if DEBUG
             let arguments = ProcessInfo.processInfo.arguments
             if let index = arguments.firstIndex(of: "-catalog"), arguments.indices.contains(index + 1) {
-                return ["catalog": arguments[index + 1]]
+                return ["catalog": .string(arguments[index + 1])]
             }
         #endif
         return [:]

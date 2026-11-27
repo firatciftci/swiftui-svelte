@@ -78,6 +78,7 @@ export function onBackground(listener: () => void): Unsubscribe {
   return subscribe(phases.get("background"), listener);
 }
 
+/** Runs when iOS warns that the app is using too much memory. @platform ios */
 export function onMemoryWarning(listener: () => void): Unsubscribe {
   return subscribe(memoryWarnings, listener);
 }

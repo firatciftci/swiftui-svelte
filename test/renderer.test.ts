@@ -199,6 +199,34 @@ describe("props and actions", () => {
       ),
     ).toThrow('No component named "Missing". Pass it to mountApp().');
   });
+
+  it("doesn't mount when the host doesn't support the bundle's protocol", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal("__nativeProtocols", [protocol + 1]);
+    try {
+      unmount = mountComponent(Greeting, { name: "Ada" });
+      await update(() => {});
+      expect(native.root?.children).toEqual([]);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          `This bundle uses bridge protocol ${protocol}, but the app's SvelteSwiftUI package supports protocol ${protocol + 1}.`,
+        ),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+      warn.mockRestore();
+    }
+  });
+
+  it("mounts when the host lists the bundle's protocol", async () => {
+    vi.stubGlobal("__nativeProtocols", [protocol]);
+    try {
+      await render(Greeting, { name: "Ada" });
+      expect(text()).toContain("Ada");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 describe("events", () => {

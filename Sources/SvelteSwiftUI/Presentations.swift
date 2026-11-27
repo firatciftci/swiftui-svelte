@@ -16,17 +16,15 @@ enum Presenting {
         switch value {
         case .string("medium"): .medium
         case .string("large"): .large
-        case let .number(size) where size > 0 && size <= 1: .fraction(size)
-        case let .number(size) where size > 1: .height(size)
+        case let .object(options):
+            if let fraction = options["fraction"]?.number, fraction > 0, fraction <= 1 {
+                .fraction(fraction)
+            } else if let points = options["points"]?.number, points > 0 {
+                .height(points)
+            } else {
+                nil
+            }
         default: nil
-        }
-    }
-
-    static func dragIndicator(_ name: String?) -> Visibility {
-        switch name {
-        case "visible": .visible
-        case "hidden": .hidden
-        default: .automatic
         }
     }
 
@@ -47,14 +45,6 @@ enum Presenting {
         case "sheet": .sheet
         case "fullScreenCover": .fullScreenCover
         default: nil
-        }
-    }
-
-    static func titleVisibility(_ name: String?) -> Visibility {
-        switch name {
-        case "visible": .visible
-        case "hidden": .hidden
-        default: .automatic
         }
     }
 
@@ -118,7 +108,7 @@ struct Presentations: ViewModifier {
             .confirmationDialog(
                 dialog?.attributes["title"]?.string ?? "",
                 isPresented: isPresented("confirmationdialog"),
-                titleVisibility: Presenting.titleVisibility(dialog?.attributes["titlevisibility"]?.string),
+                titleVisibility: Bars.visibility(dialog?.attributes["titlevisibility"]) ?? .automatic,
                 presenting: dialog
             ) { dialog in
                 ForEach(dialog.renderedChildren.filter { $0.name == "btn" }) { ActionButton(node: $0) }
@@ -179,7 +169,7 @@ private struct SheetOptions: ViewModifier {
         let attributes = node.attributes
         content
             .presentationDetents(Presenting.detents(attributes))
-            .presentationDragIndicator(Presenting.dragIndicator(attributes["dragindicator"]?.string))
+            .presentationDragIndicator(Bars.visibility(attributes["dragindicator"]) ?? .automatic)
             .presentationBackgroundInteraction(Presenting.backgroundInteraction(attributes["backgroundinteraction"]))
             .interactiveDismissDisabled(attributes["dismissible"].map { !$0.isTrue } ?? false)
             .ifLet(attributes["cornerradius"]?.number) { $0.presentationCornerRadius($1) }

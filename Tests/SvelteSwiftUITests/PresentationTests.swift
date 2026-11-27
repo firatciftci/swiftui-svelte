@@ -7,19 +7,23 @@ struct PresentationTests {
     @Test func readsDetents() {
         #expect(Presenting.detents([:]) == [.large])
         #expect(
-            Presenting.detents(["detents": .array([.string("medium"), .number(0.25), .number(300)])])
+            Presenting.detents([
+                "detents": .array([.string("medium"), .object(["fraction": .number(0.25)]), .object(["points": .number(300)])])
+            ])
                 == [.medium, .fraction(0.25), .height(300)])
-        #expect(Presenting.detents(["detents": .array([.string("tiny"), .number(-1)])]) == [.large])
-        #expect(Presenting.detent(.number(1)) == .fraction(1))
-        #expect(Presenting.detent(.number(0)) == nil)
+        #expect(Presenting.detents(["detents": .array([.string("tiny"), .number(0.5), .object(["points": .number(-1)])])]) == [.large])
+        #expect(Presenting.detent(.object(["fraction": .number(1)])) == .fraction(1))
+        #expect(Presenting.detent(.object(["points": .number(1)])) == .height(1))
+        #expect(Presenting.detent(.object(["fraction": .number(1.5)])) == nil)
+        #expect(Presenting.detent(.object(["fraction": .number(0)])) == nil)
     }
 
     @Test func readsVisibilityOptions() {
-        #expect(Presenting.dragIndicator("visible") == .visible)
-        #expect(Presenting.dragIndicator("hidden") == .hidden)
-        #expect(Presenting.dragIndicator(nil) == .automatic)
-        #expect(Presenting.titleVisibility("visible") == .visible)
-        #expect(Presenting.titleVisibility("bogus") == .automatic)
+        #expect(Bars.visibility(.string("visible")) == .visible)
+        #expect(Bars.visibility(.bool(false)) == .hidden)
+        #expect(Bars.visibility(.string("automatic")) == .automatic)
+        #expect(Bars.visibility(.string("bogus")) == nil)
+        #expect(Bars.visibility(nil) == nil)
     }
 
     @Test func readsBackgroundInteraction() {

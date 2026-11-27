@@ -127,6 +127,7 @@ async function typed<T>(
 
 type ImpactStyle = "light" | "medium" | "heavy" | "soft" | "rigid";
 
+/** Haptic feedback, using the names of UIKit's feedback generators. @platform ios */
 export const haptics = {
   async impact(
     options: { style?: ImpactStyle; intensity?: number } = {},

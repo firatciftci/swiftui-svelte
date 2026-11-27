@@ -56,7 +56,7 @@ declare module "swiftui-svelte/native" {
 
 | Export          | What it does                                                                                                                                                                                    |
 | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `haptics`       | `impact({ style, intensity })`, `notification(type)`, and `selection()` play haptics                                                                                                            |
+| `haptics`       | `impact({ style, intensity })`, `notification(type)`, and `selection()` play haptics. The styles and types use the names of UIKit's feedback generators                                         |
 | `clipboard`     | `readText()`, `writeText(text)`, and `hasText()`. iOS asks the user before an app reads text that another app copied                                                                            |
 | `share`         | `share({ text, url, subject })` opens the share sheet and resolves with `{ completed }`                                                                                                         |
 | `links`         | `open(url)` opens a URL in the app that handles it, and `canOpen(url)` checks whether an app can                                                                                                |
@@ -77,7 +77,7 @@ let map = NativeComponent("mapview") { element in
 SvelteView(source: bundle, components: [map])
 ```
 
-`element` reads attributes with `string`, `number`, `bool`, `value`, and `decode(_:_:)`. It renders the element's children with `children`, or one named child with `slot(name)`, and it sends events to `on<event>` handlers with `send`. The view updates when an attribute changes, and modifiers like `padding` and `frame` still apply. To type the element in Svelte, add it to `SvelteHTMLElements` with the `NativeElement` helper:
+`element` reads attributes with `string`, `number`, `bool`, `value`, which returns the attribute as a `JSONValue`, and `decode(_:_:)`. It renders the element's children with `children`, or one named child with `slot(name)`, and it sends events to `on<event>` handlers with `send`. The view updates when an attribute changes, and modifiers like `padding` and `frame` still apply. To type the element in Svelte, add it to `SvelteHTMLElements` with the `NativeElement` helper:
 
 ```ts
 import type { NativeElement } from "swiftui-svelte/elements";

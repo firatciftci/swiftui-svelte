@@ -125,7 +125,7 @@
 <Popover
   bind:presented={isPopoverPresented}
   adaptation="popover"
-  detents={[0.3, 200]}
+  detents={[{ fraction: 0.3 }, { points: 200 }]}
 >
   <txt>Popover</txt>
 </Popover>

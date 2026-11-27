@@ -1,6 +1,7 @@
 import type { HostEnvironment } from "./web/environment.ts";
 export type { SvelteHTMLElements } from "svelte/elements";
 
+/** An Apple text style, which scales with Dynamic Type. @platform ios */
 type Font =
   | "largeTitle"
   | "title"
@@ -43,6 +44,7 @@ type NamedColor =
   | "white"
   | "black"
   | "clear";
+/** A system color, named as in UIKit, that adapts to light and dark mode and to Increase Contrast. @platform ios */
 type SystemColor =
   | "systemBackground"
   | "secondarySystemBackground"
@@ -298,7 +300,7 @@ export type ScrollGeometry = {
   contentHeight: number;
 };
 type ScrollOptions = {
-  /** Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them. */
+  /** Whether the scroll indicators show: `automatic`, `visible`, `hidden`, or `never`, or a boolean where `false` hides them. `hidden` hides them where the system allows it, and `never` hides them even where the system would otherwise show them. */
   indicators?: boolean | "automatic" | "visible" | "hidden" | "never";
   /** When the content bounces past its edges: `automatic`, `always`, or `basedOnSize`, which bounces only when the content is larger than the view. */
   bounce?: "automatic" | "always" | "basedOnSize";
@@ -374,7 +376,7 @@ type TextInput = Modifiers & {
   placeholdercolor?: ShapeStyle;
   /** Whether the field has keyboard focus. Use `bind:focused` with the `TextField` component to bind it. */
   focused?: boolean;
-  /** The keyboard to show, such as `email`, `url`, `number`, `decimal`, or `phone`. */
+  /** The keyboard to show, such as `email`, `url`, `number`, `decimal`, or `phone`. @platform ios */
   keyboard?:
     | "default"
     | "ascii"
@@ -388,7 +390,7 @@ type TextInput = Modifiers & {
     | "twitter"
     | "webSearch"
     | "asciiNumber";
-  /** What the text is, such as `email`, `username`, `password`, or `oneTimeCode`, so iOS can offer AutoFill and saved passwords. */
+  /** What the text is, such as `email`, `username`, `password`, or `oneTimeCode`, so iOS can offer AutoFill and saved passwords. @platform ios */
   contenttype?:
     | "name"
     | "givenName"
@@ -459,7 +461,18 @@ type ToolbarPlacement =
   | "cancellationAction"
   | "destructiveAction"
   | "automatic";
-type Detent = "medium" | "large" | number;
+/** A height a presentation can rest at: `medium`, `large`, `{ fraction }` for a fraction of the screen such as `{ fraction: 0.25 }`, or `{ points }` for a fixed height such as `{ points: 300 }`. @platform ios */
+type Detent =
+  | "medium"
+  | "large"
+  | {
+      /** The height as a fraction of the screen, from 0 to 1. */
+      fraction: number;
+    }
+  | {
+      /** The height in points. */
+      points: number;
+    };
 type ColumnWidth = number | { min?: number; ideal?: number; max?: number };
 type SplitVisibility = "automatic" | "all" | "doubleColumn" | "detailOnly";
 type SplitColumn = "sidebar" | "content" | "detail";
@@ -471,7 +484,7 @@ export type SearchToken =
       id?: string | number;
       /** The text shown on the token. */
       label: string;
-      /** The SF Symbol name shown on the token. */
+      /** The SF Symbol name shown on the token. @platform ios */
       symbol?: string;
     };
 /** A scope button for a `searchable` field: a string, or an object with a `value` and an optional `title`. */
@@ -484,13 +497,13 @@ export type SearchScope =
       title?: string;
     };
 type PresentationOptions = {
-  /** The heights the user can drag the presentation to: `medium`, `large`, a fraction of the screen such as `0.25`, or a height in points such as `300`. Defaults to `large`. */
+  /** The heights the user can drag the presentation to: `medium`, `large`, `{ fraction }` such as `{ fraction: 0.25 }`, or `{ points }` such as `{ points: 300 }`. Defaults to `large`. @platform ios */
   detents?: Array<Detent>;
-  /** Shows the drag handle at the top: `visible`, `hidden`, or `automatic`. */
-  dragindicator?: "automatic" | "visible" | "hidden";
+  /** Shows the drag handle at the top: `visible`, `hidden`, or `automatic`, or a boolean. @platform ios */
+  dragindicator?: BarVisibility;
   /** Whether the user can dismiss the presentation by swiping it away. Set it to `false` to keep it open. */
   dismissible?: boolean;
-  /** Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `0.25` to allow it only up to that height. */
+  /** Whether the user can use the content behind the presentation: `true`, `false`, or a detent such as `{ fraction: 0.25 }` to allow it only up to that height. */
   backgroundinteraction?:
     | boolean
     | "automatic"
@@ -499,7 +512,7 @@ type PresentationOptions = {
     | Detent;
   /** The corner radius of the presentation in points. */
   cornerradius?: number;
-  /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). */
+  /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background (`regular` or `clear` on iOS 26, and a material before that). @platform ios */
   presentationbackground?:
     | ShapeStyle
     | "clear"
@@ -523,7 +536,6 @@ type ClipShape =
   | "capsule"
   | "ellipse"
   | number
-  | { cornerradius: number }
   | {
       /** The radius in points of the top leading corner. */
       topleading?: number;
@@ -662,9 +674,9 @@ type Modifiers = {
   balanced?: boolean;
   /** The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element. */
   font?: Font;
-  /** The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style. */
+  /** The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style. @platform ios */
   fontname?: string;
-  /** PostScript names of fonts to try, in order, for characters that `fontname` doesn't have, such as an Arabic font for Arabic text. Each fallback is used when the font before it lacks the character. */
+  /** PostScript names of fonts to try, in order, for characters that `fontname` doesn't have, such as an Arabic font for Arabic text. Each fallback is used when the font before it lacks the character. @platform ios */
   fontfallbacks?: Array<string>;
   /** A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. */
   size?: number;
@@ -733,7 +745,7 @@ type Modifiers = {
   /** The priority the element has when its parent doesn't have room for every child. Higher values keep their size first. */
   layoutpriority?: number;
   /** Whether the element responds to touches and the pointer. Set it to `false` to let touches pass through it to the views behind. */
-  allowshittesting?: boolean;
+  hittestable?: boolean;
   /** Moves the element by `{ x, y }` points without changing the layout around it. */
   offset?: Point;
   /** Places the element's center at `{ x, y }` points in its parent's coordinate space. */
@@ -887,15 +899,15 @@ type Modifiers = {
   lang?: string;
   /** The layout direction of the element and everything inside it: `ltr` or `rtl`. */
   dir?: "ltr" | "rtl";
-  /** The haptic feedback to play each time `feedbacktrigger` changes: a name such as `success` or `impact`, or an object describing an impact. */
+  /** The haptic feedback to play each time `feedbacktrigger` changes: a name such as `success` or `impact`, or an object describing an impact. @platform ios */
   sensoryfeedback?: SensoryFeedback;
-  /** The value to watch for `sensoryfeedback`. Feedback plays each time it changes. */
+  /** The value to watch for `sensoryfeedback`. Feedback plays each time it changes. @platform ios */
   feedbacktrigger?: unknown;
   /** Forces `light` or `dark` mode on the element and everything inside it. */
   colorscheme?: "light" | "dark";
   /** Asks the window, sheet, or popover that contains the element to use `light` or `dark` mode. */
   preferredcolorscheme?: "light" | "dark";
-  /** Pins the Dynamic Type size, such as `xLarge`, or keeps it within `{ min, max }`. */
+  /** Pins the Dynamic Type size, such as `xLarge`, or keeps it within `{ min, max }`. @platform ios */
   dynamictypesize?:
     | DynamicTypeSize
     | {
@@ -904,7 +916,7 @@ type Modifiers = {
         /** The largest Dynamic Type size. */
         max?: DynamicTypeSize;
       };
-  /** Draws Liquid Glass behind the element on iOS 26 and later, in a capsule unless a `shape` is set. Earlier versions draw the element without glass. */
+  /** Draws Liquid Glass behind the element on iOS 26 and later, in a capsule unless a `shape` is set. Earlier versions draw the element without glass. @platform ios */
   glasseffect?:
     | boolean
     | "regular"
@@ -920,11 +932,11 @@ type Modifiers = {
         /** The shape of the glass, using the same values as `clipshape`. */
         shape?: ClipShape;
       };
-  /** Identifies a glass shape inside a `glasseffectcontainer`, so one shape can morph into another as elements appear and disappear. */
+  /** Identifies a glass shape inside a `glasseffectcontainer`, so one shape can morph into another as elements appear and disappear. @platform ios */
   glassid?: string | number;
-  /** Groups elements inside a `glasseffectcontainer` so that they share one glass shape. */
+  /** Groups elements inside a `glasseffectcontainer` so that they share one glass shape. @platform ios */
   glassunion?: string | number;
-  /** Whether scrolling hides the keyboard: `automatic`, `immediately`, `interactively`, or `never`. */
+  /** Whether scrolling hides the keyboard: `automatic`, `immediately`, `interactively`, or `never`. @platform ios */
   scrolldismisseskeyboard?:
     | "automatic"
     | "immediately"
@@ -963,7 +975,7 @@ declare module "svelte/elements" {
       visibility?: SplitVisibility;
       /** Runs when SwiftUI or the user changes the column visibility, with the new value. */
       onvisibilitychange?: (visibility: SplitVisibility) => void;
-      /** The column that shows on iPhone, where the columns collapse into a stack: `sidebar`, `content`, or `detail`. */
+      /** The column that shows on iPhone, where the columns collapse into a stack: `sidebar`, `content`, or `detail`. @platform ios */
       compactcolumn?: SplitColumn;
       /** Runs when the user goes back to another column on iPhone, with the column they went back to. */
       oncompactcolumnchange?: (column: SplitColumn) => void;
@@ -993,7 +1005,7 @@ declare module "svelte/elements" {
     sheet: Modifiers & PresentationOptions;
     /** A `.fullScreenCover` presented for as long as it's rendered. */
     fullscreencover: Modifiers & {
-      /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background. */
+      /** The background behind the content: a color, material, or gradient, `clear` for none, or `{ glass }` for a Liquid Glass background. @platform ios */
       presentationbackground?: PresentationOptions["presentationbackground"];
       /** Whether the user can dismiss the cover. */
       dismissible?: boolean;
@@ -1005,7 +1017,7 @@ declare module "svelte/elements" {
       PresentationOptions & {
         /** The edge of the anchor that the arrow points from: `top`, `bottom`, `leading`, or `trailing`. */
         arrowedge?: Edge;
-        /** How the popover adapts on iPhone, where it opens as a sheet by default: `automatic`, `none`, `popover`, `sheet`, or `fullScreenCover`. */
+        /** How the popover adapts on iPhone, where it opens as a sheet by default: `automatic`, `none`, `popover`, `sheet`, or `fullScreenCover`. @platform ios */
         adaptation?:
           | "automatic"
           | "none"
@@ -1030,8 +1042,8 @@ declare module "svelte/elements" {
     confirmationdialog: {
       /** The title of the dialog. */
       title: string;
-      /** Shows or hides the title: `automatic`, `visible`, or `hidden`. */
-      titlevisibility?: "automatic" | "visible" | "hidden";
+      /** Shows or hides the title: `automatic`, `visible`, or `hidden`, or a boolean. */
+      titlevisibility?: BarVisibility;
       /** Runs when the dialog is dismissed, so you can update your state. */
       ondismiss?: () => void;
     };
@@ -1067,8 +1079,8 @@ declare module "svelte/elements" {
       onscopechange?: (scope: string) => void;
       /** When the scope buttons appear: `automatic`, `onTextEntry`, or `onSearchPresentation`. */
       scopeactivation?: "automatic" | "onTextEntry" | "onSearchPresentation";
-      /** On iOS 26 and later, collapses the search field into a toolbar button. */
-      minimize?: boolean;
+      /** On iOS 26 and later, `always` collapses the search field into a toolbar button. Defaults to `automatic`, which lets the system decide. */
+      minimize?: "automatic" | "always";
     };
     /** A `.toolbar` whose children become toolbar items of the element it sits in, such as a screen, a dialog, or a section of a page. Put it next to a `textfield` with `placement="keyboard"` to show a bar above the keyboard while the field has focus. */
     toolbar: {
@@ -1090,8 +1102,8 @@ declare module "svelte/elements" {
       onchange?: (selection: string | number) => void;
       /** The tab view style: `automatic`, `page`, `sidebarAdaptable`, or `tabBarOnly`. */
       variant?: "automatic" | "page" | "sidebarAdaptable" | "tabBarOnly";
-      /** Shows page dots below the tabs when `variant` is `page`: `automatic`, `always`, or `never`. */
-      indexdisplay?: "automatic" | "always" | "never";
+      /** Shows page dots below the tabs when `variant` is `page`: `automatic`, `visible`, or `hidden`, or a boolean. */
+      indexdisplay?: BarVisibility;
       /** On iOS 26 and later, shrinks the tab bar while the user scrolls: `automatic`, `never`, `onScrollDown`, or `onScrollUp`. */
       minimize?: "automatic" | "never" | "onScrollDown" | "onScrollUp";
     };
@@ -1104,7 +1116,7 @@ declare module "svelte/elements" {
     tab: Modifiers & {
       /** The title of the tab. */
       title: string;
-      /** The SF Symbol name for the tab's icon. */
+      /** The SF Symbol name for the tab's icon. @platform ios */
       symbol?: string;
       /** The value that `selection` and `onchange` use for this tab. Without it, the tab's position, starting at 0, is used. */
       value?: string | number;
@@ -1374,7 +1386,7 @@ declare module "svelte/elements" {
     labelview: Modifiers & {
       /** The title of the label. */
       title?: string;
-      /** The SF Symbol name for the icon. */
+      /** The SF Symbol name for the icon. @platform ios */
       symbol?: string;
       /** The name of an asset-catalog image for the icon. */
       image?: string;
@@ -1430,7 +1442,7 @@ declare module "svelte/elements" {
       /** Runs when the button is tapped. */
       onclick?: () => void;
     };
-    /** An SF Symbol, rendered as an `Image(systemName:)`. */
+    /** An SF Symbol, rendered as an `Image(systemName:)`. @platform ios */
     sfsymbol: Modifiers & {
       /** The SF Symbol name, such as `trash` or `wifi`. */
       name: string;
@@ -1491,15 +1503,15 @@ declare module "svelte/elements" {
     /** A `TextEditor`: an editable area for many lines of text that scrolls. Give it a `height`. */
     texteditor: Omit<TextInput, "placeholder"> &
       TextValue & {
-        /** `hidden` removes the editor's system background so the element's own background shows through, like SwiftUI's `scrollContentBackground(.hidden)`. */
-        scrollcontentbackground?: "hidden" | "visible";
+        /** `hidden` or `false` removes the editor's system background so the element's own background shows through, like SwiftUI's `scrollContentBackground(.hidden)`. Also takes `automatic` and `visible`. */
+        scrollcontentbackground?: BarVisibility;
       };
-    /** A `Toggle`: an on-off control, drawn as a switch, a checkbox, or a button. */
+    /** A `Toggle`: an on-off control, drawn as a switch or a button. */
     toggle: Modifiers & {
       /** Whether the toggle is on. Use `bind:checked` with the `Toggle` component to bind it. */
       checked?: boolean;
-      /** The toggle style: `automatic`, `switch`, `button`, or `checkbox`. `switch` always draws a switch, and `button` draws a button that stays highlighted while it's on. */
-      variant?: "automatic" | "switch" | "button" | "checkbox";
+      /** The toggle style: `automatic`, `switch`, or `button`. `switch` always draws a switch, and `button` draws a button that stays highlighted while it's on. */
+      variant?: "automatic" | "switch" | "button";
       /** Runs when the user turns the toggle on or off, with the new `checked` value. */
       onchange?: (checked: boolean) => void;
     };
@@ -1530,7 +1542,7 @@ declare module "svelte/elements" {
       /** Where the mask sits relative to the parent, such as `center` or `bottom`. */
       alignment?: LayerAlignment;
     };
-    /** A `GlassEffectContainer`: renders the Liquid Glass of its children together on iOS 26 and later. */
+    /** A `GlassEffectContainer`: renders the Liquid Glass of its children together on iOS 26 and later. @platform ios */
     glasseffectcontainer: Modifiers & {
       /** The distance in points at which nearby glass shapes blend into one. */
       spacing?: number;
@@ -1582,7 +1594,7 @@ declare module "svelte/elements" {
     choice: {
       /** The value that the picker's `onchange` receives when this option is picked. */
       value: string | number;
-      /** The SF Symbol shown beside the option's title. */
+      /** The SF Symbol shown beside the option's title. @platform ios */
       symbol?: string;
     };
     /** A `Slider`: lets the user pick a number between `min` and `max`. */
@@ -1688,7 +1700,7 @@ declare module "svelte/elements" {
     contentunavailableview: Modifiers & {
       /** The title of the empty state. */
       title?: string;
-      /** The SF Symbol shown above the title. */
+      /** The SF Symbol shown above the title. @platform ios */
       symbol?: string;
       /** Explanatory text shown below the title. */
       description?: string;
@@ -1701,7 +1713,7 @@ declare module "svelte/elements" {
     menuview: Modifiers & {
       /** The label of the menu, shown with `symbol`. Use a `label` child for a custom label. */
       title?: string;
-      /** The SF Symbol shown beside the title. */
+      /** The SF Symbol shown beside the title. @platform ios */
       symbol?: string;
       /** The menu button style: `automatic`, `button`, or `borderlessButton`. */
       variant?: "automatic" | "button" | "borderlessButton";

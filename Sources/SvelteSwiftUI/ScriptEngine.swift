@@ -173,6 +173,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
             "__nativeStorageLoad": loadStorage,
             "__nativeStorageSave": saveStorage,
             "__nativeEnvironment": environment,
+            "__nativeProtocols": Array([NodeStore.protocolVersion]),
         ]
         for (name, value) in globals { context.globalObject.setValue(value, forProperty: name) }
         installHostAPIs(into: context)

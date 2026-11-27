@@ -116,7 +116,7 @@ jobs:
       - name: Check that the JS and Swift protocol versions match
         run: |
           js=$(sed -nE 's/^export const protocol = ([0-9]+);$/\1/p' src/protocol.ts)
-          swift=$(sed -nE 's/^ *static let protocolVersion = ([0-9]+)$/\1/p' Sources/SvelteSwiftUI/NodeStore.swift)
+          swift=$(sed -nE 's/^ *(nonisolated )?static let protocolVersion = ([0-9]+)$/\2/p' Sources/SvelteSwiftUI/NodeStore.swift)
           echo "JS $js, Swift $swift"
           [ -n "$js" ] && [ "$js" = "$swift" ]
 

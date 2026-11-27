@@ -211,7 +211,7 @@ final class Node: Identifiable {
 
 @Observable
 final class NodeStore {
-    static let protocolVersion = 3
+    nonisolated static let protocolVersion = 3
 
     private(set) var roots: [Int: Node] = [:]
     private(set) var bundleProtocolVersion: Int?

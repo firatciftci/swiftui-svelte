@@ -17,7 +17,6 @@ struct EffectsTests {
         #expect(bounds(.string("capsule")) == rect)
         #expect(bounds(.string("ellipse")) == rect)
         #expect(bounds(.number(12)) == rect)
-        #expect(bounds(.object(["cornerradius": .number(8)])) == rect)
         #expect(bounds(.object(["topleading": .number(10)])) == rect)
         #expect(
             bounds(.object(["d": .string("M0 0 L10 0 L10 10 Z"), "viewbox": .string("0 0 10 10")]))

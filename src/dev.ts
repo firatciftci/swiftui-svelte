@@ -64,6 +64,13 @@ export function checkElement(name: string): void {
 }
 
 export function checkAttribute(element: string, name: string): void {
+  if (element === "label") {
+    warnOnce(
+      `<label> ${name}`,
+      `<label> only holds the custom label of the element around it, so its "${name}" attribute does nothing. Put the attribute on an element inside the <label>.`,
+    );
+    return;
+  }
   const own = elements[element];
   if (own == null || modifiers.has(name) || own.includes(name)) return;
   const suggestion = closest(

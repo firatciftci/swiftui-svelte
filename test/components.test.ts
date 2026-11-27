@@ -157,7 +157,10 @@ describe("bindable components", () => {
     await update(() => dispatch(byTestId("open"), "click"));
     for (const name of names) expect(find(name)).toBeDefined();
     expect(find("alert")?.attributes.get("title")).toBe("Saved");
-    expect(find("popover")?.attributes.get("detents")).toEqual([0.3, 200]);
+    expect(find("popover")?.attributes.get("detents")).toEqual([
+      { fraction: 0.3 },
+      { points: 200 },
+    ]);
     expect(find("inspector")?.attributes.get("columnwidth")).toEqual({
       ideal: 300,
     });

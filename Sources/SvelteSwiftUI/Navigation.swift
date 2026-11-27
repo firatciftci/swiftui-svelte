@@ -148,7 +148,7 @@ struct Tabs: View {
                 ForEach(tabs) { NodeView(node: $0).tag(Self.value(of: $0, in: tabs)) }
             }
             #if !os(macOS)
-                .tabViewStyle(.page(indexDisplayMode: Self.indexDisplayMode(node.attributes["indexdisplay"]?.string)))
+                .tabViewStyle(.page(indexDisplayMode: Self.indexDisplayMode(node.attributes["indexdisplay"])))
             #endif
         case "sidebarAdaptable": tabView(entries, tabs, selection).tabViewStyle(.sidebarAdaptable)
         case "tabBarOnly": tabView(entries, tabs, selection).tabViewStyle(.tabBarOnly)
@@ -202,10 +202,10 @@ struct Tabs: View {
     }
 
     #if !os(macOS)
-        static func indexDisplayMode(_ name: String?) -> PageTabViewStyle.IndexDisplayMode {
-            switch name {
-            case "always": .always
-            case "never": .never
+        static func indexDisplayMode(_ value: JSONValue?) -> PageTabViewStyle.IndexDisplayMode {
+            switch Bars.visibility(value) {
+            case .visible: .always
+            case .hidden: .never
             default: .automatic
             }
         }

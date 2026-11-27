@@ -92,6 +92,6 @@ The screens share a namespace, so elements with the same `matchedid` on two scre
 - `$app/paths` exports `base` and `assets`, which are both empty strings, plus `resolve` and `asset`. `resolve("/items/[id]", { id })` fills in the parameters and drops `(group)` segments, as it does in SvelteKit.
 - `page.data` is typed as `Record<string, unknown>` because the data from every level merges into one object.
 - The stack lives in one tab. Each sheet renders a single page inside its own navigation stack.
-- `preloadData`, `pushState`, `replaceState`, and `page.form` are not available.
+- `preloadData`, `pushState`, and `replaceState` are not available.
 
 The app restores the stack when it launches, so a user who closes the app on a detail screen returns to that screen. Pass `restore={false}` to `<Router>` so that the app starts on the root screen at every launch instead.

@@ -237,7 +237,7 @@ export const modifierGroups: Array<{
       "onhover",
       "onscrollvisibility",
       "visibilitythreshold",
-      "allowshittesting",
+      "hittestable",
       "pressed",
       "hovered",
     ],

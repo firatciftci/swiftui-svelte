@@ -6,13 +6,13 @@
 mountApp({ App, Profile, Badge });
 ```
 
-A `SvelteView` shows the component called `default` unless you pass `component`, which is what `mountApp(App)` registers. Pass `props` to give the component values from Swift. When they change, the component updates as it would with new props from a parent. Pass `actions` to give it functions that call back into Swift. Each action arrives as a function prop, and whatever the component passes to it reaches your closure as a Foundation value: a string, a number, a boolean, an array, a dictionary, or `NSNull`.
+A `SvelteView` shows the component called `default` unless you pass `component`, which is what `mountApp(App)` registers. Pass `props` to give the component values from Swift, as a dictionary of `JSONValue`. Literals work as they are, and `JSONValue(_:)` converts a number, a `Date` (to an ISO 8601 string), or a `URL` (to a string). When props change, the component updates as it would with new props from a parent. Pass `actions` to give it functions that call back into Swift. Each action arrives as a function prop, and whatever the component passes to it reaches your closure as a `JSONValue`. Switch over its cases, or decode it into your own `Decodable` type with `decode(_:)`.
 
 ```swift
 SvelteView(
     source: bundleURL,
     component: "Badge",
-    props: ["count": count, "since": startDate],
+    props: ["count": JSONValue(count), "since": JSONValue(startDate)],
     actions: ["onreset": { _ in count = 0 }]
 )
 ```
@@ -24,8 +24,6 @@ SvelteView(
 
 <btn onclick={() => onreset()}>Reset {count}</btn>
 ```
-
-Props must be JSON values. A `Date` becomes an ISO 8601 string, and a `URL` becomes a string.
 
 Each `SvelteView(source:)` runs its own JavaScript context. To have several views share one context, and with it the same module state and stores, create a `SvelteRuntime` once and pass it to each view:
 
@@ -52,6 +50,8 @@ SvelteView(source: bundleURL) { error in
 }
 ```
 
+A `SvelteView(runtime:)` reports errors to its runtime, so when views share a `SvelteRuntime`, pass `onError` to the runtime or set its `onError` property.
+
 The closure runs on the main thread with a `ScriptError`. `message` is the error's message, and `frames` is the stack, with each frame's `function` and its `location` in your source when `app.js.map` is in the app. `kind` says where the error came from:
 
 | Kind      | When                                                                                                  |
@@ -61,3 +61,7 @@ The closure runs on the main thread with a `ScriptError`. `message` is the error
 | `.load`   | The bundle couldn't be loaded, for example because `app.js` is missing or the server didn't answer.   |
 
 Errors that a `<svelte:boundary>` catches don't reach `onError`.
+
+## Reloading the bundle
+
+`reload()` on a `SvelteRuntime` loads the bundle again from its source and mounts every component that's showing again with its current props. Module state starts over, so use it when that state is stale as a whole, such as after the user signs in or out.

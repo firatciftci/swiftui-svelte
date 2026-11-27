@@ -45,9 +45,6 @@ enum Effects {
         if let data = options["d"]?.string {
             return AnyShape(SVGShape(path: SVGPathCache.path(data), viewBox: SVGShape.viewBox(options["viewbox"]?.string)))
         }
-        if let radius = options["cornerradius"]?.number {
-            return AnyShape(RoundedRectangle(cornerRadius: max(radius, 0), style: .continuous))
-        }
         let corners = ["topleading", "bottomleading", "bottomtrailing", "toptrailing"].map { max(options[$0]?.number ?? 0, 0) }
         guard corners.contains(where: { $0 > 0 }) else { return nil }
         return AnyShape(
@@ -213,7 +210,7 @@ struct Availability: ViewModifier {
         content
             .ifLet(attributes["disabled"]) { $0.disabled($1.isTrue) }
             .ifLet(attributes["hidden"]?.isTrue == true ? true : nil) { view, _ in view.hidden() }
-            .ifLet(attributes["allowshittesting"].map(\.isTrue)) { $0.allowsHitTesting($1) }
+            .ifLet(attributes["hittestable"].map(\.isTrue)) { $0.allowsHitTesting($1) }
             .ifLet(Effects.ignoredSafeArea(attributes["ignoressafearea"])) { $0.ignoresSafeArea($1.regions, edges: $1.edges) }
     }
 }

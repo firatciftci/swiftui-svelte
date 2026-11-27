@@ -150,9 +150,18 @@ class Reader {
   }
 
   doc(symbol: ts.Symbol | undefined): string {
-    return symbol == null
-      ? ""
-      : ts.displayPartsToString(symbol.getDocumentationComment(this.checker));
+    if (symbol == null) return "";
+    const text = ts.displayPartsToString(
+      symbol.getDocumentationComment(this.checker),
+    );
+    const isIOS = symbol
+      .getJsDocTags(this.checker)
+      .some(
+        (tag) =>
+          tag.name === "platform" &&
+          ts.displayPartsToString(tag.text).trim() === "ios",
+      );
+    return isIOS ? `${text} _iOS-specific._` : text;
   }
 
   attributes(type: ts.Type): Array<Attribute> {
@@ -255,6 +264,8 @@ export function generate(): string {
     "This page lists every element and modifier in swiftui-svelte, with the type of each attribute and an example. A script generates it from the TSDoc in [`src/elements.ts`](../src/elements.ts) and the examples in [`example/src/catalog`](../example/src/catalog), which the example app shows in its Catalog tab. To change the page, edit those files and run `nr docs`.",
     "",
     "Every element also takes the [modifiers](#modifiers), unless its entry says it doesn't.",
+    "",
+    "Descriptions that end in _iOS-specific_ use iOS names or features, so a host for another platform might not support them.",
     "",
     ...contents,
     `- [Modifiers](#modifiers): ${groups.join(", ")}`,

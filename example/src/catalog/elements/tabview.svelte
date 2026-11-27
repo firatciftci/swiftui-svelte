@@ -5,7 +5,7 @@
 
 <tabview
   variant="page"
-  indexdisplay="always"
+  indexdisplay="visible"
   selection={page}
   onchange={(value) => (page = value)}
   background="indigo"

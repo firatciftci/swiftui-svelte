@@ -31,15 +31,18 @@ struct BundleTests {
 
     @Test func callsSwiftActionsWithJSONPayloads() throws {
         let runtime = try runtime()
-        var received: Array<Any> = []
+        var received: Array<JSONValue> = []
         let id = runtime.mount("Greeting", props: #"{"name":"Ada","count":3}"#, actions: ["onsave": { received.append($0) }])
         let button = try #require(runtime.store.root(for: id)?.children.last)
         runtime.dispatch(button.id, "click")
-        let payload = try #require(received.first as? [String: Any])
+        struct Payload: Decodable, Equatable {
+            let name: String
+            let count: Int
+            let at: String
+        }
         #expect(received.count == 1)
-        #expect(payload["name"] as? String == "Ada")
-        #expect(payload["count"] as? Double == 3)
-        #expect(payload["at"] as? String == "1970-01-01T00:00:00.000Z")
+        #expect(received.first == ["name": "Ada", "count": 3, "at": "1970-01-01T00:00:00.000Z"])
+        #expect(try received.first?.decode(Payload.self) == Payload(name: "Ada", count: 3, at: "1970-01-01T00:00:00.000Z"))
     }
 
     @Test func runsSeveralMountsInOneContext() throws {
@@ -59,7 +62,7 @@ struct BundleTests {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada"}"#, actions: [:])
         runtime.update(id, props: #"{"name":"Grace"}"#, actions: [:])
-        runtime.restart()
+        runtime.reload()
         #expect(dump(runtime.store.root(for: id)) == greeting("Grace: 0"))
     }
 
@@ -75,14 +78,15 @@ struct BundleTests {
             "name": "Ada",
             "count": 3,
             "on": true,
-            "at": Date(timeIntervalSince1970: 0),
-            "url": URL(string: "https://svelte.dev/docs")!,
-            "nested": ["list": [1, "two"]],
+            "at": JSONValue(Date(timeIntervalSince1970: 0)),
+            "url": JSONValue(URL(string: "https://svelte.dev/docs")!),
+            "nested": ["list": [1, "two", .null]],
+            "ratio": JSONValue(0.5),
         ])
         #expect(
             json
-                == #"{"at":"1970-01-01T00:00:00.000Z","count":3,"name":"Ada","nested":{"list":[1,"two"]},"on":true,"url":"https://svelte.dev/docs"}"#
+                == #"{"at":"1970-01-01T00:00:00.000Z","count":3,"name":"Ada","nested":{"list":[1,"two",null]},"on":true,"ratio":0.5,"url":"https://svelte.dev/docs"}"#
         )
-        #expect(SvelteView.json(["bad": SvelteRuntime.self]) == "{}")
+        #expect(SvelteView.json(["count": JSONValue(Int64(7))]) == #"{"count":7}"#)
     }
 }

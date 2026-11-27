@@ -16,7 +16,7 @@ public final class SvelteRuntime {
     private struct Mount {
         let component: String
         var props: String
-        var actions: [String: @MainActor (Any) -> Void]
+        var actions: [String: @MainActor (JSONValue) -> Void]
     }
 
     private(set) var store = NodeStore()
@@ -103,7 +103,7 @@ public final class SvelteRuntime {
         #if DEBUG
             if let route = Self.launchRoute { pendingURLs.insert(route, at: 0) }
         #endif
-        reload()
+        loadSource()
         guard reloadsOnChange else { return }
         let source = source
         let initial = loadedVersion
@@ -118,7 +118,7 @@ public final class SvelteRuntime {
         }
     }
 
-    func mount(_ component: String, props: String, actions: [String: @MainActor (Any) -> Void]) -> Int {
+    func mount(_ component: String, props: String, actions: [String: @MainActor (JSONValue) -> Void]) -> Int {
         let id = nextMountID
         nextMountID += 1
         mounts[id] = Mount(component: component, props: props, actions: actions)
@@ -126,7 +126,7 @@ public final class SvelteRuntime {
         return id
     }
 
-    func update(_ id: Int, props: String, actions: [String: @MainActor (Any) -> Void]) {
+    func update(_ id: Int, props: String, actions: [String: @MainActor (JSONValue) -> Void]) {
         guard let mount = mounts[id] else { return }
         mounts[id]?.actions = actions
         guard mount.props != props else { return }
@@ -205,7 +205,7 @@ public final class SvelteRuntime {
                         isStopped = true
                     } else {
                         isRecovering = true
-                        reload()
+                        loadSource()
                     }
                 }
             case let .action(mount, name, json) where !isStopped: perform(mount, name, json)
@@ -315,8 +315,7 @@ public final class SvelteRuntime {
 
     private func perform(_ mount: Int, _ name: String, _ json: String) {
         guard let action = mounts[mount]?.actions[name] else { return }
-        let value = (try? JSONValue(parsing: json)) ?? .null
-        action(value.object)
+        action((try? JSONValue(parsing: json)) ?? .null)
     }
 
     private func frame(_ timestamp: CFTimeInterval, gap: Double) -> Bool {
@@ -354,18 +353,18 @@ public final class SvelteRuntime {
         }
     #endif
 
-    func restart() {
+    public func reload() {
         isRecovering = false
-        reload()
+        loadSource()
     }
 
     private func reload(ifNewerThan version: String) {
         guard !isDownloading, version != loadedVersion else { return }
         isRecovering = false
-        reload()
+        loadSource()
     }
 
-    private func reload() {
+    private func loadSource() {
         generation += 1
         isLoaded = false
         guard !source.isFileURL else {

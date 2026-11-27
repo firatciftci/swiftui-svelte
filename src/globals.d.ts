@@ -1,5 +1,6 @@
 declare function __nativeCommit(json: string, animation?: string): void;
 declare function __nativeNow(): number;
+declare var __nativeProtocols: Array<number> | undefined;
 declare function __nativeInvoke(id: number, method: string, json: string): void;
 declare var __svelteReply: (
   request: number,

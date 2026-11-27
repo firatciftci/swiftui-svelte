@@ -41,9 +41,10 @@ struct NavigationTests {
         }
 
         @Test func readsPageIndexDisplay() {
-            let describe = { (name: String?) in String(describing: Tabs.indexDisplayMode(name)) }
-            #expect(describe("always") == String(describing: PageTabViewStyle.IndexDisplayMode.always))
-            #expect(describe("never") == String(describing: PageTabViewStyle.IndexDisplayMode.never))
+            let describe = { (value: JSONValue?) in String(describing: Tabs.indexDisplayMode(value)) }
+            #expect(describe(.string("visible")) == String(describing: PageTabViewStyle.IndexDisplayMode.always))
+            #expect(describe(.bool(true)) == String(describing: PageTabViewStyle.IndexDisplayMode.always))
+            #expect(describe(.string("hidden")) == String(describing: PageTabViewStyle.IndexDisplayMode.never))
             #expect(describe(nil) == String(describing: PageTabViewStyle.IndexDisplayMode.automatic))
         }
     #endif

@@ -56,7 +56,7 @@ struct ModifierSet: OptionSet, Hashable {
                 "colorscheme", "dynamictypesize", "feedbacktrigger", "preferredcolorscheme", "scrolldismisseskeyboard",
                 "sensoryfeedback",
             ],
-            .availability: ["disabled", "hidden", "ignoressafearea", "allowshittesting"],
+            .availability: ["disabled", "hidden", "ignoressafearea", "hittestable"],
             .animated: ["animated", "animation", "disablesanimations"],
             .scrolling: ["visibilitythreshold"],
             .resizing: ["container"],

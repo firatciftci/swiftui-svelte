@@ -148,9 +148,7 @@
           maxwidth={400}
           color={tint == null ? undefined : "white"}
           opacity={stackDepth > 0 ? 0 : 1}
-          glasseffect={env.liquidGlass
-            ? { tint, shape: { cornerradius: 16 } }
-            : undefined}
+          glasseffect={env.liquidGlass ? { tint, shape: 16 } : undefined}
           background={env.liquidGlass ? undefined : "regularMaterial"}
         >
           {#if toast.type === "loading"}

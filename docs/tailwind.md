@@ -44,6 +44,8 @@ When an attribute appears in both the `class` and the element itself, the elemen
 
 This stack has no padding. Inside a class string, later rules win, as they do in CSS. Add `!` to a utility, such as `!p-0`, to make it win.
 
+`margin`, `container`, `css`, `axis`, `boxsizing`, `selfalign`, and `linebox` exist so that Tailwind classes can set them. They're public and they work by hand, but the classes are how you're meant to use them, and their values follow CSS rather than SwiftUI.
+
 ## Variants
 
 - `dark:` applies when the app's color scheme is dark. The app follows the device's Dark Mode setting unless you choose a mode with `ModeWatcher`, in which case the choice wins.

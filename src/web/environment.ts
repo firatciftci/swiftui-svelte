@@ -5,6 +5,7 @@ type SizeClass = "compact" | "regular";
 export type HostEnvironment = {
   colorScheme: "light" | "dark";
   systemColorScheme: "light" | "dark";
+  /** Whether the system draws Liquid Glass, as on iOS 26 and later. @platform ios */
   liquidGlass: boolean;
   reduceMotion: boolean;
   reduceTransparency: boolean;
@@ -14,7 +15,9 @@ export type HostEnvironment = {
   differentiateWithoutColor: boolean;
   invertColors: boolean;
   boldText: boolean;
+  /** Whether the Button Shapes accessibility setting is on. @platform ios */
   buttonShapes: boolean;
+  /** SwiftUI's `DynamicTypeSize` case name. For portable code, use `fontScale`. @platform ios */
   dynamicTypeSize:
     | "xSmall"
     | "small"
@@ -32,8 +35,11 @@ export type HostEnvironment = {
   languages: Array<string>;
   timeZone: string;
   layoutDirection: "leftToRight" | "rightToLeft";
+  /** SwiftUI's horizontal size class. For portable code, use `viewportWidth`. @platform ios */
   horizontalSizeClass: SizeClass | null;
+  /** SwiftUI's vertical size class. For portable code, use `viewportHeight`. @platform ios */
   verticalSizeClass: SizeClass | null;
+  /** SwiftUI's scene phase: `active`, `inactive`, or `background`. @platform ios */
   scenePhase: "active" | "inactive" | "background";
   safeAreaInsets: Readonly<{
     top: number;
@@ -47,6 +53,7 @@ export type HostEnvironment = {
   pixelRatio: number;
   fontScale: number;
   platform: string;
+  /** The kind of Apple device: `phone`, `pad`, `tv`, `mac`, or `vision`. @platform ios */
   idiom: string;
   onLine: boolean;
   userAgent: string;

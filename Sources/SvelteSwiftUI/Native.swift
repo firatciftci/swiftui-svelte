@@ -142,8 +142,8 @@ public struct NativeElement {
 
     public var id: Int { node.id }
 
-    public func value(_ name: String) -> Any? {
-        node.nativeAttributes[name].map(\.object)
+    public func value(_ name: String) -> JSONValue? {
+        node.nativeAttributes[name]
     }
 
     public func string(_ name: String) -> String? {
@@ -159,11 +159,7 @@ public struct NativeElement {
     }
 
     public func decode<T: Decodable>(_: T.Type, _ name: String) -> T? {
-        guard let value = node.nativeAttributes[name],
-            JSONSerialization.isValidJSONObject([value.object]),
-            let data = try? JSONSerialization.data(withJSONObject: [value.object])
-        else { return nil }
-        return (try? JSONDecoder().decode(Array<T>.self, from: data))?.first
+        try? node.nativeAttributes[name]?.decode(T.self)
     }
 
     public var children: some View {

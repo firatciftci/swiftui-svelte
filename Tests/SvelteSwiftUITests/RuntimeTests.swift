@@ -322,7 +322,7 @@ struct RuntimeTests {
         }
         try await Task.sleep(for: .milliseconds(20))
         #expect(!isDone)
-        runtime.restart()
+        runtime.reload()
         await task.value
         #expect(isDone)
     }
@@ -386,14 +386,14 @@ struct RuntimeTests {
 
         reports.errors = []
         try "throw new Error('boom')".write(to: url, atomically: true, encoding: .utf8)
-        runtime.restart()
+        runtime.reload()
         #expect(reports.errors.map(\.kind) == [.script])
         #expect(reports.errors.first?.message == "Error: boom")
         #expect(reports.errors.first?.frames.isEmpty == false)
 
         reports.errors = []
         try FileManager.default.removeItem(at: url)
-        runtime.restart()
+        runtime.reload()
         #expect(reports.errors.map(\.kind) == [.load])
     }
 
@@ -405,7 +405,7 @@ struct RuntimeTests {
         #expect(runtime.error == nil)
         #expect(runtime.store.error == nil)
         #expect(runtime.store.root?.children.first?.name == "txt")
-        runtime.restart()
+        runtime.reload()
         #expect(runtime.error?.message.contains("boom") == true)
         #expect(runtime.store.root?.children.first?.name == "txt")
     }

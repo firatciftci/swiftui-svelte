@@ -53,7 +53,7 @@ struct WebAPITests {
         #expect(evaluate(runtime, "matchMedia('(prefers-reduced-motion: reduce)').matches") == "true")
         #expect(evaluate(runtime, "navigator.languages.length > 0") == "true")
         #expect(evaluate(runtime, "navigator.userAgent")?.hasPrefix("swiftui-svelte (") == true)
-        runtime.restart()
+        runtime.reload()
         #expect(evaluate(runtime, query) == "true")
     }
 

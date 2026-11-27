@@ -802,9 +802,9 @@
         </FullScreenCover>
         <Sheet
           bind:presented={showsShortSheet}
-          detents={[0.25, "medium"]}
+          detents={[{ fraction: 0.25 }, "medium"]}
           dragindicator="visible"
-          backgroundinteraction={0.25}
+          backgroundinteraction={{ fraction: 0.25 }}
         >
           <txt padding color="secondary">
             Drag the handle to resize this sheet. You can still use the list
@@ -833,7 +833,7 @@
         <TabView
           bind:selection={slide}
           variant="page"
-          indexdisplay="always"
+          indexdisplay="visible"
           height={140}
           testid="carousel"
         >

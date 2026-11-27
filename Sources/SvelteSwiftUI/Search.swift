@@ -107,7 +107,7 @@ struct Searching: ViewModifier {
                 }
             }
             .modifier(Scopes(node: node, scopes: scopes))
-            .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.isTrue == true))
+            .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
             .onSubmit(of: .search) { runtime.dispatch(node.id, "submit") }
             .onChange(of: text) { _, typed in
                 guard typed != node.attributes["value"]?.string else { return }

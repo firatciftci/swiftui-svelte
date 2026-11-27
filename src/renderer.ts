@@ -1056,6 +1056,14 @@ globalThis.__svelteMount = (mountId, name, json) => {
   update(entry, values);
   entry.target.state = State.Native;
   send(opcodes.root, entry.target.id, protocol, mountId);
+  const supported =
+    typeof __nativeProtocols === "undefined" ? [3] : __nativeProtocols;
+  if (!supported.includes(protocol)) {
+    console.warn(
+      `This bundle uses bridge protocol ${protocol}, but the app's SvelteSwiftUI package supports protocol ${supported.join(" and ")}. Install the same release of swiftui-svelte from npm and SvelteSwiftUI from Swift Package Manager, then rebuild the bundle.`,
+    );
+    return;
+  }
   entry.instance = mount(component as Component<Record<string, unknown>>, {
     target: entry.target,
     renderer,

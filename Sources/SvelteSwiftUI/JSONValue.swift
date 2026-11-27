@@ -1,12 +1,32 @@
 import Foundation
 
-enum JSONValue: Hashable {
+public enum JSONValue: Hashable, Sendable {
     case null
     case bool(Bool)
     case number(Double)
     case string(String)
     case array(Array<Self>)
     case object([String: Self])
+
+    public init(_ value: some BinaryInteger) {
+        self = .number(Double(value))
+    }
+
+    public init(_ value: some BinaryFloatingPoint) {
+        self = .number(Double(value))
+    }
+
+    public init(_ date: Date) {
+        self = .string(date.ISO8601Format(.init(includingFractionalSeconds: true)))
+    }
+
+    public init(_ url: URL) {
+        self = .string(url.absoluteString)
+    }
+
+    public func decode<T: Decodable>(_: T.Type) throws -> T {
+        try JSONDecoder().decode(T.self, from: JSONEncoder().encode(self))
+    }
 
     var string: String? {
         switch self {
@@ -51,5 +71,50 @@ enum JSONValue: Hashable {
         case let .array(values): values.map(\.object)
         case let .object(values): values.mapValues(\.object)
         }
+    }
+}
+
+extension JSONValue: Codable {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(Double.self) {
+            self = .number(value)
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else if let value = try? container.decode(Array<Self>.self) {
+            self = .array(value)
+        } else {
+            self = .object(try container.decode([String: Self].self))
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .null: try container.encodeNil()
+        case let .bool(value): try container.encode(value)
+        case let .number(value): try container.encode(value)
+        case let .string(value): try container.encode(value)
+        case let .array(values): try container.encode(values)
+        case let .object(values): try container.encode(values)
+        }
+    }
+}
+
+extension JSONValue: ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, ExpressibleByFloatLiteral, ExpressibleByStringLiteral,
+    ExpressibleByArrayLiteral, ExpressibleByDictionaryLiteral
+{
+    public init(booleanLiteral value: Bool) { self = .bool(value) }
+    public init(integerLiteral value: Int) { self = .number(Double(value)) }
+    public init(floatLiteral value: Double) { self = .number(value) }
+    public init(stringLiteral value: String) { self = .string(value) }
+    public init(arrayLiteral elements: Self...) { self = .array(elements) }
+
+    public init(dictionaryLiteral elements: (String, Self)...) {
+        self = .object(Dictionary(elements, uniquingKeysWith: { _, last in last }))
     }
 }

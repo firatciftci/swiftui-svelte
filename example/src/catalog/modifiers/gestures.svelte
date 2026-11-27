@@ -22,7 +22,7 @@
       height={44}
       radius={8}
       opacity={0.3}
-      allowshittesting={false}
+      hittestable={false}
       ontap={() => (last = "Cover")}
     />
   </zstack>

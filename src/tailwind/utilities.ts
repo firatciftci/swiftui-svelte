@@ -752,7 +752,7 @@ const HANDLERS = new Map<string, Handler>([
   [
     "pointer-events",
     (_value, _context, raw) => {
-      if (raw === "none") return [{ attrs: { allowshittesting: false } }];
+      if (raw === "none") return [{ attrs: { hittestable: false } }];
       return raw === "auto" ? [{ attrs: {} }] : null;
     },
   ],

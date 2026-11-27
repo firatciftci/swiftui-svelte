@@ -22,7 +22,11 @@ When the JavaScript throws, Debug builds show the error over your app, with the 
 
 To keep an error in one part of the screen from taking down the rest, wrap that part in `<svelte:boundary>` with a `failed` snippet. Errors that a boundary catches don't show the overlay. [Elements](elements.md) explains how boundaries work. Errors print their stack trace to the console too.
 
-If the bundle was built with a different version of swiftui-svelte than the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering. Update the npm package and the Swift package to the same version, then rebuild the bundle.
+If the bundle was built with a different version of swiftui-svelte than the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering. Update the npm package and the Swift package to the same version, then rebuild the bundle. The bundle also checks the app's protocol version before it mounts anything, and it logs a warning that names both versions.
+
+## Bridge statistics
+
+`stats` from `swiftui-svelte` counts the renderer's work. `live` is the number of element nodes that haven't been released yet, `commits` and `ops` count the batches and operations sent to the host, `bytes` is their total size, and `serializeMs` and `nativeMs` are the time spent encoding batches and the time spent inside the host's commit call. Read it to look for leaks and to compare performance between builds. `protocol` is the bridge protocol version the bundle was built with.
 
 ## Misspelled elements and attributes
 

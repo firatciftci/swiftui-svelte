@@ -29,13 +29,13 @@ public struct SvelteView: View {
     #endif
     private let component: String
     private let props: String
-    private let actions: [String: @MainActor (Any) -> Void]
+    private let actions: [String: @MainActor (JSONValue) -> Void]
 
     public init(
         source: URL,
         component: String = "default",
-        props: [String: Any] = [:],
-        actions: [String: @MainActor (Any) -> Void] = [:],
+        props: [String: JSONValue] = [:],
+        actions: [String: @MainActor (JSONValue) -> Void] = [:],
         reloadsOnChange: Bool = false,
         modules: Array<NativeModule> = [],
         components: Array<NativeComponent> = [],
@@ -53,8 +53,8 @@ public struct SvelteView: View {
     public init(
         runtime: SvelteRuntime,
         component: String = "default",
-        props: [String: Any] = [:],
-        actions: [String: @MainActor (Any) -> Void] = [:]
+        props: [String: JSONValue] = [:],
+        actions: [String: @MainActor (JSONValue) -> Void] = [:]
     ) {
         _runtime = State(initialValue: runtime)
         self.component = component
@@ -88,7 +88,7 @@ public struct SvelteView: View {
         .overlay(alignment: .bottom) {
             #if DEBUG
                 if let error = runtime.error ?? runtime.store.error.map({ ScriptError(kind: .bridge, message: $0, frames: []) }) {
-                    ErrorOverlay(error: error, dismiss: runtime.dismissError, reload: runtime.restart)
+                    ErrorOverlay(error: error, dismiss: runtime.dismissError, reload: runtime.reload)
                 }
             #endif
         }
@@ -165,27 +165,10 @@ public struct SvelteView: View {
         }
     #endif
 
-    static func json(_ props: [String: Any]) -> String {
-        let value = props.mapValues(jsonCompatible)
-        guard JSONSerialization.isValidJSONObject(value),
-            let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .withoutEscapingSlashes]),
-            let json = String(bytes: data, encoding: .utf8)
-        else {
-            print("[svelte] Props must be JSON values: strings, numbers, booleans, dates, URLs, arrays, and dictionaries.")
-            return "{}"
-        }
-        return json
-    }
-
-    private static func jsonCompatible(_ value: Any) -> Any {
-        switch value {
-        case let date as Date: date.ISO8601Format(.init(includingFractionalSeconds: true))
-        case let url as URL: url.absoluteString
-        case let array as Array<Any>: array.map(jsonCompatible)
-        case let dictionary as [String: Any]: dictionary.mapValues(jsonCompatible)
-        case Optional<Any>.none: NSNull()
-        default: value
-        }
+    static func json(_ props: [String: JSONValue]) -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        return (try? encoder.encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
     }
 }
 

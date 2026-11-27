@@ -604,7 +604,7 @@ A host may omit the following, but it must not crash on them, and it must report
 - **Angles** are numbers in degrees.
 - **Durations** for animation, delays, debounce, and long press are numbers in milliseconds. Hosts must use these units exactly.
 - **Percentages** are not sent as a unit. A number is a fraction. For example, `0.5` means fifty percent.
-- **Detent heights** are numbers. A value of `1` or less is a fraction of the screen height, and a value above `1` is points.
+- **Detent heights** are `"medium"`, `"large"`, `{ "fraction": number }` for a fraction of the screen height greater than 0 and at most 1, or `{ "points": number }` for a height in points. A host ignores any other value.
 
 ### 9.4 Colors and ShapeStyle
 
@@ -697,7 +697,7 @@ When a change is additive and an older host would otherwise fail, the change is 
 
 The host checks `protocol` in the `root` record. A host must refuse to render a mount whose protocol it does not implement, show the user an error that names both versions, and log the error. The iOS host detects this mismatch and shows that error.
 
-The bundle does not check the host's version. A bundle built against a newer protocol than the host implements will send operations that the host rejects or misreads. Protocol 3 has no handshake that prevents this. Section 11 lists the planned handshake.
+Before it mounts a component, the bundle reads `__nativeProtocols`, an array of the protocol versions the host implements. The host must install it before it loads the bundle. If the array doesn't include the bundle's `protocol`, the bundle sends the `root` record so the host can show its error, logs a warning that names both versions, and doesn't mount the component. The bundle treats a host without `__nativeProtocols` as one that implements protocol 3 only. A future bundle that implements more than one protocol uses the array to pick one that the host implements.
 
 ### 10.4 Compatibility
 
@@ -707,7 +707,6 @@ A host implements exactly one protocol version. A release of the bundle is compa
 
 These are known gaps in protocol 3. They are not part of the normative behavior above, and a host must not depend on them.
 
-- A handshake that lets the bundle read the host's protocol versions before it mounts.
 - A standard way for a host to report unsupported values to the bundle, in addition to logs.
 - Pause and resume for `onData` in fetch.
 - Writing each storage key separately for `localStorage`, instead of saving the whole map at once.
@@ -730,3 +729,4 @@ A host conforms to protocol 3 when it does all of these:
 12. It delivers `openurl` for every URL, including ones that arrive before the bundle loads.
 13. It implements the `__native*` globals in Sections 6 to 8, and it fails the random and digest calls as Section 8.5 requires.
 14. It reports unsupported values through its log, once per name, and it never stops rendering because of one.
+15. It installs `__nativeProtocols` with the protocol versions it implements before it loads the bundle.
