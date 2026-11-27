@@ -973,9 +973,12 @@ hostTest(
     });
     equal(included.origin, "https://app.example");
     equal(included.cookie, "swiftui_test=kept");
-    equal((await echo({})).cookie, undefined);
-    equal((await echo({ credentials: "same-origin" })).cookie, undefined);
-    equal((await echo({ credentials: "omit" })).cookie, undefined);
+    const byDefault = await echo({});
+    const sameOrigin = await echo({ credentials: "same-origin" });
+    const omitted = await echo({ credentials: "omit" });
+    equal(byDefault.cookie, undefined);
+    equal(sameOrigin.cookie, undefined);
+    equal(omitted.cookie, undefined);
   },
 );
 

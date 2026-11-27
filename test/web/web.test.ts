@@ -61,13 +61,13 @@ const fetchBridge: NativeFetchBridge = {
       redirect: RequestRedirect;
       credentials: RequestCredentials;
     };
-    const sendsCookies = request.credentials === "include";
+    const hasCredentials = request.credentials === "include";
     const controller = new AbortController();
     fetches.set(id, controller);
     void (async () => {
       try {
         const headers = [...request.headers];
-        if (sendsCookies && cookieJar.size > 0)
+        if (hasCredentials && cookieJar.size > 0)
           headers.push([
             "cookie",
             [...cookieJar]
@@ -81,7 +81,11 @@ const fetchBridge: NativeFetchBridge = {
           redirect: request.redirect,
           signal: controller.signal,
         });
-        if (request.redirect === "manual" && response.status >= 300 && response.status < 400) {
+        if (
+          request.redirect === "manual" &&
+          response.status >= 300 &&
+          response.status < 400
+        ) {
           onResponse(
             JSON.stringify({
               status: 0,
@@ -94,7 +98,10 @@ const fetchBridge: NativeFetchBridge = {
           onEnd(null);
           return;
         }
-        for (const header of sendsCookies ? response.headers.getSetCookie() : []) {
+        const setCookies = hasCredentials
+          ? response.headers.getSetCookie()
+          : [];
+        for (const header of setCookies) {
           const [pair = ""] = header.split(";", 1);
           const [name = "", ...value] = pair.split("=");
           cookieJar.set(name, value.join("="));

@@ -64,7 +64,9 @@ public final class SvelteRuntime {
         self.onError = onError
         for module in BuiltInModules.all { self.modules[module.name] = module }
         for module in modules {
-            if self.modules[module.name] != nil { print("[svelte] The native module \(module.name) replaces another module with that name.") }
+            if self.modules[module.name] != nil {
+                print("[svelte] The native module \(module.name) replaces another module with that name.")
+            }
             self.modules[module.name] = module
         }
         for component in components {
@@ -352,62 +354,6 @@ public final class SvelteRuntime {
         }
     #endif
 
-    public func open(_ url: URL) {
-        if isLoaded {
-            deliver(url)
-        } else if !pendingURLs.contains(url) {
-            pendingURLs.append(url)
-        }
-    }
-
-    func open(_ url: URL, from mount: Int?) {
-        if let mount, let first = mounts.keys.min(), mount != first { return }
-        open(url)
-    }
-
-    private func deliver(_ url: URL) {
-        call("__svelteAppEvent", ["openurl", url.absoluteString], waits: false)
-    }
-
-    func updateEnvironment(_ changes: [String: Any]) {
-        var changed: [String: Any] = [:]
-        for (key, value) in changes where !((environment[key] as? NSObject)?.isEqual(value) ?? false) {
-            environment[key] = value
-            changed[key] = value
-        }
-        guard !changed.isEmpty, isStarted else { return }
-        call("__svelteEnvironment", [Self.json(changed)], waits: false)
-    }
-
-    private static func json(_ value: [String: Any]) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys) else { return "{}" }
-        return String(bytes: data, encoding: .utf8) ?? "{}"
-    }
-
-    func report(_ error: ScriptError) {
-        if error.kind == .unhandledRejection {
-            print("[js:unhandledrejection] \(error)")
-        } else {
-            print("[js:exception] \(error)")
-            self.error = error
-        }
-        onError?(error)
-    }
-
-    func dismissError() {
-        error = nil
-        store.dismissError()
-    }
-
-    public func emit(_ event: String, from module: String) {
-        call("__svelteNativeEvent", [module, event, NSNull()])
-    }
-
-    public func emit(_ event: String, from module: String, _ payload: some Encodable) {
-        guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
-        call("__svelteNativeEvent", [module, event, json])
-    }
-
     func restart() {
         isRecovering = false
         reload()
@@ -468,6 +414,64 @@ public final class SvelteRuntime {
         for url in pendingURLs { deliver(url) }
         pendingURLs.removeAll()
         drain()
+    }
+}
+
+extension SvelteRuntime {
+    public func open(_ url: URL) {
+        if isLoaded {
+            deliver(url)
+        } else if !pendingURLs.contains(url) {
+            pendingURLs.append(url)
+        }
+    }
+
+    func open(_ url: URL, from mount: Int?) {
+        if let mount, let first = mounts.keys.min(), mount != first { return }
+        open(url)
+    }
+
+    private func deliver(_ url: URL) {
+        call("__svelteAppEvent", ["openurl", url.absoluteString], waits: false)
+    }
+
+    func updateEnvironment(_ changes: [String: Any]) {
+        var changed: [String: Any] = [:]
+        for (key, value) in changes where !((environment[key] as? NSObject)?.isEqual(value) ?? false) {
+            environment[key] = value
+            changed[key] = value
+        }
+        guard !changed.isEmpty, isStarted else { return }
+        call("__svelteEnvironment", [Self.json(changed)], waits: false)
+    }
+
+    private static func json(_ value: [String: Any]) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys) else { return "{}" }
+        return String(bytes: data, encoding: .utf8) ?? "{}"
+    }
+
+    func report(_ error: ScriptError) {
+        if error.kind == .unhandledRejection {
+            print("[js:unhandledrejection] \(error)")
+        } else {
+            print("[js:exception] \(error)")
+            self.error = error
+        }
+        onError?(error)
+    }
+
+    func dismissError() {
+        error = nil
+        store.dismissError()
+    }
+
+    public func emit(_ event: String, from module: String) {
+        call("__svelteNativeEvent", [module, event, NSNull()])
+    }
+
+    public func emit(_ event: String, from module: String, _ payload: some Encodable) {
+        guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
+        call("__svelteNativeEvent", [module, event, json])
     }
 }
 

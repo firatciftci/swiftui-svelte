@@ -49,7 +49,8 @@ struct Children: View {
 
 enum NodeShape {
     static func isBuiltIn(_ name: String) -> Bool {
-        Node.attachments.contains(name) || !(element(of: Node(id: 0, kind: .element, name: name, text: ""), placement: nil) is CustomElement)
+        Node.attachments.contains(name)
+            || !(element(of: Node(id: 0, kind: .element, name: name, text: ""), placement: nil) is CustomElement)
     }
 
     static func view(of node: Node, placement: CSSPlacement? = nil) -> any View {

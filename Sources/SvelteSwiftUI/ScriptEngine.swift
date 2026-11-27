@@ -82,9 +82,10 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         for mount in mounts { call("__svelteMount", mount) }
     }
 
-    private typealias SetRejectionCallback = @convention(c) (
-        JSGlobalContextRef, JSObjectRef, UnsafeMutablePointer<JSValueRef?>?
-    ) -> Void
+    private typealias SetRejectionCallback =
+        @convention(c) (
+            JSGlobalContextRef, JSObjectRef, UnsafeMutablePointer<JSValueRef?>?
+        ) -> Void
 
     private static let setRejectionCallback = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "JSGlobalContextSetUnhandledRejectionCallback")
         .map { unsafeBitCast($0, to: SetRejectionCallback.self) }

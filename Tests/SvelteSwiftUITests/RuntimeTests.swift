@@ -248,7 +248,7 @@ struct RuntimeTests {
             pumpRunLoop()
             try await Task.sleep(for: .milliseconds(5))
         }
-        let gap = runtime.evaluate { $0.evaluateScript("__nativeStats().maxFrameGapMs")?.toDouble() } ?? nil
+        let gap = runtime.evaluate { $0.evaluateScript("__nativeStats().maxFrameGapMs")?.toDouble() ?? 0 }
         #expect((gap ?? 0) > 0)
     }
 

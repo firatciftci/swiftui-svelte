@@ -66,7 +66,9 @@ nonisolated enum BundleLoader {
         validator(of: response) ?? SHA256.hash(data: body).map { String(format: "%02x", $0) }.joined()
     }
 
-    private static func fetch(_ url: URL, method: String = "GET", headers: [String: String] = [:]) async throws -> (
+    private static func fetch(
+        _ url: URL, method: String = "GET", headers: [String: String] = [:]
+    ) async throws -> (
         Data, HTTPURLResponse
     ) {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 10)
