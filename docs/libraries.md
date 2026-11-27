@@ -2,6 +2,16 @@
 
 Four libraries work in a swiftui-svelte app without changes to the app's code: TanStack Query, tRPC, oRPC, and Better Auth. Each of the four talks to a server through `fetch` or `EventSource`, which the host provides, and this page covers the setup each one needs. svelte-sonner and mode-watcher also run unchanged, through native versions described at the end of this page. Markdown files compiled by mdsvex render too, because the host draws the HTML tags that mdsvex writes. Charts built with d3's scale and shape modules render as well, because the host draws SVG.
 
+## Which libraries work
+
+swiftui-svelte runs real npm packages. It doesn't ship its own versions of them. Whether a library runs depends on what it needs from the browser:
+
+1. Libraries for logic, data, and networking run unchanged, because the host provides the web APIs they call: `fetch`, `EventSource`, `WebSocket`, `localStorage`, timers, and the `URL` and encoding APIs. This covers query and RPC clients, auth clients, validation libraries such as zod, and date and number formatting.
+2. Libraries that write markup run unchanged when the host draws their tags. That covers Markdown from mdsvex and SVG charts built with d3. The host adds tags like these only when the mapping is small and general.
+3. Component libraries that build on the DOM, such as bits-ui and shadcn-svelte, don't run, and there's no browser emulation to make them run. A component gets a native adapter only when it maps one-to-one onto a SwiftUI control, as svelte-sonner and mode-watcher do, and each adapter lists the options it doesn't support.
+
+A library also can't run if it uses `bind:` on elements, `on:` directives, or other syntax that Svelte's custom renderer doesn't compile. LayerChart is one example. Before you depend on a library, import it in a small screen and build the app. Svelte reports these errors when it compiles the library.
+
 ## TanStack Query
 
 TanStack Query needs two small changes, because its default focus and online handling assume a browser. Its focus manager listens for `visibilitychange` on `window`, which a swiftui-svelte app never fires. Its online manager starts out online and doesn't read `navigator.onLine` when the app launches. `connectQueryManagers` from `swiftui-svelte/query` connects both managers to the app: the queries refetch when the app comes to the foreground, and they pause while it's in the background. The online state follows `navigator.onLine` and the `online` and `offline` events.
