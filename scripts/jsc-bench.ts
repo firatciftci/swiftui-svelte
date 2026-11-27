@@ -10,6 +10,7 @@ const report = await benchmark({ count });
 const rows = [
   [
     "shape",
+    "nodes/row",
     "B/row",
     "retained",
     "mount ms",
@@ -21,6 +22,7 @@ const rows = [
 for (const [shape, sample] of Object.entries(report)) {
   rows.push([
     shape,
+    sample.nodes.toFixed(1),
     String(sample.bytes),
     String(sample.retained),
     sample.mount.toFixed(2),

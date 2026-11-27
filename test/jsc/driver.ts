@@ -1,3 +1,4 @@
+import { stats } from "swiftui-svelte";
 import type { Row } from "./rows.svelte.ts";
 import { show } from "./rows.svelte.ts";
 
@@ -8,6 +9,7 @@ declare function preciseTime(): number;
 declare function print(...values: Array<unknown>): void;
 
 export type Sample = {
+  nodes: number;
   bytes: number;
   retained: number;
   mount: number;
@@ -89,10 +91,12 @@ function mount(name: string, props: Record<string, unknown>): number {
 function measureShape(shape: string, count: number): Sample {
   show(rows(count, ""));
   const before = heap();
+  const created = stats.live;
   let id = 0;
   const mounted = time(() => {
     id = mount("Shapes", { shape });
   });
+  const nodes = (stats.live - created) / count;
   const bytes = (heap() - before) / count;
   const next = rows(count, " !");
   const update = time(() => show(next));
@@ -100,7 +104,7 @@ function measureShape(shape: string, count: number): Sample {
   const unmount = time(() => __svelteUnmount(id));
   const retained = (heap() - before) / count;
   show([]);
-  return { bytes, retained, mount: mounted, update, swap, unmount };
+  return { nodes, bytes, retained, mount: mounted, update, swap, unmount };
 }
 
 function measureTable(
@@ -110,7 +114,9 @@ function measureTable(
   const id = mount("Table", {});
   settle();
   const before = heap();
+  const created = stats.live;
   const mounted = time(() => table("create", count));
+  const nodes = (stats.live - created) / count;
   const bytes = (heap() - before) / count;
   const update = time(() => table("update", count));
   const swap = time(() => table("swap", count));
@@ -118,7 +124,7 @@ function measureTable(
   const retained = (heap() - before) / count;
   __svelteUnmount(id);
   settle();
-  return { bytes, retained, mount: mounted, update, swap, unmount };
+  return { nodes, bytes, retained, mount: mounted, update, swap, unmount };
 }
 
 function median(values: Array<number>): number {
@@ -142,6 +148,7 @@ export function run(
       if (round > 0) samples.push(sample);
     }
     report[shape] = {
+      nodes: median(samples.map((sample) => sample.nodes)),
       bytes: Math.round(median(samples.map((sample) => sample.bytes))),
       retained: Math.round(median(samples.map((sample) => sample.retained))),
       mount: median(samples.map((sample) => sample.mount)),

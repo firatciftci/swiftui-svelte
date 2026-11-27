@@ -67,7 +67,7 @@ describe("benchmarks", () => {
   }
 });
 
-const rowBudgets: Record<string, Sample> = {
+const rowBudgets: Record<string, Omit<Sample, "nodes">> = {
   "each-empty": {
     bytes: 627,
     retained: 64,
