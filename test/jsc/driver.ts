@@ -18,7 +18,7 @@ export type Sample = {
   unmount: number;
 };
 
-export const shapes = [
+const shapes = [
   "each-empty",
   "txt-static",
   "txt",
