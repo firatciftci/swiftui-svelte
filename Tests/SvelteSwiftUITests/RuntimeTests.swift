@@ -225,6 +225,34 @@ struct RuntimeTests {
         try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(3) }
     }
 
+    @Test func runsTheDisplayLinkOnlyWhileFramesAreRequested() async throws {
+        let runtime = try runtime(
+            mount + """
+                let frames = 0;
+                globalThis.__svelteFrame = () => attr(2, "frames", ++frames);
+                """)
+        #expect(!runtime.frames.isRunning)
+        _ = runtime.evaluate { $0.evaluateScript("__nativeRequestFrame()") }
+        #expect(runtime.frames.isRunning)
+        try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(1) }
+        try await eventually { !runtime.frames.isRunning }
+        _ = runtime.evaluate { $0.evaluateScript("__nativeRequestFrame()") }
+        try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(2) }
+    }
+
+    @Test func keepsTheDisplayLinkRunningWhileFrameStatsAreRead() async throws {
+        let runtime = try runtime(mount)
+        _ = runtime.evaluate { $0.evaluateScript("__nativeStats()") }
+        #expect(runtime.frames.isRunning)
+        for _ in 0..<60 {
+            pumpRunLoop()
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        #expect(runtime.frames.isRunning)
+        let gap = runtime.evaluate { $0.evaluateScript("__nativeStats().maxFrameGapMs")?.toDouble() } ?? nil
+        #expect((gap ?? 0) > 0)
+    }
+
     @Test func runsTimers() async throws {
         let runtime = try runtime(
             mount + """

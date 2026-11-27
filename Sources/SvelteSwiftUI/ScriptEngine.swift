@@ -16,6 +16,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         case nativeCall(Int, String, String, String)
         case error(ScriptError)
         case requestFrame
+        case watchFrames
     }
 
     struct Stats: Sendable {
@@ -135,6 +136,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         }
         let stats: @convention(block) () -> [String: Double] = { [weak self] in
             guard let self else { return [:] }
+            post(.watchFrames)
             return self.stats.withLock { stats in
                 defer {
                     stats.maxFrameGap = 0

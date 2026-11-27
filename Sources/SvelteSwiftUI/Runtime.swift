@@ -28,6 +28,7 @@ public final class SvelteRuntime {
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
+    @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
     @ObservationIgnored private var loadedVersion: String?
@@ -35,7 +36,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var isRecovering = false
     @ObservationIgnored private var isDownloading = false
     @ObservationIgnored private var watcher: Task<Void, Never>?
-    @ObservationIgnored private let frames = FrameMonitor()
+    @ObservationIgnored let frames = FrameMonitor()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
     @ObservationIgnored private var memoryObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var pendingURLs: Array<URL> = []
@@ -70,8 +71,7 @@ public final class SvelteRuntime {
     func start() {
         guard !isStarted else { return }
         isStarted = true
-        frames.onFrame = { [weak self] timestamp, gap in self?.frame(timestamp, gap: gap) }
-        frames.start()
+        frames.onFrame = { [weak self] timestamp, gap in self?.frame(timestamp, gap: gap) ?? false }
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             let isOnline = path.status == .satisfied
@@ -196,7 +196,12 @@ public final class SvelteRuntime {
             case let .action(mount, name, json) where !isStopped: perform(mount, name, json)
             case let .invoke(id, method, json) where !isStopped: invoke(id, method, json)
             case let .nativeCall(id, module, method, json) where !isStopped: callModule(id, module, method, json)
-            case .requestFrame where !isStopped: isFrameRequested = true
+            case .requestFrame where !isStopped:
+                isFrameRequested = true
+                frames.resume()
+            case .watchFrames:
+                watchesFramesUntil = CACurrentMediaTime() + 2
+                frames.resume()
             case let .error(error): report(error)
             default: break
             }
@@ -299,11 +304,12 @@ public final class SvelteRuntime {
         action(value.object)
     }
 
-    private func frame(_ timestamp: CFTimeInterval, gap: Double) {
+    private func frame(_ timestamp: CFTimeInterval, gap: Double) -> Bool {
         engine.stats.withLock { $0.maxFrameGap = max($0.maxFrameGap, gap) }
-        guard isFrameRequested else { return }
+        guard isFrameRequested else { return timestamp < watchesFramesUntil }
         isFrameRequested = false
         call("__svelteFrame", [timestamp * 1000], waits: false)
+        return true
     }
 
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
@@ -451,13 +457,21 @@ nonisolated private final class WeakBox<Object: AnyObject> {
     weak var object: Object?
 }
 
-private final class FrameMonitor: NSObject {
+final class FrameMonitor: NSObject {
+    private static let idleTicksBeforePausing = 30
     private var link: CADisplayLink?
     private var lastTimestamp: CFTimeInterval = 0
-    var onFrame: ((CFTimeInterval, Double) -> Void)?
+    private var idleTicks = 0
+    var onFrame: ((CFTimeInterval, Double) -> Bool)?
 
-    func start() {
-        guard link == nil else { return }
+    var isRunning: Bool { link.map { !$0.isPaused } ?? false }
+
+    func resume() {
+        idleTicks = 0
+        if let link {
+            link.isPaused = false
+            return
+        }
         #if os(macOS)
             guard let link = (NSScreen.main ?? NSScreen.screens.first)?.displayLink(target: self, selector: #selector(tick)) else { return }
         #else
@@ -470,7 +484,14 @@ private final class FrameMonitor: NSObject {
     @objc private func tick(_ link: CADisplayLink) {
         let gap = lastTimestamp > 0 ? (link.timestamp - lastTimestamp) * 1000 : 0
         lastTimestamp = link.timestamp
-        onFrame?(link.timestamp, gap)
+        if onFrame?(link.timestamp, gap) == true {
+            idleTicks = 0
+            return
+        }
+        idleTicks += 1
+        guard idleTicks >= Self.idleTicksBeforePausing else { return }
+        link.isPaused = true
+        lastTimestamp = 0
     }
 }
 
