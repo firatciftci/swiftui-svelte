@@ -121,12 +121,7 @@ const finalizer = new FinalizationRegistry<number>((id) => {
   elements.delete(id);
   stats.live--;
 });
-const scheduler = {
-  nextId: 1,
-  nextRequest: 1,
-  isScheduled: false,
-  requiresWire: false,
-};
+const scheduler = { nextId: 1, nextRequest: 1, isScheduled: false };
 const invocations: Array<
   [element: ElementNode, method: string, options: Record<string, unknown>]
 > = [];
@@ -148,12 +143,10 @@ function requiresWire(value: unknown): boolean {
 }
 
 function sendable(value: unknown): unknown {
-  if (
-    !scheduler.requiresWire &&
-    (typeof value === "object" || typeof value === "bigint")
-  )
-    scheduler.requiresWire = requiresWire(value);
-  return value;
+  if (typeof value !== "object" && typeof value !== "bigint") return value;
+  if (!requiresWire(value)) return value;
+  const plain: unknown = JSON.parse(JSON.stringify(value, wire));
+  return plain;
 }
 
 function schedule(): void {
@@ -342,9 +335,8 @@ function commit(animation?: AnimationOptions): void {
     flushInvocations();
     return;
   }
-  const json = JSON.stringify(batch, scheduler.requiresWire ? wire : undefined);
+  const json = JSON.stringify(batch);
   batch.length = 0;
-  scheduler.requiresWire = false;
   const serialized = __nativeNow();
   if (animation === undefined) __nativeCommit(json);
   else __nativeCommit(json, JSON.stringify(animation));

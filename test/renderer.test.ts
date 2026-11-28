@@ -1056,6 +1056,24 @@ describe("attributes", () => {
     });
   });
 
+  it("serializes batches without a replacer when a value holds a Map", async () => {
+    const stringify = vi.spyOn(JSON, "stringify");
+    try {
+      await render(Values);
+      await update(() => (state.values.big = 2n ** 70n));
+      const batches = stringify.mock.calls.filter(
+        ([value, replacer]) => Array.isArray(value) && replacer != null,
+      );
+      expect(batches).toEqual([]);
+    } finally {
+      stringify.mockRestore();
+    }
+    expect(find("vstack")?.attributes.get("data-map")).toEqual({
+      a: 1,
+      b: ["x"],
+    });
+  });
+
   it("sends a changed attribute value", async () => {
     await render(Values);
     await update(() => (state.values.number = 2));
