@@ -944,13 +944,34 @@ function awaitHandlers(
     tasks.delete(request);
     for (const outcome of outcomes) {
       if (outcome.status === "rejected" && signal?.aborted !== true) {
-        setTimeout(() => {
-          throw outcome.reason;
-        }, 0);
+        report(outcome.reason);
       }
     }
     invoke(element, "settled", { request });
   });
+}
+
+function report(error: unknown): void {
+  setTimeout(() => {
+    throw error;
+  }, 0);
+}
+
+function run(
+  handlers: Array<Handler>,
+  argument: unknown,
+  request: number | undefined,
+): Array<unknown> {
+  const results: Array<unknown> = [];
+  for (const handler of handlers) {
+    try {
+      results.push(handler(argument));
+    } catch (error) {
+      if (request == null) report(error);
+      else results.push(Promise.reject(error));
+    }
+  }
+  return results;
 }
 
 function startTask(request: number | undefined): AbortSignal {
@@ -979,7 +1000,7 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     return;
   }
   const argument = type === "task" ? startTask(request) : payload;
-  const results = handlers.map((handler) => handler(argument));
+  const results = run(handlers, argument, request);
   if (request != null) awaitHandlers(element, request, results);
   const name =
     controlledAttributes.get(element.name)?.[type] ??

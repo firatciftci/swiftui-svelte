@@ -31,5 +31,11 @@
     throw new Error("offline");
   }}
 />
+<scrollview
+  testid="throwing"
+  onrefresh={() => {
+    throw new Error("unreachable");
+  }}
+/>
 <scrollview testid="plain" />
 <btn testid="hide" onclick={() => (shows = false)}>Hide</btn>

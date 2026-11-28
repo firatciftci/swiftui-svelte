@@ -502,6 +502,20 @@ describe("refresh", () => {
     }
   });
 
+  it("settles a refresh whose handler throws and reports the error", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      await render(Refresh);
+      await update(() => {
+        expect(() => refresh("throwing", 9)).not.toThrow();
+      });
+      expect(settled()).toEqual([9]);
+      expect(() => vi.runOnlyPendingTimers()).toThrow("unreachable");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("settles a refresh whose element was removed", async () => {
     await render(Refresh);
     await update(() => refresh("feed", 8));
@@ -768,6 +782,22 @@ describe("controlled inputs", () => {
     await update(() => edit(byTestId("limited"), "input", "value", "abcdefg"));
     await update(() => edit(byTestId("limited"), "input", "value", "abcdefgh"));
     expect(byTestId("limited")?.attributes.get("value")).toBe("abcde");
+  });
+
+  it("restores a value when the handler throws and reports the error", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      await render(Controlled);
+      await update(() => {
+        expect(() =>
+          edit(byTestId("throwing"), "input", "value", "typed"),
+        ).not.toThrow();
+      });
+      expect(byTestId("throwing")?.attributes.get("value")).toBe("");
+      expect(() => vi.runOnlyPendingTimers()).toThrow("rejected input");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("leaves a field without a value alone", async () => {

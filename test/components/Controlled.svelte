@@ -2,6 +2,7 @@
   let text = $state("");
   const locked = false;
   let free = $state(false);
+  const rejected = "";
 </script>
 
 <textfield
@@ -10,6 +11,13 @@
   oninput={(value) => (text = value.slice(0, 5))}
 />
 <textfield testid="uncontrolled" oninput={() => {}} />
+<textfield
+  testid="throwing"
+  value={rejected}
+  oninput={() => {
+    throw new Error("rejected input");
+  }}
+/>
 <toggle testid="locked" checked={locked} onchange={() => {}} />
 <toggle testid="free" checked={free} onchange={(value) => (free = value)} />
 <tabview testid="pinned" selection="first" onchange={() => {}}>
