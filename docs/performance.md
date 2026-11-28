@@ -59,7 +59,7 @@ Reversing a keyed `{#each}` used to cost Svelte 109ms for 1,000 rows, because Sv
 <details>
 <summary>Running the benchmark</summary>
 
-`pnpm bench` builds [`Bench.svelte`](../example/src/Bench.svelte) instead of the example app. It runs a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a loop that creates and clears rows and checks that nodes get released) and logs one `BENCH` line per scenario to the console. Run `pnpm build` afterward to get the example app back. Benchmark a Release build, because Debug builds of the Swift side are several times slower.
+`pnpm bench` builds [`Bench.svelte`](../example/src/Bench.svelte) instead of the example app. It runs a fixed set of scenarios on a 1,000-row `list` (create, update all, update one, toggle all, reverse, append one, simulated typing, clear, and a loop that creates and clears rows and checks that nodes get released) and logs one `BENCH` line per scenario with `console.log`. The host writes `console.log` output to the unified log under the `swiftui-svelte` subsystem, not to standard output, so read the lines from there. Run `pnpm build` afterward to get the example app back. Benchmark a Release build, because Debug builds of the Swift side are several times slower.
 
 To sign for a device, create `example/ios/Local.xcconfig`, which git ignores, with your team ID and a bundle ID that's free on your account:
 
@@ -68,7 +68,7 @@ DEVELOPMENT_TEAM = YOUR_TEAM_ID
 PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*] = com.yourname.SvelteHost
 ```
 
-Then build, install, and launch with the console attached. `xcrun devicectl list devices` shows the device ID.
+Then build, install, and launch. `xcrun devicectl list devices` shows the device ID. To read the `BENCH` lines, open Console.app, select the device, and search for `BENCH`.
 
 ```sh
 pnpm bench
@@ -76,17 +76,18 @@ pnpm ios:project
 xcodebuild -project example/ios/SvelteHost.xcodeproj -scheme SvelteHost -configuration Release \
   -destination 'id=DEVICE_ID' -derivedDataPath example/ios/build -allowProvisioningUpdates build
 xcrun devicectl device install app --device DEVICE_ID example/ios/build/Build/Products/Release-iphoneos/SvelteHost.app
-xcrun devicectl device process launch --console --terminate-existing --device DEVICE_ID com.yourname.SvelteHost
+xcrun devicectl device process launch --terminate-existing --device DEVICE_ID com.yourname.SvelteHost
 ```
 
-Apps on iOS devices run JavaScriptCore without its JIT compiler, but the simulator has it. To get closer to device numbers in the simulator, launch with the JIT turned off:
+Apps on iOS devices run JavaScriptCore without its JIT compiler, but the simulator has it. To get closer to device numbers in the simulator, start streaming the log in one terminal, then launch with the JIT turned off in another:
 
 ```sh
-SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --console-pty --terminate-running-process booted com.example.SvelteHost
+xcrun simctl spawn booted log stream --style compact --predicate 'subsystem == "swiftui-svelte"' | grep BENCH
+SIMCTL_CHILD_JSC_useJIT=false xcrun simctl launch --terminate-running-process booted com.example.SvelteHost
 ```
 
 With the JIT off, an iPhone 18 Pro simulator came within about 1.5 times the device numbers: Svelte took 64ms to create 1,000 rows and 82ms to reverse them, and Swift's times were about the same as on the device.
 
-To run the plain SwiftUI version, launch the Release build with the `-NativeBench` argument. It logs one `NATIVE` line per scenario, in the same format as the `BENCH` lines.
+To run the plain SwiftUI version, launch the Release build with the `-NativeBench` argument. It prints one `NATIVE` line per scenario to standard output, in the same format as the `BENCH` lines, so `--console-pty` on `simctl launch` or `--console` on `devicectl device process launch` shows them.
 
 </details>
