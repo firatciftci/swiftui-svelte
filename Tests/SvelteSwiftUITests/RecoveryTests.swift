@@ -10,6 +10,38 @@ struct RecoveryTests {
         #expect(runtime.store.root?.children.first?.name == "txt")
     }
 
+    private let echo = #"globalThis.__svelteDispatch = (id, type, payload) => __nativeCommit(payload);"#
+
+    @Test func remountsAgainAfterTheRemountedAppCommitsCleanly() throws {
+        let runtime = try runtime(mountScript + echo)
+        runtime.dispatch(2, "x", "[42]")
+        #expect(runtime.store.root?.children.first?.name == "txt")
+        runtime.dispatch(2, "x", #"[4,2,0,"first"]"#)
+        #expect(runtime.store.node(2)?.attributes["txt"] == .string("first"))
+        runtime.dispatch(2, "x", "[42]")
+        #expect(runtime.store.root?.children.first?.name == "txt")
+        runtime.dispatch(2, "x", #"[4,2,0,"second"]"#)
+        #expect(runtime.store.node(2)?.attributes["txt"] == .string("second"))
+    }
+
+    @Test func stopsWhenTheRemountedAppFailsBeforeItCommitsCleanly() throws {
+        let runtime = try runtime(mountScript + echo)
+        runtime.dispatch(2, "x", "[42]")
+        runtime.dispatch(2, "x", "[42]")
+        runtime.dispatch(2, "x", #"[4,2,0,"after"]"#)
+        #expect(runtime.store.node(2)?.attributes["txt"] == nil)
+        #expect(runtime.store.error?.contains("42") == true)
+    }
+
+    @Test func stopsWhenTheRemountedAppFailsRightAfterItMounts() async throws {
+        let runtime = try runtime(
+            mountScript + echo + #"setTimeout(() => __nativeCommit("[42]"), 0);"#)
+        try await eventually { runtime.store.error != nil }
+        runtime.dispatch(2, "x", #"[4,2,0,"after"]"#)
+        #expect(runtime.store.node(2)?.attributes["txt"] == nil)
+        #expect(runtime.store.error?.contains("42") == true)
+    }
+
     @Test func reportsExceptions() throws {
         let runtime = try runtime("throw new Error('boom')")
         #expect(runtime.error?.message.contains("boom") == true)

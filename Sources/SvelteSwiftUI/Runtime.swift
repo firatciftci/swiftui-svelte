@@ -28,7 +28,7 @@ public final class SvelteRuntime {
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
-    @ObservationIgnored private var inbox: Array<(generation: Int, message: ScriptEngine.Message)> = []
+    @ObservationIgnored private var inbox: Array<(generation: Int, isInitial: Bool, message: ScriptEngine.Message)> = []
     @ObservationIgnored private var isDraining = false
     @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
@@ -191,8 +191,7 @@ public final class SvelteRuntime {
     }
 
     func drain() {
-        let generation = generation
-        for message in engine.takeMessages() { inbox.append((generation, message)) }
+        receive(isInitial: false)
         guard !isDraining, !inbox.isEmpty else { return }
         isDraining = true
         defer { isDraining = false }
@@ -200,12 +199,14 @@ public final class SvelteRuntime {
         var isStopped = false
         var index = 0
         while index < inbox.count {
-            let (generation, message) = inbox[index]
+            let (generation, isInitial, message) = inbox[index]
             index += 1
             guard generation == self.generation else { continue }
             switch message {
             case let .commit(json, animation) where !isStopped:
-                if !store.apply(json, animation: animation) {
+                if store.apply(json, animation: animation) {
+                    if !isInitial { isRecovering = false }
+                } else {
                     onError?(ScriptError(kind: .bridge, message: store.error ?? "The bundle sent a malformed batch.", frames: []))
                     if isRecovering {
                         stopEngine()
@@ -417,10 +418,16 @@ public final class SvelteRuntime {
         engine.queue.sync {
             engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
+        receive(isInitial: true)
         isLoaded = true
         for url in pendingURLs { deliver(url) }
         pendingURLs.removeAll()
         drain()
+    }
+
+    private func receive(isInitial: Bool) {
+        let generation = generation
+        for message in engine.takeMessages() { inbox.append((generation, isInitial, message)) }
     }
 }
 
