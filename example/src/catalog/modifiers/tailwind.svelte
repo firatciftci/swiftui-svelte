@@ -36,7 +36,7 @@
     Sized with its border inside
   </txt>
   <txt
-    margin={{ leading: "auto", trailing: "auto" }}
+    margin={{ horizontal: "auto" }}
     balanced
     class="text-sm text-neutral-600 dark:text-neutral-300"
   >

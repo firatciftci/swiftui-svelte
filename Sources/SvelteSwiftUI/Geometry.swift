@@ -2,23 +2,13 @@ import SwiftUI
 
 enum Geometry {
     static func insets(_ value: JSONValue?) -> EdgeInsets? {
-        switch value {
-        case .number, .bool, .string:
-            let length = Styles.padding(value)
-            return EdgeInsets(top: length, leading: length, bottom: length, trailing: length)
-        case let .object(edges):
-            func edge(_ name: String, _ axis: String) -> CGFloat {
-                Styles.padding(edges[name] ?? edges[axis])
-            }
-            return EdgeInsets(
-                top: edge("top", "vertical"),
-                leading: edge("leading", "horizontal"),
-                bottom: edge("bottom", "vertical"),
-                trailing: edge("trailing", "horizontal")
-            )
-        default:
-            return nil
-        }
+        guard let edges = Edges(value) else { return nil }
+        return EdgeInsets(
+            top: Styles.padding(edges.top),
+            leading: Styles.padding(edges.leading),
+            bottom: Styles.padding(edges.bottom),
+            trailing: Styles.padding(edges.trailing)
+        )
     }
 
     static func length(_ value: JSONValue?) -> CGFloat? {
@@ -142,25 +132,46 @@ struct Margin {
     let vertical: VerticalAlignment?
 
     init(_ value: JSONValue?) {
-        var edges: [String: JSONValue] = [:]
-        if case let .object(object)? = value { edges = object }
-        func points(_ name: String) -> CGFloat { CGFloat(edges[name]?.number ?? 0) }
-        func isAuto(_ name: String) -> Bool { edges[name]?.string == "auto" }
-        insets = EdgeInsets(top: points("top"), leading: points("leading"), bottom: points("bottom"), trailing: points("trailing"))
+        let edges = Edges(value)
+        func points(_ edge: JSONValue?) -> CGFloat { CGFloat(edge?.number ?? 0) }
+        func isAuto(_ edge: JSONValue?) -> Bool { edge?.string == "auto" }
+        insets = EdgeInsets(
+            top: points(edges?.top), leading: points(edges?.leading), bottom: points(edges?.bottom), trailing: points(edges?.trailing))
         horizontal =
-            switch (isAuto("leading"), isAuto("trailing")) {
+            switch (isAuto(edges?.leading), isAuto(edges?.trailing)) {
             case (true, true): .center
             case (true, false): .trailing
             case (false, true): .leading
             case (false, false): nil
             }
         vertical =
-            switch (isAuto("top"), isAuto("bottom")) {
+            switch (isAuto(edges?.top), isAuto(edges?.bottom)) {
             case (true, true): .center
             case (true, false): .bottom
             case (false, true): .top
             case (false, false): nil
             }
+    }
+}
+
+struct Edges {
+    let top: JSONValue?
+    let leading: JSONValue?
+    let bottom: JSONValue?
+    let trailing: JSONValue?
+
+    init?(_ value: JSONValue?) {
+        switch value {
+        case .number, .bool, .string:
+            (top, leading, bottom, trailing) = (value, value, value, value)
+        case let .object(edges):
+            top = edges["top"] ?? edges["vertical"]
+            leading = edges["leading"] ?? edges["horizontal"]
+            bottom = edges["bottom"] ?? edges["vertical"]
+            trailing = edges["trailing"] ?? edges["horizontal"]
+        default:
+            return nil
+        }
     }
 }
 

@@ -55,4 +55,17 @@ struct GeometryTests {
         #expect(Margin(.object(["bottom": .string("auto")])).vertical == .top)
         #expect(Margin(nil).insets == EdgeInsets())
     }
+
+    @Test func readsMarginShorthandsAsPaddingDoes() {
+        #expect(Margin(.number(16)).insets == EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
+        let horizontal = Margin(.object(["horizontal": .number(16)]))
+        #expect(horizontal.insets == EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+        let vertical = Margin(.object(["vertical": .string("auto"), "top": .number(8)]))
+        #expect(vertical.insets == EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+        #expect(vertical.vertical == .top)
+        let centered = Margin(.string("auto"))
+        #expect(centered.horizontal == .center)
+        #expect(centered.vertical == .center)
+        #expect(centered.insets == EdgeInsets())
+    }
 }

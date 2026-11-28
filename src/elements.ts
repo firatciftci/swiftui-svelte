@@ -367,6 +367,23 @@ type Insets =
       /** The inset of the top and bottom edges, in points. A shorthand for `top` and `bottom`. */
       vertical?: Inset;
     };
+type MarginEdge = number | "auto";
+type Margin =
+  | MarginEdge
+  | {
+      /** The margin of the top edge, in points, or `"auto"`. */
+      top?: MarginEdge;
+      /** The margin of the leading edge, in points, or `"auto"`. */
+      leading?: MarginEdge;
+      /** The margin of the bottom edge, in points, or `"auto"`. */
+      bottom?: MarginEdge;
+      /** The margin of the trailing edge, in points, or `"auto"`. */
+      trailing?: MarginEdge;
+      /** The margin of the leading and trailing edges, in points, or `"auto"`. A shorthand for `leading` and `trailing`. */
+      horizontal?: MarginEdge;
+      /** The margin of the top and bottom edges, in points, or `"auto"`. A shorthand for `top` and `bottom`. */
+      vertical?: MarginEdge;
+    };
 type Length = number | "infinity";
 type Point = { x?: number; y?: number };
 type TextInput = Modifiers & {
@@ -653,13 +670,8 @@ type Modifiers = {
   class?: string;
   /** Pads the element. A number pads every edge by that many points, an object such as `{ horizontal: 20, top: 4 }` pads each edge separately, and a bare `padding` adds 16 points. A negative value works as it does in SwiftUI: the element's frame shrinks by that much, and content that fills the space it's offered, such as a shape, draws that far past the frame. Use it for shadows and backgrounds that spread beyond their element. */
   padding?: Insets;
-  /** The space outside the element on each edge, in points, or "auto" to share the free space and center the element along that axis. Margin sits outside the background, border, and shadow, unlike padding. */
-  margin?: {
-    top?: number | "auto";
-    leading?: number | "auto";
-    bottom?: number | "auto";
-    trailing?: number | "auto";
-  };
+  /** The space outside the element, in points. A number sets every edge, and an object such as `{ horizontal: 16, top: 4 }` sets each edge separately. An edge can also be `"auto"`, which shares the free space and centers the element along that axis, so `margin="auto"` centers it on both axes. Margin sits outside the background, border, and shadow, unlike padding. */
+  margin?: Margin;
   /** Makes the element a query container for @container classes, with the width it is laid out at. An empty string is the unnamed container, and any other value names it. The @container class sets this. */
   container?: string;
   /** Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this. */

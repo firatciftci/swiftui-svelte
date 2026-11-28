@@ -3448,16 +3448,16 @@ Every element takes these attributes, except the few whose entries say they don'
 
 ### Tailwind CSS
 
-| Attribute   | Type                                                                                                              | Description                                                                                                                                                                                                                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `class`     | `string`                                                                                                          | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md). |
-| `margin`    | `{ top?: number \| "auto"; leading?: number \| "auto"; bottom?: number \| "auto"; trailing?: number \| "auto"; }` | The space outside the element on each edge, in points, or "auto" to share the free space and center the element along that axis. Margin sits outside the background, border, and shadow, unlike padding.                                                                                              |
-| `container` | `string`                                                                                                          | Makes the element a query container for                                                                                                                                                                                                                                                               |
-| `css`       | `boolean`                                                                                                         | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.                                                                                                                                                               |
-| `axis`      | `"horizontal" \| "vertical"`                                                                                      | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this.                                                                                                                                                           |
-| `boxsizing` | `"content-box" \| "border-box"`                                                                                   | How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`.                                                                            |
-| `selfalign` | `"start" \| "center" \| "end" \| "stretch"`                                                                       | How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this.                                                                                                                                                                             |
-| `balanced`  | `boolean`                                                                                                         | Balances the lines of a text element, so they come out an even width. The text-balance class sets this.                                                                                                                                                                                               |
+| Attribute   | Type                                        | Description                                                                                                                                                                                                                                                                                                                                                              |
+| ----------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `class`     | `string`                                    | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md).                                                                    |
+| `margin`    | `Margin`                                    | The space outside the element, in points. A number sets every edge, and an object such as `{ horizontal: 16, top: 4 }` sets each edge separately. An edge can also be `"auto"`, which shares the free space and centers the element along that axis, so `margin="auto"` centers it on both axes. Margin sits outside the background, border, and shadow, unlike padding. |
+| `container` | `string`                                    | Makes the element a query container for                                                                                                                                                                                                                                                                                                                                  |
+| `css`       | `boolean`                                   | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.                                                                                                                                                                                                                                  |
+| `axis`      | `"horizontal" \| "vertical"`                | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this.                                                                                                                                                                                                                              |
+| `boxsizing` | `"content-box" \| "border-box"`             | How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`.                                                                                                                                               |
+| `selfalign` | `"start" \| "center" \| "end" \| "stretch"` | How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this.                                                                                                                                                                                                                                                |
+| `balanced`  | `boolean`                                   | Balances the lines of a text element, so they come out an even width. The text-balance class sets this.                                                                                                                                                                                                                                                                  |
 
 ```svelte
 <hstack class="items-center gap-2">
@@ -3498,7 +3498,7 @@ Every element takes these attributes, except the few whose entries say they don'
     Sized with its border inside
   </txt>
   <txt
-    margin={{ leading: "auto", trailing: "auto" }}
+    margin={{ horizontal: "auto" }}
     balanced
     class="text-sm text-neutral-600 dark:text-neutral-300"
   >
@@ -3923,6 +3923,33 @@ type MagnifyEvent = {
   /** The rate of change of the magnification per second. */
   velocity: number;
 };
+```
+
+### `Margin`
+
+```ts
+type Margin =
+  | MarginEdge
+  | {
+      /** The margin of the top edge, in points, or `"auto"`. */
+      top?: MarginEdge;
+      /** The margin of the leading edge, in points, or `"auto"`. */
+      leading?: MarginEdge;
+      /** The margin of the bottom edge, in points, or `"auto"`. */
+      bottom?: MarginEdge;
+      /** The margin of the trailing edge, in points, or `"auto"`. */
+      trailing?: MarginEdge;
+      /** The margin of the leading and trailing edges, in points, or `"auto"`. A shorthand for `leading` and `trailing`. */
+      horizontal?: MarginEdge;
+      /** The margin of the top and bottom edges, in points, or `"auto"`. A shorthand for `top` and `bottom`. */
+      vertical?: MarginEdge;
+    };
+```
+
+### `MarginEdge`
+
+```ts
+type MarginEdge = number | "auto";
 ```
 
 ### `NamedColor`
