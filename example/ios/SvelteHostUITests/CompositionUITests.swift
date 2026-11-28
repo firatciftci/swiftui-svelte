@@ -14,7 +14,7 @@ extension SvelteHostUITests {
 
     func testTransformsTextTypedWithoutAnInputMethod() {
         let field = openCodeField(keyboards: "(\"en_US@sw=QWERTY;hw=Automatic\")")
-        field.typeText("abc")
+        for letter in ["a", "b", "c"] { key(letter).tap() }
         XCTAssertEqual(field.value as? String, "ABC")
     }
 
@@ -30,6 +30,6 @@ extension SvelteHostUITests {
     }
 
     private func key(_ label: String) -> XCUIElement {
-        app.keyboards.keys.matching(NSPredicate(format: "label == %@", label)).firstMatch
+        app.keyboards.keys.matching(NSPredicate(format: "label ==[c] %@", label)).firstMatch
     }
 }
