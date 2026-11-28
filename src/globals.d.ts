@@ -30,7 +30,11 @@ declare var __svelteMount: (
   name: string,
   json: string,
 ) => void;
-declare var __svelteProps: (mountId: number, json: string) => void;
+declare var __svelteProps: (
+  mountId: number,
+  json: string,
+  actions?: string,
+) => void;
 declare var __svelteUnmount: (mountId: number) => void;
 declare function __nativeAction(
   mountId: number,

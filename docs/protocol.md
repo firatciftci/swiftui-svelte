@@ -230,10 +230,10 @@ A host must not show a loading state forever. If the bundle has loaded and no `r
 The host updates props with:
 
 ```text
-__svelteProps(mountId, json)
+__svelteProps(mountId, json, actions?)
 ```
 
-`json` is an object of the complete prop set, minus actions. Props missing from the object are removed. Action props are never changed by this call.
+`json` is an object of the complete prop set, minus actions. Props missing from the object are removed. `actions` is optional. When the host passes it, it's a JSON array of the action names the mount has now: the bundle adds a function prop for each new name and removes the props of names that are gone. When the host leaves it out, the actions stay as they are. A host sends `actions` only when the set of names changes, and it may send it with the same props.
 
 The host unmounts with:
 

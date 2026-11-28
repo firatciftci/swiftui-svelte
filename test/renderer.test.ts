@@ -176,6 +176,31 @@ describe("props and actions", () => {
     expect(native.actions.map((action) => action.name)).toEqual(["onsave"]);
   });
 
+  it("adds and removes actions when Swift updates them", async () => {
+    unmount = mountComponent(Greeting, { name: "Ada" });
+    await update(() => {});
+    await update(() =>
+      globalThis.__svelteProps(
+        lastMount(),
+        JSON.stringify({ name: "Ada" }),
+        JSON.stringify(["onsave"]),
+      ),
+    );
+    native.actions.length = 0;
+    await update(() => dispatch(find("btn"), "click"));
+    expect(native.actions.map((action) => action.name)).toEqual(["onsave"]);
+    await update(() =>
+      globalThis.__svelteProps(
+        lastMount(),
+        JSON.stringify({ name: "Ada", onsave: 1 }),
+        JSON.stringify([]),
+      ),
+    );
+    native.actions.length = 0;
+    await update(() => dispatch(find("btn"), "click"));
+    expect(native.actions).toEqual([]);
+  });
+
   it("runs several mounts in one context", async () => {
     const first = mountComponent(Greeting, { name: "One" });
     const firstId = lastMount();

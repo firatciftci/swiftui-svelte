@@ -159,10 +159,12 @@ public final class SvelteRuntime {
     func update(_ id: Int, props: String, actions: [String: @MainActor (JSONValue) -> Void]) {
         guard let mount = mounts[id] else { return }
         mounts[id]?.actions = actions
-        guard mount.props != props else { return }
+        let names = actions.keys.sorted()
+        let namesChanged = names != mount.actions.keys.sorted()
+        guard mount.props != props || namesChanged else { return }
         mounts[id]?.props = props
         flushInputs(waits: true)
-        call("__svelteProps", [id, props])
+        call("__svelteProps", namesChanged ? [id, props, Self.json(names)] : [id, props])
     }
 
     func unmount(_ id: Int) {
@@ -172,8 +174,7 @@ public final class SvelteRuntime {
 
     private func arguments(for id: Int) -> Array<Any> {
         guard let mount = mounts[id] else { return [] }
-        let actions = mount.actions.keys.sorted().map { "\"\($0)\"" }.joined(separator: ",")
-        return [id, mount.component, "{\"props\":\(mount.props),\"actions\":[\(actions)]}"]
+        return [id, mount.component, "{\"props\":\(mount.props),\"actions\":\(Self.json(mount.actions.keys.sorted()))}"]
     }
 
     func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull(), waits: Bool = true) {
@@ -496,7 +497,7 @@ extension SvelteRuntime {
         call("__svelteEnvironment", [Self.json(changed)], waits: false)
     }
 
-    private static func json(_ value: [String: Any]) -> String {
+    private static func json(_ value: Any) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys) else { return "{}" }
         return String(bytes: data, encoding: .utf8) ?? "{}"
     }

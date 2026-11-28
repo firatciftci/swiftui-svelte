@@ -1065,18 +1065,13 @@ globalThis.__svelteMount = (mountId, name, json) => {
     props: Record<string, unknown>;
     actions: Array<string>;
   };
-  const props = new SvelteMap<string, unknown>();
-  for (const action of actions) {
-    props.set(action, (payload: unknown) =>
-      __nativeAction(mountId, action, JSON.stringify(payload ?? null, wire)),
-    );
-  }
   const entry: Mounted = {
     instance: {},
     target: renderer.createFragment(),
-    props,
-    actions: new Set(actions),
+    props: new SvelteMap<string, unknown>(),
+    actions: new Set(),
   };
+  setActions(mountId, entry, actions);
   update(entry, values);
   entry.target.state = State.Native;
   send(opcodes.root, entry.target.id, protocol, mountId);
@@ -1091,14 +1086,36 @@ globalThis.__svelteMount = (mountId, name, json) => {
   entry.instance = mount(component as Component<Record<string, unknown>>, {
     target: entry.target,
     renderer,
-    props: reactiveProps(props),
+    props: reactiveProps(entry.props),
   });
   mounted.set(mountId, entry);
 };
 
-globalThis.__svelteProps = (mountId, json) => {
+function setActions(
+  mountId: number,
+  entry: Mounted,
+  names: Array<string>,
+): void {
+  const next = new Set(names);
+  for (const name of entry.actions) {
+    if (!next.has(name)) entry.props.delete(name);
+  }
+  for (const name of next) {
+    if (entry.actions.has(name)) continue;
+    entry.props.set(name, (payload: unknown) =>
+      __nativeAction(mountId, name, JSON.stringify(payload ?? null, wire)),
+    );
+  }
+  entry.actions = next;
+}
+
+globalThis.__svelteProps = (mountId, json, actions) => {
   const entry = mounted.get(mountId);
-  if (entry != null) update(entry, JSON.parse(json) as Record<string, unknown>);
+  if (entry == null) return;
+  if (actions != null) {
+    setActions(mountId, entry, JSON.parse(actions) as Array<string>);
+  }
+  update(entry, JSON.parse(json) as Record<string, unknown>);
 };
 
 globalThis.__svelteUnmount = (mountId) => {

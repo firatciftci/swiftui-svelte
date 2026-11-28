@@ -8,6 +8,7 @@ public struct SvelteView: View {
     @State private var viewportSize = CGSize.zero
     @State private var systemScheme = ColorScheme.light
     @State private var isOverdue = false
+    @State private var actionBox = ActionBox()
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -68,6 +69,7 @@ public struct SvelteView: View {
 
     public var body: some View {
         let phase = runtime.phase(of: handle?.id, isOverdue: isOverdue)
+        let box = actionBox.holding(actions)
         VStack(spacing: 0) {
             switch phase {
             case let .mounted(root):
@@ -137,11 +139,15 @@ public struct SvelteView: View {
         .onAppear {
             runtime.updateEnvironment(environment.dictionary)
             if handle == nil {
-                handle = MountHandle(runtime: runtime, id: runtime.mount(component, props: props, actions: actions))
+                let id = runtime.mount(component, props: props, actions: box.forwarding)
+                handle = MountHandle(runtime: runtime, id: id)
             }
         }
         .onChange(of: props) { _, props in
-            if let handle { runtime.update(handle.id, props: props, actions: actions) }
+            if let handle { runtime.update(handle.id, props: props, actions: box.forwarding) }
+        }
+        .onChange(of: box.names) {
+            if let handle { runtime.update(handle.id, props: props, actions: box.forwarding) }
         }
         .onChange(of: environment) { _, environment in
             runtime.updateEnvironment(environment.dictionary)
@@ -219,6 +225,25 @@ public struct SvelteView: View {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         return (try? encoder.encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+    }
+}
+
+final class ActionBox {
+    var actions: [String: @MainActor (JSONValue) -> Void] = [:]
+
+    var names: Array<String> { actions.keys.sorted() }
+
+    func holding(_ actions: [String: @MainActor (JSONValue) -> Void]) -> ActionBox {
+        self.actions = actions
+        return self
+    }
+
+    var forwarding: [String: @MainActor (JSONValue) -> Void] {
+        var forwarding: [String: @MainActor (JSONValue) -> Void] = [:]
+        for name in actions.keys {
+            forwarding[name] = { [weak self] value in self?.actions[name]?(value) }
+        }
+        return forwarding
     }
 }
 
