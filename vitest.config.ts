@@ -3,6 +3,7 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { mdsvex } from "mdsvex";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
+import { annotate } from "./src/locations.ts";
 import {
   appAliases,
   loadLibrary,
@@ -21,6 +22,14 @@ export default defineConfig({
       outdir: "./example/src/paraglide",
       strategy: ["preferredLanguage", "baseLocale"],
     }),
+    {
+      name: "swiftui-svelte-declarations",
+      enforce: "pre",
+      transform: (code, id) =>
+        id.endsWith(".svelte")
+          ? annotate(code, id, import.meta.dirname, { stamps: false })
+          : undefined,
+    },
     mdsvex({ extensions: [".md"] }),
     svelte({ extensions: [".svelte", ".md"] }),
     { name: "svelte-fixes", transform: (code, id) => fixSvelte(code, id) },

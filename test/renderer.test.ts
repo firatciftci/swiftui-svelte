@@ -24,6 +24,8 @@ import Boundary from "./components/Boundary.svelte";
 import Classes from "./components/Classes.svelte";
 import Controlled from "./components/Controlled.svelte";
 import Counter from "./components/Counter.svelte";
+import Declared from "./components/Declared.svelte";
+import DeclaredClasses from "./components/DeclaredClasses.svelte";
 import Gestures from "./components/Gestures.svelte";
 import Greeting from "./components/Greeting.svelte";
 import Items from "./components/Items.svelte";
@@ -69,6 +71,22 @@ afterEach(() => {
 });
 
 describe("mounting", () => {
+  it("declares attributes that are written in the markup but undefined", async () => {
+    await render(Declared);
+    const insert = ops.find(
+      (op) => op.op === "insert" && op.node.name === "vstack",
+    );
+    expect(insert?.op === "insert" ? insert.node.attributes : []).toEqual(
+      expect.arrayContaining([
+        ["opacity", null],
+        ["background", null],
+        ["spacing", 4],
+      ]),
+    );
+    await update(() => {});
+    expect(serialize()).toContain("<vstack spacing=4>");
+  });
+
   it("sends a root fragment with the component's elements", async () => {
     await render(Counter);
     expect(serialize()).toMatchInlineSnapshot(`
@@ -1047,6 +1065,16 @@ describe("attributes", () => {
   });
 });
 
+function declaredByStack(): Array<string> {
+  const declared: Array<string> = [];
+  for (const op of ops) {
+    if (op.op !== "insert" || op.node.name !== "vstack") continue;
+    for (const [attribute, value] of op.node.attributes)
+      if (value === null) declared.push(attribute);
+  }
+  return declared;
+}
+
 describe("tailwind classes", () => {
   const padding = { top: 16, leading: 16, bottom: 16, trailing: 16 };
   const table = {
@@ -1104,6 +1132,15 @@ describe("tailwind classes", () => {
       bottom: 8,
       trailing: 8,
     });
+  });
+
+  it("declares the attributes of classes that don't apply yet", async () => {
+    await render(Classes, { className: "dark:bg-black" });
+    expect(declaredByStack()).toContain("background");
+    await render(DeclaredClasses, { on: false });
+    expect(declaredByStack()).toEqual(
+      expect.arrayContaining(["background", "padding"]),
+    );
   });
 
   it("re-resolves conditional classes when the environment changes", async () => {

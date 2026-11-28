@@ -20,7 +20,7 @@ import {
 } from "./dev.ts";
 import { textContainers } from "./markup.ts";
 import { opcodes, protocol, version } from "./protocol.ts";
-import { resolveWith } from "./tailwind/runtime.ts";
+import { attributesOf, resolveWith } from "./tailwind/runtime.ts";
 import { environment, observeEnvironment } from "./web/environment.ts";
 
 export { protocol } from "./protocol.ts";
@@ -84,6 +84,7 @@ class ElementNode implements Container, Linked {
   first: ChildNode | null = null;
   last: ChildNode | null = null;
   attributes: Attributes | null = null;
+  declared: Set<string> | null = null;
   listeners: Array<string | Handler> | null = null;
   classes: Classes | null = null;
   readonly id: number;
@@ -202,11 +203,18 @@ function encodeAttributes(node: ElementNode, record: Array<unknown>): void {
   record.push(0);
   const attributes = node.attributes ?? noAttributes;
   for (const [name, value] of Object.entries(attributes)) {
-    if (!isSent(value)) continue;
-    record.push(nameRef(name), sendable(value));
+    if (typeof value === "function") continue;
+    record.push(nameRef(name), value === undefined ? null : sendable(value));
     (record[count] as number)++;
   }
   const derived = node.classes?.derived ?? noAttributes;
+  const declared = node.declared ?? [];
+  for (const name of declared) {
+    if (hasOwnAttribute(node, name) || isSent(derived[name])) continue;
+    record.push(nameRef(name), null);
+    (record[count] as number)++;
+  }
+  node.declared = null;
   for (const [name, value] of Object.entries(derived)) {
     if (!isSent(value) || hasOwnAttribute(node, name)) continue;
     record.push(nameRef(name), sendable(value));
@@ -729,7 +737,14 @@ function reportResolution(element: ElementNode, resolution: Resolution): void {
     checkAttribute(element.name, key, locationOf(element));
 }
 
+function declare(element: ElementNode, names: Iterable<string>): void {
+  element.declared ??= new Set();
+  for (const name of names) element.declared.add(name);
+}
+
 function applyClass(element: ElementNode, value: string | null): void {
+  if (value != null && element.state !== State.Native)
+    declare(element, attributesOf(element.name, value));
   const resolution =
     value == null || value === ""
       ? noClasses
@@ -870,6 +885,16 @@ const renderer = createRenderer<{
     return value == null ? null : String(value);
   },
   setAttribute(element, name, value: unknown) {
+    if (name === "data-declare" || name === "data-declare-classes") {
+      if (element.state !== State.Native)
+        declare(
+          element,
+          name === "data-declare"
+            ? String(value).split(" ")
+            : attributesOf(element.name, String(value)),
+        );
+      return;
+    }
     if (name === "class") {
       applyClass(element, value == null ? null : String(value));
       return;

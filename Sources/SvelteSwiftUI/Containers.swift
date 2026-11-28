@@ -144,7 +144,7 @@ struct GridCell: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .ifLet(attributes["colspan"]?.number.flatMap { $0 >= 1 ? Int($0) : nil }) { $0.gridCellColumns($1) }
+            .gridCellColumns(attributes["colspan"]?.number.flatMap { $0 >= 1 ? Int($0) : nil } ?? 1)
             .ifLet(attributes["columnalignment"]?.string.map(Styles.horizontalAlignment)) { $0.gridColumnAlignment($1) }
             .ifLet(UnitPoint(anchor: attributes["cellanchor"]?.string)) { $0.gridCellAnchor($1) }
     }

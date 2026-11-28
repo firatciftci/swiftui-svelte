@@ -68,7 +68,7 @@ struct Screen: View {
         .modifier(Subtitle(text: attributes["subtitle"]?.string))
         .navigationBarBackButtonHidden(attributes["backbuttonhidden"]?.isTrue ?? false)
         #if os(iOS)
-            .ifLet(Bars.titleDisplayMode(attributes["titledisplaymode"]?.string)) { $0.navigationBarTitleDisplayMode($1) }
+            .navigationBarTitleDisplayMode(Bars.titleDisplayMode(attributes["titledisplaymode"]?.string) ?? .automatic)
             .ifLet(Bars.visibility(attributes["navbarvisibility"])) { $0.toolbar($1, for: .navigationBar) }
             .ifLet(Bars.visibility(attributes["tabbarvisibility"])) { $0.toolbar($1, for: .tabBar) }
             .ifLet(Palette.style(attributes["navbarbackground"])) {

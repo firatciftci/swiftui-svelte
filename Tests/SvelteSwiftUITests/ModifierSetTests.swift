@@ -116,6 +116,6 @@ struct ModifierSetTests {
         node.attributes = ["color": .string("red")]
         node.attributes = [:]
         node.children = []
-        #expect(node.modifiers == .typography)
+        #expect(node.modifiers == [.typography, .colored])
     }
 }

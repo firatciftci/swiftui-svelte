@@ -16,23 +16,17 @@ struct SharedNamespace: ViewModifier {
     @Namespace private var namespace
 
     func body(content: Content) -> some View {
-        if node.attributes["namespace"]?.isTrue == true {
-            content.environment(\.sharedNamespace, namespace)
-        } else {
-            content
-        }
+        content.overriding(\.sharedNamespace, with: node.attributes["namespace"]?.isTrue == true ? namespace : nil)
     }
 }
 
 struct MatchedGeometry: ViewModifier {
     let node: Node
     @Environment(\.sharedNamespace) private var namespace
+    @Namespace private var unmatched
 
     func body(content: Content) -> some View {
-        if let id = node.attributes["matchedid"]?.string, let namespace {
-            content.matchedGeometryEffect(id: id, in: namespace)
-        } else {
-            content
-        }
+        let id = node.attributes["matchedid"]?.string
+        content.matchedGeometryEffect(id: id ?? "", in: id != nil ? namespace ?? unmatched : unmatched)
     }
 }

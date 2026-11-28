@@ -82,8 +82,8 @@ struct Accessible: ViewModifier {
             .ifLet(Accessibility.children(attributes["a11ychildren"]?.string)) { $0.accessibilityElement(children: $1) }
             .modifier(AccessibleDescription(attributes: attributes))
             .modifier(AccessibleActions(node: node))
-            .ifLet(attributes["a11yhidden"]) { $0.accessibilityHidden($1.isTrue) }
-            .ifLet(attributes["testid"]?.string) { $0.accessibilityIdentifier($1) }
+            .accessibilityHidden(attributes["a11yhidden"]?.isTrue == true, isEnabled: attributes["a11yhidden"] != nil)
+            .accessibilityIdentifier(attributes["testid"]?.string ?? "", isEnabled: attributes["testid"]?.string != nil)
     }
 }
 
@@ -92,15 +92,18 @@ private struct AccessibleDescription: ViewModifier {
 
     func body(content: Content) -> some View {
         let inputLabels = Accessibility.names(attributes["a11yinputlabels"])
+        let label = attributes["a11ylabel"]?.string
+        let value = attributes["a11yvalue"]?.string
+        let hint = attributes["a11yhint"]?.string
         content
-            .ifLet(attributes["a11ylabel"]?.string) { $0.accessibilityLabel(Text($1)) }
-            .ifLet(attributes["a11yvalue"]?.string) { $0.accessibilityValue(Text($1)) }
-            .ifLet(attributes["a11yhint"]?.string) { $0.accessibilityHint(Text($1)) }
-            .ifLet(inputLabels.isEmpty ? nil : inputLabels) { $0.accessibilityInputLabels($1.map { Text($0) }) }
-            .ifLet(Accessibility.traits(attributes["a11ytraits"])) { $0.accessibilityAddTraits($1) }
-            .ifLet(Accessibility.traits(attributes["a11yremovetraits"])) { $0.accessibilityRemoveTraits($1) }
-            .ifLet(Accessibility.heading(attributes["a11yheading"])) { $0.accessibilityHeading($1) }
-            .ifLet(attributes["a11ysortpriority"]?.number) { $0.accessibilitySortPriority($1) }
+            .accessibilityLabel(Text(label ?? ""), isEnabled: label != nil)
+            .accessibilityValue(Text(value ?? ""), isEnabled: value != nil)
+            .accessibilityHint(Text(hint ?? ""), isEnabled: hint != nil)
+            .accessibilityInputLabels(inputLabels.map { Text($0) }, isEnabled: !inputLabels.isEmpty)
+            .accessibilityAddTraits(Accessibility.traits(attributes["a11ytraits"]) ?? [])
+            .accessibilityRemoveTraits(Accessibility.traits(attributes["a11yremovetraits"]) ?? [])
+            .accessibilityHeading(Accessibility.heading(attributes["a11yheading"]) ?? .unspecified)
+            .accessibilitySortPriority(attributes["a11ysortpriority"]?.number ?? 0)
     }
 }
 
@@ -112,11 +115,9 @@ private struct AccessibleActions: ViewModifier {
         let id = node.id
         let names = Accessibility.names(node.attributes["a11yactions"])
         content
-            .ifLet(names.isEmpty ? nil : names) { view, names in
-                view.accessibilityActions {
-                    ForEach(names, id: \.self) { name in
-                        Button(name) { runtime.dispatch(id, "a11yaction", .string(name)) }
-                    }
+            .accessibilityActions {
+                ForEach(names, id: \.self) { name in
+                    Button(name) { runtime.dispatch(id, "a11yaction", .string(name)) }
                 }
             }
             .ifLet(node.listens(to: "a11yactivate") ? id : nil) { view, id in

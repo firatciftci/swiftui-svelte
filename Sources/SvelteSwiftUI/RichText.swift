@@ -6,8 +6,10 @@ struct TextBase: Equatable {
     var fontFallbacks: Array<String> = []
     var size: Double?
     var design: Font.Design?
-
-    static let keys = ["font", "fontname", "fontfallbacks", "size", "design"]
+    var weight: Font.Weight?
+    var isItalic = false
+    var tint: Color?
+    var color: JSONValue?
 
     func merged(_ attributes: [String: JSONValue]) -> Self {
         var base = self
@@ -21,6 +23,10 @@ struct TextBase: Equatable {
         let fallbacks = Styles.names(attributes["fontfallbacks"])
         if !fallbacks.isEmpty { base.fontFallbacks = fallbacks }
         base.design = Styles.design(attributes["design"]?.string) ?? base.design
+        base.weight = Styles.weight(attributes["weight"]?.string) ?? base.weight
+        base.isItalic = attributes["italic"].map(\.isTrue) ?? base.isItalic
+        base.tint = Palette.color(attributes["tint"]?.string) ?? base.tint
+        if let color = attributes["color"], color != .null { base.color = color }
         return base
     }
 }

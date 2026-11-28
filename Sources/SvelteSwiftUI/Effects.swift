@@ -181,16 +181,18 @@ struct Decorations: ViewModifier {
 
     func body(content: Content) -> some View {
         let attributes = node.attributes
+        let shadow = Effects.shadow(attributes["shadow"])
+        let ring = Effects.ring(attributes["ring"])
         content
-            .ifLet(Effects.shape(attributes["clipshape"])) { $0.clipShape($1) }
-            .ifLet(Effects.shadow(attributes["shadow"])) { $0.shadow(color: $1.color, radius: $1.radius, x: $1.x, y: $1.y) }
-            .ifLet(attributes["blur"]?.number) { $0.blur(radius: max($1, 0)) }
+            .clipShape(Unclipped(shape: Effects.shape(attributes["clipshape"])))
+            .shadow(color: shadow?.color ?? .clear, radius: shadow?.radius ?? 0, x: shadow?.x ?? 0, y: shadow?.y ?? 0)
+            .blur(radius: max(attributes["blur"]?.number ?? 0, 0))
             .ifLet(node.attachment("maskview")) { view, mask in
                 view.mask(alignment: Styles.alignment(mask.attributes["alignment"]?.string)) { Children(node: mask) }
             }
             .ifLet(Effects.shape(attributes["contentshape"])) { $0.contentShape($1) }
-            .ifLet(Effects.ring(attributes["ring"])) { view, ring in
-                view.overlay {
+            .overlay {
+                if let ring {
                     RingStroke(
                         width: ring.width, radius: max(CGFloat(attributes["radius"]?.number ?? 0), 0),
                         style: Effects.cornerStyle(attributes["cornerstyle"])
@@ -207,11 +209,12 @@ struct Availability: ViewModifier {
 
     func body(content: Content) -> some View {
         let attributes = node.attributes
+        let ignored = Effects.ignoredSafeArea(attributes["ignoressafearea"])
         content
-            .ifLet(attributes["disabled"]) { $0.disabled($1.isTrue) }
-            .ifLet(attributes["hidden"]?.isTrue == true ? true : nil) { view, _ in view.hidden() }
-            .ifLet(attributes["hittestable"].map(\.isTrue)) { $0.allowsHitTesting($1) }
-            .ifLet(Effects.ignoredSafeArea(attributes["ignoressafearea"])) { $0.ignoresSafeArea($1.regions, edges: $1.edges) }
+            .disabled(attributes["disabled"]?.isTrue == true)
+            .allowsHitTesting(attributes["hittestable"]?.isTrue ?? true)
+            .gated(attributes["hidden"]?.isTrue == true) { $0.hidden() }
+            .ignoresSafeArea(ignored?.regions ?? [], edges: ignored?.edges ?? [])
     }
 }
 
@@ -255,7 +258,15 @@ struct SafeAreaInsets: ViewModifier {
     }
 }
 
-struct InsetShadow: ViewModifier {
+struct Unclipped: Shape {
+    let shape: AnyShape?
+
+    nonisolated func path(in rect: CGRect) -> Path {
+        shape?.path(in: rect) ?? Path(rect.insetBy(dx: -1e6, dy: -1e6))
+    }
+}
+
+struct InsetShadow: View {
     let shape: AnyShape
 
     init(attributes: [String: JSONValue]) {
@@ -269,21 +280,19 @@ struct InsetShadow: ViewModifier {
             )
     }
 
-    func body(content: Content) -> some View {
-        content.overlay {
-            Canvas { context, size in
-                let path = shape.path(in: CGRect(origin: .zero, size: size))
-                context.clip(to: path)
-                for step in (0..<6).reversed() {
-                    let offset = CGFloat(1 << step)
-                    var shadow = context
-                    shadow.addFilter(.blur(radius: offset))
-                    shadow.translateBy(x: 0, y: offset)
-                    shadow.stroke(path, with: .color(.black.opacity(0.07)), lineWidth: offset * 2)
-                }
+    var body: some View {
+        Canvas { context, size in
+            let path = shape.path(in: CGRect(origin: .zero, size: size))
+            context.clip(to: path)
+            for step in (0..<6).reversed() {
+                let offset = CGFloat(1 << step)
+                var shadow = context
+                shadow.addFilter(.blur(radius: offset))
+                shadow.translateBy(x: 0, y: offset)
+                shadow.stroke(path, with: .color(.black.opacity(0.07)), lineWidth: offset * 2)
             }
-            .allowsHitTesting(false)
         }
+        .allowsHitTesting(false)
     }
 }
 
@@ -302,10 +311,11 @@ struct BorderBand: ViewModifier {
 
     func body(content: Content) -> some View {
         let isBorderBox = attributes["boxsizing"]?.string == "border-box"
-        content.ifLet(Effects.border(attributes["border"])) { view, border in
-            view
-                .gated(!isBorderBox) { $0.padding(border.widths) }
-                .overlay {
+        let border = Effects.border(attributes["border"])
+        content
+            .padding(isBorderBox ? EdgeInsets() : border?.widths ?? EdgeInsets())
+            .overlay {
+                if let border {
                     BorderRing(
                         widths: border.widths, radius: max(CGFloat(attributes["radius"]?.number ?? 0), 0),
                         style: Effects.cornerStyle(attributes["cornerstyle"])
@@ -313,7 +323,7 @@ struct BorderBand: ViewModifier {
                     .fill(border.style, style: FillStyle(eoFill: true))
                     .allowsHitTesting(false)
                 }
-        }
+            }
     }
 }
 

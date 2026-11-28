@@ -6,15 +6,10 @@ struct Lifecycle: ViewModifier {
 
     func body(content: Content) -> some View {
         let id = node.id
+        let taskID = node.listens(to: "task") ? node.attributes["taskid"] ?? .null : nil
         content
-            .ifLet(node.listens(to: "appear") ? id : nil) { view, id in
-                view.onAppear { runtime.dispatch(id, "appear") }
-            }
-            .ifLet(node.listens(to: "disappear") ? id : nil) { view, id in
-                view.onDisappear { runtime.dispatch(id, "disappear") }
-            }
-            .ifLet(node.listens(to: "task") ? node.attributes["taskid"] ?? .null : nil) { view, taskID in
-                view.task(id: taskID) { await runtime.dispatchAndWait(id, "task") }
-            }
+            .onAppear { if node.listens(to: "appear") { runtime.dispatch(id, "appear") } }
+            .onDisappear { if node.listens(to: "disappear") { runtime.dispatch(id, "disappear") } }
+            .task(id: taskID) { if taskID != nil { await runtime.dispatchAndWait(id, "task") } }
     }
 }

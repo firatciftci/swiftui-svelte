@@ -410,6 +410,27 @@ export function resolveClasses(
   return { attrs, reactive, unmatched, misplaced };
 }
 
+const composed: Readonly<Record<string, string>> = {
+  $borderWidth: "border",
+  $borderColor: "border",
+  $ringWidth: "ring",
+  $ringColor: "ring",
+  $shadowColor: "shadow",
+  $stop: "background",
+  $direction: "background",
+};
+
+export function attributesOf(tag: string, value: string): Set<string> {
+  const names = new Set<string>();
+  for (const rule of parse(registry.table, tag, value).rules) {
+    for (const key of Object.keys(rule.attrs)) {
+      const target = key.startsWith("$") ? composed[key] : key;
+      if (target != null) names.add(target);
+    }
+  }
+  return names;
+}
+
 export function resolveWith(
   tag: string,
   value: string,

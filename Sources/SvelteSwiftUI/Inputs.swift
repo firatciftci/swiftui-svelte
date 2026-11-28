@@ -399,11 +399,9 @@ private struct TextInputTraits: ViewModifier {
     func body(content: Content) -> some View {
         content
             #if os(iOS) || os(visionOS)
-                .ifLet(Inputs.keyboardType(attributes["keyboard"]?.string ?? keyboard)) { $0.keyboardType($1) }
-                .ifLet(Inputs.contentType(attributes["contenttype"]?.string)) { $0.textContentType($1) }
-                .ifLet(Inputs.autocapitalization(attributes["autocapitalize"]?.string)) {
-                    $0.textInputAutocapitalization($1)
-                }
+                .keyboardType(Inputs.keyboardType(attributes["keyboard"]?.string ?? keyboard) ?? .default)
+                .textContentType(Inputs.contentType(attributes["contenttype"]?.string))
+                .textInputAutocapitalization(Inputs.autocapitalization(attributes["autocapitalize"]?.string))
             #endif
             .ifLet(attributes["autocorrect"]) { $0.autocorrectionDisabled(!$1.isTrue) }
             .ifLet(Inputs.submitLabel(attributes["submitlabel"]?.string)) { $0.submitLabel($1) }

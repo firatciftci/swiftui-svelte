@@ -3,7 +3,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { build } from "vite";
-import { stampLocations } from "./locations.ts";
+import { annotate } from "./locations.ts";
 import {
   appAliases,
   loadLibrary,
@@ -82,12 +82,10 @@ export function swiftui({
             code: `import "swiftui-svelte/renderer";\n${code}`,
             map: null,
           };
-        if (
-          isDevelopment &&
-          id.endsWith(".svelte") &&
-          !id.includes("/node_modules/")
-        )
-          return stampLocations(code, id, root);
+        if (id.endsWith(".svelte"))
+          return annotate(code, id, root, {
+            stamps: isDevelopment && !id.includes("/node_modules/"),
+          });
         return fixSvelte(code, id);
       },
     },

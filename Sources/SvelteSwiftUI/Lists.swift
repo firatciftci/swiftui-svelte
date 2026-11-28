@@ -110,12 +110,12 @@ struct RowOptions: ViewModifier {
     func body(content: Content) -> some View {
         content
             .ifLet(attributes["tag"]) { $0.tag($1) }
-            .ifLet(Geometry.insets(attributes["rowinsets"])) { $0.listRowInsets($1) }
-            .ifLet(Bars.visibility(attributes["rowseparator"])) { $0.listRowSeparator($1) }
-            .ifLet(Palette.color(attributes["rowseparatortint"]?.string)) { $0.listRowSeparatorTint($1) }
-            .ifLet(Palette.style(attributes["rowbackground"])) { $0.listRowBackground(Rectangle().fill($1)) }
-            .ifLet(attributes["deletedisabled"]) { $0.deleteDisabled($1.isTrue) }
-            .ifLet(attributes["movedisabled"]) { $0.moveDisabled($1.isTrue) }
+            .listRowInsets(Geometry.insets(attributes["rowinsets"]))
+            .listRowSeparator(Bars.visibility(attributes["rowseparator"]) ?? .automatic)
+            .listRowSeparatorTint(Palette.color(attributes["rowseparatortint"]?.string))
+            .listRowBackground(Palette.style(attributes["rowbackground"]).map { Rectangle().fill($0) })
+            .deleteDisabled(attributes["deletedisabled"]?.isTrue ?? false)
+            .moveDisabled(attributes["movedisabled"]?.isTrue ?? false)
     }
 }
 

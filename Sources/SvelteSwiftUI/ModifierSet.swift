@@ -25,7 +25,20 @@ struct ModifierSet: OptionSet, Hashable {
     static let scrolling = Self(rawValue: 1 << 21)
     static let shared = Self(rawValue: 1 << 22)
     static let margins = Self(rawValue: 1 << 23)
+    static let tinted = Self(rawValue: 1 << 24)
+    static let weighted = Self(rawValue: 1 << 25)
+    static let designed = Self(rawValue: 1 << 26)
+    static let italicized = Self(rawValue: 1 << 27)
+    static let colored = Self(rawValue: 1 << 28)
+    static let bounded = Self(rawValue: 1 << 29)
+    static let centered = Self(rawValue: 1 << 30)
     static let traits: Self = [.gridCell, .rowTraits]
+
+    static let byValue: [String: Self] = [
+        "tint": .tinted, "weight": .weighted, "design": .designed, "italic": .italicized, "color": .colored,
+        "minwidth": .bounded, "idealwidth": .bounded, "maxwidth": .bounded, "minheight": .bounded, "idealheight": .bounded,
+        "maxheight": .bounded,
+    ]
 
     static let byAttribute: [String: Self] = {
         let groups: [Self: Array<String>] = [
@@ -94,8 +107,17 @@ struct ModifierSet: OptionSet, Hashable {
 
     init(attribute name: String, value: JSONValue) {
         self = Self.byAttribute[name] ?? []
+        if value != .null { formUnion(Self.valued(name, value)) }
         guard name == "listens", case let .array(types) = value else { return }
         for case let .string(type) in types { formUnion(Self.byEvent[type] ?? []) }
+    }
+
+    private static func valued(_ name: String, _ value: JSONValue) -> Self {
+        switch name {
+        case "width", "height": value == .string("infinity") ? .bounded : []
+        case "margin": Margin(value).isCentered ? .centered : []
+        default: byValue[name] ?? []
+        }
     }
 
     init(attributes: [String: JSONValue]) {

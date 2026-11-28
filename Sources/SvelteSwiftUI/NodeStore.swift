@@ -199,6 +199,12 @@ final class Node: Identifiable {
         return extras
     }
 
+    func declare(_ names: Array<String>) {
+        var declared: ModifierSet = []
+        for name in names { declared.formUnion(ModifierSet.byAttribute[name] ?? []) }
+        enable(declared)
+    }
+
     private func enable(_ set: ModifierSet) {
         if !modifiers.isSuperset(of: set) { modifiers.formUnion(set) }
     }
@@ -406,16 +412,17 @@ final class NodeStore {
         if id < 0 { return Record(id: -id, name: nil, text: try reader.string(), attributes: [:], children: []) }
         let name = try name(try reader.int(), in: names)
         var attributes: [String: JSONValue] = [:]
+        var declared: Array<String> = []
         for _ in 0..<max(0, try reader.int()) {
             let key = try Self.name(try reader.int(), in: names)
             let value = try reader.value()
-            if value != .null { attributes[key] = value }
+            if value == .null { declared.append(key) } else { attributes[key] = value }
         }
         let count = max(0, try reader.int())
         var children: Array<Record> = []
         children.reserveCapacity(count)
         for _ in 0..<count { children.append(try record(&reader, names)) }
-        return Record(id: id, name: name, text: "", attributes: attributes, children: children)
+        return Record(id: id, name: name, text: "", attributes: attributes, declared: declared, children: children)
     }
 
     private func perform(_ batch: Batch) {
@@ -463,6 +470,7 @@ final class NodeStore {
         if let owned = ownedNames[name] { node.owned = owned }
         nodes[record.id] = node
         if Presenting.hoisted.contains(name) { presentationIDs.insert(record.id) }
+        node.declare(record.declared)
         node.attributes = record.attributes
         for (attribute, value) in record.attributes {
             AttributeChecks.check(attribute, value, on: node, diagnostics: diagnostics)
@@ -574,6 +582,7 @@ private struct Record {
     let name: String?
     let text: String
     let attributes: [String: JSONValue]
+    var declared: Array<String> = []
     let children: Array<Record>
 }
 

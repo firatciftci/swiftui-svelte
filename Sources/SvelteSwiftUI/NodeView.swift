@@ -74,9 +74,12 @@ enum NodeShape {
         var view = element
         if let placement, case let .stretch(axis) = placement { view = view.applying(StretchFrame(axis: axis)) }
         if modifiers.contains(.safeArea) { view = view.applying(SafeAreaInsets(node: node)) }
-        if modifiers.contains(.framing) { view = view.applying(Framing(attributes: attributes)).applying(Sizing(attributes: attributes)) }
+        if modifiers.contains(.framing) {
+            view = view.applying(Framing(attributes: attributes, isBounded: modifiers.contains(.bounded))).applying(
+                Sizing(attributes: attributes))
+        }
         if modifiers.contains(.decorations) { view = view.applying(BorderBand(attributes: attributes)) }
-        if modifiers.contains(.typography) { view = view.applying(Typography(attributes: attributes)) }
+        if modifiers.contains(.typography) { view = view.applying(Typography(node: node)) }
         if modifiers.contains(.appearance) { view = view.applying(Appearance(attributes: attributes)) }
         if modifiers.contains(.decorations) { view = view.applying(Decorations(node: node)) }
         if modifiers.contains(.glass) { view = view.applying(GlassSurface(attributes: attributes)) }
@@ -110,14 +113,18 @@ enum NodeShape {
         if modifiers.contains(.attachments) { view = view.applying(Attachments(node: node)) }
         if node.ownsButtonFeedback, node.name != "btn" { view = view.applying(StateFeedback(node: node)) }
         if node.tracksPresses { view = view.applying(PressTracking(isDraggable: node.listens(to: "drag"))) }
-        if modifiers.contains(.margins) { view = view.applying(Margins(attributes: node.attributes)) }
+        if modifiers.contains(.margins) {
+            view = view.applying(Margins(attributes: node.attributes, isCentered: modifiers.contains(.centered)))
+        }
         return view
     }
 
     private static func traits(of node: Node, _ content: any View) -> any View {
         var view = content
-        if node.name == "spacer" { view = view.applying(SpacerPriority()) }
-        if node.modifiers.contains(.framing) { view = view.applying(LayoutPriority(attributes: node.attributes)) }
+        let isSpacer = node.name == "spacer"
+        if isSpacer || node.modifiers.contains(.framing) {
+            view = view.applying(LayoutPriority(priority: node.attributes["layoutpriority"]?.number ?? (isSpacer ? -1 : 0)))
+        }
         if node.modifiers.contains(.gridCell) { view = view.applying(GridCell(attributes: node.attributes)) }
         if node.modifiers.contains(.rowTraits) { view = view.applying(RowTraits(node: node)) }
         return view
@@ -193,17 +200,11 @@ extension View {
     }
 }
 
-private struct SpacerPriority: ViewModifier {
-    func body(content: Content) -> some View {
-        content.layoutPriority(-1)
-    }
-}
-
 private struct LayoutPriority: ViewModifier {
-    let attributes: [String: JSONValue]
+    let priority: Double
 
     func body(content: Content) -> some View {
-        content.ifLet(attributes["layoutpriority"]?.number) { $0.layoutPriority($1) }
+        content.layoutPriority(priority)
     }
 }
 
@@ -288,11 +289,10 @@ private struct AnimatedChildren: ViewModifier {
     func body(content: Content) -> some View {
         let attributes = node.attributes
         let animation = MotionCurve.from(attributes["animation"])?.animation
+        let disablesAnimations = attributes["disablesanimations"]?.isTrue == true
         content
-            .ifLet(attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil) { $0.animation(animation, value: $1) }
-            .gated(attributes["disablesanimations"]?.isTrue == true) { view in
-                view.transaction { $0.disablesAnimations = true }
-            }
+            .animation(animation, value: attributes["animated"]?.isTrue == true ? node.children.map(\.id) : nil)
+            .transaction { if disablesAnimations { $0.disablesAnimations = true } }
     }
 }
 
@@ -302,8 +302,8 @@ private struct RowTraits: ViewModifier {
     func body(content: Content) -> some View {
         let attributes = node.attributes
         content
-            .ifLet(MotionTransition.transition(for: attributes)) { $0.transition($1) }
-            .ifLet(attributes["zindex"]?.number) { $0.zIndex($1) }
+            .transition(MotionTransition.transition(for: attributes) ?? .opacity)
+            .zIndex(attributes["zindex"]?.number ?? 0)
             .ifLet(node.attachment("swipeactions")) { view, actions in
                 view.swipeActions(edge: actions.attributes["edge"]?.string == "leading" ? .leading : .trailing) {
                     ForEach(actions.renderedChildren) { ActionButton(node: $0) }
@@ -314,21 +314,22 @@ private struct RowTraits: ViewModifier {
 }
 
 private struct Typography: ViewModifier {
-    let attributes: [String: JSONValue]
+    let node: Node
     @Environment(\.textBase) private var textBase
 
     func body(content: Content) -> some View {
+        let attributes = node.attributes
+        let modifiers = node.modifiers
+        let merged = textBase.merged(attributes)
         content
-            .ifLet(Styles.font(attributes, inheriting: textBase)) { $0.font($1) }
-            .gated(TextBase.keys.contains { (attributes[$0] ?? .null) != .null }) { view in
-                view.transformEnvironment(\.textBase) { $0 = $0.merged(attributes) }
-            }
-            .gated(attributes["italic"]?.isTrue == true) { $0.italic() }
-            .ifLet(Styles.design(attributes["design"]?.string)) { $0.fontDesign($1) }
-            .ifLet(Styles.weight(attributes["weight"]?.string)) { $0.fontWeight($1) }
-            .ifLet(Palette.style(attributes["color"])) { $0.foregroundStyle($1) }
-            .ifLet(Palette.color(attributes["tint"]?.string)) { $0.tint($1) }
-            .ifLet(Inputs.controlSize(attributes["controlsize"]?.string)) { $0.controlSize($1) }
+            .overriding(\.font, with: Styles.font(attributes, inheriting: textBase))
+            .transformEnvironment(\.textBase) { $0 = merged }
+            .gated(modifiers.contains(.italicized)) { $0.italic(merged.isItalic) }
+            .gated(modifiers.contains(.designed)) { $0.fontDesign(merged.design) }
+            .gated(modifiers.contains(.weighted)) { $0.fontWeight(merged.weight) }
+            .gated(modifiers.contains(.colored)) { $0.foregroundStyle(Palette.style(merged.color) ?? AnyShapeStyle(.foreground)) }
+            .gated(modifiers.contains(.tinted)) { $0.tint(merged.tint) }
+            .overriding(\.controlSize, with: Inputs.controlSize(attributes["controlsize"]?.string))
     }
 }
 
@@ -336,12 +337,16 @@ private struct Appearance: ViewModifier {
     let attributes: [String: JSONValue]
 
     func body(content: Content) -> some View {
+        let isInsetShadowed = attributes["insetshadow"]?.isTrue == true
         content
-            .ifLet(Palette.style(attributes["background"])) { $0.background($1) }
-            .ifLet(attributes["radius"]?.number) {
-                $0.clipShape(.rect(cornerRadius: $1, style: Effects.cornerStyle(attributes["cornerstyle"])))
-            }
-            .gated(attributes["insetshadow"]?.isTrue == true) { $0.modifier(InsetShadow(attributes: attributes)) }
+            .background(Palette.style(attributes["background"]) ?? AnyShapeStyle(Color.clear))
+            .clipShape(
+                Unclipped(
+                    shape: attributes["radius"]?.number.map {
+                        AnyShape(RoundedRectangle(cornerRadius: $0, style: Effects.cornerStyle(attributes["cornerstyle"])))
+                    })
+            )
+            .overlay { if isInsetShadowed { InsetShadow(attributes: attributes) } }
     }
 }
 
@@ -351,9 +356,9 @@ private struct Compositing: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(attributes["opacity"]?.number ?? 1)
-            .ifLet(attributes["brightness"]?.number) { $0.brightness($1) }
-            .ifLet(Palette.color(attributes["colormultiply"]?.string)) { $0.colorMultiply($1) }
-            .ifLet(Effects.blendMode(attributes["blendmode"]?.string)) { $0.blendMode($1) }
+            .brightness(attributes["brightness"]?.number ?? 0)
+            .colorMultiply(Palette.color(attributes["colormultiply"]?.string) ?? .white)
+            .blendMode(Effects.blendMode(attributes["blendmode"]?.string) ?? .normal)
             .gated(attributes["compositinggroup"]?.isTrue == true) { $0.compositingGroup() }
             .ifLet(attributes["lighten"]?.number) { $0.modifier(Lightening(amount: $1)) }
     }
@@ -365,11 +370,12 @@ private struct Localized: ViewModifier {
     func body(content: Content) -> some View {
         let lang = attributes["lang"]?.string
         content
-            .ifLet(lang.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) }) { $0.environment(\.locale, $1) }
-            .ifLet(lang.map { $0.isEmpty ? TypesettingLanguage.automatic : .explicit(Locale.Language(identifier: $0)) }) {
-                $0.typesettingLanguage($1)
-            }
-            .ifLet(Styles.layoutDirection(attributes["dir"]?.string)) { $0.environment(\.layoutDirection, $1) }
+            .overriding(\.locale, with: lang.flatMap { $0.isEmpty ? nil : Locale(identifier: $0) })
+            .typesettingLanguage(
+                lang.map { $0.isEmpty ? TypesettingLanguage.automatic : .explicit(Locale.Language(identifier: $0)) } ?? .automatic,
+                isEnabled: lang != nil
+            )
+            .overriding(\.layoutDirection, with: Styles.layoutDirection(attributes["dir"]?.string))
     }
 }
 
@@ -399,6 +405,14 @@ struct ActionButton: View {
 }
 
 extension View {
+    func overriding<Value>(_ key: WritableKeyPath<EnvironmentValues, Value>, with value: Value?) -> some View {
+        transformEnvironment(key) { if let value { $0 = value } }
+    }
+
+    func overriding<Value>(_ key: WritableKeyPath<EnvironmentValues, Value?>, with value: Value?) -> some View {
+        transformEnvironment(key) { if let value { $0 = value } }
+    }
+
     @ViewBuilder
     func gated<Modified: View>(_ isOn: Bool, _ transform: (Self) -> Modified) -> some View {
         if isOn { transform(self) } else { self }

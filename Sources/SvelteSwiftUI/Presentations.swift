@@ -104,7 +104,7 @@ struct Presentations: ViewModifier {
             .popover(item: presented(["popover"]), arrowEdge: Presenting.edge(popover?.attributes["arrowedge"]?.string)) { popover in
                 NodeView(node: popover)
                     .modifier(SheetOptions(node: popover))
-                    .ifLet(Presenting.adaptation(popover.attributes["adaptation"]?.string)) { $0.presentationCompactAdaptation($1) }
+                    .presentationCompactAdaptation(Presenting.adaptation(popover.attributes["adaptation"]?.string) ?? .automatic)
             }
             .modifier(InspectorHost(node: node, isColumn: showsInspectorColumn, isPresented: isPresented("inspector")))
             .alert(alert?.attributes["title"]?.string ?? "", isPresented: isPresented("alert"), presenting: alert) { alert in
@@ -183,7 +183,7 @@ private struct SheetOptions: ViewModifier {
             .presentationDragIndicator(Bars.visibility(attributes["dragindicator"]) ?? .automatic)
             .presentationBackgroundInteraction(Presenting.backgroundInteraction(attributes["backgroundinteraction"]))
             .interactiveDismissDisabled(attributes["dismissible"].map { !$0.isTrue } ?? false)
-            .ifLet(attributes["cornerradius"]?.number) { $0.presentationCornerRadius($1) }
+            .presentationCornerRadius(attributes["cornerradius"]?.number.map { CGFloat($0) })
             .modifier(PresentationBackdrop(value: attributes["presentationbackground"]))
     }
 }

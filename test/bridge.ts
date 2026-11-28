@@ -175,7 +175,9 @@ function build(record: NodeRecord): MirrorNode {
     kind: record.kind,
     name: record.name,
     text: record.text,
-    attributes: new Map(record.attributes),
+    attributes: new Map(
+      record.attributes.filter(([, value]) => value !== null),
+    ),
     children: [],
     parent: null,
   };

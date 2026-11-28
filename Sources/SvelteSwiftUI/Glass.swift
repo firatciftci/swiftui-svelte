@@ -27,18 +27,17 @@ struct GlassContainer: View {
 struct GlassSurface: ViewModifier {
     let attributes: [String: JSONValue]
     @Environment(\.glassNamespace) private var namespace
+    @Namespace private var unshared
 
     func body(content: Content) -> some View {
         #if os(visionOS)
             content
         #else
-            if #available(iOS 26, macOS 26, *), let glass = Self.glass(attributes["glasseffect"]) {
+            if #available(iOS 26, macOS 26, *) {
                 content
-                    .glassEffect(glass, in: Self.shape(attributes["glasseffect"]))
-                    .ifLet(namespace.flatMap { ns in attributes["glassid"]?.string.map { ($0, ns) } }) { $0.glassEffectID($1.0, in: $1.1) }
-                    .ifLet(namespace.flatMap { ns in attributes["glassunion"]?.string.map { ($0, ns) } }) {
-                        $0.glassEffectUnion(id: $1.0, namespace: $1.1)
-                    }
+                    .glassEffect(Self.glass(attributes["glasseffect"]) ?? .identity, in: Self.shape(attributes["glasseffect"]))
+                    .glassEffectID(namespace != nil ? attributes["glassid"]?.string : nil, in: namespace ?? unshared)
+                    .glassEffectUnion(id: namespace != nil ? attributes["glassunion"]?.string : nil, namespace: namespace ?? unshared)
             } else {
                 content
             }

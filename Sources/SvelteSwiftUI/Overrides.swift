@@ -87,8 +87,8 @@ struct Preferences: ViewModifier {
     func body(content: Content) -> some View {
         content
             .modifier(Feedback(attributes: attributes))
-            .ifLet(Overrides.colorScheme(attributes["colorscheme"]?.string)) { $0.environment(\.colorScheme, $1) }
-            .ifLet(Overrides.colorScheme(attributes["preferredcolorscheme"]?.string)) { $0.preferredColorScheme($1) }
+            .overriding(\.colorScheme, with: Overrides.colorScheme(attributes["colorscheme"]?.string))
+            .preferredColorScheme(Overrides.colorScheme(attributes["preferredcolorscheme"]?.string))
             .modifier(TypeSize(value: attributes["dynamictypesize"]))
             .modifier(KeyboardDismissal(name: attributes["scrolldismisseskeyboard"]?.string))
     }
@@ -98,8 +98,9 @@ private struct Feedback: ViewModifier {
     let attributes: [String: JSONValue]
 
     func body(content: Content) -> some View {
-        if #available(visionOS 26, *), let feedback = Overrides.feedback(attributes["sensoryfeedback"]) {
-            content.sensoryFeedback(feedback, trigger: attributes["feedbacktrigger"] ?? .null)
+        if #available(visionOS 26, *) {
+            let feedback = Overrides.feedback(attributes["sensoryfeedback"])
+            content.sensoryFeedback(trigger: attributes["feedbacktrigger"] ?? .null) { _, _ in feedback }
         } else {
             content
         }
@@ -126,8 +127,9 @@ private struct TypeSize: ViewModifier {
         let size = Overrides.dynamicTypeSize(value?.string)
         let sizes = Overrides.dynamicTypeSizes(value)
         content
-            .ifLet(font == nil && (size != nil || sizes != nil) ? Font.body : nil) { $0.font($1) }
-            .ifLet(size) { $0.dynamicTypeSize($1) }
-            .ifLet(sizes) { $0.dynamicTypeSize($1) }
+            .overriding(\.font, with: font == nil && (size != nil || sizes != nil) ? Font.body : nil)
+            .transformEnvironment(\.dynamicTypeSize) { current in
+                if let size { current = size } else if let sizes { current = min(max(current, sizes.lowerBound), sizes.upperBound) }
+            }
     }
 }
