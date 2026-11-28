@@ -247,7 +247,7 @@ jobs:
         working-directory: build/template/hello-app
         run: npm run build && npm run check && npm run lint
 
-      - name: Build the app's Xcode project against this commit
+      - name: Build the app's Xcode project for Release against this commit
         working-directory: build/template/hello-app/ios
         run: |
           sed -i '' -e "s#url: https://github.com/firatciftci/swiftui-svelte#path: $GITHUB_WORKSPACE#" -e '/^    from: /d' project.yml
@@ -255,9 +255,16 @@ jobs:
           xcodebuild build \
             -project HelloApp.xcodeproj \
             -scheme HelloApp \
+            -configuration Release \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath ../../derived \
             CODE_SIGNING_ALLOWED=NO
+          app=../../derived/Build/Products/Release-iphonesimulator/HelloApp.app
+          test -f "$app/JavaScript/app.js"
+          if ls "$app/JavaScript/"*.map 2>/dev/null; then
+            echo "::error::The Release app contains a source map."
+            exit 1
+          fi
 
   platforms:
     name: Build for ${{ matrix.platform }}

@@ -40,7 +40,7 @@ const budget = { minified: 193_750, gzipped: 60_250 };
 
 async function bundle(
   options: { mode?: string; entry?: string } = {},
-): Promise<{ code: string; files: Array<string> }> {
+): Promise<{ code: string; map: string; files: Array<string> }> {
   const result = await build({
     configFile: false,
     logLevel: "silent",
@@ -59,15 +59,17 @@ async function bundle(
   });
   const outputs = Array.isArray(result) ? result : [result];
   let code = "";
+  let map = "";
   const files = new Array<string>();
   for (const output of outputs) {
     if (!("output" in output)) continue;
     for (const file of output.output) {
       files.push(file.fileName);
       if (file.type === "chunk") ({ code } = file);
+      else if (file.fileName.endsWith(".map")) map = String(file.source);
     }
   }
-  return { code, files };
+  return { code, map, files };
 }
 
 async function request(
@@ -115,6 +117,16 @@ describe("the Vite plugin", () => {
     ]);
     expect(code.split("\n").length).toBeLessThan(50);
     expect(code).not.toContain("doesn't have an attribute");
+  }, 60_000);
+
+  it("writes production source maps without the sources or a link to them", async () => {
+    const production = await bundle();
+    expect(production.code).not.toContain("sourceMappingURL");
+    expect(JSON.parse(production.map)).toHaveProperty("mappings");
+    expect(JSON.parse(production.map)).not.toHaveProperty("sourcesContent");
+    const development = await bundle({ mode: "development" });
+    expect(development.code).toContain("sourceMappingURL=app.js.map");
+    expect(JSON.parse(development.map)).toHaveProperty("sourcesContent");
   }, 60_000);
 
   it("keeps development builds readable and checks names", async () => {

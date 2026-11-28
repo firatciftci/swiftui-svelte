@@ -33,6 +33,13 @@ targets:
             export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
             cd "$SRCROOT/.." && npm run build
           fi
+    postBuildScripts:
+      - name: Leave the source map out of Release builds
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Release" ]; then
+            rm -f "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/JavaScript/"*.map
+          fi
     info:
       path: __APP_NAME__/Info.plist
       properties:

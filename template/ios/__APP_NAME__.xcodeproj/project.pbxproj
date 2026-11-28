@@ -71,6 +71,7 @@
 				8CC93805A0006D1A5659E447 /* Sources */,
 				3E37046CBF103BE2993E407E /* Resources */,
 				FB046BBAB077892E8C374175 /* Frameworks */,
+				AD0DBB9C300BC02A2F33FD17 /* Leave the source map out of Release builds */,
 			);
 			buildRules = (
 			);
@@ -133,6 +134,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		AD0DBB9C300BC02A2F33FD17 /* Leave the source map out of Release builds */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Leave the source map out of Release builds";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$CONFIGURATION\" = \"Release\" ]; then\n  rm -f \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/JavaScript/\"*.map\nfi\n";
+		};
 		F29E4131B0DD20EF4682CBB9 /* Bundle the JavaScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

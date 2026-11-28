@@ -29,12 +29,14 @@ export function swiftui({
   const name = outFile.slice(slash + 1);
   let root = process.cwd();
   let entryId = "";
+  let isSourceless = false;
   const version = String(Date.now());
   const source = (): string => path.resolve(root, path.dirname(entry));
   return {
     name: "swiftui-svelte",
     config: (user, { mode }) => {
       const isDevelopment = mode === "development" || user.build?.watch != null;
+      isSourceless = !isDevelopment && user.build?.sourcemap == null;
       return {
         publicDir: false,
         resolve: {
@@ -59,7 +61,7 @@ export function swiftui({
           outDir: slash === -1 ? "." : outFile.slice(0, slash),
           emptyOutDir: false,
           minify: user.build?.minify ?? !isDevelopment,
-          sourcemap: user.build?.sourcemap ?? true,
+          sourcemap: user.build?.sourcemap ?? (isDevelopment || "hidden"),
           lib: {
             entry,
             formats: ["iife"],
@@ -76,6 +78,15 @@ export function swiftui({
           map: null,
         };
       return fixSvelte(code, id);
+    },
+    generateBundle(_options, bundle) {
+      if (!isSourceless) return;
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "asset" || !file.fileName.endsWith(".map")) continue;
+        const map = JSON.parse(String(file.source)) as Record<string, unknown>;
+        delete map.sourcesContent;
+        file.source = JSON.stringify(map);
+      }
     },
     resolveId: (id) =>
       id === routesModuleId ? `\0${routesModuleId}` : undefined,

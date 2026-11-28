@@ -4,7 +4,7 @@ An app built with swiftui-svelte is a regular SwiftUI app that carries one JavaS
 
 ## Build the bundle for release
 
-`vite build` writes a minified `app.js` and its `app.js.map`. The template's **Bundle the JavaScript** build phase runs `npm run build` for every Release build, so an archive always has a fresh bundle. If you set up the Xcode project yourself, add a Run Script phase before **Copy Bundle Resources** that runs `vite build`, or run it yourself before you archive. A bundle from `vite build --watch` or `--mode development` isn't minified and includes the checks for misspelled attributes, so don't ship one.
+`vite build` writes a minified `app.js` and a source map, `app.js.map`, beside it. The map holds file names and positions but no copy of your source code, and `app.js` doesn't link to it. The template's **Bundle the JavaScript** build phase runs `npm run build` for every Release build, so an archive always has a fresh bundle. If you set up the Xcode project yourself, add a Run Script phase before **Copy Bundle Resources** that runs `vite build`, or run it yourself before you archive. A bundle from `vite build --watch` or `--mode development` isn't minified and includes the checks for misspelled attributes, so don't ship one.
 
 ## Load the bundle from the app
 
@@ -25,10 +25,10 @@ The template's Info.plist sets `NSAllowsLocalNetworking` and `NSLocalNetworkUsag
 ## What changes in a Release build
 
 - Safari's Web Inspector doesn't list the JavaScript context.
-- Errors don't show the overlay. They print to the console with positions in your source, which `SvelteView` reads from `app.js.map`, and the app keeps the last screen that rendered. Use `<svelte:boundary>` to show your own fallback, and use `onError` on `SvelteView` to send errors to your crash reporter.
+- Errors don't show the overlay. They print to the console with positions in `app.js`, and the app keeps the last screen that rendered. Use `<svelte:boundary>` to show your own fallback, and use `onError` on `SvelteView` to send errors to your crash reporter.
 - The checks for misspelled elements and attributes are left out of the bundle.
 
-`app.js.map` contains your source code. To keep it out of the app, set `build.sourcemap` to `false` in your Vite config, or leave the file out of the app target. Errors then show positions in `app.js` instead.
+The template's **Leave the source map out of Release builds** phase removes `app.js.map` from the app, so Release builds don't carry it, and Debug builds keep it for the error overlay. If you set up the Xcode project yourself, add the same phase or leave the map out of the Release target. Keep the `app.js.map` from each build you release, so you can look up the positions in its errors in your source later.
 
 ## Test on a device before you submit
 
