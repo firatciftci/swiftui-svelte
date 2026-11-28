@@ -40,6 +40,8 @@ var body: some View {
 
 A component stays mounted as long as its `SvelteView` exists, including while it's in a tab that isn't selected, and unmounts when the view goes away.
 
+A runtime shuts down when nothing references it anymore: its timers stop, its requests and WebSockets close, and its JavaScript context is released. To shut one down earlier, for example when the user signs out and you're about to show a screen that doesn't use it, call `stop()`. If a view mounts a component on a stopped runtime, the runtime loads the bundle again and starts from scratch.
+
 ## Reporting errors
 
 Debug builds show JavaScript errors over your app, and Release builds only print them. To send them somewhere else in every build, such as a crash reporter, pass `onError` to `SvelteView` or to `SvelteRuntime`:

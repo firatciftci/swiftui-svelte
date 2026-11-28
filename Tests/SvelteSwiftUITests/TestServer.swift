@@ -8,6 +8,9 @@ nonisolated final class TestServer: @unchecked Sendable {
     private var connections: Array<NWConnection> = []
     private var isStarted = false
     private var files: [String: String] = [:]
+    private var sockets = 0
+
+    var openSockets: Int { queue.sync { sockets } }
 
     init() throws {
         let parameters = NWParameters.tcp
@@ -33,7 +36,10 @@ nonisolated final class TestServer: @unchecked Sendable {
             listener.newConnectionHandler = { [weak self] connection in
                 guard let self else { return }
                 connections.append(connection)
-                ServerConnection(connection: connection, queue: queue) { [weak self] in self?.files[$0] }.start()
+                ServerConnection(
+                    connection: connection, queue: queue, files: { [weak self] in self?.files[$0] },
+                    onSocket: { [weak self] change in self?.sockets += change }
+                ).start()
             }
             listener.start(queue: queue)
         }
@@ -56,16 +62,21 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
     private let connection: NWConnection
     private let queue: DispatchQueue
     private let files: (String) -> String?
+    private let onSocket: (Int) -> Void
     private var buffer = Data()
     private var isWebSocket = false
     private var message = Data()
     private var messageOpcode: UInt8 = 0
     private var isClosing = false
 
-    init(connection: NWConnection, queue: DispatchQueue, files: @escaping (String) -> String?) {
+    init(
+        connection: NWConnection, queue: DispatchQueue, files: @escaping (String) -> String?,
+        onSocket: @escaping (Int) -> Void
+    ) {
         self.connection = connection
         self.queue = queue
         self.files = files
+        self.onSocket = onSocket
     }
 
     func start() {
@@ -78,6 +89,7 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
             if let data { buffer.append(data) }
             if isWebSocket { readFrames() } else { readRequest() }
             if isComplete || error != nil {
+                if isWebSocket { onSocket(-1) }
                 connection.cancel()
                 return
             }
@@ -211,6 +223,7 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
         }
         connection.send(content: Data((response + "\r\n").utf8), completion: .idempotent)
         isWebSocket = true
+        onSocket(1)
         readFrames()
     }
 

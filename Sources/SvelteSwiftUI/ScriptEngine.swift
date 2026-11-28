@@ -154,7 +154,8 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let loadStorage: @convention(block) () -> String = {
             UserDefaults.standard.string(forKey: storageKey) ?? "{}"
         }
-        let saveStorage: @convention(block) (String) -> Void = { json in
+        let saveStorage: @convention(block) (String) -> Void = { [weak self, weak context] json in
+            guard let self, let context, self.context === context else { return }
             UserDefaults.standard.set(json, forKey: storageKey)
         }
         let environment: @convention(block) () -> String = { [weak self] in

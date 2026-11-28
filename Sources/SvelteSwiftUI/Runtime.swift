@@ -87,6 +87,30 @@ public final class SvelteRuntime {
         drain.value.object = self
     }
 
+    isolated deinit {
+        stop()
+    }
+
+    public func stop() {
+        guard isStarted else { return }
+        isStarted = false
+        generation += 1
+        watcher?.cancel()
+        watcher = nil
+        pathMonitor?.cancel()
+        pathMonitor = nil
+        if let memoryObserver { NotificationCenter.default.removeObserver(memoryObserver) }
+        memoryObserver = nil
+        frames.stop()
+        isFrameRequested = false
+        for continuation in settlements.values { continuation.resume() }
+        settlements.removeAll()
+        measureRequests.removeAll()
+        inbox.removeAll()
+        let engine = engine
+        engine.queue.sync { engine.stop() }
+    }
+
     func start() {
         guard !isStarted else { return }
         isStarted = true
@@ -369,6 +393,13 @@ public final class SvelteRuntime {
         }
     #endif
 
+    private func receive(isInitial: Bool) {
+        let generation = generation
+        for message in engine.takeMessages() { inbox.append(Inbound(generation: generation, isInitial: isInitial, message: message)) }
+    }
+}
+
+extension SvelteRuntime {
     public func reload() {
         isRecovering = false
         loadSource()
@@ -433,11 +464,6 @@ public final class SvelteRuntime {
         for url in pendingURLs { deliver(url) }
         pendingURLs.removeAll()
         drain()
-    }
-
-    private func receive(isInitial: Bool) {
-        let generation = generation
-        for message in engine.takeMessages() { inbox.append(Inbound(generation: generation, isInitial: isInitial, message: message)) }
     }
 }
 
@@ -524,42 +550,6 @@ private struct Inbound {
 
 nonisolated private final class WeakBox<Object: AnyObject> {
     weak var object: Object?
-}
-
-final class FrameMonitor: NSObject {
-    private static let idleTicksBeforePausing = 30
-    private(set) var link: CADisplayLink?
-    private var lastTimestamp: CFTimeInterval = 0
-    private var idleTicks = 0
-    var onFrame: ((CFTimeInterval, Double) -> Bool)?
-
-    func resume() {
-        idleTicks = 0
-        if let link {
-            link.isPaused = false
-            return
-        }
-        #if os(macOS)
-            guard let link = (NSScreen.main ?? NSScreen.screens.first)?.displayLink(target: self, selector: #selector(tick)) else { return }
-        #else
-            let link = CADisplayLink(target: self, selector: #selector(tick))
-        #endif
-        link.add(to: .main, forMode: .common)
-        self.link = link
-    }
-
-    @objc private func tick(_ link: CADisplayLink) {
-        let gap = lastTimestamp > 0 ? (link.timestamp - lastTimestamp) * 1000 : 0
-        lastTimestamp = link.timestamp
-        if onFrame?(link.timestamp, gap) == true {
-            idleTicks = 0
-            return
-        }
-        idleTicks += 1
-        guard idleTicks >= Self.idleTicksBeforePausing else { return }
-        link.isPaused = true
-        lastTimestamp = 0
-    }
 }
 
 public nonisolated struct ScriptError: Error, Equatable, Sendable, CustomStringConvertible {
