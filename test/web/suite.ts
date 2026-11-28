@@ -1255,7 +1255,6 @@ hostTest(
       true,
     );
     equal(environment.matchMedia("(pointer: coarse)").matches, true);
-    equal(environment.matchMedia("(min-width: 600px)").matches, false);
     equal(environment.matchMedia("garbage").matches, false);
     const changes: Array<boolean> = [];
     const listener = (event: MediaQueryListEvent): void =>
@@ -1272,6 +1271,67 @@ hostTest(
       systemColorScheme: "light",
       reduceMotion: false,
     });
+  },
+);
+
+hostTest(
+  "matchMedia evaluates viewport queries and reports crossed breakpoints",
+  (web) => {
+    const environment = host(web);
+    environment.setEnvironment({
+      viewportWidth: 390,
+      viewportHeight: 844,
+      fontScale: 1,
+      pixelRatio: 3,
+    });
+    const isMatching = (query: string): boolean =>
+      environment.matchMedia(query).matches;
+    const expected: Array<[string, boolean]> = [
+      ["(min-width: 600px)", false],
+      ["(max-width: 600px)", true],
+      ["(width: 390px)", true],
+      ["(min-width: 24em)", true],
+      ["(min-width: 25rem)", false],
+      ["(min-width: 0)", true],
+      ["(width >= 40rem)", false],
+      ["(width < 40rem)", true],
+      ["(300px < width <= 390px)", true],
+      ["(400px <= width)", false],
+      ["(48rem > width)", true],
+      ["(width)", true],
+      ["(min-height: 800px)", true],
+      ["(max-height: 43.75em)", false],
+      ["(orientation: portrait)", true],
+      ["(orientation: landscape)", false],
+      ["(min-aspect-ratio: 1/2)", false],
+      ["(max-aspect-ratio: 1 / 2)", true],
+      ["(aspect-ratio < 1)", true],
+      ["(min-resolution: 2dppx)", true],
+      ["(resolution: 3x)", true],
+      ["(min-resolution: 300dpi)", false],
+      ["screen and (min-width: 300px) and (orientation: portrait)", true],
+      ["not all and (min-width: 600px)", true],
+      ["(min-width: 600px), (orientation: portrait)", true],
+      ["(min-width: 10vw)", false],
+      ["(scan: progressive)", false],
+      ["not all and (scan: progressive)", false],
+    ];
+    for (const [query, value] of expected)
+      equal(isMatching(query), value, query);
+    environment.setEnvironment({ fontScale: 1.5 });
+    equal(isMatching("(min-width: 24em)"), false);
+    environment.setEnvironment({ fontScale: 1 });
+
+    const wide = environment.matchMedia("(min-width: 600px)");
+    const changes: Array<boolean> = [];
+    const listener = (event: MediaQueryListEvent): void =>
+      void changes.push(event.matches);
+    wide.addEventListener("change", listener as (event: Event) => void);
+    environment.setEnvironment({ viewportWidth: 700, viewportHeight: 400 });
+    environment.setEnvironment({ viewportWidth: 800 });
+    environment.setEnvironment({ viewportWidth: 390, viewportHeight: 844 });
+    wide.removeEventListener("change", listener as (event: Event) => void);
+    deep(changes, [true, false]);
   },
 );
 

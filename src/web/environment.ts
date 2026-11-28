@@ -161,7 +161,147 @@ function feature(name: string, value: string | undefined): boolean | null {
   }
 }
 
-function doesQueryMatch(query: string): boolean {
+declare const __SWIFTUI_SVELTE_DEV__: boolean | undefined;
+
+const isDevelopment =
+  typeof __SWIFTUI_SVELTE_DEV__ !== "undefined" && __SWIFTUI_SVELTE_DEV__;
+
+const warnedTerms = new Set<string>();
+
+const measures = {
+  width: () => environment.viewportWidth,
+  height: () => environment.viewportHeight,
+  "aspect-ratio": () =>
+    environment.viewportHeight === 0
+      ? null
+      : environment.viewportWidth / environment.viewportHeight,
+  resolution: () => environment.pixelRatio,
+} satisfies Record<string, () => number | null>;
+
+type Measured = keyof typeof measures;
+
+function isMeasured(name: string): name is Measured {
+  return Object.hasOwn(measures, name);
+}
+
+const resolutionUnits: Record<string, number> = {
+  dppx: 1,
+  x: 1,
+  dpi: 1 / 96,
+  dpcm: 2.54 / 96,
+};
+
+function amount(name: Measured, text: string): number | null {
+  if (name === "aspect-ratio") {
+    const ratio =
+      /^(\d+(?:\.\d+)?|\.\d+)(?:\s*\/\s*(\d+(?:\.\d+)?|\.\d+))?$/.exec(text);
+    const denominator = Number(ratio?.[2] ?? 1);
+    return ratio == null || denominator === 0
+      ? null
+      : Number(ratio[1]) / denominator;
+  }
+  const match = /^(-?(?:\d+(?:\.\d+)?|\.\d+))([a-z]*)$/.exec(text);
+  const number = Number(match?.[1]);
+  const unit = match?.[2] ?? "";
+  const scale =
+    name === "resolution"
+      ? resolutionUnits[unit]
+      : unit === "px"
+        ? 1
+        : unit === "em" || unit === "rem"
+          ? 16 * environment.fontScale
+          : unit === "" && number === 0
+            ? 0
+            : undefined;
+  return match == null || scale == null ? null : number * scale;
+}
+
+const comparisons: Record<string, (left: number, right: number) => boolean> = {
+  "<": (left, right) => left < right,
+  "<=": (left, right) => left <= right,
+  ">": (left, right) => left > right,
+  ">=": (left, right) => left >= right,
+  "=": (left, right) => left === right,
+};
+
+function isRelated(left: number, operator: string, right: number): boolean {
+  return comparisons[operator]?.(left, right) ?? false;
+}
+
+function range(text: string): boolean | null {
+  const parts = text.split(/\s*([<>]=?|=)\s*/);
+  if (parts.length === 3) {
+    const [left = "", operator = "", right = ""] = parts;
+    if (isMeasured(left)) {
+      const actual = measures[left]();
+      const expected = amount(left, right);
+      return actual == null || expected == null
+        ? null
+        : isRelated(actual, operator, expected);
+    }
+    if (isMeasured(right)) {
+      const actual = measures[right]();
+      const expected = amount(right, left);
+      return actual == null || expected == null
+        ? null
+        : isRelated(expected, operator, actual);
+    }
+    return null;
+  }
+  if (parts.length === 5) {
+    const [low = "", first = "", name = "", second = "", high = ""] = parts;
+    if (!isMeasured(name)) return null;
+    const actual = measures[name]();
+    const lower = amount(name, low);
+    const upper = amount(name, high);
+    if (actual == null || lower == null || upper == null) return null;
+    return isRelated(lower, first, actual) && isRelated(actual, second, upper);
+  }
+  return null;
+}
+
+function evaluate(text: string): boolean | null {
+  if (/[<>=]/.test(text)) return range(text);
+  const match = /^([a-z-]+)(?:\s*:(.+))?$/.exec(text);
+  if (match == null) return null;
+  const name = match[1] ?? "";
+  const value = match[2]?.trim();
+  const bound = /^(min|max)-(.+)$/.exec(name);
+  const base = bound?.[2] ?? name;
+  if (isMeasured(base)) {
+    const actual = measures[base]();
+    if (value === undefined)
+      return bound == null && actual != null ? actual !== 0 : null;
+    const expected = amount(base, value);
+    if (actual == null || expected == null) return null;
+    return isRelated(
+      actual,
+      bound?.[1] === "min" ? ">=" : bound?.[1] === "max" ? "<=" : "=",
+      expected,
+    );
+  }
+  if (name === "orientation") {
+    if (value === undefined) return true;
+    const isPortrait = environment.viewportHeight >= environment.viewportWidth;
+    if (value === "portrait") return isPortrait;
+    return value === "landscape" ? !isPortrait : null;
+  }
+  return feature(name, value);
+}
+
+function term(part: string, media: string): boolean | null {
+  const inner = /^\((.*)\)$/.exec(part);
+  const value = inner == null ? null : evaluate((inner[1] ?? "").trim());
+  if (value == null && isDevelopment && !warnedTerms.has(part)) {
+    warnedTerms.add(part);
+    console.warn(
+      `matchMedia() can't evaluate "${part}" in "${media}", so that query doesn't match. It supports width, height, aspect-ratio, orientation, resolution, prefers-color-scheme, prefers-reduced-motion, prefers-reduced-transparency, prefers-contrast, hover, and pointer, with lengths in px, em, or rem.`,
+    );
+  }
+  return value;
+}
+
+function doesQueryMatch(query: string, media: string): boolean {
   let text = query.trim().toLowerCase();
   if (text === "") return true;
   let isNegate = false;
@@ -173,15 +313,13 @@ function doesQueryMatch(query: string): boolean {
   }
   let isResult = true;
   for (const part of text.split(/\s+and\s+/)) {
-    const term = part.trim();
-    if (term === "all" || term === "screen") continue;
-    if (term === "print") {
+    const trimmed = part.trim();
+    if (trimmed === "all" || trimmed === "screen") continue;
+    if (trimmed === "print") {
       isResult = false;
       continue;
     }
-    const match = /^\(\s*([a-z-]+)\s*(?::\s*([a-z0-9-]+)\s*)?\)$/.exec(term);
-    if (match == null) return false;
-    const value = feature(match[1] ?? "", match[2]);
+    const value = term(trimmed, media);
     if (value == null) return false;
     if (!value) isResult = false;
   }
@@ -190,7 +328,7 @@ function doesQueryMatch(query: string): boolean {
 
 function doesMediaMatch(media: string): boolean {
   if (media.trim() === "") return true;
-  return media.split(",").some((query) => doesQueryMatch(query));
+  return media.split(",").some((query) => doesQueryMatch(query, media));
 }
 
 export class MediaQueryListEventShim extends EventShim {
