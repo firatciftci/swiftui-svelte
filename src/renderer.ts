@@ -14,6 +14,7 @@ import {
   checkAttribute,
   checkElement,
   checkFont,
+  checkValue,
   isMarkup,
   warnOnce,
 } from "./dev.ts";
@@ -873,8 +874,10 @@ const renderer = createRenderer<{
       applyClass(element, value == null ? null : String(value));
       return;
     }
-    if (isDevelopment && name !== "data-loc")
+    if (isDevelopment && name !== "data-loc") {
       checkAttribute(element.name, name, locationOf(element));
+      checkValue(element.name, name, value, locationOf(element));
+    }
     if (name === "container") index(element);
     setOwnAttribute(element, name, value);
     changeAttribute(element, name);

@@ -38,9 +38,11 @@ In a development build, a warning about an element also says where that element 
 
 `stats` from `swiftui-svelte` counts the renderer's work. `live` is the number of element nodes that haven't been released yet, `commits` and `ops` count the batches and operations sent to the host, `bytes` is their total size, and `serializeMs` and `nativeMs` are the time spent encoding batches and the time spent inside the host's commit call. Read it to look for leaks and to compare performance between builds. `protocol` is the bridge protocol version the bundle was built with.
 
-## Misspelled elements and attributes
+## Misspelled elements, attributes, and values
 
 While `vite build --watch` runs, or in a build with `--mode development`, the bundle also checks element and attribute names and reports a warning in the tray and in Xcode's console for any it doesn't recognize, such as `<txt> doesn't have an attribute named "paddng". Did you mean "padding"?`. Each name is reported once. An element name that isn't built in renders as a red "Unknown element" label, unless you registered a native component with that name. Release builds leave the checks out.
+
+The same builds also check the values of attributes that take one of a fixed set of words, such as `font`, `weight`, and `blendmode`, and they warn about a word that isn't in the set, such as `<txt> font="headlin" isn't a value font accepts, so it has no effect. Did you mean "headline"?`.
 
 `svelte-check` catches most of these before you build, because every element and attribute is typed. Run it with the TypeScript preset from [Getting started](getting-started.md).
 

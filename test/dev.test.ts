@@ -1,6 +1,6 @@
 import { flushSync } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { checkAttribute, checkElement } from "swiftui-svelte/dev";
+import { checkAttribute, checkElement, checkValue } from "swiftui-svelte/dev";
 import { elements, modifiers } from "swiftui-svelte/known";
 import { byTestId, dispatch, mountComponent, settle } from "./bridge.ts";
 import FontSize from "./components/FontSize.svelte";
@@ -126,6 +126,29 @@ describe("development checks", () => {
         location: "src/Located.svelte:6:3",
         message: `<txt> doesn't have an attribute named "colr". Did you mean "color"?`,
       },
+    ]);
+  });
+
+  it("warns once about a string that isn't one of an attribute's values", async () => {
+    const stop = mountComponent(Typo, { extra: { font: "headlin" } });
+    flushSync();
+    await settle();
+    stop();
+    checkValue("txt", "font", "headlin");
+    checkValue("vstack", "dir", "sideways");
+    checkValue("txt", "font", "headline");
+    checkValue("txt", "font", 17);
+    checkValue("txt", "fixedsize", "");
+    checkValue("txt", "color", "chartreuse-ish");
+    checkValue("vstack", "blendmode", "zzzz");
+    expect(
+      warn.mock.calls
+        .map(([message]: Array<unknown>) => String(message))
+        .filter((message) => message.includes("isn't a value")),
+    ).toEqual([
+      `<txt> font="headlin" isn't a value font accepts, so it has no effect. Did you mean "headline"?`,
+      `<vstack> dir="sideways" isn't a value dir accepts, so it has no effect. Use "ltr" or "rtl".`,
+      `<vstack> blendmode="zzzz" isn't a value blendmode accepts, so it has no effect. docs/reference.md lists the values it takes.`,
     ]);
   });
 

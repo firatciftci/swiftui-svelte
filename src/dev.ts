@@ -1,4 +1,4 @@
-import { elements, modifiers } from "./known.ts";
+import { elements, elementValues, modifiers, modifierValues } from "./known.ts";
 import { textContainers } from "./markup.ts";
 
 const warned = new Set<string>();
@@ -117,4 +117,36 @@ export function checkFont(
     `<${element}> has both font and size, so it ignores font="${String(font)}" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`,
     { element, attribute: "font", value: String(font), location },
   );
+}
+
+function quotedList(values: ReadonlyArray<string>): string {
+  const quoted = values.map((value) => `"${value}"`);
+  if (quoted.length < 3) return quoted.join(" or ");
+  return `${quoted.slice(0, -1).join(", ")}, or ${quoted.at(-1)}`;
+}
+
+export function checkValue(
+  element: string,
+  name: string,
+  value: unknown,
+  location?: string,
+): void {
+  if (typeof value !== "string" || value === "") return;
+  const allowed = elementValues[element]?.[name] ?? modifierValues[name];
+  if (allowed == null || allowed.includes(value)) return;
+  const problem = `<${element}> ${name}="${value}" isn't a value ${name} accepts, so it has no effect.`;
+  const suggestion = closest(
+    value,
+    allowed,
+    Math.max(2, Math.floor(value.length / 3)),
+  );
+  let advice = "docs/reference.md lists the values it takes.";
+  if (suggestion != null) advice = `Did you mean "${suggestion}"?`;
+  else if (allowed.length <= 12) advice = `Use ${quotedList(allowed)}.`;
+  warnOnce(`<${element}> ${name}=${value}`, `${problem} ${advice}`, {
+    element,
+    attribute: name,
+    value,
+    location,
+  });
 }

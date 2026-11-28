@@ -46,30 +46,90 @@ export function load(): {
   return { checker, file, ...declarations(file) };
 }
 
+function variants(type: ts.Type): ReadonlyArray<ts.Type> {
+  return type.isUnion() ? type.types : [type];
+}
+
+function literals(type: ts.Type): Array<string> | null {
+  const found: Array<string> = [];
+  for (const member of variants(type)) {
+    if (member.isStringLiteral()) found.push(member.value);
+    else if (
+      (member.flags &
+        (ts.TypeFlags.String |
+          ts.TypeFlags.TemplateLiteral |
+          ts.TypeFlags.StringMapping |
+          ts.TypeFlags.Intersection |
+          ts.TypeFlags.Any |
+          ts.TypeFlags.Unknown)) !==
+      0
+    )
+      return null;
+  }
+  return found.length > 0 ? found : null;
+}
+
 export function generate(): string {
   const { checker, file, elements, modifiers } = load();
   const names = (type: ts.Type): Array<string> => [
     ...new Set(
-      (type.isUnion() ? type.types : [type]).flatMap((member) =>
+      variants(type).flatMap((member) =>
         checker
           .getPropertiesOfType(member)
           .map((property) => property.getName()),
       ),
     ),
   ];
-  const shared = new Set(names(checker.getTypeAtLocation(modifiers)));
+  const valuesOf = (
+    type: ts.Type,
+    node: ts.Node,
+  ): Record<string, Array<string>> => {
+    const found = new Map<string, Set<string> | null>();
+    for (const member of variants(type)) {
+      for (const property of checker.getPropertiesOfType(member)) {
+        const name = property.getName();
+        const allowed = literals(
+          checker.getNonNullableType(
+            checker.getTypeOfSymbolAtLocation(property, node),
+          ),
+        );
+        const previous = found.get(name);
+        if (allowed == null || previous === null) found.set(name, null);
+        else found.set(name, new Set([...(previous ?? []), ...allowed]));
+      }
+    }
+    const table: Record<string, Array<string>> = {};
+    for (const [name, allowed] of found) {
+      if (allowed != null) table[name] = [...allowed];
+    }
+    return table;
+  };
+  const modifierType = checker.getTypeAtLocation(modifiers);
+  const shared = new Set(names(modifierType));
+  const sharedValues = valuesOf(modifierType, modifiers);
   const own: Record<string, Array<string>> = {};
+  const ownValues: Record<string, Record<string, Array<string>>> = {};
   for (const member of elements.members) {
     if (!ts.isPropertySignature(member) || member.type == null) continue;
     const name = member.name.getText(file).replaceAll('"', "");
-    own[name] = names(checker.getTypeFromTypeNode(member.type))
+    const type = checker.getTypeFromTypeNode(member.type);
+    own[name] = names(type)
       .filter((attribute) => !shared.has(attribute))
       .toSorted((a, b) => a.localeCompare(b));
+    const values = Object.entries(valuesOf(type, member)).filter(
+      ([attribute, allowed]) =>
+        JSON.stringify(allowed) !== JSON.stringify(sharedValues[attribute]),
+    );
+    if (values.length > 0) ownValues[name] = Object.fromEntries(values);
   }
   const lines = [
     `export const modifiers: ReadonlySet<string> = new Set(${JSON.stringify([...shared].toSorted((a, b) => a.localeCompare(b)))});`,
     "",
     `export const elements: Readonly<Record<string, ReadonlyArray<string>>> = ${JSON.stringify(own)};`,
+    "",
+    `export const modifierValues: Readonly<Record<string, ReadonlyArray<string>>> = ${JSON.stringify(sharedValues)};`,
+    "",
+    `export const elementValues: Readonly<Record<string, Readonly<Record<string, ReadonlyArray<string>>>>> = ${JSON.stringify(ownValues)};`,
     "",
   ];
   return lines.join("\n");
