@@ -6,7 +6,7 @@ import Testing
 struct ListTests {
     private func element(_ name: String, _ attributes: [String: JSONValue] = [:], _ children: Array<Node> = []) -> Node {
         let node = Node(id: 0, kind: .element, name: name, text: "")
-        node.attributes = attributes
+        node.setOwnAttributes(attributes)
         node.children = children
         return node
     }

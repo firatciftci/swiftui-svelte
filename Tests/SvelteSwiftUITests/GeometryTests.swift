@@ -31,7 +31,7 @@ struct GeometryTests {
     @Test func sizesBorderBoxElementsAroundTheirBorderAndPadding() {
         func rendered(_ attributes: [String: JSONValue]) -> CGSize? {
             let node = Node(id: 1, kind: .element, name: "vstack", text: "")
-            node.attributes = attributes
+            node.setOwnAttributes(attributes)
             let renderer = ImageRenderer(content: AnyView(NodeShape.view(of: node)))
             renderer.scale = 1
             return renderer.cgImage.map { CGSize(width: $0.width, height: $0.height) }

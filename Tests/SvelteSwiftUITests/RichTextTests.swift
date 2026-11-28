@@ -19,7 +19,7 @@ struct RichTextTests {
 
     private func txt(_ attributes: [String: JSONValue] = [:], _ children: Array<Node>) -> Node {
         let node = Node(id: 0, kind: .element, name: "txt", text: "")
-        node.attributes = attributes
+        node.setOwnAttributes(attributes)
         node.children = children
         return node
     }

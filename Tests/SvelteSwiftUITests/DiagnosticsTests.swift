@@ -30,7 +30,7 @@ struct DiagnosticsTests {
     @Test func readsTheSourceLocationThatDevelopmentBuildsStamp() {
         let node = Node(id: 1, kind: .element, name: "txt", text: "")
         #expect(node.location == nil)
-        node.attributes = ["data-loc": .string("src/App.svelte:4:3")]
+        node.setOwnAttributes(["data-loc": .string("src/App.svelte:4:3")])
         #expect(node.location == "src/App.svelte:4:3")
     }
 

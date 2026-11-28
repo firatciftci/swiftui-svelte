@@ -7,7 +7,7 @@ struct SelectionTests {
     private func choices(_ values: Array<JSONValue>) -> Array<Node> {
         values.enumerated().map { index, value in
             let choice = Node(id: index, kind: .element, name: "choice", text: "")
-            choice.attributes["value"] = value
+            choice.setOwnAttribute("value", value)
             return choice
         }
     }

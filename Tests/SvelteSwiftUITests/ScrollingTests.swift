@@ -7,10 +7,10 @@ struct ScrollingTests {
     @Test func readsWhichEventsAnElementListensFor() {
         let node = Node(id: 0, kind: .element, name: "scrollview", text: "")
         #expect(!node.listens(to: "scroll"))
-        node.attributes["listens"] = .array([.string("scroll")])
+        node.setOwnAttribute("listens", .array([.string("scroll")]))
         #expect(node.listens(to: "scroll"))
         #expect(!node.listens(to: "resize"))
-        node.attributes["listens"] = .string("scroll")
+        node.setOwnAttribute("listens", .string("scroll"))
         #expect(!node.listens(to: "scroll"))
     }
 

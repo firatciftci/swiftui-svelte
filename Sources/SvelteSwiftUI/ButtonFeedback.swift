@@ -54,7 +54,7 @@ struct FeedbackButtonStyle: ButtonStyle {
                 .onChange(of: Change(press: press, overrides: overrides), initial: true) { old, new in
                     let left = old.press.active(pressed: pressed, hovered: hovered)
                     withAnimation(ButtonPress.animation(from: left, to: new.press.active(pressed: pressed, hovered: hovered))) {
-                        for label in labels { label.labelFeedback = new.overrides }
+                        for label in labels { label.feedback.label = new.overrides }
                     }
                 }
                 .onHover { isHovered = $0 }
@@ -96,7 +96,7 @@ struct StateFeedback: ViewModifier {
                 let hovered = ButtonFeedback(node.attributes["hovered"])
                 let active = new.active(pressed: pressed, hovered: hovered)
                 withAnimation(ButtonPress.animation(from: old.active(pressed: pressed, hovered: hovered), to: active)) {
-                    node.stateFeedback = active?.overrides ?? [:]
+                    node.feedback.state = active?.overrides ?? [:]
                 }
             }
             .onHover { isHovered = $0 }

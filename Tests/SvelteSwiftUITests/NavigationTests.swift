@@ -55,7 +55,7 @@ struct NavigationTests {
         let section = Node(id: 2, kind: .element, name: "tabsection", text: "")
         let second = tab(3)
         let third = tab(4)
-        third.attributes["value"] = .string("search")
+        third.setOwnAttribute("value", .string("search"))
         section.children = [second, third]
         let tabs = Tabs.tabs(in: [first, section])
         #expect(tabs.map(\.id) == [1, 3, 4])

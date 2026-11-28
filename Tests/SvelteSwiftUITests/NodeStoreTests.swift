@@ -1,4 +1,6 @@
 import Foundation
+import Observation
+import Synchronization
 import Testing
 
 @testable import SvelteSwiftUI
@@ -376,10 +378,53 @@ extension NodeStoreTests {
     @Test func leavesButtonFeedbackOutOfJavaScriptAttributes() {
         let store = self.store([])
         let node = store.node(2)
-        node?.labelFeedback = ["background": .string("blue")]
+        node?.feedback.label = ["background": .string("blue")]
         store.apply(batch([4, 2, 2, "x"]))
         #expect(node?.ownAttributes["background"] == nil)
         #expect(node?.nativeAttributes["background"] == .string("blue"))
+    }
+
+    @Test func keepsFeedbackAndOwnedAttributesOutOfAnEditedValue() {
+        let node = Node(id: 1, kind: .element, name: "probe", text: "")
+        node.owned = ["color"]
+        node.setOwnAttributes(["color": .string("red"), "value": .string("a")])
+        node.feedback.state = ["opacity": .number(0.5)]
+        node.setOwnAttribute("value", .string("b"))
+        #expect(node.ownAttributes == ["color": .string("red"), "value": .string("b")])
+        #expect(node.attributes == ["opacity": .number(0.5), "value": .string("b")])
+    }
+
+    @Test func updatesTheMergedAttributesWhenAnySourceChanges() {
+        let node = Node(id: 1, kind: .element, name: "probe", text: "")
+        node.owned = ["color"]
+        node.setOwnAttributes(["color": .string("red"), "padding": .number(4)])
+        node.feedback.label = ["opacity": .number(0.5)]
+        #expect(node.attributes == ["padding": .number(4), "opacity": .number(0.5)])
+        node.setOwnAttribute("padding", .number(8))
+        #expect(node.attributes == ["padding": .number(8), "opacity": .number(0.5)])
+        node.feedback.state = ["opacity": .number(1)]
+        #expect(node.nativeAttributes == ["color": .string("red"), "padding": .number(8), "opacity": .number(1)])
+        node.owned = []
+        #expect(node.attributes["color"] == .string("red"))
+        node.feedback = Node.Feedback()
+        #expect(node.attributes == ["color": .string("red"), "padding": .number(8)])
+    }
+
+    @Test(arguments: [false, true])
+    func notifiesReadersOfCachedAttributesWhenAnOwnAttributeChanges(isCached: Bool) {
+        let node = Node(id: 1, kind: .element, name: "probe", text: "")
+        node.owned = ["color"]
+        node.setOwnAttributes(["padding": .number(4)])
+        node.feedback.label = ["opacity": .number(0.5)]
+        if isCached { _ = node.attributes }
+        let changes = Mutex(0)
+        withObservationTracking {
+            _ = node.attributes
+        } onChange: {
+            changes.withLock { $0 += 1 }
+        }
+        node.setOwnAttribute("padding", .number(8))
+        #expect(changes.withLock { $0 } == 1)
     }
 
     @Test func ignoresAMoveBeforeItself() {

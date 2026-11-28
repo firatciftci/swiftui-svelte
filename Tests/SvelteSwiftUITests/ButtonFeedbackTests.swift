@@ -26,23 +26,23 @@ struct ButtonFeedbackTests {
 
     @Test func overridesTheLabelsAttributesOnlyWhileActive() {
         let node = Node(id: 1, kind: .element, name: "txt", text: "")
-        node.attributes = ["background": .string("red"), "radius": .number(8), "shadow": .number(4)]
-        node.labelFeedback = ["background": .string("blue"), "shadow": .bool(false)]
+        node.setOwnAttributes(["background": .string("red"), "radius": .number(8), "shadow": .number(4)])
+        node.feedback.label = ["background": .string("blue"), "shadow": .bool(false)]
         #expect(node.attributes["background"] == .string("blue"))
         #expect(node.attributes["radius"] == .number(8))
         #expect(node.attributes["shadow"] == .bool(false))
-        node.labelFeedback = [:]
+        node.feedback.label = [:]
         #expect(node.attributes["background"] == .string("red"))
         #expect(node.attributes["shadow"] == .number(4))
     }
 
     @Test func stateFeedbackOverridesLabelFeedback() {
         let node = Node(id: 1, kind: .element, name: "rectangle", text: "")
-        node.attributes = ["opacity": .number(0)]
-        node.labelFeedback = ["opacity": .number(0.5)]
-        node.stateFeedback = ["opacity": .number(1)]
+        node.setOwnAttributes(["opacity": .number(0)])
+        node.feedback.label = ["opacity": .number(0.5)]
+        node.feedback.state = ["opacity": .number(1)]
         #expect(node.attributes["opacity"] == .number(1))
-        node.stateFeedback = [:]
+        node.feedback.state = [:]
         #expect(node.attributes["opacity"] == .number(0.5))
     }
 
@@ -50,17 +50,17 @@ struct ButtonFeedbackTests {
         for type in ["tap", "longpress", "drag"] {
             let card = Node(id: 1, kind: .element, name: "vstack", text: "")
             let label = Node(id: 2, kind: .element, name: "txt", text: "")
-            card.attributes = ["listens": .array([.string(type)])]
+            card.setOwnAttributes(["listens": .array([.string(type)])])
             card.children = [label]
             #expect(!card.tracksPresses)
-            label.attributes = ["hovered": .object(["opacity": .number(0.5)])]
+            label.setOwnAttributes(["hovered": .object(["opacity": .number(0.5)])])
             #expect(card.tracksPresses, "\(type)")
         }
         let button = Node(id: 3, kind: .element, name: "btn", text: "")
-        button.attributes = ["listens": .array([.string("tap")]), "pressed": .object(["scale": .number(0.9)])]
+        button.setOwnAttributes(["listens": .array([.string("tap")]), "pressed": .object(["scale": .number(0.9)])])
         #expect(!button.tracksPresses)
         let scroller = Node(id: 4, kind: .element, name: "vstack", text: "")
-        scroller.attributes = ["listens": .array([.string("scroll")]), "pressed": .object(["scale": .number(0.9)])]
+        scroller.setOwnAttributes(["listens": .array([.string("scroll")]), "pressed": .object(["scale": .number(0.9)])])
         #expect(!scroller.tracksPresses)
     }
 
@@ -69,7 +69,7 @@ struct ButtonFeedbackTests {
         let stack = Node(id: 2, kind: .element, name: "hstack", text: "")
         let text = Node(id: 3, kind: .element, name: "txt", text: "")
         let background = Node(id: 4, kind: .element, name: "background", text: "")
-        background.attributes = ["pressed": .object(["shadow": .bool(false)])]
+        background.setOwnAttributes(["pressed": .object(["shadow": .bool(false)])])
         text.children = [background]
         stack.children = [text]
         button.children = [stack]

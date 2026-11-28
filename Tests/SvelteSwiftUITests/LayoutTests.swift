@@ -70,14 +70,14 @@ struct LayoutTests {
     @Test func readsTheAxisOfACSSStack() {
         let row = Node(id: 1, kind: .element, name: "hstack", text: "")
         #expect(!CSSStack.isColumn(row))
-        row.attributes = ["axis": .string("vertical")]
+        row.setOwnAttributes(["axis": .string("vertical")])
         #expect(CSSStack.isColumn(row))
         let column = Node(id: 2, kind: .element, name: "vstack", text: "")
         #expect(CSSStack.isColumn(column))
-        column.attributes = ["axis": .string("horizontal")]
+        column.setOwnAttributes(["axis": .string("horizontal")])
         #expect(!CSSStack.isColumn(column))
         let child = Node(id: 3, kind: .element, name: "txt", text: "")
-        row.attributes["css"] = .bool(true)
+        row.setOwnAttribute("css", .bool(true))
         #expect(CSSPlacement.of(child, in: row) == .stretch(.horizontal))
     }
 
@@ -92,21 +92,21 @@ struct LayoutTests {
 
     @Test func placesCSSChildrenByTheirFlowAlignment() {
         let parent = Node(id: 1, kind: .element, name: "vstack", text: "")
-        parent.attributes = ["css": .bool(true)]
+        parent.setOwnAttributes(["css": .bool(true)])
         let child = Node(id: 2, kind: .element, name: "txt", text: "")
         #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
-        child.attributes = ["selfalign": .string("end")]
+        child.setOwnAttributes(["selfalign": .string("end")])
         #expect(CSSPlacement.of(child, in: parent) == .align(UnitPoint(x: 1, y: 0)))
-        child.attributes = ["selfalign": .string("stretch")]
+        child.setOwnAttributes(["selfalign": .string("stretch")])
         #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
-        parent.attributes["alignment"] = .string("center")
+        parent.setOwnAttribute("alignment", .string("center"))
         #expect(CSSPlacement.of(child, in: parent) == .stretch(.horizontal))
-        child.attributes = [:]
+        child.setOwnAttributes([:])
         #expect(CSSPlacement.of(child, in: parent) == .align(UnitPoint(x: 0.5, y: 0)))
         let row = Node(id: 3, kind: .element, name: "hstack", text: "")
-        row.attributes = ["css": .bool(true)]
+        row.setOwnAttributes(["css": .bool(true)])
         #expect(CSSPlacement.of(child, in: row) == .stretch(.vertical))
-        parent.attributes["css"] = nil
+        parent.setOwnAttribute("css", nil)
         #expect(CSSPlacement.of(child, in: parent) == nil)
     }
 }

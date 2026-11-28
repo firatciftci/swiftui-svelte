@@ -96,14 +96,14 @@ struct ModifierSetTests {
 
     @Test func leavesPlainNodesWithoutModifiers() {
         let node = Node(id: 1, kind: .element, name: "vstack", text: "")
-        node.attributes = ["spacing": .number(4), "alignment": .string("leading")]
+        node.setOwnAttributes(["spacing": .number(4), "alignment": .string("leading")])
         node.children = [Node(id: 2, kind: .text, name: "", text: "a"), Node(id: 3, kind: .element, name: "txt", text: "")]
         #expect(node.modifiers.isEmpty)
     }
 
     @Test func enablesGroupsFromAttributesListenersAndAttachments() {
         let node = Node(id: 1, kind: .element, name: "vstack", text: "")
-        node.attributes = ["padding": .null, "listens": .array([.string("tap"), .string("scroll")])]
+        node.setOwnAttributes(["padding": .null, "listens": .array([.string("tap"), .string("scroll")])])
         #expect(node.modifiers == [.framing, .gestures])
         node.children = [Node(id: 2, kind: .element, name: "overlay", text: ""), Node(id: 3, kind: .element, name: "maskview", text: "")]
         #expect(node.modifiers == [.framing, .gestures, .layers, .decorations])
@@ -113,8 +113,8 @@ struct ModifierSetTests {
 
     @Test func keepsGroupsOnAfterTheirAttributesGo() {
         let node = Node(id: 1, kind: .element, name: "txt", text: "")
-        node.attributes = ["color": .string("red")]
-        node.attributes = [:]
+        node.setOwnAttributes(["color": .string("red")])
+        node.setOwnAttributes([:])
         node.children = []
         #expect(node.modifiers == [.typography, .colored])
     }

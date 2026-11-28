@@ -111,7 +111,7 @@ struct Searching: ViewModifier {
             .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
             .onSubmit(of: .search) {
                 if text != node.attributes["value"]?.string {
-                    node.attributes["value"] = .string(text)
+                    node.setOwnAttribute("value", .string(text))
                     runtime.dispatch(node.id, "input", .string(text))
                     sentBeforeChange = text
                 }
@@ -121,7 +121,7 @@ struct Searching: ViewModifier {
                 let isSent = typed == sentBeforeChange
                 sentBeforeChange = nil
                 guard !isSent, typed != node.attributes["value"]?.string else { return }
-                node.attributes["value"] = .string(typed)
+                node.setOwnAttribute("value", .string(typed))
                 runtime.dispatch(node.id, "input", .string(typed), waits: true)
                 if let settled = node.attributes["value"]?.string, settled != typed { text = settled }
             }

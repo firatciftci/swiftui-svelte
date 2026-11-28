@@ -7,10 +7,18 @@ final class Node: Identifiable {
         case fragment, element, text
     }
 
+    struct Feedback: Equatable {
+        var label: [String: JSONValue] = [:]
+        var state: [String: JSONValue] = [:]
+
+        var isEmpty: Bool { label.isEmpty && state.isEmpty }
+    }
+
     private final class Extras {
         var owned: Set<String> = []
-        var labelFeedback: [String: JSONValue] = [:]
-        var stateFeedback: [String: JSONValue] = [:]
+        var feedback = Feedback()
+        var native: [String: JSONValue]?
+        var visible: [String: JSONValue]?
         var presented: Array<Node> = []
         var focusRequest = FocusRequest()
         var frame: CGRect?
@@ -26,7 +34,7 @@ final class Node: Identifiable {
         }
     }
     private(set) var ownAttributes: [String: JSONValue] = [:] {
-        didSet { enable(ModifierSet(attributes: ownAttributes)) }
+        didSet { invalidate() }
     }
     var children: Array<Node> = [] {
         didSet {
@@ -56,9 +64,14 @@ final class Node: Identifiable {
     }
 
     var nativeAttributes: [String: JSONValue] {
-        guard !labelFeedback.isEmpty || !stateFeedback.isEmpty else { return ownAttributes }
-        return ownAttributes.merging(labelFeedback) { _, override in override }
-            .merging(stateFeedback) { _, override in override }
+        let own = ownAttributes
+        let feedback = feedback
+        guard let extras, !feedback.isEmpty else { return own }
+        if let native = extras.native { return native }
+        let native = own.merging(feedback.label) { _, override in override }
+            .merging(feedback.state) { _, override in override }
+        extras.native = native
+        return native
     }
     var ownsButtonFeedback: Bool {
         ButtonFeedback(attributes["pressed"]) != nil || ButtonFeedback(attributes["hovered"]) != nil
@@ -70,15 +83,16 @@ final class Node: Identifiable {
         name != "btn" && ["tap", "longpress", "drag"].contains(where: listens(to:)) && hasButtonFeedback
     }
     var attributes: [String: JSONValue] {
-        get {
-            guard !owned.isEmpty else { return nativeAttributes }
-            var visible = nativeAttributes.filter { !owned.contains($0.key) }
-            if case let .array(events) = nativeAttributes["listens"] {
-                visible["listens"] = .array(events.filter { !owned.contains($0.string ?? "") })
-            }
-            return visible
+        let owned = owned
+        let native = nativeAttributes
+        guard let extras, !owned.isEmpty else { return native }
+        if let visible = extras.visible { return visible }
+        var visible = native.filter { !owned.contains($0.key) }
+        if case let .array(events) = native["listens"] {
+            visible["listens"] = .array(events.filter { !owned.contains($0.string ?? "") })
         }
-        set { ownAttributes = newValue }
+        extras.visible = visible
+        return visible
     }
     var owned: Set<String> {
         get {
@@ -88,28 +102,20 @@ final class Node: Identifiable {
         set {
             guard newValue != extras?.owned ?? [] else { return }
             withMutation(keyPath: \.owned) { extended().owned = newValue }
+            invalidate()
         }
     }
-    var labelFeedback: [String: JSONValue] {
+    var feedback: Feedback {
         get {
-            access(keyPath: \.labelFeedback)
-            return extras?.labelFeedback ?? [:]
+            access(keyPath: \.feedback)
+            return extras?.feedback ?? Feedback()
         }
         set {
-            guard newValue != extras?.labelFeedback ?? [:] else { return }
-            withMutation(keyPath: \.labelFeedback) { extended().labelFeedback = newValue }
-            enable(ModifierSet(attributes: newValue))
-        }
-    }
-    var stateFeedback: [String: JSONValue] {
-        get {
-            access(keyPath: \.stateFeedback)
-            return extras?.stateFeedback ?? [:]
-        }
-        set {
-            guard newValue != extras?.stateFeedback ?? [:] else { return }
-            withMutation(keyPath: \.stateFeedback) { extended().stateFeedback = newValue }
-            enable(ModifierSet(attributes: newValue))
+            guard newValue != extras?.feedback ?? Feedback() else { return }
+            withMutation(keyPath: \.feedback) { extended().feedback = newValue }
+            enable(ModifierSet(attributes: newValue.label))
+            enable(ModifierSet(attributes: newValue.state))
+            invalidate()
         }
     }
     var presented: Array<Node> {
@@ -183,9 +189,21 @@ final class Node: Identifiable {
         "sectionview": ["header", "footer"],
     ]
 
+    func setOwnAttributes(_ attributes: [String: JSONValue]) {
+        guard ownAttributes != attributes else { return }
+        ownAttributes = attributes
+        enable(ModifierSet(attributes: attributes))
+    }
+
     func setOwnAttribute(_ name: String, _ value: JSONValue?) {
         guard ownAttributes[name] != value else { return }
         ownAttributes[name] = value
+        if let value { enable(ModifierSet(attribute: name, value: value)) }
+    }
+
+    private func invalidate() {
+        extras?.native = nil
+        extras?.visible = nil
     }
 
     private static func link(_ id: Int) -> Int? {
@@ -471,7 +489,7 @@ final class NodeStore {
         nodes[record.id] = node
         if Presenting.hoisted.contains(name) { presentationIDs.insert(record.id) }
         node.declare(record.declared)
-        node.attributes = record.attributes
+        node.setOwnAttributes(record.attributes)
         for (attribute, value) in record.attributes {
             AttributeChecks.check(attribute, value, on: node, diagnostics: diagnostics)
         }

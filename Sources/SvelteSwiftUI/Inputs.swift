@@ -224,13 +224,13 @@ struct TextInputControl: View {
                 let isSent = typed == sentBeforeChange
                 sentBeforeChange = nil
                 guard !isSent, typed != node.attributes["value"]?.string else { return }
-                node.attributes["value"] = .string(typed)
+                node.setOwnAttribute("value", .string(typed))
                 if !isComposing { send(typed) }
             }
             .onChange(of: value) { _, value in
                 guard let value, value != text else { return }
                 if runtime.inputs.isStaleEcho(value, of: node.id) {
-                    node.attributes["value"] = .string(text)
+                    node.setOwnAttribute("value", .string(text))
                     return
                 }
                 pending?.cancel()
@@ -280,7 +280,7 @@ struct TextInputControl: View {
 
     private func submit() {
         if !isComposing, text != node.attributes["value"]?.string {
-            node.attributes["value"] = .string(text)
+            node.setOwnAttribute("value", .string(text))
             pending?.cancel()
             runtime.deferInput(node.id, text)
             sentBeforeChange = text
@@ -294,7 +294,7 @@ struct TextInputControl: View {
         else { return }
         isComposing = state.isComposing
         guard !state.isComposing else { return }
-        node.attributes["value"] = .string(state.text)
+        node.setOwnAttribute("value", .string(state.text))
         send(state.text)
     }
 
