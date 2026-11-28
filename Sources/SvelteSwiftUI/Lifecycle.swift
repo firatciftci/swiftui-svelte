@@ -14,7 +14,7 @@ struct Lifecycle: ViewModifier {
                 view.onDisappear { runtime.dispatch(id, "disappear") }
             }
             .ifLet(node.listens(to: "task") ? node.attributes["taskid"] ?? .null : nil) { view, taskID in
-                view.task(id: taskID) { await runtime.runTask(id) }
+                view.task(id: taskID) { await runtime.dispatchAndWait(id, "task") }
             }
     }
 }

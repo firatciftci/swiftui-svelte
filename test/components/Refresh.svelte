@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pending } from "./refresh.ts";
+  import { pending, refreshSignals } from "./refresh.ts";
 
   let refreshes = $state(0);
   let shows = $state(true);
@@ -36,6 +36,14 @@
   onrefresh={() => {
     throw new Error("unreachable");
   }}
+/>
+<scrollview
+  testid="abortable"
+  onrefresh={(signal) =>
+    new Promise<void>((_, reject) => {
+      refreshSignals.push(signal);
+      signal.addEventListener("abort", () => reject(signal.reason));
+    })}
 />
 <scrollview testid="plain" />
 <btn testid="hide" onclick={() => (shows = false)}>Hide</btn>

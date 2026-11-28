@@ -34,7 +34,7 @@ import NativeMap from "./components/NativeMap.svelte";
 import NestedAnimation from "./components/NestedAnimation.svelte";
 import "./components/native-elements.ts";
 import Refresh from "./components/Refresh.svelte";
-import { pending } from "./components/refresh.ts";
+import { pending, refreshSignals } from "./components/refresh.ts";
 import Scrolling from "./components/Scrolling.svelte";
 import Slots from "./components/Slots.svelte";
 import { resetState, state } from "./components/state.svelte.ts";
@@ -477,6 +477,29 @@ function settled(): Array<number> {
 describe("refresh", () => {
   beforeEach(() => {
     pending.length = 0;
+    refreshSignals.length = 0;
+  });
+
+  it("aborts a refresh's signal when the host cancels it, without reporting the rejection", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    try {
+      await render(Refresh);
+      await update(() => refresh("abortable", 11));
+      expect(refreshSignals.map((signal) => signal.aborted)).toEqual([false]);
+      expect(settled()).toEqual([]);
+      await update(() =>
+        globalThis.__svelteDispatch(
+          byTestId("abortable")?.id ?? NaN,
+          "taskcancel",
+          11,
+        ),
+      );
+      expect(refreshSignals[0]?.aborted).toBe(true);
+      expect(settled()).toEqual([11]);
+      expect(() => vi.runOnlyPendingTimers()).not.toThrow();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("tells the host which elements refresh", async () => {

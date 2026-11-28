@@ -1002,7 +1002,8 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     }
     return;
   }
-  const argument = type === "task" ? startTask(request) : payload;
+  const argument =
+    type === "task" || type === "refresh" ? startTask(request) : payload;
   const results = run(handlers, argument, request);
   if (request != null) awaitHandlers(element, request, results);
   const name =

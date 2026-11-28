@@ -297,7 +297,28 @@ struct RuntimeTests {
                 """)
         var isDone = false
         let task = Task {
-            await runtime.runTask(2)
+            await runtime.dispatchAndWait(2, "task")
+            isDone = true
+        }
+        try await eventually { runtime.store.node(2)?.attributes["started"] != nil }
+        #expect(!isDone)
+        task.cancel()
+        await task.value
+        #expect(isDone)
+        #expect(runtime.store.node(2)?.attributes["canceled"] == runtime.store.node(2)?.attributes["started"])
+    }
+
+    @Test func cancelsARefreshInJavaScriptWhenSwiftUICancelsIt() async throws {
+        let runtime = try runtime(
+            mountScript + """
+                globalThis.__svelteDispatch = (id, type, payload, request) => {
+                  if (type === "taskcancel") attr(id, "canceled", payload);
+                  else attr(id, "started", request);
+                };
+                """)
+        var isDone = false
+        let task = Task {
+            await runtime.dispatchAndWait(2, "refresh")
             isDone = true
         }
         try await eventually { runtime.store.node(2)?.attributes["started"] != nil }

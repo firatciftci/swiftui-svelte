@@ -182,24 +182,14 @@ public final class SvelteRuntime {
         call("__svelteDispatch", [id, type, payload], waits: waits)
     }
 
-    func dispatchAndWait(_ id: Int, _ type: String, _ payload: Any = NSNull()) async {
-        flushInputs(waits: true)
-        requestSerial += 1
-        let request = requestSerial
-        await withCheckedContinuation { continuation in
-            settlements[request] = continuation
-            call("__svelteDispatch", [id, type, payload, request])
-        }
-    }
-
-    func runTask(_ id: Int) async {
+    func dispatchAndWait(_ id: Int, _ type: String) async {
         flushInputs(waits: true)
         requestSerial += 1
         let request = requestSerial
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 settlements[request] = continuation
-                call("__svelteDispatch", [id, "task", NSNull(), request])
+                call("__svelteDispatch", [id, type, NSNull(), request])
             }
         } onCancel: {
             Task { @MainActor [weak self] in self?.cancelTask(request, of: id) }

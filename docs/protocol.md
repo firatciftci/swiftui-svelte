@@ -182,7 +182,7 @@ The payloads for the built-in event types that the iOS host sends are in this ta
 | `pop`                               | integer count of popped path entries                                                  |                                                        |
 | `refresh`                           | `null`                                                                                | Carries a request.                                     |
 | `task`                              | `null`                                                                                | Carries a request. The bundle passes an `AbortSignal`. |
-| `taskcancel`                        | the request number, in the payload position                                           | Aborts the task with that request.                     |
+| `taskcancel`                        | the request number, in the payload position                                           | Aborts the task or refresh with that request.          |
 | `click`                             | `null`                                                                                |                                                        |
 | `submit`                            | `null`                                                                                |                                                        |
 | `change`, `input`                   | the new value                                                                         | Text and control value changes.                        |
@@ -206,7 +206,7 @@ The bundle drops an event for a node that it has removed, even when the host has
 
 The host must keep the request ID until it receives `settled` for it. For `refresh` and `task`, the host must wait for `settled` before it finishes the native operation (for example, before it ends a pull-to-refresh spinner).
 
-`taskcancel` aborts the `AbortSignal` that a `task` handler received. The host sends it when it ends the task, such as when the view that owns the task disappears or when its `taskid` changes. The payload is the request number that the task was started with.
+`taskcancel` aborts the `AbortSignal` that a `task` or `refresh` handler received. The host sends it when it ends the operation early, such as when the view that owns a task disappears or its `taskid` changes, or when SwiftUI cancels a refresh because the list went away. The payload is the request number that the operation was started with. The host doesn't wait for `settled` after it sends `taskcancel`.
 
 #### 3.6.3 Errors in handlers
 

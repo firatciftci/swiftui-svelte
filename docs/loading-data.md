@@ -38,11 +38,11 @@ This screen loads Svelte's repositories from GitHub 20 at a time. It shows a spi
     }
   }
 
-  async function refresh() {
+  async function refresh(signal: AbortSignal) {
     repos = [];
     page = 1;
     finished = false;
-    await load();
+    await load(signal);
   }
 </script>
 

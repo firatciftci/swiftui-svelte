@@ -308,8 +308,8 @@ type ScrollOptions = {
   anchor?: UnitPointName;
   /** Runs as the content scrolls, with the scroll position and sizes in points. */
   onscroll?: (scroll: ScrollGeometry) => void;
-  /** Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles. */
-  onrefresh?: () => Promise<unknown> | void;
+  /** Runs when the user pulls to refresh. If it returns a promise, the spinner stays until the promise settles. The signal aborts when the view goes away before the refresh finishes, so pass it to `fetch` to cancel the request. */
+  onrefresh?: (signal: AbortSignal) => Promise<unknown> | void;
   /** Stops the content from scrolling, and keeps it in place. */
   scrolldisabled?: boolean;
   /** Runs when the scroll phase changes, with `phase`: `idle`, `tracking` (a finger is on the content), `interacting`, `decelerating`, or `animating`. */
