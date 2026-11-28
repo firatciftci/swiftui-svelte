@@ -361,6 +361,39 @@ extension NodeStoreTests {
         #expect(store.root?.presented.map(\.id) == [13])
     }
 
+    @Test func reassignsHostsOnlyWhenAPresentationCanChangeHost() {
+        let store = self.store([
+            7, "screen", 7, "vstack", 7, "alert",
+            1, 1, 0, 10, 5, 0, 1, 11, 6, 0, 1, 12, 3, 0, 0,
+        ])
+        let passes = store.hostingPasses
+        #expect(store.node(10)?.presented.map(\.id) == [12])
+
+        store.apply(batch([1, 2, 0, 20, 4, 0, 1, -21, "row", 1, 11, 0, 22, 6, 0, 0]))
+        store.apply(batch([4, 20, 1, 8, 6, 21, "changed", 3, 20, 3, 22]))
+        #expect(store.hostingPasses == passes)
+
+        store.apply(batch([1, 11, 0, 30, 7, 0, 0]))
+        #expect(store.hostingPasses == passes + 1)
+        #expect(store.node(10)?.presented.map(\.id) == [12, 30])
+
+        store.apply(batch([2, 2, 0, 3]))
+        #expect(store.hostingPasses == passes + 2)
+
+        store.apply(batch([3, 30]))
+        #expect(store.hostingPasses == passes + 3)
+        #expect(store.node(10)?.presented.map(\.id) == [12])
+
+        store.apply(batch([3, 11]))
+        #expect(store.hostingPasses == passes + 4)
+        #expect(store.node(10)?.presented.isEmpty == true)
+
+        #expect(store.apply(batch([1, 2, 0, 40, 4, 0, 0, 2, 2, 0, 3, 3, 40])))
+        #expect(store.hostingPasses == passes + 4)
+        #expect(texts(store) == ["b", "c", "a"])
+        #expect(store.error == nil)
+    }
+
     @Test func rejectsAnInsertIntoAnUnknownParent() {
         let store = self.store([7, "screen", 1, 999, 0, 20, 3, 0, 0])
         #expect(store.node(20) == nil)

@@ -258,6 +258,7 @@ final class NodeStore {
     @ObservationIgnored private var presentationIDs: Set<Int> = []
     @ObservationIgnored private var hostIDs: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
+    @ObservationIgnored private(set) var hostingPasses = 0
     @ObservationIgnored private var ownedNames: [String: Set<String>] = [:]
     @ObservationIgnored let diagnostics: Diagnostics
 
@@ -459,6 +460,7 @@ final class NodeStore {
             case let .move(parentID, beforeID, id):
                 guard let parent = nodes[parentID], let node = nodes[id] else { continue }
                 insert(node, into: parent, before: nodes[beforeID])
+                if !presentationIDs.isEmpty { needsHosting = true }
             case let .remove(id):
                 guard let node = nodes[id] else { continue }
                 if let parentID = node.parentID, let curve = MotionTransition.curve(for: node.attributes) {
@@ -466,7 +468,6 @@ final class NodeStore {
                 }
                 detach(node)
                 forget(node)
-                if !hostIDs.isEmpty { needsHosting = true }
                 if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
             case let .attribute(id, name, value):
                 guard let node = nodes[id] else { continue }
@@ -487,7 +488,10 @@ final class NodeStore {
         let node = Node(id: record.id, kind: .element, name: name, text: "")
         if let owned = ownedNames[name] { node.owned = owned }
         nodes[record.id] = node
-        if Presenting.hoisted.contains(name) { presentationIDs.insert(record.id) }
+        if Presenting.hoisted.contains(name) {
+            presentationIDs.insert(record.id)
+            needsHosting = true
+        }
         node.declare(record.declared)
         node.setOwnAttributes(record.attributes)
         for (attribute, value) in record.attributes {
@@ -511,7 +515,7 @@ final class NodeStore {
 
     private func forget(_ node: Node) {
         nodes[node.id] = nil
-        presentationIDs.remove(node.id)
+        if presentationIDs.remove(node.id) != nil { needsHosting = true }
         var childID = node.firstID
         while let id = childID, let child = nodes[id] {
             childID = child.nextID
@@ -548,7 +552,6 @@ final class NodeStore {
         if let next { next.previousID = node.id } else { parent.lastID = node.id }
         node.parentID = parent.id
         dirty.insert(parent.id)
-        if !presentationIDs.isEmpty || !hostIDs.isEmpty { needsHosting = true }
     }
 
     private func host(of node: Node) -> Node? {
@@ -563,6 +566,7 @@ final class NodeStore {
 
     private func assignHosts() {
         needsHosting = false
+        hostingPasses += 1
         var assigned: [Int: Array<Node>] = [:]
         for id in presentationIDs.sorted() {
             guard let node = nodes[id], let host = host(of: node) else { continue }

@@ -62,6 +62,8 @@
         };
         const commit = () => __nativeCommit(JSON.stringify(ops.splice(0)));
         globalThis.change = (attribute, value) => { ops.push(4, 2, name(attribute), value); commit(); };
+        globalThis.add = (tag) => { ops.push(1, 2, 0, 50, name(tag), 0, 0); commit(); };
+        globalThis.drop = () => { ops.push(3, 50); commit(); };
         globalThis.__svelteMount = (id) => {
           const declared = \(Array(samples.keys).sorted())
           ops.push(0, 1, 3, id);
@@ -180,6 +182,21 @@
 
         @Test func coversEveryModifierAttribute() {
             #expect(Set(samples.keys) == Set(ModifierSet.byAttribute.keys))
+        }
+
+        @Test(arguments: ["group", "disclosuregroup", "popover", "confirmationdialog"])
+        func restructuresAParentOnlyTheFirstTimeAChildChangesItsShape(tag: String) async throws {
+            let identities = Identities()
+            let (runtime, host) = try await render(identities)
+            await run("add(\"\(tag)\")", on: runtime, host)
+            await run("drop()", on: runtime, host)
+            let settled = Set(identities.seen)
+            #expect(settled.count <= 2)
+            for _ in 0..<2 {
+                await run("add(\"\(tag)\")", on: runtime, host)
+                await run("drop()", on: runtime, host)
+            }
+            #expect(Set(identities.seen) == settled, "Recreated the sibling after <\(tag)> came back")
         }
 
         @Test func keepsChildStateWhileItsParentsAttributesChange() async throws {
