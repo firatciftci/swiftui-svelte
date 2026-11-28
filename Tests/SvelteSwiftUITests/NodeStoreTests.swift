@@ -156,11 +156,42 @@ struct NodeStoreTests {
     }
 
     @Test func ignoresOpsForUnknownNodes() {
-        let store = store([1, 99, 0, -9, "x", 2, 2, 0, 98, 4, 97, 1, 1, 5, 97, 1, 3, 96, 6, 95, "t", 2, 99, 0, 3])
+        let store = store([2, 2, 0, 98, 4, 97, 1, 1, 5, 97, 1, 3, 96, 6, 95, "t", 6, 2, "t"])
         #expect(texts(store) == ["a", "b", "c"])
-        #expect(store.node(9) == nil)
+        #expect(store.node(2)?.text.isEmpty == true)
         #expect(store.nodeCount == 5)
         #expect(store.error == nil)
+    }
+
+    @Test(arguments: [
+        #"[6,3,"z",1,99,0,-9,"x"]"#,
+        #"[6,3,"z",2,99,0,3]"#,
+        #"[6,3,"z",1,2,0,-4,"again"]"#,
+        #"[6,3,"z",1,2,0,9,0,0,2,-10,"x",-10,"y"]"#,
+        #"[6,3,"z",2,2,0,1]"#,
+        #"[6,3,"z",3,2,1,2,0,-9,"x"]"#,
+        #"[6,3,"z",1,2,0,0,0,0,0]"#,
+    ])
+    func rejectsAStructurallyMalformedBatch(json: String) {
+        let store = store([])
+        store.apply(json)
+        #expect(store.error != nil)
+        #expect(texts(store) == ["a", "b", "c"])
+        #expect(store.nodeCount == 5)
+    }
+
+    @Test func reinsertsANodeItRemovedInTheSameBatch() {
+        let store = store([3, 2, 1, 1, 0, 2, 0, 0, 1, -3, "a"])
+        #expect(store.error == nil)
+        #expect(texts(store) == ["a"])
+        #expect(store.node(4) == nil)
+        #expect(store.nodeCount == 3)
+    }
+
+    @Test func treatsANullAttributeInARecordAsAbsent() {
+        let store = store([1, 1, 0, 9, 0, 1, 1, NSNull(), 0])
+        #expect(store.error == nil)
+        #expect(store.node(9)?.attributes.isEmpty == true)
     }
 
     @Test(arguments: ["not json", "[99]", "[1,2", "[7]", "[4,2,50,1]", "[6,3,\"open]", "[6,3,\"\\x\"]", "[4,2,1,tru]", "[] x"])
@@ -171,11 +202,15 @@ struct NodeStoreTests {
         #expect(texts(store) == ["a", "b", "c"])
     }
 
-    @Test func appliesOpsBeforeAMalformedOne() {
+    @Test func rejectsAMalformedBatchAsAWhole() {
         let store = store([])
-        store.apply("[6,3,\"z\",99]")
-        #expect(texts(store) == ["z", "b", "c"])
+        store.apply("[6,3,\"z\",1,2,0,-9,\"x\",7,\"new\",99]")
+        #expect(texts(store) == ["a", "b", "c"])
+        #expect(store.node(9) == nil)
         #expect(store.error?.contains("99") == true)
+        store.apply(batch([7, "next", 4, 2, 5, 1]))
+        #expect(store.error == nil)
+        #expect(store.node(2)?.attributes["next"] == .number(1))
     }
 
     @Test func toleratesWhitespace() {
@@ -320,10 +355,11 @@ extension NodeStoreTests {
         #expect(store.root?.presented.map(\.id) == [13])
     }
 
-    @Test func waitsForADetachedSubtreeToJoinTheTree() {
+    @Test func rejectsAnInsertIntoAnUnknownParent() {
         let store = self.store([7, "screen", 1, 999, 0, 20, 3, 0, 0])
         #expect(store.node(20) == nil)
         #expect(store.root?.presented.isEmpty == true)
+        #expect(store.error?.contains("999") == true)
     }
 
     @Test func keepsOwnedAttributesThroughJavaScriptEdits() {

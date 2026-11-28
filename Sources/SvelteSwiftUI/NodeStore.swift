@@ -259,26 +259,25 @@ final class NodeStore {
     }
 
     private func commit(_ json: String) -> Bool {
-        var json = json
-        let failure: BridgeError? = json.withUTF8 { bytes in
-            var reader = BridgeReader(bytes)
-            do throws(BridgeError) {
-                try reader.open()
-                while try !reader.isAtEnd() {
-                    try apply(&reader)
-                    guard isCompatible else { return nil }
-                }
-                try reader.finish()
-                return nil
-            } catch {
-                return error
-            }
-        }
-        if let failure {
+        let batch: Batch
+        switch decode(json) {
+        case let .failure(failure):
             print("[bridge] \(failure)")
             error = failure.description
             return false
+        case let .success(decoded):
+            batch = decoded
         }
+        if let version = batch.incompatibleVersion {
+            bundleProtocolVersion = version
+            isCompatible = false
+            return true
+        }
+        if batch.hasRoot {
+            bundleProtocolVersion = Self.protocolVersion
+            isCompatible = true
+        }
+        perform(batch)
         if error != nil { error = nil }
         if needsHosting { assignHosts() }
         for id in dirty {
@@ -305,92 +304,155 @@ final class NodeStore {
         return children
     }
 
-    private func name(_ ref: Int) throws(BridgeError) -> String {
-        guard names.indices.contains(ref) else { throw BridgeError(description: "Unknown name \(ref)") }
-        return names[ref]
+    private func decode(_ json: String) -> Result<Batch, BridgeError> {
+        var json = json
+        let names = names
+        let nodes = nodes
+        return json.withUTF8 { bytes in
+            var reader = BridgeReader(bytes)
+            var batch = Batch(names: names)
+            var shadow = Shadow(nodes: nodes)
+            return Result { () throws(BridgeError) -> Batch in
+                try reader.open()
+                while try !reader.isAtEnd() {
+                    if let operation = try Self.operation(&reader, &batch, &shadow) {
+                        batch.operations.append(operation)
+                    }
+                    if batch.incompatibleVersion != nil { return batch }
+                }
+                try reader.finish()
+                return batch
+            }
+        }
     }
 
-    private func apply(_ reader: inout BridgeReader) throws(BridgeError) {
+    private static func operation(
+        _ reader: inout BridgeReader,
+        _ batch: inout Batch,
+        _ shadow: inout Shadow
+    ) throws(BridgeError) -> Operation? {
         switch try reader.int() {
         case 0:
             let id = try reader.int()
             let version = try reader.int()
-            bundleProtocolVersion = version
-            isCompatible = version == Self.protocolVersion
-            guard isCompatible else { return }
+            guard version == protocolVersion else {
+                batch.incompatibleVersion = version
+                return nil
+            }
             let mount = try reader.int()
-            let root = nodes[id] ?? Node(id: id, kind: .fragment, name: "", text: "")
-            nodes[id] = root
-            roots[mount] = root
+            shadow.create(id)
+            batch.hasRoot = true
+            return .root(id: id, mount: mount)
         case 1:
-            let parentID = try reader.int()
-            let beforeID = try reader.int()
-            let node = try read(&reader)
-            guard let parent = nodes[parentID] else {
-                forget(node)
-                return
-            }
-            insert(node, into: parent, before: nodes[beforeID])
-            if let curve = MotionTransition.curve(for: node.attributes) { transitions[parentID] = curve }
+            let parent = try reader.int()
+            let before = try reader.int()
+            let record = try record(&reader, batch.names)
+            guard shadow.isAlive(parent) else { throw BridgeError(description: "Insert into unknown parent \(parent)") }
+            try shadow.insert(record, under: parent)
+            return .insert(parent: parent, before: before, record: record)
         case 2:
-            let parentID = try reader.int()
-            let beforeID = try reader.int()
+            let parent = try reader.int()
+            let before = try reader.int()
             let id = try reader.int()
-            guard let parent = nodes[parentID], let node = nodes[id] else { return }
-            insert(node, into: parent, before: nodes[beforeID])
+            guard shadow.isAlive(parent) else { throw BridgeError(description: "Move into unknown parent \(parent)") }
+            try shadow.move(id, under: parent)
+            return .move(parent: parent, before: before, id: id)
         case 3:
-            guard let node = nodes[try reader.int()] else { return }
-            if let parentID = node.parentID, let curve = MotionTransition.curve(for: node.attributes) {
-                transitions[parentID] = curve
-            }
-            detach(node)
-            forget(node)
-            if !hostIDs.isEmpty { needsHosting = true }
-            if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
+            let id = try reader.int()
+            shadow.remove(id)
+            return .remove(id)
         case 4:
             let id = try reader.int()
-            let name = try name(try reader.int())
+            let name = try name(try reader.int(), in: batch.names)
             let value = try reader.value()
-            nodes[id]?.setOwnAttribute(name, value == .null ? nil : value)
+            return .attribute(id: id, name: name, value: value == .null ? nil : value)
         case 5:
             let id = try reader.int()
-            let name = try name(try reader.int())
-            nodes[id]?.setOwnAttribute(name, nil)
+            return .attribute(id: id, name: try name(try reader.int(), in: batch.names), value: nil)
         case 6:
             let id = try reader.int()
-            let text = try reader.string()
-            if let node = nodes[id], node.text != text { node.text = text }
+            return .text(id: id, text: try reader.string())
         case 7:
-            names.append(try reader.string())
+            batch.names.append(try reader.string())
+            return nil
         case let opcode:
             throw BridgeError(description: "Unknown opcode \(opcode)")
         }
     }
 
-    private func read(_ reader: inout BridgeReader) throws(BridgeError) -> Node {
+    private static func name(_ ref: Int, in names: Array<String>) throws(BridgeError) -> String {
+        guard names.indices.contains(ref) else { throw BridgeError(description: "Unknown name \(ref)") }
+        return names[ref]
+    }
+
+    private static func record(_ reader: inout BridgeReader, _ names: Array<String>) throws(BridgeError) -> Record {
         let id = try reader.int()
-        if id < 0 {
-            let node = Node(id: -id, kind: .text, name: "", text: try reader.string())
-            nodes[-id] = node
-            return node
-        }
-        let node = Node(id: id, kind: .element, name: try name(try reader.int()), text: "")
-        if let owned = ownedNames[node.name] { node.owned = owned }
-        nodes[id] = node
-        if Presenting.hoisted.contains(node.name) { presentationIDs.insert(id) }
+        guard id != 0 else { throw BridgeError(description: "Node record with ID 0") }
+        if id < 0 { return Record(id: -id, name: nil, text: try reader.string(), attributes: [:], children: []) }
+        let name = try name(try reader.int(), in: names)
         var attributes: [String: JSONValue] = [:]
         for _ in 0..<max(0, try reader.int()) {
-            let name = try name(try reader.int())
-            attributes[name] = try reader.value()
+            let key = try Self.name(try reader.int(), in: names)
+            let value = try reader.value()
+            if value != .null { attributes[key] = value }
         }
-        node.attributes = attributes
-        let count = try reader.int()
-        guard count > 0 else { return node }
-        var children: Array<Node> = []
+        let count = max(0, try reader.int())
+        var children: Array<Record> = []
         children.reserveCapacity(count)
-        for _ in 0..<count {
-            let child = try read(&reader)
-            child.parentID = id
+        for _ in 0..<count { children.append(try record(&reader, names)) }
+        return Record(id: id, name: name, text: "", attributes: attributes, children: children)
+    }
+
+    private func perform(_ batch: Batch) {
+        names = batch.names
+        for operation in batch.operations {
+            switch operation {
+            case let .root(id, mount):
+                let root = nodes[id] ?? Node(id: id, kind: .fragment, name: "", text: "")
+                nodes[id] = root
+                roots[mount] = root
+            case let .insert(parentID, beforeID, record):
+                guard let parent = nodes[parentID] else { continue }
+                let node = make(record)
+                insert(node, into: parent, before: nodes[beforeID])
+                if let curve = MotionTransition.curve(for: node.attributes) { transitions[parentID] = curve }
+            case let .move(parentID, beforeID, id):
+                guard let parent = nodes[parentID], let node = nodes[id] else { continue }
+                insert(node, into: parent, before: nodes[beforeID])
+            case let .remove(id):
+                guard let node = nodes[id] else { continue }
+                if let parentID = node.parentID, let curve = MotionTransition.curve(for: node.attributes) {
+                    transitions[parentID] = curve
+                }
+                detach(node)
+                forget(node)
+                if !hostIDs.isEmpty { needsHosting = true }
+                if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
+            case let .attribute(id, name, value):
+                nodes[id]?.setOwnAttribute(name, value)
+            case let .text(id, text):
+                if let node = nodes[id], node.kind == .text, node.text != text { node.text = text }
+            }
+        }
+    }
+
+    private func make(_ record: Record) -> Node {
+        guard let name = record.name else {
+            let node = Node(id: record.id, kind: .text, name: "", text: record.text)
+            nodes[record.id] = node
+            return node
+        }
+        let node = Node(id: record.id, kind: .element, name: name, text: "")
+        if let owned = ownedNames[name] { node.owned = owned }
+        nodes[record.id] = node
+        if Presenting.hoisted.contains(name) { presentationIDs.insert(record.id) }
+        node.attributes = record.attributes
+        guard !record.children.isEmpty else { return node }
+        var children: Array<Node> = []
+        children.reserveCapacity(record.children.count)
+        for childRecord in record.children {
+            let child = make(childRecord)
+            child.parentID = record.id
             child.previousID = children.last?.id
             children.last?.nextID = child.id
             children.append(child)
@@ -468,5 +530,101 @@ final class NodeStore {
             host.presented = presented
         }
         hostIDs = Set(assigned.keys)
+    }
+}
+
+private struct Record {
+    let id: Int
+    let name: String?
+    let text: String
+    let attributes: [String: JSONValue]
+    let children: Array<Record>
+}
+
+private enum Operation {
+    case root(id: Int, mount: Int)
+    case insert(parent: Int, before: Int, record: Record)
+    case move(parent: Int, before: Int, id: Int)
+    case remove(Int)
+    case attribute(id: Int, name: String, value: JSONValue?)
+    case text(id: Int, text: String)
+}
+
+private struct Batch {
+    var names: Array<String>
+    var operations: Array<Operation> = []
+    var hasRoot = false
+    var incompatibleVersion: Int?
+}
+
+private struct Shadow {
+    let nodes: [Int: Node]
+    private var parents: [Int: Int] = [:]
+    private var created: Set<Int> = []
+    private var recreated: Set<Int> = []
+    private var removed: Set<Int> = []
+
+    init(nodes: [Int: Node]) {
+        self.nodes = nodes
+    }
+
+    func isAlive(_ id: Int) -> Bool {
+        guard created.contains(id) || nodes[id] != nil else { return false }
+        var current = id
+        while !removed.contains(current) {
+            if let parent = parents[current] {
+                guard parent != 0 else { return true }
+                current = parent
+                continue
+            }
+            guard let parent = nodes[current]?.parentID else { return true }
+            guard !recreated.contains(parent) else { return false }
+            current = parent
+        }
+        return false
+    }
+
+    private func isAncestor(_ ancestor: Int, of id: Int) -> Bool {
+        var current: Int? = id
+        while let node = current {
+            if node == ancestor { return true }
+            if let parent = parents[node] {
+                current = parent == 0 ? nil : parent
+            } else {
+                current = nodes[node]?.parentID
+            }
+        }
+        return false
+    }
+
+    private mutating func revive(_ id: Int, under parent: Int) {
+        if nodes[id] != nil { recreated.insert(id) }
+        created.insert(id)
+        removed.remove(id)
+        parents[id] = parent
+    }
+
+    mutating func create(_ id: Int) {
+        revive(id, under: 0)
+    }
+
+    mutating func insert(_ record: Record, under parent: Int) throws(BridgeError) {
+        guard !isAlive(record.id) else {
+            throw BridgeError(description: "Insert of node \(record.id), which already exists")
+        }
+        revive(record.id, under: parent)
+        for child in record.children { try insert(child, under: record.id) }
+    }
+
+    mutating func move(_ id: Int, under parent: Int) throws(BridgeError) {
+        guard isAlive(id) else { return }
+        guard !isAncestor(id, of: parent) else {
+            throw BridgeError(description: "Move of node \(id) into its own subtree")
+        }
+        parents[id] = parent
+    }
+
+    mutating func remove(_ id: Int) {
+        removed.insert(id)
     }
 }

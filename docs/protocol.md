@@ -112,7 +112,7 @@ A text record starts with the negated node ID, followed by the string. The host 
 
 Each child record must be applied in order. An element record must register its own ID before the next sibling is read.
 
-An insert of a node that the host already has must not create a second copy. The bundle sends `move` for nodes that already exist, so a repeated insert of a known ID is malformed.
+An insert of a node that the host already has must not create a second copy. The bundle sends `move` for nodes that already exist, so an insert of a node ID that is still in the tree is malformed. The bundle reuses the ID of a node that it removed and later inserts again, so an insert of an ID that an earlier `remove` freed, in the same batch or an earlier one, is valid.
 
 #### 3.4.3 `move`
 
@@ -205,11 +205,7 @@ The host must keep the request ID until it receives `settled` for it. For `refre
 
 #### 3.6.3 Errors in handlers
 
-If a handler throws or rejects, the bundle reports the error and continues. The host does not receive the error, and it must not treat a handler error as a failed event.
-
-### 3.7 Malformed batches and recovery
-
-A host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle. On any of the following, the host must stop applying the batch and log the error: an unknown opcode, a JSON syntax error, an unknown name index, an insert into an unknown parent, or a text record that does not match its node. The host must then remount the app once, as a new engine instance, which resets the name table (Section 3.3). If the remounted app fails the same way, the host must stop the engine, keep showing the error, and not apply further batches until the app restarts or the bundle changes. The host should show the error in its development UI, and it should log it in release builds.
+If a handler throA host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle. Each of the following makes a batch malformed: an unknown opcode, a JSON syntax error, an operand of the wrong type, an unknown name index, an element record with ID 0, an insert or move into an unknown parent, an insert of a node ID that is still in the tree, and a move of a node into its own subtree. On a malformed batch, the host must apply none of its operations, including its `name` operations, and it must log the error. The host must then remount the app once, as a new engine instance, which resets the name table (Section 3.3). If the remounted app fails the same way, the host must stop the engine, keep showing the error, and not apply further batches until the app restarts or the bundle changes. The host should show the error in its development UI, and it should log it in release builds. keep showing the error, and not apply further batches until the app restarts or the bundle changes. The host should show the error in its development UI, and it should log it in release builds.
 
 ### 3.8 Mounts
 
