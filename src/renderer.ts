@@ -293,17 +293,21 @@ function flushTexts(): void {
 }
 
 function flushInserts(): void {
+  let follower: ChildNode | null = null;
+  let anchor = 0;
   for (const node of pending) {
     if (node.state !== State.Pending || node.parent?.state !== State.Native) {
       continue;
     }
+    if (node !== follower) anchor = anchorId(node);
+    follower = node.next;
     if (!isMaterial(node)) {
       node.state = State.Local;
       continue;
     }
     const record: Array<unknown> = [];
     encode(node, record);
-    send(opcodes.insert, node.parent.id, anchorId(node));
+    send(opcodes.insert, node.parent.id, anchor);
     for (const token of record) batch.push(token);
   }
   pending.length = 0;

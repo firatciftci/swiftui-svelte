@@ -32,6 +32,7 @@ import Items from "./components/Items.svelte";
 import Lifecycle from "./components/Lifecycle.svelte";
 import { log, signals } from "./components/lifecycle.ts";
 import Lists from "./components/Lists.svelte";
+import ManyRows from "./components/ManyRows.svelte";
 import NativeMap from "./components/NativeMap.svelte";
 import NestedAnimation from "./components/NestedAnimation.svelte";
 import "./components/native-elements.ts";
@@ -1028,6 +1029,30 @@ describe("text", () => {
     expect(find("txt")?.children.map((child) => child.text)).toEqual(["Hi"]);
     await update(() => (state.label = ""));
     expect(find("txt")?.children.map((child) => child.text)).toEqual([""]);
+  });
+});
+
+async function insertTime(count: number): Promise<number> {
+  let fastest = Infinity;
+  for (let round = 0; round < 3; round++) {
+    state.show = false;
+    await render(ManyRows, { count });
+    const start = performance.now();
+    await update(() => (state.show = true));
+    fastest = Math.min(fastest, performance.now() - start);
+    expect(find("vstack")?.children).toHaveLength(count);
+    unmount?.();
+    unmount = undefined;
+    reset();
+  }
+  return fastest;
+}
+
+describe("inserts", () => {
+  it("inserts many rows into a mounted parent in linear time", async () => {
+    const small = await insertTime(2000);
+    const large = await insertTime(16_000);
+    expect(large / small).toBeLessThan(24);
   });
 });
 
