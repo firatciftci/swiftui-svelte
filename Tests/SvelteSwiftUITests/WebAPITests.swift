@@ -57,18 +57,65 @@ struct WebAPITests {
         #expect(evaluate(runtime, query) == "true")
     }
 
-    @Test func persistsLocalStorageInUserDefaults() async throws {
+    private func storageRuntime(_ name: String) throws -> SvelteRuntime {
         let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
-        let key = "SvelteSwiftUI.localStorage"
-        let saved = UserDefaults.standard.string(forKey: key)
-        defer { UserDefaults.standard.set(saved, forKey: key) }
-        UserDefaults.standard.set(#"{"kept":"yes"}"#, forKey: key)
-        let runtime = SvelteRuntime(source: url)
+        let runtime = SvelteRuntime(source: url, storage: name)
         runtime.start()
-        #expect(evaluate(runtime, "localStorage.getItem('kept')") == "yes")
-        _ = evaluate(runtime, "localStorage.setItem('count', 2); localStorage.removeItem('kept')")
+        return runtime
+    }
+
+    private func saved(_ name: String) -> [String: String] {
+        let domain = UserDefaults.standard.persistentDomain(forName: "SvelteSwiftUI.localStorage.\(name)") ?? [:]
+        return domain.compactMapValues { $0 as? String }
+    }
+
+    @Test func persistsLocalStorageInUserDefaults() async throws {
+        let name = "test-\(UUID().uuidString)"
+        defer { SvelteRuntime.clearStorage(name) }
+        let first = try storageRuntime(name)
+        _ = evaluate(first, "localStorage.setItem('kept', 'yes'); localStorage.setItem('gone', 'soon')")
         try await Task.sleep(for: .milliseconds(20))
-        #expect(UserDefaults.standard.string(forKey: key) == #"{"count":"2"}"#)
+        #expect(saved(name) == ["kept": "yes", "gone": "soon"])
+        let second = try storageRuntime(name)
+        #expect(evaluate(second, "localStorage.getItem('kept')") == "yes")
+        _ = evaluate(second, "localStorage.setItem('count', 2); localStorage.removeItem('gone')")
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(saved(name) == ["kept": "yes", "count": "2"])
+    }
+
+    @Test func keepsTheKeysThatOtherRuntimesWrite() async throws {
+        let name = "test-\(UUID().uuidString)"
+        defer { SvelteRuntime.clearStorage(name) }
+        let first = try storageRuntime(name)
+        let second = try storageRuntime(name)
+        _ = evaluate(first, "localStorage.setItem('first', '1')")
+        _ = evaluate(second, "localStorage.setItem('second', '2')")
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(saved(name) == ["first": "1", "second": "2"])
+        _ = evaluate(first, "localStorage.clear()")
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(saved(name) == ["second": "2"])
+        let third = try storageRuntime(name)
+        #expect(evaluate(third, "JSON.stringify(Object.keys(localStorage))") == #"["second"]"#)
+    }
+
+    @Test func separatesLocalStorageByName() async throws {
+        let one = "test-\(UUID().uuidString)"
+        let other = "test-\(UUID().uuidString)"
+        defer {
+            SvelteRuntime.clearStorage(one)
+            SvelteRuntime.clearStorage(other)
+        }
+        _ = evaluate(try storageRuntime(one), "localStorage.setItem('mine', 'yes')")
+        try await Task.sleep(for: .milliseconds(20))
+        #expect(evaluate(try storageRuntime(other), "String(localStorage.getItem('mine'))") == "null")
+        #expect(saved(other).isEmpty)
+    }
+
+    @Test func namesLocalStorageAfterTheBundleByDefault() throws {
+        #expect(SvelteRuntime.storageName(for: URL(filePath: "/app/Resources/app.js")) == "app")
+        #expect(SvelteRuntime.storageName(for: try #require(URL(string: "http://localhost:5173/app.js?t=1"))) == "app")
+        #expect(SvelteRuntime.storageName(for: URL(filePath: "/app/Resources/settings.js")) == "settings")
     }
 
     @Test func sendsCookiesOnlyAsTheCredentialsModeAllows() throws {

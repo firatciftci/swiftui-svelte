@@ -38,14 +38,15 @@ public struct SvelteView: View {
         props: [String: JSONValue] = [:],
         actions: [String: @MainActor (JSONValue) -> Void] = [:],
         reloadsOnChange: Bool = false,
+        storage: String? = nil,
         modules: Array<NativeModule> = [],
         components: Array<NativeComponent> = [],
         onError: (@MainActor (ScriptError) -> Void)? = nil
     ) {
         self.init(
             runtime: SvelteRuntime(
-                source: source, reloadsOnChange: reloadsOnChange, modules: modules, components: components,
-                onError: onError),
+                source: source, reloadsOnChange: reloadsOnChange, storage: storage, modules: modules,
+                components: components, onError: onError),
             component: component,
             props: props,
             actions: actions)

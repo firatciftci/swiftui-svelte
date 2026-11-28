@@ -1187,6 +1187,24 @@ hostTest("sessionStorage stores strings in memory", (web) => {
   equal(storage.length, 0);
 });
 
+hostTest("sessionStorage throws QuotaExceededError past 5 MB", (web) => {
+  const storage = host(web).sessionStorage;
+  storage.clear();
+  storage.setItem("small", "kept");
+  let caught: unknown = null;
+  try {
+    storage.setItem("big", "x".repeat(5 * 1024 * 1024));
+  } catch (error) {
+    caught = error;
+  }
+  equal((caught as { name?: unknown } | null)?.name, "QuotaExceededError");
+  equal(storage.getItem("big"), null);
+  equal(storage.getItem("small"), "kept");
+  storage.setItem("small", "x".repeat(1024));
+  equal(storage.getItem("small")?.length, 1024);
+  storage.clear();
+});
+
 hostTest(
   "navigator.onLine and online and offline events follow the host",
   (web) => {

@@ -5,7 +5,7 @@ import SwiftUI
 struct SvelteHostApp: App {
     init() {
         if ProcessInfo.processInfo.arguments.contains("-resetStorage") {
-            UserDefaults.standard.removeObject(forKey: "SvelteSwiftUI.localStorage")
+            SvelteRuntime.clearStorage(SvelteRuntime.storageName(for: Self.source))
         }
     }
 

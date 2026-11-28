@@ -60,6 +60,7 @@ public final class SvelteRuntime {
     public init(
         source: URL,
         reloadsOnChange: Bool = false,
+        storage: String? = nil,
         modules: Array<NativeModule> = [],
         components: Array<NativeComponent> = [],
         onError: (@MainActor (ScriptError) -> Void)? = nil
@@ -81,7 +82,7 @@ public final class SvelteRuntime {
             self.components[component.name] = component
         }
         let drain = Unchecked(value: WeakBox<SvelteRuntime>())
-        engine = ScriptEngine {
+        engine = ScriptEngine(storage: LocalStorage(name: storage ?? Self.storageName(for: source))) {
             DispatchQueue.main.async { MainActor.assumeIsolated { drain.value.object?.drain() } }
         }
         drain.value.object = self

@@ -34,8 +34,10 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     private var nextTimerID = 1
     private var environment = "{}"
     private let network: NetworkClient
+    private let storage: LocalStorage
 
-    init(deliver: @escaping @Sendable () -> Void) {
+    init(storage: LocalStorage, deliver: @escaping @Sendable () -> Void) {
+        self.storage = storage
         self.deliver = deliver
         queue = DispatchQueue(label: "SvelteSwiftUI.JavaScript", qos: .userInteractive)
         network = NetworkClient(queue: queue)
@@ -150,13 +152,13 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
                 return ["nodes": Double(stats.nodes), "maxFrameGapMs": stats.maxFrameGap, "applyMs": stats.applyTime]
             }
         }
-        let storageKey = "SvelteSwiftUI.localStorage"
-        let loadStorage: @convention(block) () -> String = {
-            UserDefaults.standard.string(forKey: storageKey) ?? "{}"
+        let loadStorage: @convention(block) () -> String = { [weak self, weak context] in
+            guard let self, let context, self.context === context else { return "{}" }
+            return storage.load()
         }
         let saveStorage: @convention(block) (String) -> Void = { [weak self, weak context] json in
             guard let self, let context, self.context === context else { return }
-            UserDefaults.standard.set(json, forKey: storageKey)
+            storage.save(json)
         }
         let environment: @convention(block) () -> String = { [weak self] in
             self?.environment ?? "{}"

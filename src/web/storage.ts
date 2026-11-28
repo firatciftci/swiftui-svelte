@@ -1,8 +1,14 @@
+import { DOMExceptionShim } from "./events.ts";
+
+const quota = 5 * 1024 * 1024;
+
 export function createStorage(
   initial: Iterable<[string, string]>,
   onChange?: (items: Map<string, string>) => void,
 ): Storage {
   const items = new Map(initial);
+  let size = 0;
+  for (const [key, value] of items) size += key.length + value.length;
   const changed = (): void => onChange?.(items);
   const methods: Storage = {
     get length() {
@@ -17,15 +23,36 @@ export function createStorage(
     },
     getItem: (key: unknown): string | null => items.get(String(key)) ?? null,
     setItem(key: unknown, value: unknown): void {
-      items.set(String(key), String(value));
+      const name = String(key);
+      const text = String(value);
+      const previous = items.get(name);
+      const next =
+        size -
+        (previous == null ? 0 : name.length + previous.length) +
+        name.length +
+        text.length;
+      if (next > quota) {
+        throw new DOMExceptionShim(
+          `Setting "${name}" exceeds the 5 MB storage quota.`,
+          "QuotaExceededError",
+        );
+      }
+      size = next;
+      items.set(name, text);
       changed();
     },
     removeItem(key: unknown): void {
-      if (items.delete(String(key))) changed();
+      const name = String(key);
+      const previous = items.get(name);
+      if (previous == null) return;
+      size -= name.length + previous.length;
+      items.delete(name);
+      changed();
     },
     clear(): void {
       if (items.size === 0) return;
       items.clear();
+      size = 0;
       changed();
     },
   };

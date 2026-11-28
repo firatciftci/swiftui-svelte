@@ -560,7 +560,9 @@ The bundle installs `crypto` only when both `__nativeRandomFill` and `__nativeDi
 - `__nativeStorageLoad()` returns a JSON object of all saved string pairs. The bundle reads it once when it installs. An empty or missing value means no saved entries.
 - `__nativeStorageSave(json)` receives the complete map as a JSON object after each change. The bundle batches changes into one save per microtask.
 
-The host must store the map durably, in a location the app can read on its next launch. The bundle sends the complete map on every save, so the host must not drop entries that the bundle did not load. The host must not share storage between apps.
+The host must store the map durably, in a location the app can read on its next launch. The bundle sends the complete map on every save, but several engines can share one store, for example two windows of the same app. So the host must write only the entries that changed since this engine's last load or save, and it must keep entries that other engines wrote. The host must not share storage between apps.
+
+The bundle limits each storage to 5 MB, counted as the length of every key and value in UTF-16 code units. A `setItem` that would go over the limit throws a `DOMException` named `QuotaExceededError` and leaves the storage unchanged.
 
 `sessionStorage` is in memory only, and it starts empty at each engine start.
 
