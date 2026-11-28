@@ -58,14 +58,16 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         if shouldSchedule { deliver() }
     }
 
-    func load(script: String, source: URL, map: SourceMap?, environment: String, mounts: Array<Unchecked<Array<Any>>>) {
+    func load(
+        script: String, source: URL, map: SourceMap?, environment: String, mounts: Array<Unchecked<Array<Any>>>
+    ) -> BundleIdentity? {
         dispatchPrecondition(condition: .onQueue(queue))
         stop()
         self.environment = environment
         network.origin = NetworkClient.origin(of: source)
         guard let context = JSContext() else {
             post(.error(ScriptError(message: "Couldn't create a JavaScript context.", frames: [])))
-            return
+            return nil
         }
         #if DEBUG
             context.isInspectable = true
@@ -78,7 +80,9 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         install(into: context)
         self.context = context
         context.evaluateScript(script, withSourceURL: source)
+        let identity = BundleIdentity(context.objectForKeyedSubscript("__svelteBundle"))
         for mount in mounts { call("__svelteMount", mount) }
+        return identity
     }
 
     func stop() {
@@ -258,5 +262,23 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         timers[id] = timer
         timer.resume()
         return id
+    }
+}
+
+struct BundleIdentity: Equatable, Sendable {
+    let version: String
+    let protocolVersion: Int
+
+    nonisolated init(version: String, protocolVersion: Int) {
+        self.version = version
+        self.protocolVersion = protocolVersion
+    }
+
+    nonisolated init?(_ value: JSValue?) {
+        guard let value, value.isObject,
+            let version = value.objectForKeyedSubscript("version"), version.isString,
+            let protocolVersion = value.objectForKeyedSubscript("protocol"), protocolVersion.isNumber
+        else { return nil }
+        self.init(version: version.toString(), protocolVersion: Int(protocolVersion.toInt32()))
     }
 }

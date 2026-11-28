@@ -18,11 +18,13 @@ Release builds don't mark the context as inspectable, so Safari doesn't list the
 
 ## Errors
 
-When the JavaScript throws, Debug builds show the error over your app, with the message, the file and line in your Svelte or TypeScript source, and the stack trace. **Reload** restarts the bundle, and **Dismiss** hides the error and leaves the app as it was. The `swiftui()` Vite plugin writes `app.js.map` next to `app.js`, and `SvelteView` uses it to turn bundle positions into source positions, so add both files to your app target. Release builds don't show the overlay: they print the error to the console and keep the last screen that rendered. To forward errors to a crash reporter, pass `onError` to `SvelteView`, as [Embedding in a Swift app](embedding.md#reporting-errors) shows.
+When the JavaScript throws after your app has rendered, Debug builds show the error over your app, with the message, the file and line in your Svelte or TypeScript source, and the stack trace. **Reload** restarts the bundle, and **Dismiss** hides the error and leaves the app as it was. The `swiftui()` Vite plugin writes `app.js.map` next to `app.js`, and `SvelteView` uses it to turn bundle positions into source positions, so add both files to your app target. Release builds don't show the overlay: they print the error to the console and keep the last screen that rendered. To forward errors to a crash reporter, pass `onError` to `SvelteView`, as [Embedding in a Swift app](embedding.md#reporting-errors) shows.
 
 To keep an error in one part of the screen from taking down the rest, wrap that part in `<svelte:boundary>` with a `failed` snippet. Errors that a boundary catches don't show the overlay. [Elements](elements.md) explains how boundaries work. Errors print their stack trace to the console too.
 
-If the bundle was built with a different version of swiftui-svelte than the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen instead of rendering. Update the npm package and the Swift package to the same version, then rebuild the bundle. The bundle also checks the app's protocol version before it mounts anything, and it logs a warning that names both versions.
+If the view never renders, `SvelteView` says why in every build, Release included. When the bundle doesn't load, or throws before it mounts the component, the view shows the error message and a **Reload** button. When the bundle loads but sends nothing for two seconds, the view says that the app didn't start, and it names the swiftui-svelte release and the bridge protocol of the bundle and of the app's SvelteSwiftUI package. A bundle from swiftui-svelte 0.2.0 or earlier doesn't report its release, and the view says so.
+
+If the bundle was built with a different version of swiftui-svelte than the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen that names both versions instead of rendering. Update the npm package and the Swift package to the same version, then rebuild the bundle. The bundle also checks the app's protocol version before it mounts anything, and it logs a warning that names both versions.
 
 ## Bridge statistics
 
@@ -36,7 +38,7 @@ While `vite build --watch` runs, or in a build with `--mode development`, the bu
 
 ## Common problems
 
-- **The screen is blank.** Check Xcode's console for an error from the bundle, and check that `app.js` is in the app target. A bundle that fails to load shows the error in Debug builds.
+- **The screen is blank.** Check Xcode's console for an error from the bundle, and check that `app.js` is in the app target. If the bundle fails to load, throws before it mounts, or never mounts, the app shows a message in place of the view in every build.
 - **A control snaps back.** Elements are controlled, so a `textfield` shows `value` and a `toggle` shows `checked`. Update your state in `oninput` or `onchange`, or use a component from `swiftui-svelte/components` with `bind:`.
 - **`document` or `window.location` is undefined.** There's no page, so the DOM APIs aren't there. [Web APIs](web-apis.md) lists what is, and the ESLint preset reports the globals that are missing.
 - **A list is slow to scroll.** Give each `{#each}` a key, and put long lists in a `list` or a lazy stack. [Performance](performance.md) has more.

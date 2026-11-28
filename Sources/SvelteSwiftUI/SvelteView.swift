@@ -7,6 +7,7 @@ public struct SvelteView: View {
     @State private var keyboardHeight = 0.0
     @State private var viewportSize = CGSize.zero
     @State private var systemScheme = ColorScheme.light
+    @State private var isOverdue = false
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -65,20 +66,37 @@ public struct SvelteView: View {
     private static let appLanguage = Bundle.main.preferredLocalizations.first.map { Locale.Language(identifier: $0) }
 
     public var body: some View {
+        let phase = runtime.phase(of: handle?.id, isOverdue: isOverdue)
         VStack(spacing: 0) {
-            if !runtime.store.isCompatible {
-                let bundle = runtime.store.bundleProtocolVersion.map(String.init) ?? "none"
+            switch phase {
+            case let .mounted(root):
+                NodeView(node: root)
+                    .ifLet(Self.appLanguage) { $0.typesettingLanguage($1) }
+            case .incompatible:
                 ContentUnavailableView(
                     "Version mismatch",
                     systemImage: "exclamationmark.triangle",
-                    description: Text(
-                        "The JavaScript bundle uses bridge protocol \(bundle), but this app's SvelteSwiftUI package uses protocol \(NodeStore.protocolVersion). Install the same release of swiftui-svelte from npm and SvelteSwiftUI from Swift Package Manager, then rebuild the bundle."
-                    )
+                    description: Text(mismatchDescription)
                 )
-            } else if let root = runtime.store.root(for: handle?.id) {
-                NodeView(node: root)
-                    .ifLet(Self.appLanguage) { $0.typesettingLanguage($1) }
-            } else {
+            case let .failed(error):
+                ContentUnavailableView {
+                    Label("This screen couldn't load", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(error.message)
+                } actions: {
+                    Button("Reload", action: runtime.reload)
+                }
+                .accessibilityIdentifier("svelte-failed")
+            case .unresponsive:
+                ContentUnavailableView {
+                    Label("The app didn't start", systemImage: "hourglass")
+                } description: {
+                    Text(unresponsiveDescription)
+                } actions: {
+                    Button("Reload", action: runtime.reload)
+                }
+                .accessibilityIdentifier("svelte-unresponsive")
+            case .loading:
                 ProgressView()
             }
         }
@@ -87,10 +105,16 @@ public struct SvelteView: View {
         #endif
         .overlay(alignment: .bottom) {
             #if DEBUG
-                if let error = runtime.error ?? runtime.store.error.map({ ScriptError(kind: .bridge, message: $0, frames: []) }) {
+                if case .mounted = phase, let error = runtime.currentError {
                     ErrorOverlay(error: error, dismiss: runtime.dismissError, reload: runtime.reload)
                 }
             #endif
+        }
+        .task(id: runtime.loads) {
+            isOverdue = false
+            guard runtime.loads > 0 else { return }
+            try? await Task.sleep(for: .seconds(2))
+            if !Task.isCancelled { isOverdue = true }
         }
         .background {
             Color.clear
@@ -121,6 +145,31 @@ public struct SvelteView: View {
         .onChange(of: environment) { _, environment in
             runtime.updateEnvironment(environment.dictionary)
         }
+    }
+
+    private var hostDescription: String {
+        "This app's SvelteSwiftUI package is version \(SvelteRuntime.version) and uses protocol \(NodeStore.protocolVersion). Install the same release of swiftui-svelte from npm and SvelteSwiftUI from Swift Package Manager, then rebuild the bundle."
+    }
+
+    private var mismatchDescription: String {
+        let bundle =
+            if let identity = runtime.bundleIdentity {
+                "The JavaScript bundle comes from swiftui-svelte \(identity.version) and uses bridge protocol \(identity.protocolVersion)."
+            } else {
+                "The JavaScript bundle uses bridge protocol \(runtime.store.bundleProtocolVersion.map(String.init) ?? "none")."
+            }
+        return "\(bundle) \(hostDescription)"
+    }
+
+    private var unresponsiveDescription: String {
+        let bundle =
+            if let identity = runtime.bundleIdentity {
+                "The bundle comes from swiftui-svelte \(identity.version) and uses bridge protocol \(identity.protocolVersion)."
+            } else {
+                "The bundle doesn't say which swiftui-svelte release built it."
+            }
+        return
+            "The JavaScript bundle didn't show \"\(component)\" within two seconds. \(bundle) This app's SvelteSwiftUI package is version \(SvelteRuntime.version) and uses bridge protocol \(NodeStore.protocolVersion). Install the same release of swiftui-svelte from npm and SvelteSwiftUI from Swift Package Manager, then rebuild the bundle."
     }
 
     private var environment: EnvironmentSnapshot {

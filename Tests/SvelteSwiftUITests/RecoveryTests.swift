@@ -42,6 +42,72 @@ struct RecoveryTests {
         #expect(runtime.store.error?.contains("42") == true)
     }
 
+    private let mountsRoot = """
+        globalThis.__svelteBundle = { version: "9.8.7", protocol: 3 };
+        globalThis.__svelteMount = (id) => __nativeCommit(JSON.stringify([0, 1, 3, id, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
+        """
+
+    @Test func readsWhichReleaseBuiltTheBundle() throws {
+        let runtime = try runtime(mountsRoot)
+        #expect(runtime.bundleIdentity == BundleIdentity(version: "9.8.7", protocolVersion: 3))
+        #expect(runtime.loads == 1)
+        let unknown = try SvelteSwiftUITests.runtime("globalThis.__svelteBundle = { version: 1 };")
+        #expect(unknown.bundleIdentity == nil)
+    }
+
+    @Test func showsAMountedRoot() throws {
+        let runtime = try runtime(mountsRoot)
+        let id = runtime.mount("default", props: "{}", actions: [:])
+        guard case let .mounted(root) = runtime.phase(of: id, isOverdue: true) else {
+            Issue.record("The mount has no root.")
+            return
+        }
+        #expect(root.children.first?.name == "txt")
+    }
+
+    @Test func showsAMountThatThrowsAsFailed() throws {
+        let runtime = try runtime(#"globalThis.__svelteMount = (id, name) => { throw new Error(`No component named "${name}".`); };"#)
+        let id = runtime.mount("missing", props: "{}", actions: [:])
+        guard case let .failed(error) = runtime.phase(of: id, isOverdue: false) else {
+            Issue.record("The mount didn't fail.")
+            return
+        }
+        #expect(error.message.contains("missing"))
+    }
+
+    @Test func showsABundleThatFailsToLoadAsFailed() {
+        let runtime = SvelteRuntime(source: URL(filePath: "/nonexistent/app.js"))
+        let id = runtime.mount("default", props: "{}", actions: [:])
+        guard case .failed = runtime.phase(of: id, isOverdue: false) else {
+            Issue.record("The missing bundle didn't fail.")
+            return
+        }
+        #expect(runtime.loads == 1)
+    }
+
+    @Test func showsAMountWithoutARootAsUnresponsiveOnceOverdue() throws {
+        let runtime = try runtime("globalThis.__svelteMount = () => {};")
+        let id = runtime.mount("default", props: "{}", actions: [:])
+        guard case .loading = runtime.phase(of: id, isOverdue: false) else {
+            Issue.record("The mount isn't loading.")
+            return
+        }
+        guard case .unresponsive = runtime.phase(of: id, isOverdue: true) else {
+            Issue.record("The overdue mount isn't unresponsive.")
+            return
+        }
+    }
+
+    @Test func showsAProtocolMismatch() throws {
+        let runtime = try runtime(#"globalThis.__svelteMount = (id) => __nativeCommit(JSON.stringify([0, 1, 2, id]));"#)
+        let id = runtime.mount("default", props: "{}", actions: [:])
+        guard case .incompatible = runtime.phase(of: id, isOverdue: true) else {
+            Issue.record("The mismatch isn't shown.")
+            return
+        }
+        #expect(runtime.store.bundleProtocolVersion == 2)
+    }
+
     @Test func reportsExceptions() throws {
         let runtime = try runtime("throw new Error('boom')")
         #expect(runtime.error?.message.contains("boom") == true)

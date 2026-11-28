@@ -1,5 +1,7 @@
 export const protocol = 3;
 
+export const version = "0.2.0";
+
 export const opcodes = {
   root: 0,
   insert: 1,

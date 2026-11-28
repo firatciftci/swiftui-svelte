@@ -24,6 +24,8 @@ public final class SvelteRuntime {
     private(set) var appearance: ColorScheme?
     private(set) var scrollRequest: ScrollRequest?
     private(set) var scrollOffsetRequest: ScrollOffsetRequest?
+    private(set) var bundleIdentity: BundleIdentity?
+    private(set) var loads = 0
 
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
@@ -406,6 +408,8 @@ public final class SvelteRuntime {
             bundle = loaded
         case let .failure(failure):
             engine.queue.sync { engine.stop() }
+            bundleIdentity = nil
+            loads += 1
             report(ScriptError(kind: .load, message: failure.message, frames: []))
             return
         }
@@ -415,9 +419,10 @@ public final class SvelteRuntime {
         let environment = Self.json(environment)
         let source = source
         let script = bundle.script
-        engine.queue.sync {
+        bundleIdentity = engine.queue.sync {
             engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
+        loads += 1
         receive(isInitial: true)
         isLoaded = true
         for url in pendingURLs { deliver(url) }
@@ -475,6 +480,17 @@ extension SvelteRuntime {
         store.dismissError()
     }
 
+    var currentError: ScriptError? {
+        error ?? store.error.map { ScriptError(kind: .bridge, message: $0, frames: []) }
+    }
+
+    func phase(of mount: Int?, isOverdue: Bool) -> MountPhase {
+        if !store.isCompatible { return .incompatible }
+        if let root = store.root(for: mount) { return .mounted(root) }
+        if let currentError { return .failed(currentError) }
+        return isOverdue ? .unresponsive : .loading
+    }
+
     public func emit(_ event: String, from module: String) {
         call("__svelteNativeEvent", [module, event, NSNull()])
     }
@@ -483,6 +499,14 @@ extension SvelteRuntime {
         guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
         call("__svelteNativeEvent", [module, event, json])
     }
+}
+
+enum MountPhase {
+    case loading
+    case mounted(Node)
+    case incompatible
+    case failed(ScriptError)
+    case unresponsive
 }
 
 private struct Inbound {

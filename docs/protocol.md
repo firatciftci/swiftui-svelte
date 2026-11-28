@@ -218,10 +218,12 @@ __svelteMount(mountId, name, json)
 ```
 
 - `mountId` is an integer that the host chooses and keeps. Each mount has its own ID.
-- `name` is the name of a component that the bundle registered through `mountApp`. An unknown name throws an `Error` in the engine. The host must treat that as a failed mount: it must log the message and show an error in place of the view.
+- `name` is the name of a component that the bundle registered through `mountApp`. An unknown name throws an `Error` in the engine. The host must treat that as a failed mount: it must log the message and show an error in place of the view, in release builds too.
 - `json` is `{ "props": {...}, "actions": [...] }`. Props are the initial prop values. Each entry in `actions` is a prop name whose value is a function that the bundle calls back into the host with `__nativeAction` (Section 6.3.3).
 
 The bundle sends `root` (opcode 0) before it mounts the component, so the host receives the root record first.
+
+A host must not show a loading state forever. If the bundle has loaded and no `root` record for a mount arrives within two seconds, the host must show an error in place of the view that names the bundle's release and protocol (Section 10.3) and the host's own release and protocol.
 
 The host updates props with:
 
@@ -696,6 +698,8 @@ When a change is additive and an older host would otherwise fail, the change is 
 The host checks `protocol` in the `root` record. A host must refuse to render a mount whose protocol it does not implement, show the user an error that names both versions, and log the error. The iOS host detects this mismatch and shows that error.
 
 Before it mounts a component, the bundle reads `__nativeProtocols`, an array of the protocol versions the host implements. The host must install it before it loads the bundle. If the array doesn't include the bundle's `protocol`, the bundle sends the `root` record so the host can show its error, logs a warning that names both versions, and doesn't mount the component. The bundle treats a host without `__nativeProtocols` as one that implements protocol 3 only. A future bundle that implements more than one protocol uses the array to pick one that the host implements.
+
+When the bundle is evaluated, it sets the global `__svelteBundle` to `{ "version": string, "protocol": number }`, the npm release that built it and the protocol it uses. A host reads it after evaluation, so it can name both releases in its errors, including when no `root` record arrives. A bundle without `__svelteBundle` comes from swiftui-svelte 0.2.0 or earlier.
 
 ### 10.4 Compatibility
 

@@ -18,6 +18,7 @@ declare function __nativeLog(
   level: "log" | "info" | "warn" | "error" | "debug",
   message: string,
 ): void;
+declare var __svelteBundle: { version: string; protocol: number };
 declare var __svelteDispatch: (
   id: number,
   type: string,

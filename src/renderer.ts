@@ -12,7 +12,7 @@ import type {
 import type { HostEnvironment } from "./web/environment.ts";
 import { checkAttribute, checkElement, isMarkup, warnOnce } from "./dev.ts";
 import { textContainers } from "./markup.ts";
-import { opcodes, protocol } from "./protocol.ts";
+import { opcodes, protocol, version } from "./protocol.ts";
 import { resolveWith } from "./tailwind/runtime.ts";
 import { environment, observeEnvironment } from "./web/environment.ts";
 
@@ -979,6 +979,8 @@ function startTask(request: number | undefined): AbortSignal {
   if (request != null) tasks.set(request, controller);
   return controller.signal;
 }
+
+globalThis.__svelteBundle = { version, protocol };
 
 globalThis.__svelteDispatch = (id, type, payload, request) => {
   if (type === "taskcancel") {
