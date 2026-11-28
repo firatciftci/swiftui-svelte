@@ -11,6 +11,7 @@
   - `a11ychildren`, `aspectratio`, `contentmode`, `cellanchor`, `columnalignment`, `compositinggroup`, `contentshape`, `hidden`, `lighten`, `linebox`, `position`, and `tag` rebuild the content each time they switch between having a value and not having one, and `hidden` also rebuilds it each time it switches between true and false. The `a11yactivate`, `a11yadjust`, and `a11yescape` events also rebuild the content when a handler comes or goes.
   - Setting `color`, `tint`, `weight`, `design`, or `italic` for the first time rebuilds the content once. So does setting a minimum, ideal, or maximum size for the first time (including a `width` or `height` of `"infinity"`). Giving an element its first `auto` margin does too. SwiftUI has no way to apply these modifiers without changing the view, so they only start once there's a value, and the element keeps them after that. When a `color`, `tint`, `weight`, `design`, or `italic` value is cleared, the element takes the value from its Svelte ancestors, but not from SwiftUI views outside the `SvelteView`. An element whose sizes are cleared can lay out slightly differently inside a `grid`.
   - Attributes added later through a spread, classes held in variables, a `background` or `overlay` child that appears later, and the first `measure()` call on a ref turn a group on late. Children work the same way: the first `group`, `sectionview`, `tab`, `disclosuregroup`, `gridrow`, `popover`, or `confirmationdialog` that appears among an element's children after the element was created rebuilds its other children once. The element keeps that shape, so later ones rebuild nothing.
+- **Share one runtime between views of the same bundle.** Each `SvelteRuntime` loads and runs the whole bundle, which took the example app about 90 ms and 20 MB in a simulator. Another view on a runtime that's already running only pays for its own nodes. [Embedding in a Swift app](embedding.md) shows how.
 - **Measure a Release build on a device.** The simulator runs JavaScriptCore with its JIT compiler, and devices run it without one, so the simulator can be several times faster. The next section shows how to measure.
 
 ## Measurements
@@ -37,6 +38,18 @@ The bundle now loads off the main thread too, and events such as taps, `appear`,
 Released nodes are cleaned up on both sides: after 6,000 rows were created and cleared, 13 nodes were still alive in JavaScript, and Swift held only the 7 nodes on screen.
 
 Lazy containers keep memory flat while scrolling. In an iPhone 18 Pro simulator with a Debug build, a `list` of 10,000 rows took 240 MB when it opened and 170 MB after scrolling through 3,000 rows. A lazy stack of the same rows went from 140 MB to 156 MB. Before version 1.0, SwiftUI built every row of a `list` when it opened, which took 980 MB, and a lazy stack kept 160 MB of rows it had scrolled past. To measure it yourself, open the Playground tab of the example app, open one of the 10,000-row screens in the Navigation section, and tap **Scroll through 3,000 rows**. The label next to the button shows the memory when the screen opened, before scrolling, and after.
+
+### One runtime or several
+
+Each `SvelteRuntime` has its own JavaScript context, and it loads and runs the whole bundle before it mounts anything. Views that share a runtime pay that cost once. In an iPhone 18 Pro simulator with a Debug build, the example app's 580 KB bundle and its Playground screen of 1,187 nodes gave these medians over five runs. The time runs until Swift holds the mounted nodes, before SwiftUI draws them:
+
+| Scenario                                 | Time | Memory |
+| ---------------------------------------- | ---- | ------ |
+| Another runtime, mounting the screen     | 88ms | 20 MB  |
+| Another runtime, loading the bundle only | 69ms | 13 MB  |
+| Another view on a shared runtime         | 7ms  | 3 MB   |
+
+The first runtime in a process costs more, about 110–140ms and 36 MB, because JavaScriptCore sets itself up then. Most of the cost of another runtime is loading the bundle, so it grows with the bundle's size, while another view on a shared runtime costs only what its own nodes cost. To measure it yourself, run `nr build`, then run `EngineCostTests` in `Tests/SvelteSwiftUITests`, which prints these numbers. These are simulator numbers, and a device runs JavaScriptCore without its JIT compiler, so the times there can be higher.
 
 ### Compared with plain SwiftUI
 

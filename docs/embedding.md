@@ -25,7 +25,7 @@ SvelteView(
 <btn onclick={() => onreset()}>Reset {count}</btn>
 ```
 
-Each `SvelteView(source:)` runs its own JavaScript context. To have several views share one context, and with it the same module state and stores, create a `SvelteRuntime` once and pass it to each view:
+Each `SvelteView(source:)` starts its own runtime, with its own JavaScript context, its own copy of the bundle, and its own module state. To have several views share one context, and with it the same module state and stores, create a `SvelteRuntime` once and pass it to each view:
 
 ```swift
 @State private var runtime = SvelteRuntime(source: bundleURL)
@@ -37,6 +37,8 @@ var body: some View {
     }
 }
 ```
+
+Sharing a runtime also saves time and memory, because each runtime loads and runs the whole bundle before it can mount anything. With the example app's 580 KB bundle, in an iPhone 18 Pro simulator, another runtime took about 90 ms and 20 MB to mount its first screen, and another view on a shared runtime took under 10 ms and about 3 MB. [Performance](performance.md#one-runtime-or-several) has the details. Start separate runtimes only when views must not share state, or when you want to stop one without stopping the others.
 
 A component stays mounted as long as its `SvelteView` exists, including while it's in a tab that isn't selected, and unmounts when the view goes away.
 

@@ -63,6 +63,24 @@ struct BundleTests {
         #expect(runtime.store.nodeCount < 20)
     }
 
+    @Test func sharesModuleStateAmongTheViewsOfOneRuntimeOnly() throws {
+        let runtime = try runtime()
+        let other = try self.runtime()
+        let first = runtime.mount("Tally", props: "{}", actions: [:])
+        let second = runtime.mount("Tally", props: "{}", actions: [:])
+        let separate = other.mount("Tally", props: "{}", actions: [:])
+        runtime.settle()
+        other.settle()
+        let button = try #require(runtime.store.root(for: first)?.children.first)
+        runtime.dispatch(button.id, "click")
+        runtime.settle()
+        other.settle()
+        let tally = "#fragment\n  <btn>\n    #text \"Tally 1\""
+        #expect(dump(runtime.store.root(for: first)) == tally)
+        #expect(dump(runtime.store.root(for: second)) == tally)
+        #expect(dump(other.store.root(for: separate)) == "#fragment\n  <btn>\n    #text \"Tally 0\"")
+    }
+
     @Test func mountsAgainAfterAReload() throws {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada"}"#, actions: [:])
