@@ -134,11 +134,12 @@
             return (runtime, host)
         }
 
-        private func run(_ script: String, on runtime: SvelteRuntime, _ host: NSHostingView<SvelteView>) {
+        private func run(_ script: String, on runtime: SvelteRuntime, _ host: NSHostingView<SvelteView>) async {
             _ = runtime.evaluate { $0.evaluateScript(script) != nil }
             for _ in 0..<3 {
                 pumpRunLoop()
                 host.layoutSubtreeIfNeeded()
+                await Task.yield()
             }
         }
 
@@ -184,25 +185,25 @@
         @Test func keepsChildStateWhileItsParentsAttributesChange() async throws {
             let identities = Identities()
             let (runtime, host) = try await render(identities)
-            func recreations() -> Set<String> {
+            func recreations() async -> Set<String> {
                 var recreated: Set<String> = []
                 for (attribute, value) in samples.sorted(by: { $0.key < $1.key }) {
                     let before = identities.seen.count
-                    run("change(\"\(attribute)\", \(value))", on: runtime, host)
-                    run("change(\"\(attribute)\", null)", on: runtime, host)
+                    await run("change(\"\(attribute)\", \(value))", on: runtime, host)
+                    await run("change(\"\(attribute)\", null)", on: runtime, host)
                     if identities.seen.count != before { recreated.insert(attribute) }
                 }
                 for event in events {
                     let before = identities.seen.count
-                    run("change(\"listens\", \(events.filter { $0 != event }))", on: runtime, host)
-                    run("change(\"listens\", \(events))", on: runtime, host)
+                    await run("change(\"listens\", \(events.filter { $0 != event }))", on: runtime, host)
+                    await run("change(\"listens\", \(events))", on: runtime, host)
                     if identities.seen.count != before { recreated.insert("listens \(event)") }
                 }
                 return recreated
             }
-            let first = recreations()
+            let first = await recreations()
             #expect(first.isSubset(of: restructuring.union(restructuringOnce)), "Recreated the child: \(first.sorted())")
-            let second = recreations()
+            let second = await recreations()
             #expect(second == restructuring, "Recreated the child: \(second.sorted())")
         }
     }
