@@ -6,7 +6,9 @@ While you work, run the app against a bundle that rebuilds when you save, so you
 
 ## Logging
 
-`console.log`, `console.info`, `console.warn`, `console.error`, and `console.debug` print to Xcode's console with the level in front, such as `[js:warn] Couldn't load the profile`. Objects are printed as JSON. Swift prints its own messages with a `[svelte]` or `[bridge]` prefix, so you can filter the console by prefix.
+`console.log`, `console.info`, `console.warn`, `console.error`, and `console.debug` write to Apple's unified log under the subsystem `swiftui-svelte` and the category `javascript`, each at the matching level. Objects are logged as JSON. Xcode's console shows these messages while the app runs, and you can filter it by subsystem or category. To read them from a device that isn't attached to Xcode, open the Console app on your Mac and search for `subsystem:swiftui-svelte`.
+
+The library's own warnings, such as a native module that replaces another module with the same name, use the category `diagnostics`. Each warning is logged once each time the bundle loads. Bridge errors and JavaScript exceptions are logged as errors.
 
 ## Safari Web Inspector
 

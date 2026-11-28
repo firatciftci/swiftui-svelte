@@ -583,6 +583,8 @@ The host provides `__nativeNow()`, a monotonic clock in milliseconds. The bundle
 
 The bundle redirects `console.log`, `console.info`, `console.warn`, `console.error`, and `console.debug` to `__nativeLog(level, message)`. `level` is one of those five names. `message` is the arguments joined with spaces, with objects encoded as JSON and errors as their stacks. A host must show these messages in its development log.
 
+In development builds, the bundle also sends its own warnings, such as an attribute name it doesn't recognize, to `__nativeDiagnostic(json)` when the host defines that function, and to `console.warn` when it doesn't. `json` is a JSON object with a `message` string and the optional strings `element`, `attribute`, and `value`, which name the element, the attribute, and the value that the warning is about. The bundle sends each warning once per load. A host should show these warnings to the developer, and it may drop repeats.
+
 ## 9. Element vocabulary
 
 ### 9.1 Where the vocabulary is defined

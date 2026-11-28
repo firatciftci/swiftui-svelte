@@ -231,9 +231,13 @@ final class NodeStore {
     @ObservationIgnored private var transitions: [Int: MotionCurve] = [:]
     @ObservationIgnored private var presentationIDs: Set<Int> = []
     @ObservationIgnored private var hostIDs: Set<Int> = []
-    @ObservationIgnored private var warnedWaiting: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
     @ObservationIgnored private var ownedNames: [String: Set<String>] = [:]
+    @ObservationIgnored let diagnostics: Diagnostics
+
+    init(diagnostics: Diagnostics = Diagnostics()) {
+        self.diagnostics = diagnostics
+    }
 
     var nodeCount: Int { nodes.count }
 
@@ -255,7 +259,6 @@ final class NodeStore {
         transitions = [:]
         presentationIDs = []
         hostIDs = []
-        warnedWaiting = []
         needsHosting = false
         self.ownedNames = ownedNames
     }
@@ -272,7 +275,7 @@ final class NodeStore {
         let batch: Batch
         switch decode(json) {
         case let .failure(failure):
-            print("[bridge] \(failure)")
+            Diagnostics.logger.error("\(failure.description, privacy: .public)")
             error = failure.description
             return false
         case let .success(decoded):
@@ -543,15 +546,15 @@ final class NodeStore {
             #endif
         }
         hostIDs = Set(assigned.keys)
-        warnedWaiting.formIntersection(presentationIDs)
     }
 
     #if DEBUG
         private func warnAboutWaiting(_ presented: Array<Node>, in host: Node) {
             let hostName = host.kind == .fragment ? "SvelteView" : host.name
-            for node in Presenting.waiting(presented) where warnedWaiting.insert(node.id).inserted {
-                print(
-                    "[svelte] A <\(node.name)> is waiting because its <\(hostName)> already shows one, and SwiftUI shows one <\(node.name)> at a time from the same <\(hostName)>. It appears when the first one closes. To show both at once, put the second inside the first."
+            for node in Presenting.waiting(presented) {
+                diagnostics.report(
+                    "A <\(node.name)> is waiting because its <\(hostName)> already shows one, and SwiftUI shows one <\(node.name)> at a time from the same <\(hostName)>. It appears when the first one closes. To show both at once, put the second inside the first.",
+                    element: node.name
                 )
             }
         }

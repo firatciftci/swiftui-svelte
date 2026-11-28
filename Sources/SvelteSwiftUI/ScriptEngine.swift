@@ -35,9 +35,11 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     private var environment = "{}"
     private let network: NetworkClient
     private let storage: LocalStorage
+    private let diagnostics: Diagnostics
 
-    init(storage: LocalStorage, deliver: @escaping @Sendable () -> Void) {
+    init(storage: LocalStorage, diagnostics: Diagnostics = Diagnostics(), deliver: @escaping @Sendable () -> Void) {
         self.storage = storage
+        self.diagnostics = diagnostics
         self.deliver = deliver
         queue = DispatchQueue(label: "SvelteSwiftUI.JavaScript", qos: .userInteractive)
         network = NetworkClient(queue: queue)
@@ -111,9 +113,9 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let commit: @convention(block) (String, JSValue) -> Void = { [weak self] json, animation in
             self?.post(.commit(json, animation.isString ? animation.toString() : nil))
         }
-        let log: @convention(block) (String, String) -> Void = { level, message in
-            print("[js:\(level)] \(message)")
-        }
+        let log: @convention(block) (String, String) -> Void = { Diagnostics.log($1, level: $0) }
+        let diagnostics = diagnostics
+        let diagnostic: @convention(block) (String) -> Void = { diagnostics.report(json: $0) }
         let setTimeout: @convention(block) (JSValue, JSValue) -> Int = { [weak self] callback, delay in
             self?.schedule(callback, after: delay, repeats: false) ?? 0
         }
@@ -168,6 +170,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
             "__nativeInvoke": invoke,
             "__nativeCall": nativeCall,
             "__nativeLog": log,
+            "__nativeDiagnostic": diagnostic,
             "setTimeout": setTimeout,
             "setInterval": setInterval,
             "clearTimeout": clearTimer,

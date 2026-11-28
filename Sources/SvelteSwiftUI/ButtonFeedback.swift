@@ -86,6 +86,7 @@ struct PressTracking: ViewModifier {
 struct StateFeedback: ViewModifier {
     let node: Node
     @Environment(\.buttonPress) private var press
+    @Environment(SvelteRuntime.self) private var runtime
     @State private var isHovered = false
 
     func body(content: Content) -> some View {
@@ -105,12 +106,12 @@ struct StateFeedback: ViewModifier {
     }
 
     #if DEBUG
-        @MainActor private static var warned: Set<Int> = []
-
         private func warnIfUntracked() {
-            guard !press.isTracked, ButtonFeedback(node.attributes["pressed"]) != nil, Self.warned.insert(node.id).inserted else { return }
-            print(
-                "[svelte] A <\(node.name)> has pressed styles that never apply, because nothing tracks presses on it. Put it inside a <btn>, or give it or an element around it an ontap, onlongpress, or ondrag handler."
+            guard !press.isTracked, ButtonFeedback(node.attributes["pressed"]) != nil else { return }
+            runtime.store.diagnostics.report(
+                "A <\(node.name)> has pressed styles that never apply, because nothing tracks presses on it. Put it inside a <btn>, or give it or an element around it an ontap, onlongpress, or ondrag handler.",
+                element: node.name,
+                attribute: "pressed"
             )
         }
     #endif

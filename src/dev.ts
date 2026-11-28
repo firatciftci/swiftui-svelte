@@ -47,10 +47,18 @@ function closest(
   return best;
 }
 
-export function warnOnce(key: string, message: string): void {
+export function warnOnce(
+  key: string,
+  message: string,
+  context?: { element: string; attribute?: string; value?: string },
+): void {
   if (warned.has(key)) return;
   warned.add(key);
-  console.warn(message);
+  if (typeof __nativeDiagnostic === "function") {
+    __nativeDiagnostic(JSON.stringify({ ...context, message }));
+  } else {
+    console.warn(message);
+  }
 }
 
 export function checkElement(name: string): void {
@@ -60,6 +68,7 @@ export function checkElement(name: string): void {
   warnOnce(
     `<${name}>`,
     `There's no element named <${name}>. Did you mean <${suggestion}>? If <${name}> is a native component, register it with SvelteView(components:).`,
+    { element: name },
   );
 }
 
@@ -68,6 +77,7 @@ export function checkAttribute(element: string, name: string): void {
     warnOnce(
       `<label> ${name}`,
       `<label> only holds the custom label of the element around it, so its "${name}" attribute does nothing. Put the attribute on an element inside the <label>.`,
+      { element, attribute: name },
     );
     return;
   }
@@ -81,6 +91,7 @@ export function checkAttribute(element: string, name: string): void {
   warnOnce(
     `<${element}> ${name}`,
     `<${element}> doesn't have an attribute named "${name}".${suggestion == null ? "" : ` Did you mean "${suggestion}"?`}`,
+    { element, attribute: name },
   );
 }
 
@@ -94,5 +105,6 @@ export function checkFont(
   warnOnce(
     `<${element}> font size`,
     `<${element}> has both font and size, so it ignores font="${String(font)}" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`,
+    { element, attribute: "font", value: String(font) },
   );
 }

@@ -700,12 +700,14 @@ function reportClass(tag: string, resolution: Resolution): void {
     warnOnce(
       `class ${token}`,
       `class "${token}" isn't a Tailwind utility in this build. Add the file that uses it to tailwind({ sources }), or check the spelling.`,
+      { element: tag, attribute: "class", value: token },
     );
   }
   for (const token of resolution.misplaced) {
     warnOnce(
       `<${tag}> class ${token}`,
       `class "${token}" has no effect on <${tag}>.`,
+      { element: tag, attribute: "class", value: token },
     );
   }
 }

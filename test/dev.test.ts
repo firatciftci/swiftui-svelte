@@ -70,6 +70,33 @@ describe("development checks", () => {
     ]);
   });
 
+  it("sends warnings to the native diagnostics channel when the host has one", () => {
+    const native = vi.fn<(json: string) => void>();
+    vi.stubGlobal("__nativeDiagnostic", native);
+    try {
+      checkAttribute("hstack", "qqqqqqqqqq");
+      checkAttribute("hstack", "qqqqqqqqqq");
+      checkElement("txtx");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(warn).not.toHaveBeenCalled();
+    expect(
+      native.mock.calls.map(([json]): unknown => JSON.parse(json)),
+    ).toEqual([
+      {
+        element: "hstack",
+        attribute: "qqqqqqqqqq",
+        message: `<hstack> doesn't have an attribute named "qqqqqqqqqq".`,
+      },
+      {
+        element: "txtx",
+        message:
+          "There's no element named <txtx>. Did you mean <txt>? If <txtx> is a native component, register it with SvelteView(components:).",
+      },
+    ]);
+  });
+
   it("knows every element and modifier in elements.ts", () => {
     expect(modifiers.has("padding")).toBe(true);
     expect(elements.btn).toContain("onclick");

@@ -19,8 +19,9 @@ public final class SvelteRuntime {
         var actions: [String: @MainActor (JSONValue) -> Void]
     }
 
-    private(set) var store = NodeStore()
+    private(set) var store: NodeStore
     private(set) var error: ScriptError?
+    private(set) var diagnostics: Array<Diagnostic> = []
     private(set) var appearance: ColorScheme?
     private(set) var scrollRequest: ScrollRequest?
     private(set) var scrollOffsetRequest: ScrollOffsetRequest?
@@ -54,6 +55,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private(set) var components: [String: NativeComponent] = [:]
     private var ownedNames: [String: Set<String>] { components.mapValues(\.owned) }
     @ObservationIgnored private(set) var generation = 0
+    @ObservationIgnored private var configurationWarnings: Array<String> = []
     @ObservationIgnored private let reloadsOnChange: Bool
     @ObservationIgnored public var onError: (@MainActor (ScriptError) -> Void)?
 
@@ -71,21 +73,28 @@ public final class SvelteRuntime {
         for module in BuiltInModules.all { self.modules[module.name] = module }
         for module in modules {
             if self.modules[module.name] != nil {
-                print("[svelte] The native module \(module.name) replaces another module with that name.")
+                configurationWarnings.append("The native module \(module.name) replaces another module with that name.")
             }
             self.modules[module.name] = module
         }
         for component in components {
             if NodeShape.isBuiltIn(component.name) {
-                print("[svelte] The native component \(component.name) never renders, because <\(component.name)> is a built-in element.")
+                configurationWarnings.append(
+                    "The native component \(component.name) never renders, because <\(component.name)> is a built-in element."
+                )
             }
             self.components[component.name] = component
         }
-        let drain = Unchecked(value: WeakBox<SvelteRuntime>())
-        engine = ScriptEngine(storage: LocalStorage(name: storage ?? Self.storageName(for: source))) {
-            DispatchQueue.main.async { MainActor.assumeIsolated { drain.value.object?.drain() } }
+        let runtime = Unchecked(value: WeakBox<SvelteRuntime>())
+        let diagnostics = Diagnostics { diagnostic, generation in
+            DispatchQueue.main.async { MainActor.assumeIsolated { runtime.value.object?.show(diagnostic, from: generation) } }
         }
-        drain.value.object = self
+        store = NodeStore(diagnostics: diagnostics)
+        engine = ScriptEngine(storage: LocalStorage(name: storage ?? Self.storageName(for: source)), diagnostics: diagnostics) {
+            DispatchQueue.main.async { MainActor.assumeIsolated { runtime.value.object?.drain() } }
+        }
+        runtime.value.object = self
+        reportConfiguration()
     }
 
     isolated deinit {
@@ -428,6 +437,9 @@ extension SvelteRuntime {
         for request in measureRequests.values.joined() { reply(request, frame: nil) }
         measureRequests.removeAll()
         store.reset(ownedNames: ownedNames)
+        store.diagnostics.reset()
+        diagnostics = []
+        reportConfiguration()
         error = nil
         let engine = engine
         let bundle: BundleLoader.Bundle
@@ -492,8 +504,21 @@ extension SvelteRuntime {
         return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 
+    private func reportConfiguration() {
+        for warning in configurationWarnings { store.diagnostics.report(warning) }
+    }
+
+    private func show(_ diagnostic: Diagnostic, from generation: Int) {
+        guard generation == store.diagnostics.generation else { return }
+        diagnostics.append(diagnostic)
+    }
+
+    func dismissDiagnostics() {
+        diagnostics = []
+    }
+
     func report(_ error: ScriptError) {
-        print("[js:exception] \(error)")
+        Diagnostics.javascript.error("\(String(describing: error), privacy: .public)")
         self.error = error
         onError?(error)
     }
