@@ -228,6 +228,7 @@ final class NodeStore {
     @ObservationIgnored private var transitions: [Int: MotionCurve] = [:]
     @ObservationIgnored private var presentationIDs: Set<Int> = []
     @ObservationIgnored private var hostIDs: Set<Int> = []
+    @ObservationIgnored private var warnedWaiting: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
     @ObservationIgnored private var ownedNames: [String: Set<String>] = [:]
 
@@ -251,6 +252,7 @@ final class NodeStore {
         transitions = [:]
         presentationIDs = []
         hostIDs = []
+        warnedWaiting = []
         needsHosting = false
         self.ownedNames = ownedNames
     }
@@ -533,9 +535,24 @@ final class NodeStore {
         for (id, presented) in assigned {
             guard let host = nodes[id], host.presented.map(\.id) != presented.map(\.id) else { continue }
             host.presented = presented
+            #if DEBUG
+                warnAboutWaiting(presented, in: host)
+            #endif
         }
         hostIDs = Set(assigned.keys)
+        warnedWaiting.formIntersection(presentationIDs)
     }
+
+    #if DEBUG
+        private func warnAboutWaiting(_ presented: Array<Node>, in host: Node) {
+            let hostName = host.kind == .fragment ? "SvelteView" : host.name
+            for node in Presenting.waiting(presented) where warnedWaiting.insert(node.id).inserted {
+                print(
+                    "[svelte] A <\(node.name)> is waiting because its <\(hostName)> already shows one, and SwiftUI shows one <\(node.name)> at a time from the same <\(hostName)>. It appears when the first one closes. To show both at once, put the second inside the first."
+                )
+            }
+        }
+    #endif
 }
 
 private struct Record {

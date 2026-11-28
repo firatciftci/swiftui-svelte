@@ -58,6 +58,11 @@ enum Presenting {
         }
     }
 
+    static func waiting(_ presented: Array<Node>) -> Array<Node> {
+        var shown: Set<String> = []
+        return presented.filter { !shown.insert($0.name).inserted }
+    }
+
     static func message(_ node: Node) -> String {
         node.renderedChildren.filter { $0.name == "txt" }
             .map { String(Styles.attributedString($0).characters) }

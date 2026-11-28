@@ -81,6 +81,18 @@ struct PresentationTests {
         #expect(Node(id: 3, kind: .element, name: "screen", text: "").hostsInspector)
     }
 
+    @Test func queuesSiblingPresentationsOfOneKindInOrder() {
+        let element = { (id: Int, name: String) in Node(id: id, kind: .element, name: name, text: "") }
+        let first = element(1, "sheet")
+        let alert = element(2, "alert")
+        let second = element(3, "sheet")
+        let third = element(4, "sheet")
+        let cover = element(5, "fullscreencover")
+        #expect(Presenting.waiting([first, alert, second, third, cover]).map(\.id) == [3, 4])
+        #expect(Presenting.waiting([alert, second, third]).map(\.id) == [4])
+        #expect(Presenting.waiting([first, alert, cover]).isEmpty)
+    }
+
     @Test func joinsMessageText() {
         let dialog = Node(id: 0, kind: .element, name: "confirmationdialog", text: "")
         let first = Node(id: 1, kind: .element, name: "txt", text: "")
