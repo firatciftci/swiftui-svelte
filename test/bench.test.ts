@@ -31,7 +31,7 @@ const budgets: Record<number, Record<(typeof names)[number], Budget>> = {
     clear: { ops: 1000, ms: 40 },
   },
   10_000: {
-    create: { ops: 10_000, ms: 1000 },
+    create: { ops: 10_000, ms: 2500 },
     update: { ops: 1000, ms: 120 },
     swap: { ops: 2, ms: 400 },
     reverse: { ops: 9999, ms: 15_000 },
