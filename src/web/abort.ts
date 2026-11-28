@@ -2,6 +2,7 @@ import { DOMExceptionShim, EventShim, EventTargetShim } from "./events.ts";
 
 const reasons = new WeakMap<AbortSignalShim, unknown>();
 const constructing = Symbol("constructing");
+const released = new FinalizationRegistry<() => void>((detach) => detach());
 
 function abort(signal: AbortSignalShim, reason: unknown): void {
   if (reasons.has(signal)) return;
@@ -39,17 +40,29 @@ export class AbortSignalShim extends EventTargetShim {
   ): AbortSignalShim {
     const combined = new AbortSignalShim(constructing);
     const sources = [...signals];
-    for (const source of sources) {
-      if (source.aborted) {
-        abort(combined, source.reason);
-        return combined;
+    const done = sources.find((source) => source.aborted);
+    if (done != null) {
+      abort(combined, done.reason);
+      return combined;
+    }
+    const target = new WeakRef(combined);
+    const listeners: Array<() => void> = [];
+    const detach = (): void => {
+      for (const [index, source] of sources.entries()) {
+        const listener = listeners[index];
+        if (listener != null) source.removeEventListener("abort", listener);
       }
-    }
+    };
     for (const source of sources) {
-      source.addEventListener("abort", () => abort(combined, source.reason), {
-        once: true,
-      });
+      const listener = (): void => {
+        detach();
+        const signal = target.deref();
+        if (signal != null) abort(signal, source.reason);
+      };
+      listeners.push(listener);
+      source.addEventListener("abort", listener, { once: true });
     }
+    released.register(combined, detach);
     return combined;
   }
 

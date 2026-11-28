@@ -214,6 +214,73 @@ test("AbortSignal.abort, timeout, and any", async (web) => {
   equal(web.AbortSignal.any([web.AbortSignal.abort("done")]).reason, "done");
 });
 
+function countListeners(signal: AbortSignal): () => number {
+  let count = 0;
+  const add = signal.addEventListener.bind(signal);
+  const remove = signal.removeEventListener.bind(signal);
+  signal.addEventListener = ((
+    ...args: Parameters<AbortSignal["addEventListener"]>
+  ): void => {
+    count += 1;
+    add(...args);
+  }) as AbortSignal["addEventListener"];
+  signal.removeEventListener = ((
+    ...args: Parameters<AbortSignal["removeEventListener"]>
+  ): void => {
+    count -= 1;
+    remove(...args);
+  }) as AbortSignal["removeEventListener"];
+  return () => count;
+}
+
+hostTest("AbortSignal.any lets go of its sources once it aborts", (web) => {
+  const first = new web.AbortController();
+  const second = new web.AbortController();
+  const listeners = countListeners(second.signal);
+  const combined = web.AbortSignal.any([first.signal, second.signal]);
+  equal(listeners(), 1);
+  first.abort("first");
+  equal(combined.reason, "first");
+  equal(listeners(), 0);
+  second.abort("second");
+  equal(combined.reason, "first");
+});
+
+hostTest(
+  "requests and fetches don't leave abort listeners behind",
+  async (web, server) => {
+    const controller = new web.AbortController();
+    const listeners = countListeners(controller.signal);
+    for (let index = 0; index < 1000; index += 1)
+      void new web.Request(`${server.http}/json`, {
+        signal: controller.signal,
+      });
+    equal(listeners(), 0);
+    for (let index = 0; index < 20; index += 1) {
+      const response = await web.fetch(`${server.http}/json`, {
+        signal: controller.signal,
+      });
+      await response.text();
+    }
+    const canceled = await web.fetch(`${server.http}/json`, {
+      signal: controller.signal,
+    });
+    await canceled.body?.cancel();
+    equal(listeners(), 0);
+    const pending = web.fetch(`${server.http}/json`, {
+      signal: controller.signal,
+    });
+    controller.abort("stop");
+    let reason: unknown = null;
+    try {
+      await pending;
+    } catch (error) {
+      reason = error;
+    }
+    equal(reason, "stop");
+  },
+);
+
 test("TextEncoder encodes UTF-8, including astral and lone surrogates", (web) => {
   const encoder = new web.TextEncoder();
   equal(encoder.encoding, "utf-8");

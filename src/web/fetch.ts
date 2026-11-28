@@ -601,7 +601,11 @@ export class RequestShim extends BodyShim {
     const signals = [init.signal ?? source?.signal].filter(
       (signal) => signal != null,
     );
-    this.signal = AbortSignalShim.any(signals);
+    const [only] = signals;
+    this.signal =
+      signals.length === 1 && only instanceof AbortSignalShim
+        ? only
+        : AbortSignalShim.any(signals);
     const hasBody =
       init.body != null ||
       (init.body === undefined &&
@@ -958,6 +962,12 @@ export function createFetch(native: NativeFetchBridge) {
       reject(signal.reason);
       controller?.error(signal.reason);
     };
+    const isFirstToFinish = (): boolean => {
+      if (isFinished) return false;
+      isFinished = true;
+      signal.removeEventListener("abort", onAbort);
+      return true;
+    };
     signal.addEventListener("abort", onAbort, { once: true });
     native.start(
       id,
@@ -979,9 +989,7 @@ export function createFetch(native: NativeFetchBridge) {
             controller = streamController;
           },
           cancel() {
-            if (isFinished) return;
-            isFinished = true;
-            native.cancel(id);
+            if (isFirstToFinish()) native.cancel(id);
           },
         });
         resolve(ResponseShim.native(meta, stream));
@@ -990,9 +998,7 @@ export function createFetch(native: NativeFetchBridge) {
         if (!isFinished && chunk.byteLength > 0) controller?.enqueue(chunk);
       },
       (failure) => {
-        if (isFinished) return;
-        isFinished = true;
-        signal.removeEventListener("abort", onAbort);
+        if (!isFirstToFinish()) return;
         if (failure == null && controller != null) {
           controller.close();
           return;
