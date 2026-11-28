@@ -5,9 +5,10 @@ import { get } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import { VERSION } from "svelte/compiler";
+import { compile, VERSION } from "svelte/compiler";
 import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
+import { stampLocations } from "swiftui-svelte/locations";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 import type { State } from "../src/tailwind/runtime.ts";
@@ -133,6 +134,28 @@ describe("the Vite plugin", () => {
     const { code } = await bundle({ mode: "development" });
     expect(code.split("\n").length).toBeGreaterThan(1000);
     expect(code).toContain("doesn't have an attribute");
+  }, 60_000);
+
+  it("stamps elements in blocks and components, skips markup, and escapes the path", () => {
+    const source =
+      '<script lang="ts">\n  const shown: boolean = true;\n</script>\n\n{#if shown}\n  <vstack><txt>Hi <b>there</b></txt></vstack>\n{/if}\n<Card><hstack /></Card>\n';
+    const stamped = stampLocations(source, "/app/src/{id}/A&B.svelte", "/app");
+    const file = "src/&#123;id&#125;/A&#38;B.svelte";
+    expect(stamped?.code).toBe(
+      `<script lang="ts">\n  const shown: boolean = true;\n</script>\n\n{#if shown}\n  <vstack data-loc="${file}:6:3"><txt data-loc="${file}:6:11">Hi <b>there</b></txt></vstack>\n{/if}\n<Card><hstack data-loc="${file}:8:7" /></Card>\n`,
+    );
+    expect(() =>
+      compile(stamped?.code ?? "", { filename: "A.svelte" }),
+    ).not.toThrow();
+    expect(stampLocations("<Card />", "/app/src/A.svelte", "/app")).toBeNull();
+    expect(stampLocations("<vstack", "/app/src/A.svelte", "/app")).toBeNull();
+  });
+
+  it("stamps each element with its source location in development builds only", async () => {
+    const development = await bundle({ mode: "development" });
+    expect(development.code).toContain("test/size/Hello.svelte:1:1");
+    const production = await bundle();
+    expect(production.code).not.toContain("data-loc");
   }, 60_000);
 
   it("replaces process.env.NODE_ENV, which JavaScriptCore doesn't define", async () => {

@@ -29,9 +29,23 @@ nonisolated final class Diagnostics: Sendable {
         }
     }
 
+    private struct Key: Hashable {
+        let element: String?
+        let attribute: String?
+        let value: String?
+        let message: String?
+
+        init(_ diagnostic: Diagnostic) {
+            element = diagnostic.element
+            attribute = diagnostic.attribute
+            value = diagnostic.value
+            message = diagnostic.element == nil ? diagnostic.message : nil
+        }
+    }
+
     private struct State {
         var generation = 0
-        var seen: Set<Diagnostic> = []
+        var seen: Set<Key> = []
     }
 
     private let state = Mutex(State())
@@ -45,10 +59,8 @@ nonisolated final class Diagnostics: Sendable {
 
     @discardableResult
     func report(_ diagnostic: Diagnostic) -> Bool {
-        var key = diagnostic
-        key.location = nil
         let generation: Int? = state.withLock { state in
-            state.seen.insert(key).inserted ? state.generation : nil
+            state.seen.insert(Key(diagnostic)).inserted ? state.generation : nil
         }
         guard let generation else { return false }
         Self.logger.warning("\(diagnostic.description, privacy: .public)")
@@ -57,8 +69,10 @@ nonisolated final class Diagnostics: Sendable {
     }
 
     @discardableResult
-    func report(_ message: String, element: String? = nil, attribute: String? = nil, value: String? = nil) -> Bool {
-        report(Diagnostic(element: element, attribute: attribute, value: value, message: message))
+    func report(
+        _ message: String, element: String? = nil, attribute: String? = nil, value: String? = nil, location: String? = nil
+    ) -> Bool {
+        report(Diagnostic(element: element, attribute: attribute, value: value, location: location, message: message))
     }
 
     @discardableResult

@@ -26,6 +26,7 @@ const readByStateFeedback = new Set(["pressed", "hovered"]);
 const dispatchedPerAction = new Set(["ona11yaction"]);
 const htmlAndSvgReaders = new Set(["Markup.swift", "Vector.swift"]);
 const internal = new Set(["listens"]);
+const stampedInDevelopment = new Set(["data-loc"]);
 
 const modifierSet =
   files.find(({ file }) => file === "ModifierSet.swift")?.text ?? "";
@@ -56,7 +57,12 @@ describe("the element schema and the Swift host", () => {
     for (const { file, text } of files) {
       if (htmlAndSvgReaders.has(file)) continue;
       for (const name of captures(text, /attributes\[\s*"([\w-]+)"\s*\]/g)) {
-        if (!typed.has(name) && !internal.has(name)) untyped.add(name);
+        if (
+          !typed.has(name) &&
+          !internal.has(name) &&
+          !stampedInDevelopment.has(name)
+        )
+          untyped.add(name);
       }
     }
     expect([...untyped]).toEqual([]);

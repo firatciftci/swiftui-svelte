@@ -211,7 +211,15 @@ struct CustomElement: View {
         if let component = runtime.components[node.name] {
             component.body(NativeElement(node: node, runtime: runtime))
         } else {
-            Text("Unknown element <\(node.name)>").foregroundStyle(.red)
+            Text("Unknown element <\(node.name)>")
+                .foregroundStyle(.red)
+                .onAppear {
+                    runtime.store.diagnostics.report(
+                        "There's no element named <\(node.name)>, so it shows as a red \"Unknown element\" label. If <\(node.name)> is a native component, register it with SvelteView(components:).",
+                        element: node.name,
+                        location: node.location
+                    )
+                }
         }
     }
 }

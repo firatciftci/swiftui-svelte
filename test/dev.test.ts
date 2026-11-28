@@ -4,6 +4,7 @@ import { checkAttribute, checkElement } from "swiftui-svelte/dev";
 import { elements, modifiers } from "swiftui-svelte/known";
 import { byTestId, dispatch, mountComponent, settle } from "./bridge.ts";
 import FontSize from "./components/FontSize.svelte";
+import Located from "./components/Located.svelte";
 import Typo from "./components/Typo.svelte";
 
 function fontSizeMessage(element: string): string {
@@ -93,6 +94,37 @@ describe("development checks", () => {
         element: "txtx",
         message:
           "There's no element named <txtx>. Did you mean <txt>? If <txtx> is a native component, register it with SvelteView(components:).",
+      },
+    ]);
+  });
+
+  it("names the source location of the element a warning is about", async () => {
+    const native = vi.fn<(json: string) => void>();
+    vi.stubGlobal("__nativeDiagnostic", native);
+    try {
+      const stop = mountComponent(Located, { extra: { colr: "red" } });
+      flushSync();
+      await settle();
+      stop();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(
+      native.mock.calls
+        .map(([json]): unknown => JSON.parse(json))
+        .toSorted((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+    ).toEqual([
+      {
+        element: "tx",
+        location: "src/Located.svelte:7:3",
+        message:
+          "There's no element named <tx>. Did you mean <txt>? If <tx> is a native component, register it with SvelteView(components:).",
+      },
+      {
+        element: "txt",
+        attribute: "colr",
+        location: "src/Located.svelte:6:3",
+        message: `<txt> doesn't have an attribute named "colr". Did you mean "color"?`,
       },
     ]);
   });

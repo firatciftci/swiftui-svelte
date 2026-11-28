@@ -111,7 +111,8 @@ struct StateFeedback: ViewModifier {
             runtime.store.diagnostics.report(
                 "A <\(node.name)> has pressed styles that never apply, because nothing tracks presses on it. Put it inside a <btn>, or give it or an element around it an ontap, onlongpress, or ondrag handler.",
                 element: node.name,
-                attribute: "pressed"
+                attribute: "pressed",
+                location: node.location
             )
         }
     #endif

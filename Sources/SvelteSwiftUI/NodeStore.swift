@@ -168,6 +168,8 @@ final class Node: Identifiable {
         hostsInspector = name == "screen"
     }
 
+    var location: String? { attributes["data-loc"]?.string }
+
     static let attachments: Set<String> = Presenting.names.union([
         "background", "contextmenu", "maskview", "overlay", "safeareainset", "searchable", "swipeactions", "toolbar",
         "toolbarspacer",
@@ -554,7 +556,8 @@ final class NodeStore {
             for node in Presenting.waiting(presented) {
                 diagnostics.report(
                     "A <\(node.name)> is waiting because its <\(hostName)> already shows one, and SwiftUI shows one <\(node.name)> at a time from the same <\(hostName)>. It appears when the first one closes. To show both at once, put the second inside the first.",
-                    element: node.name
+                    element: node.name,
+                    location: node.location
                 )
             }
         }

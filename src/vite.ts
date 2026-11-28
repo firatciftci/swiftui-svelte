@@ -3,6 +3,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { build } from "vite";
+import { stampLocations } from "./locations.ts";
 import {
   appAliases,
   loadLibrary,
@@ -30,13 +31,14 @@ export function swiftui({
   let root = process.cwd();
   let entryId = "";
   let isSourceless = false;
+  let isDevelopment = false;
   const version = String(Date.now());
   const source = (): string => path.resolve(root, path.dirname(entry));
   return {
     name: "swiftui-svelte",
     api: { sync: () => syncRoutes(root, source()) },
     config: (user, { mode }) => {
-      const isDevelopment = mode === "development" || user.build?.watch != null;
+      isDevelopment = mode === "development" || user.build?.watch != null;
       isSourceless = !isDevelopment && user.build?.sourcemap == null;
       return {
         publicDir: false,
@@ -72,13 +74,22 @@ export function swiftui({
         },
       };
     },
-    transform(code, id) {
-      if (id.split("?", 1)[0] === entryId)
-        return {
-          code: `import "swiftui-svelte/renderer";\n${code}`,
-          map: null,
-        };
-      return fixSvelte(code, id);
+    transform: {
+      order: "pre",
+      handler(code, id) {
+        if (id.split("?", 1)[0] === entryId)
+          return {
+            code: `import "swiftui-svelte/renderer";\n${code}`,
+            map: null,
+          };
+        if (
+          isDevelopment &&
+          id.endsWith(".svelte") &&
+          !id.includes("/node_modules/")
+        )
+          return stampLocations(code, id, root);
+        return fixSvelte(code, id);
+      },
     },
     generateBundle(_options, bundle) {
       if (!isSourceless) return;

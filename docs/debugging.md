@@ -32,6 +32,8 @@ If the bundle was built with a different version of swiftui-svelte than the app'
 
 Debug builds also collect the library's warnings in a tray. When the current bundle has reported a warning, a yellow handle appears on the leading edge of the screen with the number of warnings. Tap it to read them. **Hide** folds the list back into the handle, and **Dismiss** clears the warnings until a new one comes in. Each warning is listed once per load of the bundle, and a reload starts the list over. The same warnings go to the console, as [Logging](#logging) describes. Release builds don't show the tray.
 
+In a development build, a warning about an element also says where that element is in your source, such as `src/App.svelte:12:5`. To make that possible, the `swiftui()` plugin gives every element a `data-loc` attribute in development builds. Production builds leave it out.
+
 ## Bridge statistics
 
 `stats` from `swiftui-svelte` counts the renderer's work. `live` is the number of element nodes that haven't been released yet, `commits` and `ops` count the batches and operations sent to the host, `bytes` is their total size, and `serializeMs` and `nativeMs` are the time spent encoding batches and the time spent inside the host's commit call. Read it to look for leaks and to compare performance between builds. `protocol` is the bridge protocol version the bundle was built with.

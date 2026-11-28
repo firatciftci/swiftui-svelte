@@ -211,7 +211,14 @@ function encodeAttributes(node: ElementNode, record: Array<unknown>): void {
     record.push(nameRef(name), sendable(value));
     (record[count] as number)++;
   }
-  if (isDevelopment) checkFonts(node);
+  if (!isDevelopment) return;
+  checkElement(node.name, locationOf(node));
+  checkFonts(node);
+}
+
+function locationOf(element: ElementNode): string | undefined {
+  const location = element.attributes?.["data-loc"];
+  return typeof location === "string" ? location : undefined;
 }
 
 function checkFonts(element: ElementNode): void {
@@ -220,6 +227,7 @@ function checkFonts(element: ElementNode): void {
     effective(element, "font"),
     effective(element, "size"),
     effective(element, "fontname"),
+    locationOf(element),
   );
 }
 
@@ -695,26 +703,29 @@ function classInputs(value: HostEnvironment): string {
   ]);
 }
 
-function reportClass(tag: string, resolution: Resolution): void {
+function reportClass(element: ElementNode, resolution: Resolution): void {
+  const tag = element.name;
+  const location = locationOf(element);
   for (const token of resolution.unmatched) {
     warnOnce(
       `class ${token}`,
       `class "${token}" isn't a Tailwind utility in this build. Add the file that uses it to tailwind({ sources }), or check the spelling.`,
-      { element: tag, attribute: "class", value: token },
+      { element: tag, attribute: "class", value: token, location },
     );
   }
   for (const token of resolution.misplaced) {
     warnOnce(
       `<${tag}> class ${token}`,
       `class "${token}" has no effect on <${tag}>.`,
-      { element: tag, attribute: "class", value: token },
+      { element: tag, attribute: "class", value: token, location },
     );
   }
 }
 
-function reportResolution(name: string, resolution: Resolution): void {
-  reportClass(name, resolution);
-  for (const key of Object.keys(resolution.attrs)) checkAttribute(name, key);
+function reportResolution(element: ElementNode, resolution: Resolution): void {
+  reportClass(element, resolution);
+  for (const key of Object.keys(resolution.attrs))
+    checkAttribute(element.name, key, locationOf(element));
 }
 
 function applyClass(element: ElementNode, value: string | null): void {
@@ -723,7 +734,7 @@ function applyClass(element: ElementNode, value: string | null): void {
       ? noClasses
       : resolveWith(element.name, value, classState(element));
   if (isDevelopment && value != null && !isMarkup(element.name))
-    reportResolution(element.name, resolution);
+    reportResolution(element, resolution);
   if (resolution.reactive)
     reactiveElements.set(element.id, new WeakRef(element));
   else reactiveElements.delete(element.id);
@@ -811,7 +822,6 @@ const renderer = createRenderer<{
     });
   },
   createElement(name) {
-    if (isDevelopment) checkElement(name);
     return track(new ElementNode(scheduler.nextId++, name));
   },
   createText(data) {
@@ -863,7 +873,8 @@ const renderer = createRenderer<{
       applyClass(element, value == null ? null : String(value));
       return;
     }
-    if (isDevelopment) checkAttribute(element.name, name);
+    if (isDevelopment && name !== "data-loc")
+      checkAttribute(element.name, name, locationOf(element));
     if (name === "container") index(element);
     setOwnAttribute(element, name, value);
     changeAttribute(element, name);

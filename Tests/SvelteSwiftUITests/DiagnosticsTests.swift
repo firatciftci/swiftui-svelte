@@ -17,6 +17,23 @@ struct DiagnosticsTests {
         #expect(reported.withLock { $0 } == [unknown, Diagnostic(element: "vstack", attribute: "paddng", message: "No paddng.")])
     }
 
+    @Test func dedupesByElementAttributeAndValueOrByMessageWithoutAnElement() {
+        let diagnostics = Diagnostics()
+        #expect(diagnostics.report("Unknown <tx>, did you mean <txt>?", element: "tx"))
+        #expect(!diagnostics.report("Unknown <tx>, shown as a red label.", element: "tx"))
+        #expect(diagnostics.report("Bad pressed.", element: "tx", attribute: "pressed"))
+        #expect(diagnostics.report("The module a replaces another."))
+        #expect(diagnostics.report("The module b replaces another."))
+        #expect(!diagnostics.report("The module b replaces another."))
+    }
+
+    @Test func readsTheSourceLocationThatDevelopmentBuildsStamp() {
+        let node = Node(id: 1, kind: .element, name: "txt", text: "")
+        #expect(node.location == nil)
+        node.attributes = ["data-loc": .string("src/App.svelte:4:3")]
+        #expect(node.location == "src/App.svelte:4:3")
+    }
+
     @Test func readsDiagnosticsFromJavaScriptAndReportsUnreadableOnes() {
         let reported = Mutex<Array<Diagnostic>>([])
         let diagnostics = Diagnostics { diagnostic, _ in reported.withLock { $0.append(diagnostic) } }

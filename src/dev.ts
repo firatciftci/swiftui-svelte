@@ -50,7 +50,12 @@ function closest(
 export function warnOnce(
   key: string,
   message: string,
-  context?: { element: string; attribute?: string; value?: string },
+  context?: {
+    element: string;
+    attribute?: string;
+    value?: string;
+    location?: string;
+  },
 ): void {
   if (warned.has(key)) return;
   warned.add(key);
@@ -61,23 +66,27 @@ export function warnOnce(
   }
 }
 
-export function checkElement(name: string): void {
+export function checkElement(name: string, location?: string): void {
   if (Object.hasOwn(elements, name) || isMarkup(name)) return;
   const suggestion = closest(name, Object.keys(elements), 1);
   if (suggestion == null) return;
   warnOnce(
     `<${name}>`,
     `There's no element named <${name}>. Did you mean <${suggestion}>? If <${name}> is a native component, register it with SvelteView(components:).`,
-    { element: name },
+    { element: name, location },
   );
 }
 
-export function checkAttribute(element: string, name: string): void {
+export function checkAttribute(
+  element: string,
+  name: string,
+  location?: string,
+): void {
   if (element === "label") {
     warnOnce(
       `<label> ${name}`,
       `<label> only holds the custom label of the element around it, so its "${name}" attribute does nothing. Put the attribute on an element inside the <label>.`,
-      { element, attribute: name },
+      { element, attribute: name, location },
     );
     return;
   }
@@ -91,7 +100,7 @@ export function checkAttribute(element: string, name: string): void {
   warnOnce(
     `<${element}> ${name}`,
     `<${element}> doesn't have an attribute named "${name}".${suggestion == null ? "" : ` Did you mean "${suggestion}"?`}`,
-    { element, attribute: name },
+    { element, attribute: name, location },
   );
 }
 
@@ -100,11 +109,12 @@ export function checkFont(
   font: unknown,
   size: unknown,
   fontname: unknown,
+  location?: string,
 ): void {
   if (font == null || size == null || fontname != null) return;
   warnOnce(
     `<${element}> font size`,
     `<${element}> has both font and size, so it ignores font="${String(font)}" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`,
-    { element, attribute: "font", value: String(font) },
+    { element, attribute: "font", value: String(font), location },
   );
 }

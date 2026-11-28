@@ -192,6 +192,9 @@ importers:
       devalue:
         specifier: ^5.9.4
         version: 5.9.4
+      magic-string:
+        specifier: ^1.4.5
+        version: 1.4.5
       web-streams-polyfill:
         specifier: ^4.5.1
         version: 4.5.1
