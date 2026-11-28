@@ -518,7 +518,7 @@ describe("refresh", () => {
 
   it("ignores a refresh for an element that was already removed", async () => {
     await render(Refresh);
-    const id = byTestId("feed")?.id;
+    const id = byTestId("feed")?.id ?? NaN;
     await update(() => dispatch(byTestId("hide"), "click"));
     await update(() => globalThis.__svelteDispatch(id, "refresh", null, 10));
     expect(pending).toEqual([]);
@@ -527,7 +527,7 @@ describe("refresh", () => {
 
   it("ignores events for elements of an unmounted app", async () => {
     await render(Refresh);
-    const id = byTestId("feed")?.id;
+    const id = byTestId("feed")?.id ?? NaN;
     unmount?.();
     unmount = undefined;
     await update(() => globalThis.__svelteDispatch(id, "refresh", null, 11));
