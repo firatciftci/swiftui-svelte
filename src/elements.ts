@@ -1374,7 +1374,7 @@ declare module "svelte/elements" {
       fit?: "fit" | "fill" | "stretch" | "tile";
       /** Runs when the image has loaded and appears. */
       onload?: () => void;
-      /** Runs when the image can't be loaded, with the error message. */
+      /** Runs when the image can't be loaded, with the error message. An empty `src`, or one that isn't a full URL, runs it too. */
       onerror?: (message: string) => void;
     };
     /** An `Image`: shows an image from the asset catalog or the app bundle. */

@@ -1528,11 +1528,12 @@ An `AsyncImage`: loads an image from `src` and shows it in the element's frame.
 | `src`     | `string`                                 | The URL of the image to load.                                                                                                                                  |
 | `fit`     | `"fit" \| "fill" \| "stretch" \| "tile"` | Scales the image: `fit` keeps its proportions inside the frame, `fill` covers the frame, `stretch` fills it exactly, and `tile` repeats it. Defaults to `fit`. |
 | `onload`  | `() => void`                             | Runs when the image has loaded and appears.                                                                                                                    |
-| `onerror` | `(message: string) => void`              | Runs when the image can't be loaded, with the error message.                                                                                                   |
+| `onerror` | `(message: string) => void`              | Runs when the image can't be loaded, with the error message. An empty `src`, or one that isn't a full URL, runs it too.                                        |
 
 ```svelte
 <script lang="ts">
   let status = $state("Loading");
+  let errors = $state(0);
 </script>
 
 <vstack spacing={8}>
@@ -1546,6 +1547,18 @@ An `AsyncImage`: loads an image from `src` and shows it in the element's frame.
     onerror={(message) => (status = message)}
   />
   <txt font="caption" color="secondary">{status}</txt>
+  <asyncimage src="" width={60} height={60} onerror={() => (errors += 1)}>
+    <failure>
+      <sfsymbol
+        testid="image-failure"
+        name="photo.badge.exclamationmark"
+        label="No image"
+      />
+    </failure>
+  </asyncimage>
+  <txt testid="image-errors" font="caption" color="secondary"
+    >Errors: {errors}</txt
+  >
 </vstack>
 ```
 

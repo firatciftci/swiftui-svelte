@@ -51,4 +51,12 @@ struct ImageTests {
         #expect(SymbolAnimation("spin") == nil)
         #expect(SymbolAnimation(nil) == nil)
     }
+
+    @Test func treatsAnEmptyOrRelativeImageSourceAsInvalid() {
+        #expect(RemoteImage.url(.string("https://example.com/photo.png")) != nil)
+        #expect(RemoteImage.url(.string("")) == nil)
+        #expect(RemoteImage.url(.string("photo.png")) == nil)
+        #expect(RemoteImage.url(.number(1)) == nil)
+        #expect(RemoteImage.url(nil) == nil)
+    }
 }

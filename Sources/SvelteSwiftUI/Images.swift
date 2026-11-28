@@ -220,34 +220,48 @@ struct RemoteImage: View {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
 
+    static let invalidSource = "The image's src is empty or isn't a full URL, such as https://example.com/photo.png."
+
+    static func url(_ src: JSONValue?) -> URL? {
+        guard let text = src?.string, let url = URL(string: text), url.scheme?.isEmpty == false else { return nil }
+        return url
+    }
+
     var body: some View {
         let attributes = node.attributes
-        let url = URL(string: attributes["src"]?.string ?? "")
-        let curve = MotionCurve(attributes["animation"]).map(\.animation)
-        AsyncImage(url: url, transaction: Transaction(animation: curve)) { phase in
-            switch phase {
-            case let .success(image):
-                ImageElement.sized(image, fit: attributes["fit"]?.string ?? "fit")
-                    .onAppear { runtime.dispatch(node.id, "load", waits: false) }
-            case let .failure(error):
-                Group {
-                    if let failure = node.attachment("failure") {
-                        Children(node: failure)
+        if let url = Self.url(attributes["src"]) {
+            let curve = MotionCurve(attributes["animation"]).map(\.animation)
+            AsyncImage(url: url, transaction: Transaction(animation: curve)) { phase in
+                switch phase {
+                case let .success(image):
+                    ImageElement.sized(image, fit: attributes["fit"]?.string ?? "fit")
+                        .onAppear { runtime.dispatch(node.id, "load", waits: false) }
+                case let .failure(error):
+                    failure(error.localizedDescription)
+                case .empty:
+                    if let placeholder = node.attachment("placeholder") {
+                        Children(node: placeholder)
                     } else {
-                        Image(systemName: "photo").foregroundStyle(.tertiary)
+                        ProgressView()
                     }
-                }
-                .onAppear { runtime.dispatch(node.id, "error", error.localizedDescription, waits: false) }
-            case .empty:
-                if let placeholder = node.attachment("placeholder") {
-                    Children(node: placeholder)
-                } else {
+                @unknown default:
                     ProgressView()
                 }
-            @unknown default:
-                ProgressView()
+            }
+        } else {
+            failure(Self.invalidSource).id(attributes["src"])
+        }
+    }
+
+    private func failure(_ message: String) -> some View {
+        Group {
+            if let failure = node.attachment("failure") {
+                Children(node: failure)
+            } else {
+                Image(systemName: "photo").foregroundStyle(.tertiary)
             }
         }
+        .onAppear { runtime.dispatch(node.id, "error", message, waits: false) }
     }
 }
 
