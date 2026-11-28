@@ -1956,6 +1956,8 @@ A `TextField`: an editable text field, or a number field when `format` is set.
 <script lang="ts">
   let email = $state("");
   let bio = $state("");
+  let saved = $state("");
+  let code = $state("");
   let price: number | null = $state(9.99);
 </script>
 
@@ -1971,6 +1973,12 @@ A `TextField`: an editable text field, or a number field when `format` is set.
     oninput={(value) => (email = value)}
   />
   <textfield
+    placeholder="Code"
+    autocapitalize="characters"
+    value={code}
+    oninput={(value) => (code = value.toUpperCase())}
+  />
+  <textfield
     placeholder="Styled placeholder"
     placeholdercolor="red"
     value=""
@@ -1980,10 +1988,12 @@ A `TextField`: an editable text field, or a number field when `format` is set.
     placeholder="Bio"
     axis="vertical"
     lines={[2, 4]}
-    debounce={300}
+    debounce={1000}
     value={bio}
     oninput={(value) => (bio = value)}
   />
+  <btn onclick={() => (saved = bio)}>Save bio</btn>
+  <txt>Saved bio: {saved}</txt>
   <textfield
     format={{ currency: "USD" }}
     value={price}
