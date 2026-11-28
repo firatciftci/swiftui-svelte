@@ -7,11 +7,11 @@ struct EnvironmentTests {
     @Test func reportsTheSystemColorSchemeSeparatelyFromTheAppearance() {
         var snapshot = EnvironmentSnapshot(colorScheme: .dark, systemColorScheme: .light)
         let dictionary = snapshot.dictionary
-        #expect(dictionary["colorScheme"] as? String == "dark")
-        #expect(dictionary["systemColorScheme"] as? String == "light")
-        #expect(dictionary["liquidGlass"] as? Bool == EnvironmentSnapshot.supportsLiquidGlass)
+        #expect(dictionary["colorScheme"] == "dark")
+        #expect(dictionary["systemColorScheme"] == "light")
+        #expect(dictionary["liquidGlass"] == .bool(EnvironmentSnapshot.supportsLiquidGlass))
         snapshot.systemColorScheme = .dark
-        #expect(snapshot.dictionary["systemColorScheme"] as? String == "dark")
+        #expect(snapshot.dictionary["systemColorScheme"] == "dark")
     }
 
     #if canImport(UIKit)
@@ -40,33 +40,30 @@ struct EnvironmentTests {
         snapshot.pixelRatio = 3
         snapshot.fontScale = 1.5
         let dictionary = snapshot.dictionary
-        #expect(dictionary["viewportHeight"] as? Double == 844)
-        #expect(dictionary["pixelRatio"] as? Double == 3)
-        #expect(dictionary["fontScale"] as? Double == 1.5)
-        #expect(dictionary["colorScheme"] as? String == "dark")
-        #expect(dictionary["increaseContrast"] as? Bool == true)
-        #expect(dictionary["reduceMotion"] as? Bool == false)
-        #expect(dictionary["dynamicTypeSize"] as? String == "accessibility3")
-        #expect(dictionary["locale"] as? String == "ar-EG")
-        #expect(dictionary["timeZone"] as? String == "Africa/Cairo")
-        #expect(dictionary["layoutDirection"] as? String == "rightToLeft")
-        #expect(dictionary["horizontalSizeClass"] as? String == "regular")
-        #expect(dictionary["verticalSizeClass"] is NSNull)
-        #expect(dictionary["scenePhase"] as? String == "background")
-        #expect(dictionary["platform"] as? String == EnvironmentSnapshot.platformName)
-        #expect(dictionary["idiom"] as? String == EnvironmentSnapshot.idiomName)
-        #expect(dictionary["keyboardHeight"] as? Double == 336)
-        let insets = try #require(dictionary["safeAreaInsets"] as? [String: Double])
-        #expect(insets == ["top": 59, "leading": 0, "bottom": 34.33, "trailing": 0])
-        #expect(JSONSerialization.isValidJSONObject(dictionary))
+        #expect(dictionary["viewportHeight"] == 844)
+        #expect(dictionary["pixelRatio"] == 3)
+        #expect(dictionary["fontScale"] == 1.5)
+        #expect(dictionary["colorScheme"] == "dark")
+        #expect(dictionary["increaseContrast"] == true)
+        #expect(dictionary["reduceMotion"] == false)
+        #expect(dictionary["dynamicTypeSize"] == "accessibility3")
+        #expect(dictionary["locale"] == "ar-EG")
+        #expect(dictionary["timeZone"] == "Africa/Cairo")
+        #expect(dictionary["layoutDirection"] == "rightToLeft")
+        #expect(dictionary["horizontalSizeClass"] == "regular")
+        #expect(dictionary["verticalSizeClass"] == .null)
+        #expect(dictionary["scenePhase"] == "background")
+        #expect(dictionary["platform"] == .string(EnvironmentSnapshot.platformName))
+        #expect(dictionary["idiom"] == .string(EnvironmentSnapshot.idiomName))
+        #expect(dictionary["keyboardHeight"] == 336)
+        #expect(dictionary["safeAreaInsets"] == ["top": 59, "leading": 0, "bottom": 34.33, "trailing": 0])
     }
 
     @Test func startsWithTheDeviceLocaleTimeZoneAndDirection() {
         let current = HostEnvironment.current
-        #expect(current["locale"] as? String == Locale.current.identifier(.bcp47))
-        #expect(current["timeZone"] as? String == TimeZone.current.identifier)
-        #expect(current["layoutDirection"] as? String == "leftToRight")
-        #expect(JSONSerialization.isValidJSONObject(current))
+        #expect(current["locale"] == .string(Locale.current.identifier(.bcp47)))
+        #expect(current["timeZone"] == .string(TimeZone.current.identifier))
+        #expect(current["layoutDirection"] == "leftToRight")
     }
 
     @Test func readsLayoutDirectionsLikeHTML() {

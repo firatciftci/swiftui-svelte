@@ -9,6 +9,7 @@ declare var __svelteReply: (
 declare function __nativeGC(): void;
 declare function __nativeRequestFrame(): void;
 declare var __svelteFrame: (time: number) => void;
+declare function __nativeWatchFrames(milliseconds: number): void;
 declare function __nativeStats(): {
   nodes: number;
   maxFrameGapMs: number;

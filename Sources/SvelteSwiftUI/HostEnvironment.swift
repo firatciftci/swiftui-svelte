@@ -7,7 +7,7 @@ import SwiftUI
 #endif
 
 enum HostEnvironment {
-    static var current: [String: Any] {
+    static var current: [String: JSONValue] {
         let version = ProcessInfo.processInfo.operatingSystemVersion
         let system = "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
         #if os(iOS) || os(visionOS)
@@ -41,9 +41,9 @@ enum HostEnvironment {
         snapshot.timeZone = .current
         snapshot.layoutDirection = localization.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight
         return snapshot.dictionary.merging([
-            "languages": languages,
+            "languages": .array(languages.map(JSONValue.string)),
             "onLine": true,
-            "userAgent": "swiftui-svelte (\(platform) \(system))",
+            "userAgent": .string("swiftui-svelte (\(platform) \(system))"),
         ]) { _, host in host }
     }
 }
@@ -84,40 +84,40 @@ struct EnvironmentSnapshot: Equatable {
         return false
     }
 
-    var dictionary: [String: Any] {
+    var dictionary: [String: JSONValue] {
         [
             "colorScheme": colorScheme == .dark ? "dark" : "light",
             "systemColorScheme": systemColorScheme == .dark ? "dark" : "light",
-            "liquidGlass": Self.supportsLiquidGlass,
-            "increaseContrast": increaseContrast,
-            "reduceMotion": reduceMotion,
-            "reduceTransparency": reduceTransparency,
-            "voiceOver": accessibility.voiceOver,
-            "switchControl": accessibility.switchControl,
-            "differentiateWithoutColor": accessibility.differentiateWithoutColor,
-            "invertColors": accessibility.invertColors,
-            "boldText": accessibility.boldText,
-            "buttonShapes": accessibility.buttonShapes,
-            "dynamicTypeSize": Self.name(of: dynamicTypeSize),
-            "locale": locale.identifier(.bcp47),
-            "timeZone": timeZone.identifier,
+            "liquidGlass": .bool(Self.supportsLiquidGlass),
+            "increaseContrast": .bool(increaseContrast),
+            "reduceMotion": .bool(reduceMotion),
+            "reduceTransparency": .bool(reduceTransparency),
+            "voiceOver": .bool(accessibility.voiceOver),
+            "switchControl": .bool(accessibility.switchControl),
+            "differentiateWithoutColor": .bool(accessibility.differentiateWithoutColor),
+            "invertColors": .bool(accessibility.invertColors),
+            "boldText": .bool(accessibility.boldText),
+            "buttonShapes": .bool(accessibility.buttonShapes),
+            "dynamicTypeSize": .string(Self.name(of: dynamicTypeSize)),
+            "locale": .string(locale.identifier(.bcp47)),
+            "timeZone": .string(timeZone.identifier),
             "layoutDirection": layoutDirection == .rightToLeft ? "rightToLeft" : "leftToRight",
-            "horizontalSizeClass": horizontalSizeClass ?? NSNull(),
-            "verticalSizeClass": verticalSizeClass ?? NSNull(),
-            "scenePhase": Self.name(of: scenePhase),
+            "horizontalSizeClass": horizontalSizeClass.map(JSONValue.string) ?? .null,
+            "verticalSizeClass": verticalSizeClass.map(JSONValue.string) ?? .null,
+            "scenePhase": .string(Self.name(of: scenePhase)),
             "safeAreaInsets": [
-                "top": Self.points(safeAreaInsets.top),
-                "leading": Self.points(safeAreaInsets.leading),
-                "bottom": Self.points(safeAreaInsets.bottom),
-                "trailing": Self.points(safeAreaInsets.trailing),
+                "top": .number(Self.points(safeAreaInsets.top)),
+                "leading": .number(Self.points(safeAreaInsets.leading)),
+                "bottom": .number(Self.points(safeAreaInsets.bottom)),
+                "trailing": .number(Self.points(safeAreaInsets.trailing)),
             ],
-            "keyboardHeight": Self.points(keyboardHeight),
-            "viewportWidth": Self.points(viewportWidth),
-            "viewportHeight": Self.points(viewportHeight),
-            "pixelRatio": Double(pixelRatio),
-            "fontScale": Double(fontScale),
-            "platform": Self.platformName,
-            "idiom": Self.idiomName,
+            "keyboardHeight": .number(Self.points(keyboardHeight)),
+            "viewportWidth": .number(Self.points(viewportWidth)),
+            "viewportHeight": .number(Self.points(viewportHeight)),
+            "pixelRatio": JSONValue(pixelRatio),
+            "fontScale": JSONValue(fontScale),
+            "platform": .string(Self.platformName),
+            "idiom": .string(Self.idiomName),
         ]
     }
 

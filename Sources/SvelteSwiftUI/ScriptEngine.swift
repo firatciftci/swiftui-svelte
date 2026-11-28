@@ -26,7 +26,7 @@ actor ScriptEngine {
         case loaded(BundleIdentity?)
         case failedToLoad(ScriptError)
         case requestFrame
-        case watchFrames
+        case watchFrames(Double)
     }
 
     struct Stats: Sendable {
@@ -193,9 +193,11 @@ actor ScriptEngine {
         let collectGarbage: @convention(block) () -> Void = { [weak context] in
             if let context { JSGarbageCollect(context.jsGlobalContextRef) }
         }
+        let watchFrames: @convention(block) (Double) -> Void = { [weak self] milliseconds in
+            self?.post(.watchFrames(milliseconds))
+        }
         let stats: @convention(block) () -> [String: Double] = { [weak self] in
             guard let self else { return [:] }
-            post(.watchFrames)
             return self.stats.withLock { stats in
                 defer {
                     stats.maxFrameGap = 0
@@ -230,6 +232,7 @@ actor ScriptEngine {
             "__nativeRequestFrame": requestFrame,
             "__nativeAction": action,
             "__nativeStats": stats,
+            "__nativeWatchFrames": watchFrames,
             "__nativeStorageLoad": loadStorage,
             "__nativeStorageSave": saveStorage,
             "__nativeEnvironment": environment,

@@ -263,9 +263,13 @@ struct RuntimeTests {
         try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(2) }
     }
 
-    @Test func keepsTheDisplayLinkRunningWhileFrameStatsAreRead() async throws {
+    @Test func watchesFrameGapsOnlyWhenAsked() async throws {
         let runtime = try runtime(mountScript)
         runtime.evaluate { _ = $0.evaluateScript("__nativeStats()") }
+        runtime.settle()
+        #expect(!runtime.frames.isRunning)
+        runtime.evaluate { _ = $0.evaluateScript("__nativeWatchFrames(1000)") }
+        runtime.settle()
         #expect(runtime.frames.isRunning)
         for _ in 0..<30 {
             pumpRunLoop()

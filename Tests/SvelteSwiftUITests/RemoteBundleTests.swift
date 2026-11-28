@@ -34,8 +34,8 @@ struct RemoteBundleTests {
         #expect(runtime.error == nil)
     }
 
-    @Test(arguments: ["/nohead/app.js", "/plain/app.js"])
-    func reloadsWhenTheServerRejectsHeadRequests(path: String) async throws {
+    @Test(arguments: ["/etag/app.js", "/dated/app.js", "/plain/app.js"])
+    func pollsWithOneConditionalRequestAndReloadsWhenTheBundleChanges(path: String) async throws {
         let server = try TestServer()
         let port = try await server.start()
         defer { server.stop() }
@@ -45,8 +45,16 @@ struct RemoteBundleTests {
         runtime.start()
         try await eventually { text(runtime) == "first" }
         let generation = runtime.generation
+        let before = server.requests.count
         try await Task.sleep(for: .seconds(1.2))
         #expect(runtime.generation == generation)
+        let polls = server.requests.dropFirst(before).filter {
+            $0.hasPrefix("HEAD") || $0 == "GET \(path)" || $0 == "GET \(path) conditional"
+        }
+        #expect(polls.count >= 1)
+        #expect(polls.count <= 3)
+        let expected = path.hasPrefix("/plain/") ? "GET \(path)" : "GET \(path) conditional"
+        #expect(polls.allSatisfy { $0 == expected }, "\(polls)")
         server.serve(script("second"), at: path)
         try await eventually { text(runtime) == "second" }
         #expect(runtime.error == nil)

@@ -29,6 +29,7 @@
     status = name;
     await wait(400);
     __nativeStats();
+    __nativeWatchFrames(2000);
     const before = { ...stats };
     const start = __nativeNow();
     flushSync(change);
@@ -52,6 +53,7 @@
     status = "typing";
     await wait(400);
     __nativeStats();
+    __nativeWatchFrames(2000);
     const latencies: Array<number> = [];
     for (const character of "swiftui-svelte") {
       const start = __nativeNow();

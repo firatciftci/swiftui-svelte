@@ -39,13 +39,7 @@ nonisolated enum BundleLoader {
 
     static func version(of source: URL, after previous: String?) async -> String? {
         guard !source.isFileURL else { return fileVersion(of: source) }
-        if let (_, response) = try? await fetch(source, method: "HEAD"), response.statusCode == 200,
-            let version = validator(of: response)
-        {
-            return version
-        }
-        let headers = previous.map { ["If-None-Match": $0] } ?? [:]
-        guard let (data, response) = try? await fetch(source, headers: headers) else { return nil }
+        guard let (data, response) = try? await fetch(source, headers: conditions(after: previous)) else { return nil }
         switch response.statusCode {
         case 304: return previous
         case 200: return version(of: response, body: data)
@@ -58,6 +52,13 @@ nonisolated enum BundleLoader {
         return date.map { String($0.timeIntervalSince1970) }
     }
 
+    private static func conditions(after previous: String?) -> [String: String] {
+        guard let previous else { return [:] }
+        if previous.hasPrefix("\"") || previous.hasPrefix("W/\"") { return ["If-None-Match": previous] }
+        if previous.hasSuffix(" GMT") { return ["If-Modified-Since": previous] }
+        return [:]
+    }
+
     private static func validator(of response: HTTPURLResponse) -> String? {
         response.value(forHTTPHeaderField: "ETag") ?? response.value(forHTTPHeaderField: "Last-Modified")
     }
@@ -66,13 +67,8 @@ nonisolated enum BundleLoader {
         validator(of: response) ?? SHA256.hash(data: body).map { String(format: "%02x", $0) }.joined()
     }
 
-    private static func fetch(
-        _ url: URL, method: String = "GET", headers: [String: String] = [:]
-    ) async throws -> (
-        Data, HTTPURLResponse
-    ) {
+    private static func fetch(_ url: URL, headers: [String: String] = [:]) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData, timeoutInterval: 10)
-        request.httpMethod = method
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let response = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }

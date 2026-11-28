@@ -60,6 +60,21 @@ struct WebAPITests {
         #expect(evaluate(runtime, "(() => { const a = new Uint8Array(0); __nativeRandomFill(a); return a.length; })()") == "0")
     }
 
+    @Test func sendsEachEnvironmentFieldWhenItsJSONValueChanges() throws {
+        let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
+        let runtime = SvelteRuntime(source: url)
+        runtime.start()
+        _ = evaluate(runtime, "globalThis.sent = []; globalThis.__svelteEnvironment = (json) => sent.push(json); ''")
+        runtime.updateEnvironment(["probe": 1, "insets": ["top": 1]])
+        runtime.updateEnvironment(["probe": 1, "insets": ["top": 1]])
+        runtime.updateEnvironment(["probe": true, "insets": ["top": 1]])
+        runtime.updateEnvironment(["probe": true, "insets": ["top": 2]])
+        runtime.settle()
+        #expect(
+            evaluate(runtime, "JSON.stringify(sent)")
+                == #"["{\"insets\":{\"top\":1},\"probe\":1}","{\"probe\":true}","{\"insets\":{\"top\":2}}"]"#)
+    }
+
     @Test func forwardsHostEnvironmentChangesToJavaScript() throws {
         let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
         let runtime = SvelteRuntime(source: url)
@@ -151,12 +166,19 @@ struct WebAPITests {
     }
 
     @Test func namesURLErrorsSoAppsCanTellOfflineFromOtherFailures() {
-        let refused = NetworkClient.failure(URLError(.cannotConnectToHost))
-        #expect(refused["name"] as? String == "cannotConnectToHost")
-        #expect(refused["code"] as? Int == URLError.cannotConnectToHost.rawValue)
-        #expect(NetworkClient.failure(URLError(.notConnectedToInternet))["name"] as? String == "notConnectedToInternet")
-        #expect(NetworkClient.failure(URLError(.dnsLookupFailed))["name"] as? String == "dnsLookupFailed")
-        #expect(NetworkClient.failure(URLError(.badURL))["name"] as? String == "unknown")
-        #expect(NetworkClient.failure(CocoaError(.fileNoSuchFile))["name"] as? String == "unknown")
+        func name(_ error: any Error) -> JSONValue? {
+            guard case let .object(fields) = NetworkClient.failure(error) else { return nil }
+            return fields["name"]
+        }
+        guard case let .object(refused) = NetworkClient.failure(URLError(.cannotConnectToHost)) else {
+            Issue.record("The failure isn't an object")
+            return
+        }
+        #expect(refused["name"] == "cannotConnectToHost")
+        #expect(refused["code"] == .number(Double(URLError.cannotConnectToHost.rawValue)))
+        #expect(name(URLError(.notConnectedToInternet)) == "notConnectedToInternet")
+        #expect(name(URLError(.dnsLookupFailed)) == "dnsLookupFailed")
+        #expect(name(URLError(.badURL)) == "unknown")
+        #expect(name(CocoaError(.fileNoSuchFile)) == "unknown")
     }
 }

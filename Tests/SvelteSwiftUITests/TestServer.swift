@@ -9,8 +9,10 @@ nonisolated final class TestServer: @unchecked Sendable {
     private var isStarted = false
     private var files: [String: String] = [:]
     private var sockets = 0
+    private var log: Array<String> = []
 
     var openSockets: Int { queue.sync { sockets } }
+    var requests: Array<String> { queue.sync { log } }
 
     init() throws {
         let parameters = NWParameters.tcp
@@ -38,7 +40,8 @@ nonisolated final class TestServer: @unchecked Sendable {
                 connections.append(connection)
                 ServerConnection(
                     connection: connection, queue: queue, files: { [weak self] in self?.files[$0] },
-                    onSocket: { [weak self] change in self?.sockets += change }
+                    onSocket: { [weak self] change in self?.sockets += change },
+                    onRequest: { [weak self] request in self?.log.append(request) }
                 ).start()
             }
             listener.start(queue: queue)
@@ -63,6 +66,7 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
     private let queue: DispatchQueue
     private let files: (String) -> String?
     private let onSocket: (Int) -> Void
+    private let onRequest: (String) -> Void
     private var buffer = Data()
     private var isWebSocket = false
     private var message = Data()
@@ -71,12 +75,22 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
 
     init(
         connection: NWConnection, queue: DispatchQueue, files: @escaping (String) -> String?,
-        onSocket: @escaping (Int) -> Void
+        onSocket: @escaping (Int) -> Void, onRequest: @escaping (String) -> Void
     ) {
         self.connection = connection
         self.queue = queue
         self.files = files
         self.onSocket = onSocket
+        self.onRequest = onRequest
+    }
+
+    private static func httpDate(_ body: Data) -> String {
+        var seconds: UInt32 = 0
+        for byte in SHA256.hash(data: body).prefix(4) { seconds = seconds << 8 | UInt32(byte) }
+        return Date(timeIntervalSince1970: Double(seconds)).formatted(
+            .verbatim(
+                "\(weekday: .abbreviated), \(day: .twoDigits) \(month: .abbreviated) \(year: .defaultDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits):\(second: .twoDigits) GMT",
+                locale: Locale(identifier: "en_US_POSIX"), timeZone: .gmt, calendar: Calendar(identifier: .gregorian)))
     }
 
     func start() {
@@ -116,6 +130,9 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
         let bodyStart = end.upperBound
         let body = Data(buffer[bodyStart..<buffer.index(bodyStart, offsetBy: length)])
         buffer = Data(buffer[buffer.index(bodyStart, offsetBy: length)...])
+        let isConditional = headers["if-none-match"] != nil || headers["if-modified-since"] != nil
+        let path = String(requestLine[1].split(separator: "?", maxSplits: 1)[0])
+        onRequest("\(requestLine[0]) \(path)\(isConditional ? " conditional" : "")")
         route(method: String(requestLine[0]), target: String(requestLine[1]), headers: headers, body: body)
     }
 
@@ -165,12 +182,16 @@ nonisolated private final class ServerConnection: @unchecked Sendable {
             let body = Data((files(path) ?? "").utf8)
             let tag = "\"" + SHA256.hash(data: body).prefix(8).map { String(format: "%02x", $0) }.joined() + "\""
             let isPlain = path.hasPrefix("/plain/")
-            if method == "HEAD", isPlain || path.hasPrefix("/nohead/") {
+            let isDated = path.hasPrefix("/dated/")
+            let modified = Self.httpDate(body)
+            if method == "HEAD", isPlain {
                 respond(405, [:], Data())
-            } else if !isPlain, headers["if-none-match"] == tag {
+            } else if isDated, headers["if-modified-since"] == modified {
+                respond(304, ["last-modified": modified], Data())
+            } else if !isPlain, !isDated, headers["if-none-match"] == tag {
                 respond(304, ["etag": tag], Data())
             } else {
-                let validators = isPlain ? [:] : ["etag": tag]
+                let validators = isPlain ? [:] : isDated ? ["last-modified": modified] : ["etag": tag]
                 respond(200, validators.merging(["content-type": "text/javascript"]) { $1 }, body, sendsBody: method != "HEAD")
             }
         default:

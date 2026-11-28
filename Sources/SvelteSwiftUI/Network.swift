@@ -110,10 +110,10 @@ nonisolated final class NetworkClient {
         }
     }
 
-    static func failure(_ error: any Error) -> [String: Any] {
+    static func failure(_ error: any Error) -> JSONValue {
         let nsError = error as NSError
         guard nsError.domain == NSURLErrorDomain else {
-            return ["message": nsError.localizedDescription, "code": nsError.code, "name": "unknown"]
+            return ["message": .string(nsError.localizedDescription), "code": .number(Double(nsError.code)), "name": "unknown"]
         }
         let name =
             switch URLError.Code(rawValue: nsError.code) {
@@ -126,7 +126,7 @@ nonisolated final class NetworkClient {
             case .cancelled: "cancelled"
             default: "unknown"
             }
-        return ["message": nsError.localizedDescription, "code": nsError.code, "name": name]
+        return ["message": .string(nsError.localizedDescription), "code": .number(Double(nsError.code)), "name": .string(name)]
     }
 
     func cancelFetch(id: Int) {
@@ -204,12 +204,9 @@ nonisolated final class NetworkClient {
     func didReceive(_ response: URLResponse, task: URLSessionTask) {
         guard let fetch = fetches[task.taskIdentifier] else { return }
         if fetch.isOpaqueRedirect {
-            let meta: [String: Any] = [
-                "status": 0, "type": "opaqueredirect", "url": task.originalRequest?.url?.absoluteString ?? "",
-                "redirected": false, "headers": Array<Array<String>>(),
-            ]
-            guard let data = try? JSONSerialization.data(withJSONObject: meta) else { return }
-            fetch.onResponse.call(withArguments: [String(bytes: data, encoding: .utf8) ?? "{}"])
+            let meta = ResponseMeta(
+                status: 0, type: "opaqueredirect", url: task.originalRequest?.url?.absoluteString ?? "", redirected: false, headers: [])
+            fetch.onResponse.call(withArguments: [meta.json])
             return
         }
         var headers: Array<Array<String>> = []
@@ -228,14 +225,10 @@ nonisolated final class NetworkClient {
                 headers.append(["content-length", String(response.expectedContentLength)])
             }
         }
-        let meta: [String: Any] = [
-            "status": status,
-            "url": response.url?.absoluteString ?? task.originalRequest?.url?.absoluteString ?? "",
-            "redirected": fetch.redirected,
-            "headers": headers,
-        ]
-        guard let data = try? JSONSerialization.data(withJSONObject: meta) else { return }
-        fetch.onResponse.call(withArguments: [String(bytes: data, encoding: .utf8) ?? "{}"])
+        let meta = ResponseMeta(
+            status: status, type: nil, url: response.url?.absoluteString ?? task.originalRequest?.url?.absoluteString ?? "",
+            redirected: fetch.redirected, headers: headers)
+        fetch.onResponse.call(withArguments: [meta.json])
     }
 
     func didReceive(_ data: Data, task: URLSessionTask) {
@@ -268,7 +261,7 @@ nonisolated final class NetworkClient {
     func didComplete(task: URLSessionTask, error: (any Error)?) {
         if let fetch = fetches.removeValue(forKey: task.taskIdentifier) {
             fetchTasks[fetch.id] = nil
-            fetch.onEnd.call(withArguments: [error.map { Self.failure($0) as Any } ?? NSNull()])
+            fetch.onEnd.call(withArguments: [error.map { Self.failure($0).object } ?? NSNull()])
             return
         }
         guard let id = socketIDs.removeValue(forKey: task.taskIdentifier), var socket = sockets[id] else { return }
@@ -342,5 +335,17 @@ nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?
     ) {
         engine?.async { $0.network.didClose(task: webSocketTask, code: closeCode, reason: reason) }
+    }
+}
+
+nonisolated private struct ResponseMeta: Encodable {
+    let status: Int
+    let type: String?
+    let url: String
+    let redirected: Bool
+    let headers: Array<Array<String>>
+
+    var json: String {
+        (try? BridgeJSON.encoder().encode(self)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
     }
 }

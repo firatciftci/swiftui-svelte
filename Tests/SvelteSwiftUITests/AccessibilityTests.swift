@@ -33,9 +33,9 @@ struct AccessibilityTests {
         var snapshot = EnvironmentSnapshot()
         snapshot.accessibility = AccessibilitySettings(voiceOver: true, boldText: true)
         let dictionary = snapshot.dictionary
-        #expect(dictionary["voiceOver"] as? Bool == true)
-        #expect(dictionary["boldText"] as? Bool == true)
-        #expect(dictionary["switchControl"] as? Bool == false)
-        #expect(dictionary["buttonShapes"] as? Bool == false)
+        #expect(dictionary["voiceOver"] == true)
+        #expect(dictionary["boldText"] == true)
+        #expect(dictionary["switchControl"] == false)
+        #expect(dictionary["buttonShapes"] == false)
     }
 }

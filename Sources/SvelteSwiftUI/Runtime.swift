@@ -140,7 +140,7 @@ public final class SvelteRuntime {
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             let isOnline = path.status == .satisfied
-            Task { @MainActor in self?.updateEnvironment(["onLine": isOnline]) }
+            Task { @MainActor in self?.updateEnvironment(["onLine": .bool(isOnline)]) }
         }
         monitor.start(queue: .main)
         pathMonitor = monitor
@@ -162,6 +162,7 @@ public final class SvelteRuntime {
             var seen = initial
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
+                if seen == nil { seen = await self?.loadedVersion }
                 guard let version = await BundleLoader.version(of: source, after: seen), version != seen else { continue }
                 seen = version
                 await self?.reload(ifNewerThan: version)
@@ -238,8 +239,8 @@ public final class SvelteRuntime {
             case .requestFrame where !isStopped:
                 isFrameRequested = true
                 frames.resume()
-            case .watchFrames:
-                watchesFramesUntil = CACurrentMediaTime() + 2
+            case let .watchFrames(milliseconds):
+                watchesFramesUntil = max(watchesFramesUntil, CACurrentMediaTime() + min(max(milliseconds, 0), 60_000) / 1000)
                 frames.resume()
             case let .error(error): report(error)
             case let .loaded(identity):
@@ -560,9 +561,9 @@ extension SvelteRuntime {
         call("__svelteAppEvent", ["openurl", .string(url.absoluteString)], waits: false)
     }
 
-    func updateEnvironment(_ changes: [String: Any]) {
-        var changed: [String: Any] = [:]
-        for (key, value) in changes where !((environment[key] as? NSObject)?.isEqual(value) ?? false) {
+    func updateEnvironment(_ changes: [String: JSONValue]) {
+        var changed: [String: JSONValue] = [:]
+        for (key, value) in changes where environment[key] != value {
             environment[key] = value
             changed[key] = value
         }
@@ -570,8 +571,8 @@ extension SvelteRuntime {
         call("__svelteEnvironment", [.string(Self.json(changed))], waits: false)
     }
 
-    private static func json(_ value: Any) -> String {
-        guard let data = try? JSONSerialization.data(withJSONObject: value, options: .sortedKeys) else { return "{}" }
+    private static func json(_ value: some Encodable) -> String {
+        guard let data = try? BridgeJSON.encoder().encode(value) else { return "{}" }
         return String(bytes: data, encoding: .utf8) ?? "{}"
     }
 
