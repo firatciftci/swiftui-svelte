@@ -129,7 +129,7 @@ struct ButtonElement: View {
         let attributes = node.attributes
         styled(
             Button(role: Inputs.role(attributes["role"]?.string)) {
-                runtime.dispatch(node.id, "click", waits: false)
+                runtime.dispatch(node.id, "click")
             } label: {
                 Children(node: node)
             },
@@ -206,6 +206,7 @@ struct TextInputControl: View {
     @State private var text: String
     @State private var pending: Task<Void, Never>?
     @State private var isComposing = false
+    @State private var sentBeforeChange: String?
 
     init(node: Node) {
         self.node = node
@@ -216,11 +217,13 @@ struct TextInputControl: View {
         let value = node.attributes["value"]?.string
         field
             .modifier(TextInputTraits(attributes: node.attributes))
-            .onSubmit { runtime.dispatch(node.id, "submit") }
+            .onSubmit(submit)
             .onReceive(NotificationCenter.default.publisher(for: Composition.fieldChange)) { composed($0) }
             .onReceive(NotificationCenter.default.publisher(for: Composition.editorChange)) { composed($0) }
             .onChange(of: text) { _, typed in
-                guard typed != node.attributes["value"]?.string else { return }
+                let isSent = typed == sentBeforeChange
+                sentBeforeChange = nil
+                guard !isSent, typed != node.attributes["value"]?.string else { return }
                 node.attributes["value"] = .string(typed)
                 if !isComposing { send(typed) }
             }
@@ -273,6 +276,16 @@ struct TextInputControl: View {
         let text = Text(placeholder)
         guard let color = Palette.style(node.attributes["placeholdercolor"]) else { return text }
         return text.foregroundStyle(color)
+    }
+
+    private func submit() {
+        if !isComposing, text != node.attributes["value"]?.string {
+            node.attributes["value"] = .string(text)
+            pending?.cancel()
+            runtime.deferInput(node.id, text)
+            sentBeforeChange = text
+        }
+        runtime.submit(node.id)
     }
 
     private func composed(_ notification: Notification) {
@@ -362,7 +375,7 @@ struct NumberFieldControl: View {
         }
         .modifier(FieldStyle(variant: attributes["variant"]?.string))
         .modifier(TextInputTraits(attributes: attributes, keyboard: "numbersAndPunctuation"))
-        .onSubmit { runtime.dispatch(node.id, "submit") }
+        .onSubmit { runtime.submit(node.id) }
         .modifier(Focusable(node: node))
     }
 }

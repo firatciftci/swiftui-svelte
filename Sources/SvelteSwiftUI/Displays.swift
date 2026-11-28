@@ -88,7 +88,7 @@ struct MenuElement: View {
                 } label: {
                     label
                 } primaryAction: {
-                    runtime.dispatch(node.id, "primaryaction", waits: false)
+                    runtime.dispatch(node.id, "primaryaction")
                 }
             } else {
                 Menu {

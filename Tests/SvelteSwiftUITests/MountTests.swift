@@ -34,12 +34,15 @@ struct MountTests {
         box.actions = ["save": { _ in calls.append("first") }]
         let id = runtime.mount("default", props: "{}", actions: box.forwarding)
         runtime.dispatch(2, "save")
+        runtime.settle()
         box.actions = ["save": { _ in calls.append("second") }]
         runtime.dispatch(2, "save")
+        runtime.settle()
         #expect(calls == ["first", "second"])
         box.actions = [:]
         runtime.update(id, props: "{}", actions: box.forwarding)
         runtime.dispatch(2, "save")
+        runtime.settle()
         #expect(calls == ["first", "second"])
     }
 }

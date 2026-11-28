@@ -66,4 +66,4 @@ Errors that a `<svelte:boundary>` catches don't reach `onError`.
 
 ## Reloading the bundle
 
-`reload()` on a `SvelteRuntime` loads the bundle again from its source and mounts every component that's showing again with its current props. Module state starts over, so use it when that state is stale as a whole, such as after the user signs in or out.
+`reload()` on a `SvelteRuntime` loads the bundle again from its source and mounts every component that's showing again with its current props. Module state starts over, so use it when that state is stale as a whole, such as after the user signs in or out. The screen that's showing stays up until the reloaded bundle renders, and it ignores taps and typing in the meantime.

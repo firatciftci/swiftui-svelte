@@ -50,7 +50,9 @@ final class SvelteHostUITests: XCTestCase {
         for index in 1...10 {
             field.typeText("Errand \(index)\n")
             let submitted = XCTNSPredicateExpectation(predicate: cleared, object: field)
-            XCTAssertEqual(XCTWaiter.wait(for: [submitted], timeout: 5), .completed, "Errand \(index) wasn't added")
+            XCTAssertEqual(
+                XCTWaiter.wait(for: [submitted], timeout: 5), .completed,
+                "Errand \(index) wasn't added; the field shows \(String(describing: field.value))")
         }
         waitFor(app.switches["Errand 1"])
         XCTAssertEqual(field.value(forKey: "hasKeyboardFocus") as? Bool, true)

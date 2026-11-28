@@ -100,7 +100,7 @@ public struct SvelteView: View {
                 }
                 .accessibilityIdentifier("svelte-unresponsive")
             case .loading:
-                ProgressView()
+                LaunchView()
             }
         }
         #if !canImport(UIKit)
@@ -383,5 +383,18 @@ private struct ErrorOverlay: View {
         .background(.red.gradient, in: .rect(cornerRadius: 16))
         .padding()
         .accessibilityIdentifier("svelte-error")
+    }
+}
+
+private struct LaunchView: View {
+    @State private var isShown = false
+
+    var body: some View {
+        ProgressView()
+            .opacity(isShown ? 1 : 0)
+            .task {
+                try? await Task.sleep(for: .milliseconds(400))
+                isShown = true
+            }
     }
 }

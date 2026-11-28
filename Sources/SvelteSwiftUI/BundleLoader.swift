@@ -53,7 +53,7 @@ nonisolated enum BundleLoader {
         }
     }
 
-    private static func fileVersion(of source: URL) -> String? {
+    static func fileVersion(of source: URL) -> String? {
         let date = try? source.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
         return date.map { String($0.timeIntervalSince1970) }
     }

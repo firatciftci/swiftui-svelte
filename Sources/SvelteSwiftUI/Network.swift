@@ -30,7 +30,6 @@ nonisolated final class NetworkClient {
         var expectsNoStatus = false
     }
 
-    private let queue: DispatchSerialQueue
     private let operations = OperationQueue()
     weak var engine: ScriptEngine?
     private var session: URLSession?
@@ -40,9 +39,7 @@ nonisolated final class NetworkClient {
     private var socketIDs: [Int: Int] = [:]
     var origin: String?
 
-    init(queue: DispatchSerialQueue) {
-        self.queue = queue
-        operations.underlyingQueue = queue
+    init() {
         operations.maxConcurrentOperationCount = 1
     }
 
@@ -164,8 +161,8 @@ nonisolated final class NetworkClient {
             count = text.utf8.count
         }
         let engine = engine
-        socket.task.send(message) { [queue] _ in
-            queue.async { engine?.assumeIsolated { $0.network.sent(count, on: id) } }
+        socket.task.send(message) { _ in
+            engine?.async { $0.network.sent(count, on: id) }
         }
     }
 
@@ -183,8 +180,8 @@ nonisolated final class NetworkClient {
 
     private func receive(_ id: Int) {
         let engine = engine
-        sockets[id]?.task.receive { [queue] result in
-            queue.async { engine?.assumeIsolated { $0.network.received(result, on: id) } }
+        sockets[id]?.task.receive { result in
+            engine?.async { $0.network.received(result, on: id) }
         }
     }
 
@@ -311,12 +308,12 @@ nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate,
         _: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
         completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void
     ) {
-        engine?.assumeIsolated { $0.network.didReceive(response, task: dataTask) }
+        engine?.async { $0.network.didReceive(response, task: dataTask) }
         completionHandler(.allow)
     }
 
     func urlSession(_: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        engine?.assumeIsolated { $0.network.didReceive(data, task: dataTask) }
+        engine?.async { $0.network.didReceive(data, task: dataTask) }
     }
 
     func urlSession(
@@ -327,23 +324,23 @@ nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate,
             completionHandler(request)
             return
         }
-        completionHandler(engine.assumeIsolated { $0.network.redirect(task: task, to: request) })
+        engine.async { completionHandler($0.network.redirect(task: task, to: request)) }
     }
 
     func urlSession(_: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
-        engine?.assumeIsolated { $0.network.didComplete(task: task, error: error) }
+        engine?.async { $0.network.didComplete(task: task, error: error) }
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?
     ) {
-        engine?.assumeIsolated { $0.network.didOpen(task: webSocketTask, protocol: `protocol`) }
+        engine?.async { $0.network.didOpen(task: webSocketTask, protocol: `protocol`) }
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?
     ) {
-        engine?.assumeIsolated { $0.network.didClose(task: webSocketTask, code: closeCode, reason: reason) }
+        engine?.async { $0.network.didClose(task: webSocketTask, code: closeCode, reason: reason) }
     }
 }

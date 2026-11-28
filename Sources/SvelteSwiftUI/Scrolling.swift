@@ -28,12 +28,12 @@ struct ScrollOptions: ViewModifier {
                 view.onScrollGeometryChange(
                     for: ScrollPayload.self,
                     of: ScrollPayload.init,
-                    action: { _, payload in runtime.dispatch(id, "scroll", payload.json, waits: false) }
+                    action: { _, payload in runtime.dispatch(id, "scroll", payload.json) }
                 )
             }
             .ifLet(node.listens(to: "scrollphase") ? node.id : nil) { view, id in
                 view.onScrollPhaseChange { _, phase in
-                    runtime.dispatch(id, "scrollphase", ["phase": .string(Self.phase(phase))], waits: false)
+                    runtime.dispatch(id, "scrollphase", ["phase": .string(Self.phase(phase))])
                 }
             }
     }
@@ -88,7 +88,7 @@ struct ScrollVisibility: ViewModifier {
             let id = node.id
             let threshold = CGFloat(node.attributes["visibilitythreshold"]?.number ?? 0)
             content.onScrollVisibilityChange(threshold: threshold) { visible in
-                runtime.dispatch(id, "scrollvisibility", ["visible": .bool(visible)], waits: false)
+                runtime.dispatch(id, "scrollvisibility", ["visible": .bool(visible)])
             }
         } else {
             content
@@ -147,7 +147,7 @@ struct Resizing: ViewModifier {
                 of: { $0.size },
                 action: { size in
                     runtime.dispatch(
-                        id, "resize", ["width": .number(points(size.width)), "height": .number(points(size.height))], waits: false)
+                        id, "resize", ["width": .number(points(size.width)), "height": .number(points(size.height))])
                 }
             )
         } else {

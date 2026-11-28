@@ -16,6 +16,7 @@ struct BundleTests {
     @Test func mountsANamedComponentWithProps() throws {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada","count":3}"#, actions: [:])
+        runtime.settle()
         #expect(runtime.error == nil)
         #expect(dump(runtime.store.root(for: id)) == greeting("Ada: 3"))
     }
@@ -23,6 +24,7 @@ struct BundleTests {
     @Test func rendersNewPropsFromSwift() throws {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada","count":3}"#, actions: [:])
+        runtime.settle()
         runtime.update(id, props: #"{"name":"Grace","count":4}"#, actions: [:])
         #expect(dump(runtime.store.root(for: id)) == greeting("Grace: 4"))
         runtime.update(id, props: #"{"name":"Grace"}"#, actions: [:])
@@ -33,8 +35,10 @@ struct BundleTests {
         let runtime = try runtime()
         var received: Array<JSONValue> = []
         let id = runtime.mount("Greeting", props: #"{"name":"Ada","count":3}"#, actions: ["onsave": { received.append($0) }])
+        runtime.settle()
         let button = try #require(runtime.store.root(for: id)?.children.last)
         runtime.dispatch(button.id, "click")
+        runtime.settle()
         struct Payload: Decodable, Equatable {
             let name: String
             let count: Int
@@ -49,6 +53,7 @@ struct BundleTests {
         let runtime = try runtime()
         let counter = runtime.mount("Counter", props: "{}", actions: [:])
         let greeting = runtime.mount("Greeting", props: #"{"name":"Lin"}"#, actions: [:])
+        runtime.settle()
         #expect(runtime.store.root(for: counter)?.children.first?.name == "vstack")
         #expect(dump(runtime.store.root(for: greeting)) == self.greeting("Lin: 0"))
         runtime.unmount(greeting)
@@ -61,14 +66,17 @@ struct BundleTests {
     @Test func mountsAgainAfterAReload() throws {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada"}"#, actions: [:])
+        runtime.settle()
         runtime.update(id, props: #"{"name":"Grace"}"#, actions: [:])
         runtime.reload()
+        runtime.settle()
         #expect(dump(runtime.store.root(for: id)) == greeting("Grace: 0"))
     }
 
     @Test func reportsAMissingComponent() throws {
         let runtime = try runtime()
         let id = runtime.mount("Missing", props: "{}", actions: [:])
+        runtime.settle()
         #expect(runtime.store.root(for: id) == nil)
         #expect(runtime.error?.message.contains(#"No component named "Missing""#) == true)
     }

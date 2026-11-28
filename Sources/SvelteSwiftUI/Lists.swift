@@ -92,12 +92,13 @@ struct Rows: View {
             rows
             .onDelete(
                 perform: node.listens(to: "delete")
-                    ? { offsets in runtime.dispatch(id, "delete", .array(offsets.map { JSONValue($0) })) } : nil
+                    ? { offsets in runtime.dispatch(id, "delete", .array(offsets.map { JSONValue($0) }), waits: true) } : nil
             )
             .onMove(
                 perform: node.listens(to: "move")
                     ? { source, destination in
-                        runtime.dispatch(id, "move", ["from": .array(source.map { JSONValue($0) }), "to": JSONValue(destination)])
+                        runtime.dispatch(
+                            id, "move", ["from": .array(source.map { JSONValue($0) }), "to": JSONValue(destination)], waits: true)
                     } : nil
             )
     }

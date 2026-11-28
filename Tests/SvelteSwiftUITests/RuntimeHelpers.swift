@@ -6,11 +6,16 @@ import Testing
 
 extension SvelteRuntime {
     func settle() {
-        engine.sync { _ in }
-        drain()
+        for _ in 0..<10 {
+            sendQueuedCalls()
+            engine.sync { _ in }
+            drain()
+            if queuedCalls.isEmpty, isCurrent { return }
+        }
     }
 
     func evaluate<Result: Sendable>(_ body: @Sendable (JSContext) -> Result) -> Result? {
+        sendQueuedCalls()
         let result = engine.sync { $0.context.map(body) }
         drain()
         return result
@@ -35,6 +40,7 @@ func runtime(_ script: String, modules: Array<NativeModule> = []) throws -> Svel
     try script.write(to: url, atomically: true, encoding: .utf8)
     let runtime = SvelteRuntime(source: url, modules: modules)
     runtime.start()
+    runtime.settle()
     return runtime
 }
 

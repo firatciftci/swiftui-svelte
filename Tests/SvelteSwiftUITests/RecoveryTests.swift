@@ -15,20 +15,27 @@ struct RecoveryTests {
     @Test func remountsAgainAfterTheRemountedAppCommitsCleanly() throws {
         let runtime = try runtime(mountScript + echo)
         runtime.dispatch(2, "x", "[42]")
+        runtime.settle()
         #expect(runtime.store.root?.children.first?.name == "txt")
         runtime.dispatch(2, "x", #"[4,2,0,"first"]"#)
+        runtime.settle()
         #expect(runtime.store.node(2)?.attributes["txt"] == .string("first"))
         runtime.dispatch(2, "x", "[42]")
+        runtime.settle()
         #expect(runtime.store.root?.children.first?.name == "txt")
         runtime.dispatch(2, "x", #"[4,2,0,"second"]"#)
+        runtime.settle()
         #expect(runtime.store.node(2)?.attributes["txt"] == .string("second"))
     }
 
     @Test func stopsWhenTheRemountedAppFailsBeforeItCommitsCleanly() throws {
         let runtime = try runtime(mountScript + echo)
         runtime.dispatch(2, "x", "[42]")
+        runtime.settle()
         runtime.dispatch(2, "x", "[42]")
+        runtime.settle()
         runtime.dispatch(2, "x", #"[4,2,0,"after"]"#)
+        runtime.settle()
         #expect(runtime.store.node(2)?.attributes["txt"] == nil)
         #expect(runtime.store.error?.contains("42") == true)
     }
@@ -36,8 +43,9 @@ struct RecoveryTests {
     @Test func stopsWhenTheRemountedAppFailsRightAfterItMounts() async throws {
         let runtime = try runtime(
             mountScript + echo + #"setTimeout(() => __nativeCommit("[42]"), 0);"#)
-        try await eventually { runtime.store.error != nil }
+        try await eventually { runtime.store.error != nil && runtime.loads == 2 }
         runtime.dispatch(2, "x", #"[4,2,0,"after"]"#)
+        runtime.settle()
         #expect(runtime.store.node(2)?.attributes["txt"] == nil)
         #expect(runtime.store.error?.contains("42") == true)
     }
@@ -78,6 +86,7 @@ struct RecoveryTests {
     @Test func showsABundleThatFailsToLoadAsFailed() {
         let runtime = SvelteRuntime(source: URL(filePath: "/nonexistent/app.js"))
         let id = runtime.mount("default", props: "{}", actions: [:])
+        runtime.settle()
         guard case .failed = runtime.phase(of: id, isOverdue: false) else {
             Issue.record("The missing bundle didn't fail.")
             return
@@ -123,12 +132,14 @@ struct RecoveryTests {
             .write(to: url, atomically: true, encoding: .utf8)
         let runtime = SvelteRuntime(source: url) { reports.errors.append($0) }
         runtime.start()
+        runtime.settle()
         #expect(reports.errors.contains { $0.kind == .bridge && $0.message.contains("42") })
         #expect(runtime.error == nil)
 
         reports.errors = []
         try "throw new Error('boom')".write(to: url, atomically: true, encoding: .utf8)
         runtime.reload()
+        runtime.settle()
         #expect(reports.errors.map(\.kind) == [.script])
         #expect(reports.errors.first?.message == "Error: boom")
         #expect(reports.errors.first?.frames.isEmpty == false)
@@ -136,6 +147,7 @@ struct RecoveryTests {
         reports.errors = []
         try FileManager.default.removeItem(at: url)
         runtime.reload()
+        runtime.settle()
         #expect(reports.errors.map(\.kind) == [.load])
     }
 
@@ -148,6 +160,7 @@ struct RecoveryTests {
         #expect(runtime.store.error == nil)
         #expect(runtime.store.root?.children.first?.name == "txt")
         runtime.reload()
+        runtime.settle()
         #expect(runtime.error?.message.contains("boom") == true)
         #expect(runtime.store.root?.children.first?.name == "txt")
     }
@@ -155,6 +168,7 @@ struct RecoveryTests {
     @Test func reportsAMissingBundle() {
         let runtime = SvelteRuntime(source: URL(filePath: "/nonexistent/app.js"), reloadsOnChange: false)
         runtime.start()
+        runtime.settle()
         #expect(runtime.error?.message.contains("Couldn't load") == true)
     }
 }

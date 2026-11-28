@@ -54,7 +54,7 @@ struct Focusable: ViewModifier {
             }
             .onChange(of: isFocused) { _, focused in
                 node.isFocused = focused
-                runtime.dispatch(node.id, focused ? "focus" : "blur", waits: false)
+                runtime.dispatch(node.id, focused ? "focus" : "blur")
             }
     }
 }

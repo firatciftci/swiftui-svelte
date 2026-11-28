@@ -42,16 +42,25 @@ extension SvelteRuntime {
 
     func sendInput(_ id: Int, _ text: String) {
         inputs.hold(text, for: id)
-        flushInputs(waits: true)
+        flushInputs()
     }
 
     func flushInput(_ id: Int) {
-        if inputs.contains(id) { flushInputs(waits: true) }
+        if inputs.contains(id) { flushInputs() }
     }
 
-    func flushInputs(waits: Bool) {
-        while let (id, text) = inputs.next() {
-            call("__svelteDispatch", [JSONValue(id), "input", .string(text)], waits: waits)
+    func queueInputs() {
+        guard isCurrent else {
+            inputs = PendingInputs()
+            return
         }
+        while let (id, text) = inputs.next() {
+            call("__svelteDispatch", [JSONValue(id), "input", .string(text)], waits: false)
+        }
+    }
+
+    func flushInputs() {
+        queueInputs()
+        sendQueuedCalls()
     }
 }

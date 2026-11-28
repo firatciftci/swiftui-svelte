@@ -42,6 +42,18 @@ struct TeardownTests {
         try await eventually { server.openSockets == 0 }
     }
 
+    @Test func stopsTheJavaScriptThreadWithItsEngine() async throws {
+        weak var engine: ScriptEngine?
+        var thread: JavaScriptThread?
+        do {
+            let runtime = try runtime(mountScript + "setInterval(() => {}, 5);")
+            engine = runtime.engine
+            thread = runtime.engine.thread
+        }
+        try await eventually { engine == nil }
+        #expect(thread?.perform {} == false)
+    }
+
     @Test func stopsARuntimeThatIsStillReferenced() async throws {
         let server = try TestServer()
         let port = try await server.start()
@@ -63,6 +75,7 @@ struct TeardownTests {
             #"globalThis.__svelteMount = (id) => __nativeCommit(JSON.stringify([0, 1, 3, id, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));"#)
         runtime.stop()
         let id = runtime.mount("default", props: "{}", actions: [:])
+        runtime.settle()
         #expect(runtime.store.root(for: id)?.children.first?.name == "txt")
     }
 }

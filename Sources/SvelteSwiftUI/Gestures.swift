@@ -82,8 +82,8 @@ private struct Drags: ViewModifier {
         content.ifLet(node.listens(to: "drag") ? node.id : nil) { view, id in
             view.simultaneousGesture(
                 DragGesture(minimumDistance: minimumDistance)
-                    .onChanged { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "changed"), waits: false) }
-                    .onEnded { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "ended"), waits: false) }
+                    .onChanged { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "changed")) }
+                    .onEnded { runtime.dispatch(id, "drag", Gestures.drag($0, phase: "ended")) }
             )
         }
     }
@@ -99,10 +99,10 @@ struct PointerEvents: ViewModifier {
             view.onContinuousHover { phase in
                 switch phase {
                 case let .active(location):
-                    runtime.dispatch(id, "hover", Gestures.hover(isInside ? "move" : "enter", location), waits: false)
+                    runtime.dispatch(id, "hover", Gestures.hover(isInside ? "move" : "enter", location))
                     isInside = true
                 case .ended:
-                    runtime.dispatch(id, "hover", Gestures.hover("exit", nil), waits: false)
+                    runtime.dispatch(id, "hover", Gestures.hover("exit", nil))
                     isInside = false
                 }
             }
@@ -131,10 +131,10 @@ private struct Pinches: ViewModifier {
         rotates: Bool
     ) {
         if magnifies, let magnify = value.first {
-            runtime.dispatch(id, "magnify", Gestures.magnify(magnify, phase: phase), waits: false)
+            runtime.dispatch(id, "magnify", Gestures.magnify(magnify, phase: phase))
         }
         if rotates, let rotate = value.second {
-            runtime.dispatch(id, "rotate", Gestures.rotate(rotate, phase: phase), waits: false)
+            runtime.dispatch(id, "rotate", Gestures.rotate(rotate, phase: phase))
         }
     }
 }

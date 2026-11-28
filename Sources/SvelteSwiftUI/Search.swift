@@ -72,6 +72,7 @@ struct Searching: ViewModifier {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
     @State private var text: String
+    @State private var sentBeforeChange: String?
 
     init(node: Node) {
         self.node = node
@@ -108,11 +109,20 @@ struct Searching: ViewModifier {
             }
             .modifier(Scopes(node: node, scopes: scopes))
             .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
-            .onSubmit(of: .search) { runtime.dispatch(node.id, "submit") }
+            .onSubmit(of: .search) {
+                if text != node.attributes["value"]?.string {
+                    node.attributes["value"] = .string(text)
+                    runtime.dispatch(node.id, "input", .string(text))
+                    sentBeforeChange = text
+                }
+                runtime.submit(node.id)
+            }
             .onChange(of: text) { _, typed in
-                guard typed != node.attributes["value"]?.string else { return }
+                let isSent = typed == sentBeforeChange
+                sentBeforeChange = nil
+                guard !isSent, typed != node.attributes["value"]?.string else { return }
                 node.attributes["value"] = .string(typed)
-                runtime.dispatch(node.id, "input", .string(typed))
+                runtime.dispatch(node.id, "input", .string(typed), waits: true)
                 if let settled = node.attributes["value"]?.string, settled != typed { text = settled }
             }
             .onChange(of: value) { _, value in

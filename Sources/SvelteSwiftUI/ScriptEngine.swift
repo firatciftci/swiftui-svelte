@@ -23,6 +23,8 @@ actor ScriptEngine {
         case invoke(Int, String, String)
         case nativeCall(Int, String, String, String)
         case error(ScriptError)
+        case loaded(BundleIdentity?)
+        case failedToLoad(ScriptError)
         case requestFrame
         case watchFrames
     }
@@ -33,49 +35,57 @@ actor ScriptEngine {
         var applyTime = 0.0
     }
 
-    private struct Timer {
-        let source: any DispatchSourceTimer
+    private struct ScheduledTimer {
+        let timer: Foundation.Timer
         let callback: JSValue
         let arguments: Array<JSValue>
         let repeats: Bool
     }
 
-    nonisolated let queue: DispatchSerialQueue
+    nonisolated let thread = JavaScriptThread(name: "SvelteSwiftUI.JavaScript")
     nonisolated let stats = Mutex(Stats())
-    private nonisolated let outbox = Mutex<(messages: Array<Message>, isScheduled: Bool)>(([], false))
+    private struct Outbox {
+        var messages: Array<(generation: Int, message: Message)> = []
+        var generation = 0
+        var isScheduled = false
+    }
+
+    private nonisolated let outbox = Mutex(Outbox())
     private nonisolated let deliver = Mutex<(@Sendable () -> Void)?>(nil)
     private(set) var context: JSContext?
-    private var timers: [Int: Timer] = [:]
+    private var timers: [Int: ScheduledTimer] = [:]
     private var nextTimerID = 1
     private var environment = "{}"
     let network: NetworkClient
     private let storage: LocalStorage
     private nonisolated let diagnostics: Diagnostics
 
-    nonisolated var unownedExecutor: UnownedSerialExecutor { queue.asUnownedSerialExecutor() }
+    nonisolated var unownedExecutor: UnownedSerialExecutor { thread.asUnownedSerialExecutor() }
 
     init(storage: sending LocalStorage, diagnostics: Diagnostics = Diagnostics()) {
-        let queue = DispatchSerialQueue(label: "SvelteSwiftUI.JavaScript", qos: .userInteractive)
-        self.queue = queue
         self.storage = storage
         self.diagnostics = diagnostics
-        network = NetworkClient(queue: queue)
+        network = NetworkClient()
         network.engine = self
+    }
+
+    deinit {
+        thread.stop()
     }
 
     nonisolated func onMessages(_ deliver: @escaping @Sendable () -> Void) {
         self.deliver.withLock { $0 = deliver }
     }
 
-    nonisolated func sync<T: Sendable>(_ body: (isolated ScriptEngine) -> T) -> T {
-        queue.sync { assumeIsolated(body) }
+    nonisolated func sync<T: Sendable>(_ body: @Sendable (isolated ScriptEngine) -> T) -> T {
+        thread.performAndWait { assumeIsolated(body) }
     }
 
     nonisolated func async(_ body: @escaping @Sendable (isolated ScriptEngine) -> Void) {
-        queue.async { self.assumeIsolated(body) }
+        thread.perform { self.assumeIsolated(body) }
     }
 
-    nonisolated func takeMessages() -> Array<Message> {
+    nonisolated func takeMessages() -> Array<(generation: Int, message: Message)> {
         outbox.withLock { box in
             box.isScheduled = false
             defer { box.messages = [] }
@@ -85,7 +95,7 @@ actor ScriptEngine {
 
     private nonisolated func post(_ message: Message) {
         let shouldSchedule = outbox.withLock { box in
-            box.messages.append(message)
+            box.messages.append((box.generation, message))
             defer { box.isScheduled = true }
             return !box.isScheduled
         }
@@ -93,11 +103,25 @@ actor ScriptEngine {
     }
 
     func load(
-        script: String, source: URL, map: SourceMap?, environment: String, mounts: Array<Array<ScriptArgument>>
-    ) -> BundleIdentity? {
+        _ source: URL, downloaded: Result<BundleLoader.Bundle, BundleLoader.Failure>? = nil, environment: String,
+        mounts: Array<Array<ScriptArgument>>, generation: Int
+    ) {
         stop()
+        outbox.withLock { $0.generation = generation }
+        switch downloaded ?? BundleLoader.load(source) {
+        case let .success(bundle):
+            post(.loaded(evaluate(bundle, source: source, environment: environment, mounts: mounts)))
+        case let .failure(failure):
+            post(.failedToLoad(ScriptError(kind: .load, message: failure.message, frames: [])))
+        }
+    }
+
+    private func evaluate(
+        _ bundle: BundleLoader.Bundle, source: URL, environment: String, mounts: Array<Array<ScriptArgument>>
+    ) -> BundleIdentity? {
         self.environment = environment
         network.origin = NetworkClient.origin(of: source)
+        let map = bundle.map.flatMap { try? SourceMap(json: $0) }
         guard let context = JSContext() else {
             post(.error(ScriptError(message: "Couldn't create a JavaScript context.", frames: [])))
             return nil
@@ -112,14 +136,14 @@ actor ScriptEngine {
         }
         install(into: context)
         self.context = context
-        context.evaluateScript(script, withSourceURL: source)
+        context.evaluateScript(bundle.script, withSourceURL: source)
         let identity = BundleIdentity(context.objectForKeyedSubscript("__svelteBundle"))
         for mount in mounts { call("__svelteMount", mount) }
         return identity
     }
 
     func stop() {
-        for timer in timers.values { timer.source.cancel() }
+        for scheduled in timers.values { scheduled.timer.invalidate() }
         timers = [:]
         network.reset()
         context = nil
@@ -149,7 +173,7 @@ actor ScriptEngine {
             self.schedule(callback, after: delay, repeats: true)
         }
         let clearTimer: @convention(block) (Int) -> Void = { id in
-            self.timers.removeValue(forKey: id)?.source.cancel()
+            self.timers.removeValue(forKey: id)?.timer.invalidate()
         }
         let now: @convention(block) () -> Double = {
             CACurrentMediaTime() * 1000
@@ -282,15 +306,14 @@ actor ScriptEngine {
         nextTimerID += 1
         let milliseconds = delay.toDouble()
         let requested = milliseconds > 0 ? Int(min(milliseconds, Double(Int32.max))) : 0
-        let interval = DispatchTimeInterval.milliseconds(max(requested, repeats ? 1 : 0))
-        let source = DispatchSource.makeTimerSource(queue: queue)
-        source.schedule(deadline: .now() + interval, repeating: repeats ? interval : .never, leeway: .milliseconds(1))
+        let interval = Double(max(requested, repeats ? 1 : 0)) / 1000
         let extra = Array((JSContext.currentArguments() as? Array<JSValue> ?? []).dropFirst(2))
-        source.setEventHandler { [weak self] in
-            self?.assumeIsolated { $0.fire(id) }
+        let timer = Foundation.Timer(timeInterval: interval, repeats: repeats) { [weak self] _ in
+            autoreleasepool { self?.assumeIsolated { $0.fire(id) } }
         }
-        timers[id] = Timer(source: source, callback: callback, arguments: extra, repeats: repeats)
-        source.resume()
+        timer.tolerance = 0.001
+        RunLoop.current.add(timer, forMode: .common)
+        timers[id] = ScheduledTimer(timer: timer, callback: callback, arguments: extra, repeats: repeats)
         return id
     }
 

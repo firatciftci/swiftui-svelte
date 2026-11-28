@@ -268,7 +268,7 @@ private struct NavStack: View {
                 node.renderedChildren.dropFirst().map(\.id)
             } set: { path in
                 if path.count < node.renderedChildren.count - 1 {
-                    runtime.dispatch(node.id, "pop", JSONValue(path.count))
+                    runtime.dispatch(node.id, "pop", JSONValue(path.count), waits: true)
                 }
             }
         ) {
@@ -390,7 +390,7 @@ struct ActionButton: View {
 
     var body: some View {
         Button(role: Inputs.role(node.attributes["role"]?.string)) {
-            runtime.dispatch(node.id, "click", waits: false)
+            runtime.dispatch(node.id, "click")
         } label: {
             PlainLabel(node: node)
         }

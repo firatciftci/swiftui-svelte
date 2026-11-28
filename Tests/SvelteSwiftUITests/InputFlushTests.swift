@@ -40,8 +40,17 @@ struct InputFlushTests {
         runtime.deferInput(2, "draft")
         runtime.dispatch(2, "blur", waits: false)
         runtime.deferInput(2, "final")
-        runtime.dispatch(2, "submit")
+        runtime.submit(2)
         #expect(events(runtime) == "2:input:draft 2:blur:null 2:input:final 2:submit:null")
+    }
+
+    @Test func showsWhatTheSubmitHandlerClearsBeforeTheNextKeystroke() throws {
+        let runtime = try runtime(
+            mountScript + #"globalThis.__svelteDispatch = (id, type) => { if (type === "submit") attr(id, "value", ""); };"#)
+        let node = try #require(runtime.store.node(2))
+        node.setOwnAttribute("value", .string("Errand 8"))
+        runtime.submit(2)
+        #expect(node.attributes["value"] == .string(""))
     }
 
     @Test func sendsPendingInputBeforeNativeEventsAndPropUpdates() throws {

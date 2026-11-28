@@ -33,6 +33,8 @@ public final class SvelteRuntime {
     @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var inbox: Array<Inbound> = []
     @ObservationIgnored private var isDraining = false
+    @ObservationIgnored private(set) var queuedCalls: Array<(function: String, arguments: Array<ScriptArgument>)> = []
+    @ObservationIgnored private var isFlushScheduled = false
     @ObservationIgnored var inputs = PendingInputs()
     @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
@@ -40,7 +42,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var loadedVersion: String?
     @ObservationIgnored private var isLoaded = false
     @ObservationIgnored private var isRecovering = false
-    @ObservationIgnored private var isDownloading = false
+    @ObservationIgnored private var download: Task<Void, Never>?
     @ObservationIgnored private var watcher: Task<Void, Never>?
     @ObservationIgnored let frames = FrameMonitor()
     @ObservationIgnored private var pathMonitor: NWPathMonitor?
@@ -55,6 +57,8 @@ public final class SvelteRuntime {
     @ObservationIgnored private(set) var components: [String: NativeComponent] = [:]
     private var ownedNames: [String: Set<String>] { components.mapValues(\.owned) }
     @ObservationIgnored private(set) var generation = 0
+    @ObservationIgnored private var renderedGeneration = 0
+    var isCurrent: Bool { renderedGeneration == generation }
     @ObservationIgnored private var configurationWarnings: Array<String> = []
     @ObservationIgnored private let reloadsOnChange: Bool
     @ObservationIgnored public var onError: (@MainActor (ScriptError) -> Void)?
@@ -105,6 +109,9 @@ public final class SvelteRuntime {
         guard isStarted else { return }
         isStarted = false
         generation += 1
+        download?.cancel()
+        download = nil
+        queuedCalls.removeAll()
         watcher?.cancel()
         watcher = nil
         pathMonitor?.cancel()
@@ -171,7 +178,7 @@ public final class SvelteRuntime {
         let namesChanged = names != mount.actions.keys.sorted()
         guard mount.props != props || namesChanged else { return }
         mounts[id]?.props = props
-        flushInputs(waits: true)
+        queueInputs()
         let arguments: Array<JSONValue> = [JSONValue(id), .string(props)]
         call("__svelteProps", namesChanged ? arguments + [.string(Self.json(names))] : arguments)
     }
@@ -189,50 +196,8 @@ public final class SvelteRuntime {
         ]
     }
 
-    func dispatch(_ id: Int, _ type: String, _ payload: JSONValue = .null, waits: Bool = true) {
-        dispatch(id, type, argument: .json(payload), waits: waits)
-    }
-
-    func dispatch(_ id: Int, _ type: String, argument: ScriptArgument, waits: Bool = true) {
-        flushInputs(waits: waits)
-        call("__svelteDispatch", [.json(JSONValue(id)), .json(.string(type)), argument], waits: waits)
-    }
-
-    func dispatchAndWait(_ id: Int, _ type: String) async {
-        flushInputs(waits: true)
-        requestSerial += 1
-        let request = requestSerial
-        await withTaskCancellationHandler {
-            await withCheckedContinuation { continuation in
-                settlements[request] = continuation
-                call("__svelteDispatch", [JSONValue(id), .string(type), .null, JSONValue(request)])
-            }
-        } onCancel: {
-            Task { @MainActor [weak self] in self?.cancelTask(request, of: id) }
-        }
-    }
-
-    private func cancelTask(_ request: Int, of id: Int) {
-        guard let continuation = settlements.removeValue(forKey: request) else { return }
-        call("__svelteDispatch", [JSONValue(id), "taskcancel", JSONValue(request), .null])
-        continuation.resume()
-    }
-
-    func call(_ function: String, _ arguments: Array<JSONValue>, waits: Bool = true) {
-        call(function, arguments.map(ScriptArgument.json), waits: waits)
-    }
-
-    func call(_ function: String, _ arguments: Array<ScriptArgument>, waits: Bool = true) {
-        if waits {
-            engine.sync { $0.call(function, arguments) }
-            drain()
-        } else {
-            engine.async { $0.call(function, arguments) }
-        }
-    }
-
     func drain() {
-        receive(isInitial: false)
+        receive()
         guard !isDraining, !inbox.isEmpty else { return }
         isDraining = true
         defer { isDraining = false }
@@ -243,10 +208,14 @@ public final class SvelteRuntime {
             let inbound = inbox[index]
             index += 1
             guard inbound.generation == generation else { continue }
+            if renderedGeneration != generation {
+                renderedGeneration = generation
+                store.reset(ownedNames: ownedNames)
+            }
             switch inbound.message {
             case let .commit(json, animation) where !isStopped:
                 if store.apply(json, animation: animation) {
-                    if !inbound.isInitial { isRecovering = false }
+                    if isLoaded { isRecovering = false }
                 } else {
                     onError?(ScriptError(kind: .bridge, message: store.error ?? "The bundle sent a malformed batch.", frames: []))
                     if isRecovering {
@@ -267,6 +236,16 @@ public final class SvelteRuntime {
                 watchesFramesUntil = CACurrentMediaTime() + 2
                 frames.resume()
             case let .error(error): report(error)
+            case let .loaded(identity):
+                bundleIdentity = identity
+                loads += 1
+                isLoaded = true
+                for url in pendingURLs { deliver(url) }
+                pendingURLs.removeAll()
+            case let .failedToLoad(error):
+                bundleIdentity = nil
+                loads += 1
+                report(error)
             default: break
             }
         }
@@ -379,7 +358,7 @@ public final class SvelteRuntime {
 
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: ScriptArgument? = nil) {
         node.setOwnAttribute(name, value)
-        dispatch(node.id, event, argument: payload ?? .json(value))
+        dispatch(node.id, event, argument: payload ?? .json(value), waits: true)
         let settled = node.ownAttributes[name]
         guard settled != value else { return }
         node.setOwnAttribute(name, value)
@@ -404,9 +383,79 @@ public final class SvelteRuntime {
         }
     #endif
 
-    private func receive(isInitial: Bool) {
-        let generation = generation
-        for message in engine.takeMessages() { inbox.append(Inbound(generation: generation, isInitial: isInitial, message: message)) }
+    private func receive() {
+        for (generation, message) in engine.takeMessages() { inbox.append(Inbound(generation: generation, message: message)) }
+    }
+}
+
+extension SvelteRuntime {
+    func dispatch(_ id: Int, _ type: String, _ payload: JSONValue = .null, waits: Bool = false) {
+        dispatch(id, type, argument: .json(payload), waits: waits)
+    }
+
+    func dispatch(_ id: Int, _ type: String, argument: ScriptArgument, waits: Bool = false) {
+        guard isCurrent else { return }
+        queueInputs()
+        call("__svelteDispatch", [.json(JSONValue(id)), .json(.string(type)), argument], waits: waits)
+    }
+
+    func submit(_ id: Int) {
+        dispatch(id, "submit", waits: true)
+    }
+
+    func dispatchAndWait(_ id: Int, _ type: String) async {
+        guard isCurrent else { return }
+        queueInputs()
+        requestSerial += 1
+        let request = requestSerial
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                settlements[request] = continuation
+                call("__svelteDispatch", [JSONValue(id), .string(type), .null, JSONValue(request)])
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.cancelTask(request, of: id) }
+        }
+    }
+
+    private func cancelTask(_ request: Int, of id: Int) {
+        guard let continuation = settlements.removeValue(forKey: request) else { return }
+        call("__svelteDispatch", [JSONValue(id), "taskcancel", JSONValue(request), .null])
+        continuation.resume()
+    }
+
+    func call(_ function: String, _ arguments: Array<JSONValue>, waits: Bool = true) {
+        call(function, arguments.map(ScriptArgument.json), waits: waits)
+    }
+
+    func call(_ function: String, _ arguments: Array<ScriptArgument>, waits: Bool = true) {
+        queuedCalls.append((function, arguments))
+        if waits, isCurrent {
+            sendQueuedCalls()
+        } else if !isFlushScheduled {
+            isFlushScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                isFlushScheduled = false
+                sendQueuedCalls(waits: false)
+            }
+        }
+    }
+
+    func sendQueuedCalls(waits: Bool = true) {
+        guard !queuedCalls.isEmpty else { return }
+        let calls = queuedCalls
+        queuedCalls.removeAll()
+        guard waits, isCurrent else {
+            engine.async { engine in
+                for call in calls { engine.call(call.function, call.arguments) }
+            }
+            return
+        }
+        engine.sync { engine in
+            for call in calls { engine.call(call.function, call.arguments) }
+        }
+        drain()
     }
 }
 
@@ -417,67 +466,52 @@ extension SvelteRuntime {
     }
 
     private func reload(ifNewerThan version: String) {
-        guard !isDownloading, version != loadedVersion else { return }
+        guard download == nil, version != loadedVersion else { return }
         isRecovering = false
         loadSource()
     }
 
     private func loadSource() {
-        generation += 1
-        isLoaded = false
+        download?.cancel()
+        download = nil
         guard !source.isFileURL else {
-            load(BundleLoader.load(source))
+            load(nil)
             return
         }
-        let generation = generation
         let source = source
-        isDownloading = true
-        Task {
+        download = Task {
             let result = await BundleLoader.download(source)
-            guard generation == self.generation else { return }
-            isDownloading = false
+            guard !Task.isCancelled else { return }
+            download = nil
             load(result)
         }
     }
 
-    private func load(_ result: Result<BundleLoader.Bundle, BundleLoader.Failure>) {
+    private func load(_ downloaded: Result<BundleLoader.Bundle, BundleLoader.Failure>?) {
+        generation += 1
+        isLoaded = false
+        switch downloaded {
+        case let .success(bundle): loadedVersion = bundle.version
+        case .failure: break
+        case nil: loadedVersion = BundleLoader.fileVersion(of: source)
+        }
         isFrameRequested = false
+        queuedCalls.removeAll()
+        inputs = PendingInputs()
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
-        for request in measureRequests.values.joined() { reply(request, frame: nil) }
         measureRequests.removeAll()
-        store.reset(ownedNames: ownedNames)
         store.diagnostics.reset()
         diagnostics = []
         reportConfiguration()
         error = nil
-        let engine = engine
-        let bundle: BundleLoader.Bundle
-        switch result {
-        case let .success(loaded):
-            bundle = loaded
-        case let .failure(failure):
-            engine.sync { $0.stop() }
-            bundleIdentity = nil
-            loads += 1
-            report(ScriptError(kind: .load, message: failure.message, frames: []))
-            return
-        }
-        loadedVersion = bundle.version
-        let map = bundle.map.flatMap { try? SourceMap(json: $0) }
         let mounts = self.mounts.keys.sorted().map { arguments(for: $0).map(ScriptArgument.json) }
         let environment = Self.json(environment)
         let source = source
-        let script = bundle.script
-        bundleIdentity = engine.sync {
-            $0.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
+        let generation = generation
+        engine.async {
+            $0.load(source, downloaded: downloaded, environment: environment, mounts: mounts, generation: generation)
         }
-        loads += 1
-        receive(isInitial: true)
-        isLoaded = true
-        for url in pendingURLs { deliver(url) }
-        pendingURLs.removeAll()
-        drain()
     }
 }
 
@@ -550,13 +584,13 @@ extension SvelteRuntime {
     }
 
     public func emit(_ event: String, from module: String) {
-        flushInputs(waits: true)
+        queueInputs()
         call("__svelteNativeEvent", [.string(module), .string(event), .null])
     }
 
     public func emit(_ event: String, from module: String, _ payload: some Encodable) {
         guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
-        flushInputs(waits: true)
+        queueInputs()
         call("__svelteNativeEvent", [.string(module), .string(event), .string(json)])
     }
 }
@@ -571,7 +605,6 @@ enum MountPhase {
 
 private struct Inbound {
     let generation: Int
-    let isInitial: Bool
     let message: ScriptEngine.Message
 }
 

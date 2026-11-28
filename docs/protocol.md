@@ -25,6 +25,8 @@ The engine calls the host synchronously unless a section says otherwise. The hos
 
 The host should run the engine on one serial queue, separate from the UI thread. Every `__svelte*` global must be called on that queue. Every native UI mutation must happen on the UI thread.
 
+The engine's queue must also run the work that the engine schedules for itself. JavaScriptCore, for example, runs garbage collection and `FinalizationRegistry` callbacks from the run loop of the thread that created it, so a host that uses JavaScriptCore runs the engine on a thread with a running run loop. The bundle drops the entry for a released node in a `FinalizationRegistry` callback, so if those callbacks never run, its node map grows for as long as the app runs.
+
 The engine's microtask queue drains after each host call returns. A host must not assume that JavaScript work is finished when a call returns, because promises continue to run.
 
 A render batch is applied on the UI thread, in order, before the host renders the next frame. If the host applies batches on a different thread from the one that runs the engine, it must copy the batch before it returns control to the engine. Batches, actions, and invocations arrive in one stream, and the host must handle them in the order the bundle sent them. A host call into the engine can produce new messages while the host is still handling an earlier one, for example when an action calls back into JavaScript. The host must queue those messages behind the ones it has not handled yet, and it must not apply them first.

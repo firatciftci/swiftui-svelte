@@ -158,6 +158,7 @@ struct RuntimeTests {
         runtime.dispatch(2, "input", "hello")
         runtime.dispatch(2, "change", 3.5)
         runtime.dispatch(2, "toggle", true)
+        runtime.settle()
         let attributes = runtime.store.node(2)?.attributes
         #expect(attributes?["input"] == .string("hello"))
         #expect(attributes?["change"] == .number(3.5))

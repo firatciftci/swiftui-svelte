@@ -136,7 +136,7 @@ struct Presentations: ViewModifier {
         return Binding {
             current()
         } set: { value in
-            if value == nil, let current = current() { runtime.dispatch(current.id, "dismiss") }
+            if value == nil, let current = current() { runtime.dispatch(current.id, "dismiss", waits: true) }
         }
     }
 
@@ -144,7 +144,7 @@ struct Presentations: ViewModifier {
         Binding {
             presentation(name) != nil
         } set: { presented in
-            if !presented, let current = presentation(name) { runtime.dispatch(current.id, "dismiss") }
+            if !presented, let current = presentation(name) { runtime.dispatch(current.id, "dismiss", waits: true) }
         }
     }
 }

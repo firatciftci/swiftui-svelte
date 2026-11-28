@@ -235,7 +235,7 @@ struct RemoteImage: View {
                 switch phase {
                 case let .success(image):
                     ImageElement.sized(image, fit: attributes["fit"]?.string ?? "fit")
-                        .onAppear { runtime.dispatch(node.id, "load", waits: false) }
+                        .onAppear { runtime.dispatch(node.id, "load") }
                 case let .failure(error):
                     failure(error.localizedDescription)
                 case .empty:
@@ -261,7 +261,7 @@ struct RemoteImage: View {
                 Image(systemName: "photo").foregroundStyle(.tertiary)
             }
         }
-        .onAppear { runtime.dispatch(node.id, "error", .string(message), waits: false) }
+        .onAppear { runtime.dispatch(node.id, "error", .string(message)) }
     }
 }
 
