@@ -1,0 +1,284 @@
+{
+  "protocol": 3,
+  "cases": [
+    {
+      "label": "applies a root and an insert",
+      "rule": "3.4.1, 3.4.2",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "stores a text node under its positive ID",
+      "rule": "3.4.2, 3.4.6",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[6,3,\"b\"]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"b\""
+    },
+    {
+      "label": "inserts before a named sibling",
+      "rule": "3.4",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,2,3,-4,\"z\"]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"z\"\n    #text \"a\""
+    },
+    {
+      "label": "keeps the name table across batches",
+      "rule": "3.3",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,2,2,8]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack padding=8>\n    #text \"a\""
+    },
+    {
+      "label": "treats a null value as unattr",
+      "rule": "3.4.5",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,2,2,8]", "result": "applied" },
+        { "commit": "[4,2,2,null]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "removes an attribute with unattr",
+      "rule": "3.4.5",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,2,2,8]", "result": "applied" },
+        { "commit": "[5,2,2]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "treats a null value in an insert record as a declaration, not a value",
+      "rule": "3.4.5",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,1,0,4,0,1,2,null,0]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\"\n  <vstack>"
+    },
+    {
+      "label": "ignores remove, attr, unattr, and text for unknown IDs",
+      "rule": "3.4",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[3,99,4,99,2,1,5,99,2,6,99,\"x\"]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "removes a node and its subtree with one remove",
+      "rule": "3.4.4",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[3,2]", "result": "applied" }
+      ],
+      "tree": "#fragment"
+    },
+    {
+      "label": "ignores a remove of a node that the same batch removed earlier",
+      "rule": "3.4",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[3,3,3,2,3,3]", "result": "applied" }
+      ],
+      "tree": "#fragment"
+    },
+    {
+      "label": "accepts an insert of an ID that an earlier remove freed",
+      "rule": "3.4.2",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[3,2,1,1,0,2,0,0,0]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>"
+    },
+    {
+      "label": "moves a node across parents",
+      "rule": "3.4.3",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,1,0,4,0,0,0]", "result": "applied" },
+        { "commit": "[2,4,0,3]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack>\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an unknown opcode",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[9,2]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects a JSON syntax error",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,2,2,", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an operand of the wrong type",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,\"2\",2,8]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an unknown name index",
+      "rule": "3.3, 3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[4,2,40,8]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an element record with ID 0",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,1,0,0,0,0,0]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an insert into an unknown parent",
+      "rule": "3.4, 3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,77,0,5,0,0,0]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects a move into an unknown parent",
+      "rule": "3.4, 3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[2,77,0,3]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects an insert of a node that is still in the tree",
+      "rule": "3.4.2, 3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,1,0,2,0,0,0]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\""
+    },
+    {
+      "label": "rejects a move of a node into its own subtree",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[1,2,0,4,0,0,0]", "result": "applied" },
+        { "commit": "[2,4,0,2]", "result": "malformed" }
+      ],
+      "tree": "#fragment\n  <vstack>\n    #text \"a\"\n    <vstack>"
+    },
+    {
+      "label": "applies none of a malformed batch, its names included",
+      "rule": "3.7",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",7,\"txt\",7,\"padding\",0,1,3,0,1,1,0,2,0,0,1,-3,\"a\"]",
+          "result": "applied"
+        },
+        { "commit": "[7,\"extra\",4,2,2,4,9]", "result": "malformed" },
+        { "commit": "[7,\"color\",4,2,3,\"red\"]", "result": "applied" }
+      ],
+      "tree": "#fragment\n  <vstack color=\"red\">\n    #text \"a\""
+    },
+    {
+      "label": "applies nothing from a batch whose root names another protocol",
+      "rule": "3.4.1, 10.3",
+      "batches": [
+        {
+          "commit": "[7,\"vstack\",0,1,99,0,1,1,0,2,0,0,0]",
+          "result": "incompatible"
+        }
+      ],
+      "tree": ""
+    }
+  ]
+}

@@ -14,6 +14,7 @@
     "build",
     ".build",
     "Tests/SvelteSwiftUITests/Fixtures",
+    "conformance/renderer.json",
     "example/src/paraglide"
   ]
 }

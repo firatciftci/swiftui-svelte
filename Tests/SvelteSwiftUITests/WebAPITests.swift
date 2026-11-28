@@ -41,6 +41,25 @@ struct WebAPITests {
         #expect(failures.isEmpty, "\(failures.joined(separator: "\n"))")
     }
 
+    @Test func exposesTheNativeCryptoAndProtocolGlobalsWithTheirErrors() throws {
+        let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
+        let runtime = SvelteRuntime(source: url)
+        runtime.start()
+        func thrown(_ call: String) -> String? {
+            evaluate(runtime, "(() => { try { \(call); return 'none'; } catch (error) { return error.message; } })()")
+        }
+        #expect(evaluate(runtime, "JSON.stringify(__nativeProtocols)") == "[\(NodeStore.protocolVersion)]")
+        #expect(
+            evaluate(runtime, "Array.from(__nativeDigest('SHA-256', new Uint8Array([97, 98, 99])).slice(0, 4)).join()")
+                == "186,120,22,191"
+        )
+        #expect(thrown("__nativeDigest('MD5', new Uint8Array(1))") == "Unsupported digest algorithm MD5.")
+        #expect(thrown("__nativeDigest('SHA-256', [1, 2])") == "The data must be a TypedArray.")
+        #expect(thrown("__nativeRandomFill({ length: 4 })") == "The argument must be a TypedArray.")
+        #expect(evaluate(runtime, "(() => { const a = new Uint8Array(4096); __nativeRandomFill(a); return a.some(Boolean); })()") == "true")
+        #expect(evaluate(runtime, "(() => { const a = new Uint8Array(0); __nativeRandomFill(a); return a.length; })()") == "0")
+    }
+
     @Test func forwardsHostEnvironmentChangesToJavaScript() throws {
         let url = try #require(Bundle.module.url(forResource: "web", withExtension: "js", subdirectory: "Fixtures"))
         let runtime = SvelteRuntime(source: url)

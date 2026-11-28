@@ -41,7 +41,7 @@ The bundle builds a tree of nodes. There are three kinds:
 - **Element.** A named node with attributes and children. Its name is one of the element names in `src/elements.ts`, or the name of a registered native component (Section 6.3.3).
 - **Text.** A string node. Comments are never sent to the host.
 
-Every node has an integer ID. The bundle allocates IDs from a counter that starts at 1 and only increases, so an ID is never reused within one engine instance. The host must treat IDs as opaque keys. The host must not assume that IDs are dense or ordered.
+Every node has an integer ID. The bundle allocates IDs from a counter that starts at 1 and only increases, so within one engine instance an ID never names a different node. A node that the bundle removes and later inserts again keeps its ID (Section 3.4.2). The host must treat IDs as opaque keys. The host must not assume that IDs are dense or ordered.
 
 An element or text node that the host has not received yet is "local" to the bundle. Once the host has received it, the node is "native." The bundle sends only changes to native nodes. A local node becomes native the first time it is inserted under a native parent.
 
@@ -90,7 +90,7 @@ Rules that apply to all opcodes:
 
 `root` carries the fragment ID of a mount, the protocol version that the bundle was built against, and the mount ID that the host passed to `__svelteMount`. The root record must come before any insert whose parent is that fragment, and it must be in the same batch or in an earlier one.
 
-The host must check the protocol version before it applies any other operation. If the version is not the one that the host implements, the host must not render the mount and must show the user an error that names both versions. Section 10 covers this check.
+The host must check the protocol version before it applies any operation from the batch that carries the `root` record. If the version is not the one that the host implements, the host must apply nothing from that batch, including the `name` operations that come before the `root` record, and it must not render the mount. It must show the user an error that names both versions. A mismatch doesn't make the batch malformed, so the host doesn't remount (Section 3.7). The iOS host treats a mismatch as the state of the engine instance: every mount of that instance shows the error until a batch arrives whose `root` record names the host's protocol, or until the engine restarts. Section 10 covers this check.
 
 #### 3.4.2 `insert`
 
@@ -212,7 +212,13 @@ The host must keep the request ID until it receives `settled` for it. For `refre
 
 #### 3.6.3 Errors in handlers
 
-If a handler throA host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle. Each of the following makes a batch malformed: an unknown opcode, a JSON syntax error, an operand of the wrong type, an unknown name index, an element record with ID 0, an insert or move into an unknown parent, an insert of a node ID that is still in the tree, and a move of a node into its own subtree. On a malformed batch, the host must apply none of its operations, including its `name` operations, and it must log the error. The host must then remount the app once, as a new engine instance, which resets the name table (Section 3.3). If the remounted app sends another malformed batch before it has applied a clean batch that it sent after mounting, the host must stop the engine, keep showing the error, and not apply further batches until the app restarts or the bundle changes. Once the remounted app applies such a clean batch, it has recovered, and a later malformed batch starts a new remount. The host should show the error in its development UI, and it should log it in release builds. keep showing the error, and not apply further batches until the app restarts or the bundle changes. The host should show the error in its development UI, and it should log it in release builds.
+If a handler throws, the bundle still runs the event's other handlers, and it rethrows the error from a timer with a delay of 0. For an event that carries a request, the bundle also waits for the promise that each handler returns, rethrows each rejection the same way, and then sends `settled` (Section 3.6.2). It doesn't rethrow a rejection from a `task` or `refresh` handler whose signal the host aborted with `taskcancel`. After an `input` or `change` event, the bundle resends the controlled value even when a handler failed, so the control shows the value from the app's state.
+
+The host receives a rethrown error as an uncaught exception in the engine, the same as any other error that escapes a timer callback. The host must log it, and it should show it in its development UI. The host must not treat a handler error as a failed event or a malformed batch, must not remount because of it, and must keep delivering events.
+
+### 3.7 Malformed batches and recovery
+
+A host must check every batch before it applies any operation, or it must apply operations in a transaction that can be rolled back. A host that applies a partial batch leaves the name table and the node tree out of step with the bundle. Each of the following makes a batch malformed: an unknown opcode, a JSON syntax error, an operand of the wrong type, an unknown name index, an element record with ID 0, an insert or move into an unknown parent, an insert of a node ID that is still in the tree, and a move of a node into its own subtree. On a malformed batch, the host must apply none of its operations, including its `name` operations, and it must log the error. The host must then remount the app once, as a new engine instance, which resets the name table (Section 3.3). If the remounted app sends another malformed batch before it has applied a clean batch that it sent after mounting, the host must stop the engine, keep showing the error, and not apply further batches until the app restarts or the bundle changes. Once the remounted app applies such a clean batch, it has recovered, and a later malformed batch starts a new remount. The host should show the error in its development UI, and it should log it in release builds.
 
 ### 3.8 Mounts
 
@@ -248,7 +254,7 @@ After this call the bundle sends `remove` for the mount's fragment. The host mus
 
 ### 3.9 Node ID lifetime
 
-The host must free its native state for a node when it receives `remove` for the node or for an ancestor of it. The host must not reuse a removed ID for a new node, because the bundle never reuses IDs.
+The host must free its native state for a node when it receives `remove` for the node or for an ancestor of it. A freed ID never names a different node later, but the bundle can insert the same node again under its old ID (Section 3.4.2). The host must accept that insert and build the node from its record, without any state left from before the `remove`.
 
 The bundle keeps its own map from ID to node for routing events, and that map is internal to the bundle. The host never needs to tell the bundle that a node is gone, because the bundle sends `remove` itself.
 
@@ -708,7 +714,7 @@ When a change is additive and an older host would otherwise fail, the change is 
 
 ### 10.3 Detection
 
-The host checks `protocol` in the `root` record. A host must refuse to render a mount whose protocol it does not implement, show the user an error that names both versions, and log the error. The iOS host detects this mismatch and shows that error.
+The host checks `protocol` in the `root` record before it applies anything from that batch, as Section 3.4.1 describes. A host must refuse to render a mount whose protocol it does not implement, show the user an error that names both versions, and log the error. The iOS host detects this mismatch and shows that error.
 
 Before it mounts a component, the bundle reads `__nativeProtocols`, an array of the protocol versions the host implements. The host must install it before it loads the bundle. If the array doesn't include the bundle's `protocol`, the bundle sends the `root` record so the host can show its error, logs a warning that names both versions, and doesn't mount the component. The bundle treats a host without `__nativeProtocols` as one that implements protocol 3 only. A future bundle that implements more than one protocol uses the array to pick one that the host implements.
 
@@ -725,12 +731,13 @@ These are known gaps in protocol 3. They are not part of the normative behavior 
 - A standard way for a host to report unsupported values to the bundle, in addition to logs.
 - Pause and resume for `onData` in fetch.
 - Writing each storage key separately for `localStorage`, instead of saving the whole map at once.
+- Reporting a rejected promise from an async handler of an event that carries no request, and reporting unhandled promise rejections in general. Today neither reaches the host.
 
-## 12. Conformance checklist
+## 12. Conformance
 
 A host conforms to protocol 3 when it does all of these:
 
-1. It checks the `root` protocol version before it applies any other operation, and it refuses mismatches.
+1. It checks the `root` protocol version before it applies any operation from that batch, and it refuses mismatches without applying any of the batch.
 2. It keeps the name table for the life of the engine instance, and it resets it when the engine restarts.
 3. It stores text nodes under their positive IDs, whatever sign the insert record uses.
 4. It treats `null` attribute values as absence, the same as `unattr`.
@@ -745,3 +752,55 @@ A host conforms to protocol 3 when it does all of these:
 13. It implements the `__native*` globals in Sections 6 to 8, and it fails the random and digest calls as Section 8.5 requires.
 14. It reports unsupported values through its log, once per name, and it never stops rendering because of one.
 15. It installs `__nativeProtocols` with the protocol versions it implements before it loads the bundle.
+16. It ignores invocation methods that it doesn't implement, and it logs each unknown method once (Section 4).
+17. It logs uncaught exceptions from the engine, including handler errors that the bundle rethrows, and it keeps running (Section 3.6.3).
+
+### 12.1 Status of the iOS host
+
+The iOS host in `Sources/SvelteSwiftUI` meets every item. The table lists the tests that check each one. Test names are Swift Testing functions in `Tests/SvelteSwiftUITests`, except the ones that start with `test`, which are XCUITests in `example/ios/SvelteHostUITests`.
+
+| Item | Checked by                                                                                                                                                            |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `conformance/batches.json`, `NodeStoreTests.refusesAnIncompatibleBundle`, `RecoveryTests.showsAProtocolMismatch`                                                      |
+| 2    | `conformance/batches.json`, `conformance/renderer.json`, `BundleTests.mountsAgainAfterAReload`                                                                        |
+| 3    | `conformance/batches.json`                                                                                                                                            |
+| 4    | `conformance/batches.json`                                                                                                                                            |
+| 5    | `conformance/batches.json`, and the remount tests in `RecoveryTests`                                                                                                  |
+| 6    | `conformance/batches.json`, `NodeStoreTests.forgetsEveryNodeOfALargeRemovedSubtree`                                                                                   |
+| 7    | `conformance/batches.json`, `NodeStoreTests.movesANodeToAnotherParent`, `testReordersAndDeletesTodosInEditMode`                                                       |
+| 8    | `ScrollingTests.readsWhichEventsAnElementListensFor`                                                                                                                  |
+| 9    | `RuntimeTests.answersPendingMeasurementsWithNullWhenTheElementIsRemoved`, `RuntimeTests.waitsForAnAwaitedDispatchToSettle`, `testPullsToRefreshAndWaitsForTheHandler` |
+| 10   | `NativeTests.registersTheBuiltInModules`, `NativeTests.callsModuleFunctionsWithTypedArgumentsAndResults`, `testRendersNativeComponentsAndCallsNativeModules`          |
+| 11   | `EnvironmentTests.describesTheSwiftUIEnvironmentForJavaScript`, `WebAPITests.forwardsHostEnvironmentChangesToJavaScript`                                              |
+| 12   | `RuntimeTests.holdsURLsThatArriveBeforeTheRuntimeStarts`, `OpenURLTests`                                                                                              |
+| 13   | `WebAPITests.passesTheSharedWebSuiteInJavaScriptCore`, `WebAPITests.exposesTheNativeCryptoAndProtocolGlobalsWithTheirErrors`                                          |
+| 14   | `DiagnosticsTests.reportsEachDiagnosticOnceWhereverItComesFrom`                                                                                                       |
+| 15   | `WebAPITests.exposesTheNativeCryptoAndProtocolGlobalsWithTheirErrors`                                                                                                 |
+| 16   | `RuntimeTests.remembersEachUnknownInvocationMethodOnceAndIgnoresIt`                                                                                                   |
+| 17   | `RecoveryTests.reportsExceptions`                                                                                                                                     |
+
+No test makes the platform's random source fail, so the failure path of item 13 is checked by reading the code, not by a test.
+
+### 12.2 Conformance fixtures
+
+The `conformance` directory holds fixtures that any host can replay without a JavaScript engine. Both files are JSON.
+
+`batches.json` checks single batches against the rules in Section 3. It has a `protocol` field and a `cases` array. Each case has:
+
+- `label`: what the case checks.
+- `rule`: the sections of this document that the case checks.
+- `batches`: an array of `[commit, result]` pairs, applied in order to a new host. `commit` is the batch as the string that `__nativeCommit` receives. `result` is `"applied"`, `"malformed"`, or `"incompatible"`.
+- `tree`: the tree dump after the last batch.
+
+`renderer.json` is an op log that the JavaScript test suite records from the renderer as it mounts and updates the components in `test/components`. It has a `steps` array. Each step has a `label`, the `commits` that the bundle sent for it, and the `tree` dump after the host applies them. A host passes when it reproduces every dump.
+
+A tree dump starts at the root fragment of the mount, or of the mount with the highest mount ID when there are several. It has one line per node. Each node's children follow it in order, indented two spaces more than their parent:
+
+- A fragment is `#fragment`.
+- An element is `<name key=value …>`, with its attributes sorted by key. Each value is canonical JSON.
+- A text node is `#text` followed by its string as a JSON string.
+- With no mount, the dump is the empty string.
+
+Canonical JSON writes integers without a decimal point, sorts object keys, and doesn't escape `/`.
+
+The iOS host replays both files in `ConformanceTests`, and the JavaScript test suite rewrites `renderer.json` whenever it runs. A new host should replay both files in its own test suite.

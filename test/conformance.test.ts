@@ -106,7 +106,7 @@ it("records op logs that the Swift tests replay", async () => {
 
   const fs = process.getBuiltinModule("node:fs");
   fs.writeFileSync(
-    `${process.cwd()}/Tests/SvelteSwiftUITests/Fixtures/conformance.json`,
+    `${process.cwd()}/conformance/renderer.json`,
     `${JSON.stringify({ steps }, null, 2)}\n`,
   );
 });

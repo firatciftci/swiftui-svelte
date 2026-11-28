@@ -49,6 +49,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var memoryObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var pendingURLs: Array<URL> = []
     @ObservationIgnored private var measureRequests: [Int: Array<Int>] = [:]
+    @ObservationIgnored private(set) var unknownMethods: Set<String> = []
     @ObservationIgnored private var requestSerial = 0
     @ObservationIgnored private var settlements: [Int: CheckedContinuation<Void, Never>] = [:]
     @ObservationIgnored private var environment = HostEnvironment.current
@@ -286,6 +287,12 @@ public final class SvelteRuntime {
                 }
             return
         }
+        guard Self.nodeMethods.contains(method) else {
+            if unknownMethods.insert(method).inserted {
+                Diagnostics.logger.warning("Ignoring the unknown invocation method \(method, privacy: .public)")
+            }
+            return
+        }
         guard let node = store.node(id) else {
             if let request { reply(request, frame: nil) }
             return
@@ -316,6 +323,8 @@ public final class SvelteRuntime {
             break
         }
     }
+
+    private static let nodeMethods: Set<String> = ["focus", "blur", "scrollIntoView", "scrollTo", "measure"]
 
     private func scroll(to target: Int, anchor: UnitPoint?, _ options: [String: JSONValue]) {
         scrollRequest = ScrollRequest(target: target, anchor: anchor, isAnimated: isAnimated(options), serial: requestSerial)

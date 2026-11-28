@@ -70,11 +70,15 @@ struct NodeStoreTests {
         #expect(texts(store([2, 2, 3, 5])) == ["c", "a", "b"])
     }
 
-    @Test func movesANodeToAnotherParent() {
-        let store = store([1, 1, 0, 6, 4, 0, 0, 2, 6, 0, 4])
+    @Test func movesANodeToAnotherParent() throws {
+        let store = store([1, 1, 0, 6, 4, 0, 0])
+        let moved = try #require(store.node(4))
+        store.apply(batch([2, 6, 0, 4]))
         #expect(texts(store) == ["a", "c"])
         #expect(texts(store, 6) == ["b"])
         #expect(store.root?.children.map(\.id) == [2, 6])
+        #expect(store.node(4) === moved)
+        #expect(store.node(6)?.children.first === moved)
     }
 
     @Test func insertsANestedSubtree() {

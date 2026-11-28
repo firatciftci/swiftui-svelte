@@ -182,6 +182,19 @@ struct RuntimeTests {
         #expect(seen == Array(repeating: .string("kept"), count: 6))
     }
 
+    @Test func remembersEachUnknownInvocationMethodOnceAndIgnoresIt() throws {
+        let runtime = try runtime(
+            mountScript + """
+                __nativeInvoke(0, "frobnicate", "{}");
+                __nativeInvoke(2, "wiggle", "{}");
+                __nativeInvoke(0, "frobnicate", "{}");
+                __nativeInvoke(99, "wiggle", "{}");
+                """)
+        #expect(runtime.unknownMethods == ["frobnicate", "wiggle"])
+        #expect(runtime.error == nil)
+        #expect(runtime.store.node(2) != nil)
+    }
+
     @Test func keepsAnEditThatJavaScriptAccepts() throws {
         let runtime = try runtime(mountScript)
         let node = try #require(runtime.store.node(2))
