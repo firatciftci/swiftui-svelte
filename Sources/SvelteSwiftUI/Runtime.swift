@@ -32,6 +32,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var isFrameRequested = false
     @ObservationIgnored private var inbox: Array<Inbound> = []
     @ObservationIgnored private var isDraining = false
+    @ObservationIgnored var inputs = PendingInputs()
     @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
@@ -135,6 +136,7 @@ public final class SvelteRuntime {
         mounts[id]?.actions = actions
         guard mount.props != props else { return }
         mounts[id]?.props = props
+        flushInputs(waits: true)
         call("__svelteProps", [id, props])
     }
 
@@ -150,10 +152,12 @@ public final class SvelteRuntime {
     }
 
     func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull(), waits: Bool = true) {
+        flushInputs(waits: waits)
         call("__svelteDispatch", [id, type, payload], waits: waits)
     }
 
     func dispatchAndWait(_ id: Int, _ type: String, _ payload: Any = NSNull()) async {
+        flushInputs(waits: true)
         requestSerial += 1
         let request = requestSerial
         await withCheckedContinuation { continuation in
@@ -163,6 +167,7 @@ public final class SvelteRuntime {
     }
 
     func runTask(_ id: Int) async {
+        flushInputs(waits: true)
         requestSerial += 1
         let request = requestSerial
         await withTaskCancellationHandler {
@@ -492,11 +497,13 @@ extension SvelteRuntime {
     }
 
     public func emit(_ event: String, from module: String) {
+        flushInputs(waits: true)
         call("__svelteNativeEvent", [module, event, NSNull()])
     }
 
     public func emit(_ event: String, from module: String, _ payload: some Encodable) {
         guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
+        flushInputs(waits: true)
         call("__svelteNativeEvent", [module, event, json])
     }
 }

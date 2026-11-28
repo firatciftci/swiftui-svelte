@@ -207,22 +207,37 @@ struct TextInputControl: View {
         let value = node.attributes["value"]?.string
         field
             .modifier(TextInputTraits(attributes: node.attributes))
-            .onSubmit {
-                if pending != nil { send() }
-                runtime.dispatch(node.id, "submit")
-            }
+            .onSubmit { runtime.dispatch(node.id, "submit") }
             .onChange(of: text) { _, typed in
                 guard typed != node.attributes["value"]?.string else { return }
                 node.attributes["value"] = .string(typed)
                 pending?.cancel()
-                guard let delay = node.attributes["debounce"]?.number, delay > 0 else { return send() }
+                guard let delay = node.attributes["debounce"]?.number, delay > 0 else {
+                    runtime.sendInput(node.id, typed)
+                    return settle()
+                }
+                runtime.deferInput(node.id, typed)
                 pending = Task {
                     try? await Task.sleep(for: .milliseconds(delay))
-                    if !Task.isCancelled { send() }
+                    guard !Task.isCancelled else { return }
+                    runtime.flushInput(node.id)
+                    settle()
                 }
             }
             .onChange(of: value) { _, value in
-                if let value, value != text { text = value }
+                guard let value, value != text else { return }
+                if runtime.inputs.isStaleEcho(value, of: node.id) {
+                    node.attributes["value"] = .string(text)
+                    return
+                }
+                pending?.cancel()
+                runtime.inputs.discard(node.id)
+                text = value
+            }
+            .onDisappear {
+                pending?.cancel()
+                runtime.flushInput(node.id)
+                runtime.inputs.forget(node.id)
             }
             .modifier(Focusable(node: node))
     }
@@ -256,10 +271,8 @@ struct TextInputControl: View {
         return text.foregroundStyle(color)
     }
 
-    private func send() {
-        pending?.cancel()
+    private func settle() {
         pending = nil
-        runtime.dispatch(node.id, "input", text)
         if let settled = node.attributes["value"]?.string, settled != text { text = settled }
     }
 }
