@@ -4,8 +4,9 @@ import Testing
 @testable import SvelteSwiftUI
 
 struct BytesTests {
-    @Test(arguments: ["", "Row 1", "Satır İğdır", "家 🌍👩‍👩‍👧", "a\u{0}b", String(repeating: "ğ", count: 100_000)])
-    func readsAJavaScriptStringAsNativeUTF8(text: String) throws {
+    @Test(arguments: ["", "Row 1", "Satır İğdır", "家 🌍👩‍👩‍👧", "a\u{0}b", "ğ×100000"])
+    func readsAJavaScriptStringAsNativeUTF8(sample: String) throws {
+        let text = sample == "ğ×100000" ? String(repeating: "ğ", count: 100_000) : sample
         let context = try #require(JSContext())
         let value = try #require(JSValue(object: text, in: context))
         var string = try #require(value.utf8String)
