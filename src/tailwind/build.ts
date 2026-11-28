@@ -289,6 +289,19 @@ function conditionsOf(wraps: Array<AtRule>): {
   return { when, thresholds };
 }
 
+function selectorProblem(own: string): string | undefined {
+  if (own.includes("::")) return "pseudo-elements don't exist in SwiftUI";
+  if (own.includes("[")) return "attribute selectors don't exist in SwiftUI";
+  if (/[\s>+~*]/.test(own))
+    return "it styles other elements, such as children or siblings, and a class only styles its own element";
+  for (const match of own.matchAll(/:([a-z-]+)/g)) {
+    const name = match[1] ?? "";
+    if (!PSEUDO_ALLOWED.has(name))
+      return `the :${name} state has no native equivalent`;
+  }
+  return undefined;
+}
+
 function stateOf(selector: string): {
   when: Array<string>;
   target?: "hovered" | "pressed";
@@ -303,30 +316,32 @@ function stateOf(selector: string): {
   const when: Array<string> = [];
   const problems: Array<string> = [];
   let target: "hovered" | "pressed" | undefined;
-  if (/:where\(\.group\)\s*:hover/.test(selector)) target = "hovered";
-  else if (/:where\(\.group\)\s*:active/.test(selector)) target = "pressed";
-  else if (/:hover\b/.test(selector)) target = "hovered";
-  else if (/:active\b/.test(selector)) target = "pressed";
-  if (/:disabled\b/.test(selector)) when.push("disabled");
-  if (/\.dark\s+\*/.test(selector)) when.push("dark");
-  const direction = /:dir\((rtl|ltr)\)|\[dir=["']?(rtl|ltr)["']?\]/.exec(
-    selector,
+  let own = selector.replaceAll(/\\./g, "");
+  const children = /^:where\((.+) > :not\(:last-child\)\)$/.exec(own);
+  if (children != null) own = children[1] ?? "";
+  const group = /^:is\(:where\(\.group\):(hover|active) ([^ )]+)\)(.*)$/.exec(
+    own,
   );
-  const found = direction?.[1] ?? direction?.[2];
-  if (found != null) when.push(found);
-  const bare = selector
-    .replaceAll(/\\./g, "")
-    .replaceAll(/:dir\((?:rtl|ltr)\)|\[dir=["']?(?:rtl|ltr)["']?\]/g, "")
-    .replaceAll(":not(:last-child)", "");
-  if (bare.includes("::"))
-    problems.push("pseudo-elements don't exist in SwiftUI");
-  if (bare.includes("["))
-    problems.push("attribute selectors don't exist in SwiftUI");
-  for (const match of bare.matchAll(/:([a-z-]+)/g)) {
-    const name = match[1] ?? "";
-    if (!PSEUDO_ALLOWED.has(name))
-      problems.push(`the :${name} state has no native equivalent`);
+  if (group != null) {
+    target = group[1] === "hover" ? "hovered" : "pressed";
+    own = `${group[2] ?? ""}${group[3] ?? ""}`;
   }
+  own = own.replace(
+    /:where\(:dir\((rtl|ltr)\), \[dir=["']?\1["']?\], \[dir=["']?\1["']?\] \*\)/,
+    (_, direction: string) => {
+      when.push(direction);
+      return "";
+    },
+  );
+  own = own.replace(/:(?:is|where)\((?:\.dark, )?\.dark \*\)/, () => {
+    when.push("dark");
+    return "";
+  });
+  if (target == null && /:hover\b/.test(own)) target = "hovered";
+  else if (target == null && /:active\b/.test(own)) target = "pressed";
+  if (/:disabled\b/.test(own)) when.push("disabled");
+  const problem = selectorProblem(own);
+  if (problem != null) problems.push(problem);
   return { when, target, problems, ignored: false };
 }
 
@@ -519,6 +534,7 @@ function groupRules(
     }
     for (const problem of state.problems)
       addProblem(problems, candidate, problem);
+    if (state.problems.length > 0) return;
     for (const entry of declarationsOf(rule, wraps))
       addEntry(groups, problems, candidate, position, state, entry);
   });

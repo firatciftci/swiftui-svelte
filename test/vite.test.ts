@@ -16,6 +16,22 @@ import { arithmetic, resolveClasses } from "../src/tailwind/runtime.ts";
 import { parseColor } from "../src/tailwind/values.ts";
 import { tailwind } from "../src/tailwind/vite.ts";
 
+const base: State = {
+  dark: false,
+  width: 800,
+  height: 600,
+  reduceMotion: false,
+  rtl: false,
+  disabled: false,
+  platform: "unknown",
+  idiom: "phone",
+  increaseContrast: false,
+  insets: { top: 0, right: 0, bottom: 0, left: 0 },
+  pixelRatio: 2,
+  fontScale: 1,
+  containers: {},
+};
+
 const budget = { minified: 193_750, gzipped: 60_250 };
 
 async function bundle(
@@ -269,6 +285,112 @@ describe("tailwind class table", () => {
   }, 60_000);
 });
 
+describe("tailwind selector variants", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-selectors-"));
+  const unsupported = [
+    "peer-checked:bg-red-500",
+    "aria-checked:p-1",
+    "data-[state=open]:p-2",
+    "first:p-3",
+    "odd:p-4",
+    "even:p-5",
+    "open:p-6",
+    "invalid:p-7",
+    "required:p-8",
+    "placeholder:p-9",
+    "not-last:p-10",
+    "has-[>svg]:px-3",
+    "[&_svg]:pointer-events-none",
+    "[&_svg:not([class*='size-'])]:size-4",
+    "*:data-[slot=icon]:p-11",
+    "*:p-12",
+  ];
+  const supported = [
+    "hover:p-1",
+    "active:p-2",
+    "disabled:p-3",
+    "dark:p-4",
+    "rtl:p-5",
+    "group-hover:p-6",
+    "space-x-2",
+  ];
+  const button =
+    "inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 has-[>svg]:px-3 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4";
+  writeFileSync(
+    path.join(dir, "app.css"),
+    '@import "tailwindcss";\n@custom-variant dark (&:where(.dark, .dark *));\n',
+  );
+  writeFileSync(
+    path.join(dir, "Selectors.svelte"),
+    `<vstack class="${[...unsupported, ...supported].join(" ")}"></vstack>\n`,
+  );
+  writeFileSync(
+    path.join(dir, "Button.svelte"),
+    `<btn class="${button}"></btn>\n`,
+  );
+  const shadcn = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-shadcn-"));
+  writeFileSync(
+    path.join(shadcn, "app.css"),
+    '@import "tailwindcss";\n@custom-variant dark (&:is(.dark *));\n',
+  );
+  writeFileSync(
+    path.join(shadcn, "Dark.svelte"),
+    '<vstack class="dark:p-4 dark:hover:p-2"></vstack>\n',
+  );
+
+  it("reads a dark variant written as :is(.dark *)", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(shadcn, "app.css"),
+      sources: [shadcn],
+      fonts: {},
+    });
+    expect(warnings).toEqual([]);
+    expect(table.tokens["dark:p-4"]?.[0]?.when).toEqual(["dark"]);
+    expect(table.tokens["dark:hover:p-2"]?.[0]?.when).toEqual(["dark"]);
+  }, 60_000);
+
+  it("drops selectors that style other elements or states SwiftUI lacks, with one warning each", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    for (const token of unsupported) {
+      expect(resolveClasses(table, "vstack", token, base).attrs, token).toEqual(
+        {},
+      );
+      expect(
+        warnings.filter(
+          (warning) =>
+            warning.includes(`"${token}"`) &&
+            warning.includes("Selectors.svelte"),
+        ),
+        token,
+      ).toHaveLength(1);
+    }
+    for (const token of supported) {
+      expect(
+        warnings.some((warning) => warning.includes(`"${token}"`)),
+        token,
+      ).toBe(false);
+    }
+    expect(table.tokens["hover:p-1"]?.[0]?.attrs).toHaveProperty("hovered");
+    expect(table.tokens["group-hover:p-6"]?.[0]?.attrs).toHaveProperty(
+      "hovered",
+    );
+    expect(table.tokens["dark:p-4"]?.[0]?.when).toEqual(["dark"]);
+    expect(table.tokens["rtl:p-5"]?.[0]?.when).toEqual(["rtl"]);
+    expect(table.tokens["disabled:p-3"]?.[0]?.when).toEqual(["disabled"]);
+    const attrs = resolveClasses(table, "btn", button, base).attrs;
+    expect(attrs).not.toHaveProperty("hittestable");
+    expect(attrs).not.toHaveProperty("width");
+    expect(attrs).not.toHaveProperty("height");
+    expect(attrs).toMatchObject({ padding: { leading: 16, trailing: 16 } });
+  }, 60_000);
+});
+
 describe("native Tailwind utilities", () => {
   const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-native-"));
   writeFileSync(
@@ -391,22 +513,6 @@ describe("tailwind layout, lengths, and containers", () => {
     path.join(dir, "Layout.svelte"),
     '<vstack class="@container mx-auto -mt-2 mb-[env(safe-area-inset-bottom)] grid grid-cols-1 justify-items-center justify-center border-t border-x-red-500 border-b-0 focus:outline-none focus-visible:ring-2 md:p-2 @sm:p-4 @max-xs:min-w-88 justify-between decoration-2 text-balance text-pretty text-sm w-[50vw] w-[calc(10px*2)] gap-[min(4px,1vw)] rounded-[roundToNearestPixel(10px)] content-start table-fixed border-collapse ring-2 ring-red-500 drop-shadow-md"></vstack>\n<hstack class="@container/side flex-row grid-flow-col"></hstack>\n<vstack class="flex flex-col gap-2"></vstack>\n<hstack class="grid gap-1"></hstack>\n<vstack class="w-40 border-2 h-full"></vstack>\n<txt class="max-w-3xl max-w-full max-w-none text-sm leading-[normal]"></txt>\n',
   );
-  const base: State = {
-    dark: false,
-    width: 800,
-    height: 600,
-    reduceMotion: false,
-    rtl: false,
-    disabled: false,
-    platform: "unknown",
-    idiom: "phone",
-    increaseContrast: false,
-    insets: { top: 0, right: 0, bottom: 0, left: 0 },
-    pixelRatio: 2,
-    fontScale: 1,
-    containers: {},
-  };
-
   it("maps margins, stack layout, borders, and focus states", async () => {
     const { table, warnings } = await buildClassTable({
       root: process.cwd(),

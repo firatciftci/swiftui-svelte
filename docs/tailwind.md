@@ -57,6 +57,7 @@ This stack has no padding. Inside a class string, later rules win, as they do in
 - `motion-safe:` and `motion-reduce:` follow the Reduce Motion setting.
 - `group-hover:` and `group-active:` apply only when the group is a `btn`, and they follow its hovered and pressed states.
 - `focus:` and `focus-visible:` have no effect. SwiftUI draws the focus ring for you, so these classes are accepted without a warning and do nothing.
+- Variants that depend on the document have no effect, and the build warns about each class that uses one. These include sibling and parent states such as `peer-checked:` and `has-[…]:`, `aria-*:` and `data-*:`, structural states such as `first:`, `last:`, `odd:`, and `not-last:`, form states such as `open:`, `invalid:`, and `required:`, pseudo-elements such as `placeholder:`, and selectors that style other elements, such as `*:` and `[&_svg]:`. A class only styles the element it's on, so a class like `[&_svg]:size-4` never resizes the element itself.
 
 ### Platform variants
 
