@@ -197,6 +197,7 @@ struct TextInputControl: View {
     @Environment(SvelteRuntime.self) private var runtime
     @State private var text: String
     @State private var pending: Task<Void, Never>?
+    @State private var isComposing = false
 
     init(node: Node) {
         self.node = node
@@ -208,21 +209,12 @@ struct TextInputControl: View {
         field
             .modifier(TextInputTraits(attributes: node.attributes))
             .onSubmit { runtime.dispatch(node.id, "submit") }
+            .onReceive(NotificationCenter.default.publisher(for: Composition.fieldChange)) { composed($0) }
+            .onReceive(NotificationCenter.default.publisher(for: Composition.editorChange)) { composed($0) }
             .onChange(of: text) { _, typed in
                 guard typed != node.attributes["value"]?.string else { return }
                 node.attributes["value"] = .string(typed)
-                pending?.cancel()
-                guard let delay = node.attributes["debounce"]?.number, delay > 0 else {
-                    runtime.sendInput(node.id, typed)
-                    return settle()
-                }
-                runtime.deferInput(node.id, typed)
-                pending = Task {
-                    try? await Task.sleep(for: .milliseconds(delay))
-                    guard !Task.isCancelled else { return }
-                    runtime.flushInput(node.id)
-                    settle()
-                }
+                if !isComposing { send(typed) }
             }
             .onChange(of: value) { _, value in
                 guard let value, value != text else { return }
@@ -236,6 +228,10 @@ struct TextInputControl: View {
             }
             .onDisappear {
                 pending?.cancel()
+                if isComposing {
+                    isComposing = false
+                    runtime.deferInput(node.id, text)
+                }
                 runtime.flushInput(node.id)
                 runtime.inputs.forget(node.id)
             }
@@ -271,10 +267,64 @@ struct TextInputControl: View {
         return text.foregroundStyle(color)
     }
 
+    private func composed(_ notification: Notification) {
+        guard node.isFocused || isComposing, let state = Composition.state(of: notification),
+            state.isComposing != isComposing
+        else { return }
+        isComposing = state.isComposing
+        guard !state.isComposing else { return }
+        node.attributes["value"] = .string(state.text)
+        send(state.text)
+    }
+
+    private func send(_ typed: String) {
+        pending?.cancel()
+        guard let delay = node.attributes["debounce"]?.number, delay > 0 else {
+            runtime.sendInput(node.id, typed)
+            settle()
+            return
+        }
+        runtime.deferInput(node.id, typed)
+        pending = Task {
+            try? await Task.sleep(for: .milliseconds(delay))
+            guard !Task.isCancelled else { return }
+            runtime.flushInput(node.id)
+            settle()
+        }
+    }
+
     private func settle() {
         pending = nil
         if let settled = node.attributes["value"]?.string, settled != text { text = settled }
     }
+}
+
+private enum Composition {
+    #if canImport(UIKit)
+        static let fieldChange = UITextField.textDidChangeNotification
+        static let editorChange = UITextView.textDidChangeNotification
+
+        static func state(of notification: Notification) -> (isComposing: Bool, text: String)? {
+            switch notification.object {
+            case let field as UITextField: (field.markedTextRange != nil, field.text ?? "")
+            case let editor as UITextView: (editor.markedTextRange != nil, editor.text ?? "")
+            default: nil
+            }
+        }
+    #else
+        static let fieldChange = NSControl.textDidChangeNotification
+        static let editorChange = NSText.didChangeNotification
+
+        static func state(of notification: Notification) -> (isComposing: Bool, text: String)? {
+            switch notification.object {
+            case let field as NSTextField:
+                let editor = field.currentEditor() as? NSTextView
+                return (editor?.hasMarkedText() ?? false, editor?.string ?? field.stringValue)
+            case let editor as NSTextView: return (editor.hasMarkedText(), editor.string)
+            default: return nil
+            }
+        }
+    #endif
 }
 
 struct NumberFieldControl: View {

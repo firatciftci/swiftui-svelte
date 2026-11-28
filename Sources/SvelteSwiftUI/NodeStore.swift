@@ -14,6 +14,7 @@ final class Node: Identifiable {
         var presented: Array<Node> = []
         var focusRequest = FocusRequest()
         var frame: CGRect?
+        var isFocused = false
     }
 
     let id: Int
@@ -128,6 +129,10 @@ final class Node: Identifiable {
     var frame: CGRect? {
         get { extras?.frame }
         set { if newValue != nil || extras != nil { extended().frame = newValue } }
+    }
+    @ObservationIgnored var isFocused: Bool {
+        get { extras?.isFocused ?? false }
+        set { if newValue || extras != nil { extended().isFocused = newValue } }
     }
     var parentID: Int? {
         get { Self.link(parent) }

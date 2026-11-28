@@ -2,6 +2,7 @@
   let email = $state("");
   let bio = $state("");
   let saved = $state("");
+  let code = $state("");
   let price: number | null = $state(9.99);
 </script>
 
@@ -15,6 +16,12 @@
     submitlabel="next"
     value={email}
     oninput={(value) => (email = value)}
+  />
+  <textfield
+    placeholder="Code"
+    autocapitalize="characters"
+    value={code}
+    oninput={(value) => (code = value.toUpperCase())}
   />
   <textfield
     placeholder="Styled placeholder"

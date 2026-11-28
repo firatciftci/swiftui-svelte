@@ -187,6 +187,8 @@ The payloads for the built-in event types that the iOS host sends are in this ta
 | `change`, `input`                   | the new value                                                                         | Text and control value changes.                        |
 | `load`, `error`                     | element-specific                                                                      | Image load results.                                    |
 
+A host must not send `input` while an input method is composing text in the field (marked text). It sends `input` once the composition ends, with the field's full text, so that a handler that transforms the value never sees or replaces text that the user hasn't confirmed.
+
 The bundle also has a `hover` event with the payload that its element documents, and two application events that are not element events (`memorywarning` and `openurl`, Section 5).
 
 #### 3.6.1 `listens`
