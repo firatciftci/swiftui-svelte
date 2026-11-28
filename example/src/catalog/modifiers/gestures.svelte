@@ -5,10 +5,27 @@
   let angle = $state(0);
   let hovered = $state("Move the pointer over the box");
   let shown = $state(0);
+  let taps = $state(0);
+  let widest = $state(0);
 </script>
 
 <vstack spacing={20} padding>
   <txt font="headline">{last}</txt>
+  <vstack
+    testid="press-card"
+    padding
+    width={200}
+    background="mint"
+    radius={8}
+    pressed={{ width: 280 }}
+    onresize={(size) => (widest = Math.max(widest, Math.round(size.width)))}
+    ontap={() => (taps += 1)}
+  >
+    <txt>Press the card</txt>
+  </vstack>
+  <txt testid="press-result" font="caption" color="secondary"
+    >Taps: {taps}, widest: {widest}</txt
+  >
   <zstack>
     <txt
       padding

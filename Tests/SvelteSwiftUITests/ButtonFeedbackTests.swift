@@ -46,6 +46,24 @@ struct ButtonFeedbackTests {
         #expect(node.attributes["opacity"] == .number(0.5))
     }
 
+    @Test func tracksPressesOnElementsWithTapLongPressOrDragHandlersAndFeedback() {
+        for type in ["tap", "longpress", "drag"] {
+            let card = Node(id: 1, kind: .element, name: "vstack", text: "")
+            let label = Node(id: 2, kind: .element, name: "txt", text: "")
+            card.attributes = ["listens": .array([.string(type)])]
+            card.children = [label]
+            #expect(!card.tracksPresses)
+            label.attributes = ["hovered": .object(["opacity": .number(0.5)])]
+            #expect(card.tracksPresses, "\(type)")
+        }
+        let button = Node(id: 3, kind: .element, name: "btn", text: "")
+        button.attributes = ["listens": .array([.string("tap")]), "pressed": .object(["scale": .number(0.9)])]
+        #expect(!button.tracksPresses)
+        let scroller = Node(id: 4, kind: .element, name: "vstack", text: "")
+        scroller.attributes = ["listens": .array([.string("scroll")]), "pressed": .object(["scale": .number(0.9)])]
+        #expect(!scroller.tracksPresses)
+    }
+
     @Test func findsFeedbackOnAnyDescendantIncludingAttachments() {
         let button = Node(id: 1, kind: .element, name: "btn", text: "")
         let stack = Node(id: 2, kind: .element, name: "hstack", text: "")

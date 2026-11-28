@@ -19,6 +19,12 @@ extension XCUIElement {
         return self.label == label
     }
 
+    func waitForLabel(containing text: String, timeout: TimeInterval = 5) -> Bool {
+        let deadline = Date.now.addingTimeInterval(timeout)
+        while !label.contains(text), Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }
+        return label.contains(text)
+    }
+
     func waitForHittable(timeout: TimeInterval = 5) -> Bool {
         let deadline = Date.now.addingTimeInterval(timeout)
         while !isHittable, Date.now < deadline { RunLoop.current.run(until: .now.addingTimeInterval(0.1)) }

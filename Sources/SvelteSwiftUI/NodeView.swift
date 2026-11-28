@@ -108,7 +108,8 @@ enum NodeShape {
         if node.hostsPresentations { view = view.applying(Presentations(node: node)) }
         if modifiers.contains(.animated) { view = view.applying(AnimatedChildren(node: node)) }
         if modifiers.contains(.attachments) { view = view.applying(Attachments(node: node)) }
-        if node.ownsButtonFeedback { view = view.applying(StateFeedback(node: node)) }
+        if node.ownsButtonFeedback, node.name != "btn" { view = view.applying(StateFeedback(node: node)) }
+        if node.tracksPresses { view = view.applying(PressTracking(isDraggable: node.listens(to: "drag"))) }
         if modifiers.contains(.margins) { view = view.applying(Margins(attributes: node.attributes)) }
         return view
     }

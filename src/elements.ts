@@ -712,9 +712,9 @@ type Modifiers = {
   lighten?: number;
   /** Draws a soft inner edge along the element's `clipshape`, or along the rounded corners set by `radius` when there is no `clipshape`, like an inset shadow. Combine it with `opacity` and `pressed`, such as `opacity={0}` with `pressed={{ opacity: 1 }}`, to fade the edge in while a button is pressed. */
   insetshadow?: boolean;
-  /** The look of this element while the `btn` around it is pressed. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated, both when the press starts and when it ends. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. */
+  /** The look of this element while it's pressed, or while an enclosing element that tracks presses is pressed. A `btn` tracks presses, and so does any element with an `ontap`, `onlongpress`, or `ondrag` handler. Any modifier here overrides the same attribute on this element while the press lasts, such as `background`, `radius`, `border`, `shadow`, `colormultiply`, `scale`, `opacity`, `brightness`, or `color`. Set a value to `false` to remove it, such as `shadow: false`. `animation` sets how the change is animated, both when the press starts and when it ends. On a `btn`, the same overrides apply to the label's direct children, and a child's own `pressed` value wins over them. */
   pressed?: ButtonFeedback;
-  /** The look of this element while the pointer is over the `btn` around it. It takes the same values as `pressed`, and `pressed` wins while both apply. */
+  /** The look of this element while the pointer is over it, or over an enclosing element that tracks presses. It takes the same values as `pressed`, and `pressed` wins while both apply. */
   hovered?: ButtonFeedback;
   /** A fixed width in points. */
   width?: number;

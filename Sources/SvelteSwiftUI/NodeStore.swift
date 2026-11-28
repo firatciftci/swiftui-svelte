@@ -66,6 +66,9 @@ final class Node: Identifiable {
     var hasButtonFeedback: Bool {
         ownsButtonFeedback || children.contains(where: \.hasButtonFeedback)
     }
+    var tracksPresses: Bool {
+        name != "btn" && ["tap", "longpress", "drag"].contains(where: listens(to:)) && hasButtonFeedback
+    }
     var attributes: [String: JSONValue] {
         get {
             guard !owned.isEmpty else { return nativeAttributes }

@@ -51,11 +51,10 @@ This stack has no padding. Inside a class string, later rules win, as they do in
 - `dark:` applies when the app's color scheme is dark. The app follows the device's Dark Mode setting unless you choose a mode with `ModeWatcher`, in which case the choice wins.
 - `sm:`, `md:`, `lg:`, and the other width variants apply when the window is at least that wide. Widths are in points, and they use Tailwind's default breakpoints. On iPhone the window width rarely changes, but on iPad and Mac it does.
 - `@sm:`, `@md:`, `@max-xs:`, and the other container variants apply based on the width of a container. See [Container queries](#container-queries).
-- `hover:` applies while the pointer is over the element. It maps to the `hovered` state.
-- `active:` applies while the element is pressed. It maps to the `pressed` state.
+- `hover:` applies while the pointer is over the element, and `active:` applies while the element is pressed. They map to the `hovered` and `pressed` states. `hover:` works on any element. `active:` works on a `btn`, on an element with an `ontap`, `onlongpress`, or `ondrag` handler, and on anything inside one of those.
 - `disabled:` applies while the element is disabled.
 - `motion-safe:` and `motion-reduce:` follow the Reduce Motion setting.
-- `group-hover:` and `group-active:` apply only when the group is a `btn`, and they follow its hovered and pressed states.
+- `group-hover:` and `group-active:` follow the hovered and pressed states of the nearest `btn` or element with an `ontap`, `onlongpress`, or `ondrag` handler around them.
 - `focus:` and `focus-visible:` have no effect. SwiftUI draws the focus ring for you, so these classes are accepted without a warning and do nothing.
 - Variants that depend on the document have no effect, and the build warns about each class that uses one. These include sibling and parent states such as `peer-checked:` and `has-[…]:`, `aria-*:` and `data-*:`, structural states such as `first:`, `last:`, `odd:`, and `not-last:`, form states such as `open:`, `invalid:`, and `required:`, pseudo-elements such as `placeholder:`, and selectors that style other elements, such as `*:` and `[&_svg]:`. A class only styles the element it's on, so a class like `[&_svg]:size-4` never resizes the element itself.
 
