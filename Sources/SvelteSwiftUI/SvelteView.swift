@@ -106,13 +106,18 @@ public struct SvelteView: View {
         #if !canImport(UIKit)
             .preferredColorScheme(runtime.appearance)
         #endif
-        .overlay(alignment: .bottom) {
-            #if DEBUG
+        #if DEBUG
+            .overlay(alignment: .bottom) {
                 if case .mounted = phase, let error = runtime.currentError {
                     ErrorOverlay(error: error, dismiss: runtime.dismissError, reload: runtime.reload)
                 }
-            #endif
-        }
+            }
+            .overlay(alignment: .leading) {
+                if case .mounted = phase, !runtime.diagnostics.isEmpty {
+                    DiagnosticTray(diagnostics: runtime.diagnostics, dismiss: runtime.dismissDiagnostics)
+                }
+            }
+        #endif
         .task(id: runtime.loads) {
             isOverdue = false
             guard runtime.loads > 0 else { return }
@@ -260,6 +265,77 @@ private final class MountHandle {
         Task { @MainActor in runtime.unmount(id) }
     }
 }
+
+#if DEBUG
+    private struct DiagnosticTray: View {
+        let diagnostics: Array<Diagnostic>
+        let dismiss: () -> Void
+        @State private var isExpanded = false
+
+        var body: some View {
+            if isExpanded {
+                list
+            } else {
+                Button {
+                    withAnimation(.snappy) { isExpanded = true }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text(diagnostics.count, format: .number)
+                    }
+                    .font(.caption2.bold())
+                    .foregroundStyle(.black)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 5)
+                    .background(
+                        .yellow, in: .rect(topLeadingRadius: 0, bottomLeadingRadius: 0, bottomTrailingRadius: 10, topTrailingRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(diagnostics.count == 1 ? "1 warning" : "\(diagnostics.count) warnings")
+                .accessibilityIdentifier("svelte-diagnostics")
+                .ignoresSafeArea(edges: .leading)
+                .transition(.move(edge: .leading))
+            }
+        }
+
+        private var list: some View {
+            VStack(alignment: .leading, spacing: 10) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(Array(diagnostics.enumerated()), id: \.offset) { _, diagnostic in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(diagnostic.message)
+                                    .font(.caption.monospaced())
+                                if let location = diagnostic.location {
+                                    Text(location)
+                                        .font(.caption2.monospaced())
+                                        .opacity(0.7)
+                                }
+                            }
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .frame(maxHeight: 240)
+                .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Button("Dismiss", action: dismiss)
+                    Spacer()
+                    Button("Hide") { withAnimation(.snappy) { isExpanded = false } }
+                }
+                .font(.caption.bold())
+                .buttonStyle(.borderless)
+                .tint(.black)
+            }
+            .foregroundStyle(.black)
+            .padding(14)
+            .background(.yellow.gradient, in: .rect(cornerRadius: 16))
+            .padding(.horizontal)
+            .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))
+        }
+    }
+#endif
 
 private struct ErrorOverlay: View {
     let error: ScriptError

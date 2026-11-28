@@ -28,13 +28,17 @@ If the view never renders, `SvelteView` says why in every build, Release include
 
 If the bundle was built with a different version of swiftui-svelte than the app's SvelteSwiftUI package, `SvelteView` shows a version mismatch screen that names both versions instead of rendering. Update the npm package and the Swift package to the same version, then rebuild the bundle. The bundle also checks the app's protocol version before it mounts anything, and it logs a warning that names both versions.
 
+## Development warnings
+
+Debug builds also collect the library's warnings in a tray. When the current bundle has reported a warning, a yellow handle appears on the leading edge of the screen with the number of warnings. Tap it to read them. **Hide** folds the list back into the handle, and **Dismiss** clears the warnings until a new one comes in. Each warning is listed once per load of the bundle, and a reload starts the list over. The same warnings go to the console, as [Logging](#logging) describes. Release builds don't show the tray.
+
 ## Bridge statistics
 
 `stats` from `swiftui-svelte` counts the renderer's work. `live` is the number of element nodes that haven't been released yet, `commits` and `ops` count the batches and operations sent to the host, `bytes` is their total size, and `serializeMs` and `nativeMs` are the time spent encoding batches and the time spent inside the host's commit call. Read it to look for leaks and to compare performance between builds. `protocol` is the bridge protocol version the bundle was built with.
 
 ## Misspelled elements and attributes
 
-While `vite build --watch` runs, or in a build with `--mode development`, the bundle also checks element and attribute names and prints a warning to Xcode's console for any it doesn't recognize, such as `<txt> doesn't have an attribute named "paddng". Did you mean "padding"?`. Each name is reported once. An element name that isn't built in renders as a red "Unknown element" label, unless you registered a native component with that name. Release builds leave the checks out.
+While `vite build --watch` runs, or in a build with `--mode development`, the bundle also checks element and attribute names and reports a warning in the tray and in Xcode's console for any it doesn't recognize, such as `<txt> doesn't have an attribute named "paddng". Did you mean "padding"?`. Each name is reported once. An element name that isn't built in renders as a red "Unknown element" label, unless you registered a native component with that name. Release builds leave the checks out.
 
 `svelte-check` catches most of these before you build, because every element and attribute is typed. Run it with the TypeScript preset from [Getting started](getting-started.md).
 

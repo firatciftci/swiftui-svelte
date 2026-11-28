@@ -1716,6 +1716,15 @@ A `Button`: runs `onclick` when tapped.
       />
     </zstack>
   </btn>
+  <txt
+    testid="untracked-press"
+    padding
+    font="caption"
+    color="secondary"
+    pressed={{ color: "red" }}
+    >This text has pressed styles, but nothing tracks presses on it, so Debug
+    builds show a warning on the left edge of the screen.</txt
+  >
 </vstack>
 ```
 
