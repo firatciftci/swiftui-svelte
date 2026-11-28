@@ -72,7 +72,6 @@ struct Searching: ViewModifier {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
     @State private var text: String
-    @State private var sentBeforeChange: String?
 
     init(node: Node) {
         self.node = node
@@ -83,7 +82,6 @@ struct Searching: ViewModifier {
         let attributes = node.attributes
         let scopes = SearchScope.scopes(attributes["scopes"])
         let suggestions = node.renderedChildren
-        let value = attributes["value"]?.string
         content
             .searchable(
                 text: $text,
@@ -109,25 +107,7 @@ struct Searching: ViewModifier {
             }
             .modifier(Scopes(node: node, scopes: scopes))
             .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
-            .onSubmit(of: .search) {
-                if text != node.attributes["value"]?.string {
-                    node.setOwnAttribute("value", .string(text))
-                    runtime.dispatch(node.id, "input", .string(text))
-                    sentBeforeChange = text
-                }
-                runtime.submit(node.id)
-            }
-            .onChange(of: text) { _, typed in
-                let isSent = typed == sentBeforeChange
-                sentBeforeChange = nil
-                guard !isSent, typed != node.attributes["value"]?.string else { return }
-                node.setOwnAttribute("value", .string(typed))
-                runtime.dispatch(node.id, "input", .string(typed), waits: true)
-                if let settled = node.attributes["value"]?.string, settled != typed { text = settled }
-            }
-            .onChange(of: value) { _, value in
-                if let value, value != text { text = value }
-            }
+            .modifier(ControlledText(node: node, text: $text, submits: .search))
     }
 }
 

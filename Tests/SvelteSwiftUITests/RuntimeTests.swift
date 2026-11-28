@@ -165,15 +165,21 @@ struct RuntimeTests {
         #expect(runtime.error == nil)
     }
 
-    @Test func showsAnEditThenTheValueThatJavaScriptSettlesOn() async throws {
+    @Test func settlesAnEditOnTheValueThatJavaScriptKeepsWithoutShowingTheEdit() async throws {
         let runtime = try runtime(
             mountScript + """
                 globalThis.__svelteDispatch = (id) => attr(id, "value", "kept");
                 """)
         let node = try #require(runtime.store.node(2))
+        var seen: Array<JSONValue?> = []
         runtime.edit(node, "value", to: .string("typed"), event: "input")
-        #expect(node.attributes["value"] == .string("typed"))
-        try await eventually { node.attributes["value"] == .string("kept") }
+        seen.append(node.attributes["value"])
+        for _ in 0..<5 {
+            await Task.yield()
+            pumpRunLoop()
+            seen.append(node.attributes["value"])
+        }
+        #expect(seen == Array(repeating: .string("kept"), count: 6))
     }
 
     @Test func keepsAnEditThatJavaScriptAccepts() throws {

@@ -361,12 +361,6 @@ public final class SvelteRuntime {
     func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: ScriptArgument? = nil) {
         node.setOwnAttribute(name, value)
         dispatch(node.id, event, argument: payload ?? .json(value), waits: true)
-        let settled = node.ownAttributes[name]
-        guard settled != value else { return }
-        node.setOwnAttribute(name, value)
-        Task { @MainActor in
-            if node.ownAttributes[name] == value { node.setOwnAttribute(name, settled) }
-        }
     }
 
     func receiveMemoryWarning() {

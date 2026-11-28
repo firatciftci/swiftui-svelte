@@ -202,11 +202,7 @@ struct ToggleElement: View {
 
 struct TextInputControl: View {
     let node: Node
-    @Environment(SvelteRuntime.self) private var runtime
     @State private var text: String
-    @State private var pending: Task<Void, Never>?
-    @State private var isComposing = false
-    @State private var sentBeforeChange: String?
 
     init(node: Node) {
         self.node = node
@@ -214,38 +210,9 @@ struct TextInputControl: View {
     }
 
     var body: some View {
-        let value = node.attributes["value"]?.string
         field
             .modifier(TextInputTraits(attributes: node.attributes))
-            .onSubmit(submit)
-            .onReceive(NotificationCenter.default.publisher(for: Composition.fieldChange)) { composed($0) }
-            .onReceive(NotificationCenter.default.publisher(for: Composition.editorChange)) { composed($0) }
-            .onChange(of: text) { _, typed in
-                let isSent = typed == sentBeforeChange
-                sentBeforeChange = nil
-                guard !isSent, typed != node.attributes["value"]?.string else { return }
-                node.setOwnAttribute("value", .string(typed))
-                if !isComposing { send(typed) }
-            }
-            .onChange(of: value) { _, value in
-                guard let value, value != text else { return }
-                if runtime.inputs.isStaleEcho(value, of: node.id) {
-                    node.setOwnAttribute("value", .string(text))
-                    return
-                }
-                pending?.cancel()
-                runtime.inputs.discard(node.id)
-                text = value
-            }
-            .onDisappear {
-                pending?.cancel()
-                if isComposing {
-                    isComposing = false
-                    runtime.deferInput(node.id, text)
-                }
-                runtime.flushInput(node.id)
-                runtime.inputs.forget(node.id)
-            }
+            .modifier(ControlledText(node: node, text: $text, submits: .text))
             .modifier(Focusable(node: node))
     }
 
@@ -276,6 +243,49 @@ struct TextInputControl: View {
         let text = Text(placeholder)
         guard let color = Palette.style(node.attributes["placeholdercolor"]) else { return text }
         return text.foregroundStyle(color)
+    }
+}
+
+struct ControlledText: ViewModifier {
+    let node: Node
+    @Binding var text: String
+    let submits: SubmitTriggers
+    @Environment(SvelteRuntime.self) private var runtime
+    @State private var pending: Task<Void, Never>?
+    @State private var isComposing = false
+    @State private var sentBeforeChange: String?
+
+    func body(content: Content) -> some View {
+        content
+            .onSubmit(of: submits, submit)
+            .onReceive(NotificationCenter.default.publisher(for: Composition.fieldChange)) { composed($0) }
+            .onReceive(NotificationCenter.default.publisher(for: Composition.editorChange)) { composed($0) }
+            .onChange(of: text) { _, typed in
+                let isSent = typed == sentBeforeChange
+                sentBeforeChange = nil
+                guard !isSent, typed != node.attributes["value"]?.string else { return }
+                node.setOwnAttribute("value", .string(typed))
+                if !isComposing { send(typed) }
+            }
+            .onChange(of: node.attributes["value"]?.string) { _, value in
+                guard let value, value != text else { return }
+                if runtime.inputs.isStaleEcho(value, of: node.id) {
+                    node.setOwnAttribute("value", .string(text))
+                    return
+                }
+                pending?.cancel()
+                runtime.inputs.discard(node.id)
+                text = value
+            }
+            .onDisappear {
+                pending?.cancel()
+                if isComposing {
+                    isComposing = false
+                    runtime.deferInput(node.id, text)
+                }
+                runtime.flushInput(node.id)
+                runtime.inputs.forget(node.id)
+            }
     }
 
     private func submit() {

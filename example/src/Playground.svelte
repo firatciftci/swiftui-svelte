@@ -103,6 +103,8 @@
   let price = $state<number | null>(null);
   let notes = $state("");
   let journal = $state("");
+  let cappedVolume = $state(0.5);
+  let cappedGuests = $state(2);
   let showsPickers = $state(false);
   let toppings = $state<Array<string | number>>(["cheese"]);
   let sides = $state<Array<string | number>>([]);
@@ -660,6 +662,29 @@
         <txt testid="journal-count" font="caption" color="secondary">
           {journal.length} characters
         </txt>
+        <txt font="headline">Limits</txt>
+        <toggle checked={false} onchange={() => {}} testid="locked">
+          Notifications (turn on in Settings)
+        </toggle>
+        <slider
+          value={cappedVolume}
+          oninput={(value) => (cappedVolume = Math.min(value, 0.8))}
+          testid="capped-volume"
+        >
+          <txt>Volume, capped at 80%</txt>
+        </slider>
+        <txt testid="capped-volume-value" color="secondary">
+          Volume {Math.round(cappedVolume * 100)}%
+        </txt>
+        <stepper
+          value={cappedGuests}
+          min={1}
+          max={10}
+          onchange={(value) => (cappedGuests = Math.min(value, 4))}
+          testid="capped-guests"
+        >
+          <txt>{cappedGuests} guests, up to 4</txt>
+        </stepper>
       </DisclosureGroup>
 
       <DisclosureGroup title="Pickers and menus" bind:expanded={showsPickers}>
