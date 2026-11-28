@@ -35,6 +35,33 @@ struct JSONValueTests {
         #expect(throws: BridgeError.self) { try decode(json) }
     }
 
+    private struct Event: Codable, Equatable {
+        let title: String
+        let at: Date
+    }
+
+    @Test func decodesTheDatesThatItEncodes() throws {
+        let date = Date(timeIntervalSince1970: 1_700_000_000.25)
+        #expect(try JSONValue(date).decode(Date.self) == date)
+        #expect(JSONValue(date) == .string("2023-11-14T22:13:20.250Z"))
+        let event = JSONValue.object(["title": .string("Launch"), "at": JSONValue(date)])
+        #expect(try event.decode(Event.self) == Event(title: "Launch", at: date))
+    }
+
+    @Test(arguments: [
+        ("\"1970-01-01T00:00:00.000Z\"", 0.0),
+        ("\"1970-01-01T00:00:01Z\"", 1.0),
+        ("\"2023-11-14T22:13:20.250+01:00\"", 1_699_996_400.25),
+        ("1500", 1.5),
+    ])
+    func decodesDatesTheWayJavaScriptWritesThem(json: String, seconds: Double) throws {
+        #expect(try JSONValue(parsing: json).decode(Date.self) == Date(timeIntervalSince1970: seconds))
+    }
+
+    @Test func rejectsAStringThatIsNotADate() throws {
+        #expect(throws: DecodingError.self) { try JSONValue.string("soon").decode(Date.self) }
+    }
+
     @Test func keepsNumbersAndBooleansApart() throws {
         #expect(try decode("1") != .bool(true))
         #expect(try decode("true") != .number(1))

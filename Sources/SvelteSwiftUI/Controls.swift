@@ -91,7 +91,7 @@ struct DatePickerControl: View {
             selection: Binding {
                 node.attributes["value"]?.date ?? .now
             } set: { date in
-                let value = JSONValue.string(date.ISO8601Format(.init(includingFractionalSeconds: true)))
+                let value = JSONValue(date)
                 runtime.edit(node, "value", to: value, event: "change", payload: date)
             },
             in: lower...max(lower, node.attributes["max"]?.date ?? .distantFuture),

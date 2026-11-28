@@ -222,9 +222,7 @@ public struct SvelteView: View {
     #endif
 
     static func json(_ props: [String: JSONValue]) -> String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        return (try? encoder.encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+        (try? BridgeJSON.encoder().encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
     }
 }
 

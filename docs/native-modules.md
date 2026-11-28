@@ -27,6 +27,8 @@ const weather = nativeModule("weather");
 const days = await weather.forecast("Chicago", 3);
 ```
 
+A `Date` crosses the bridge as an ISO 8601 string with milliseconds, which is what `JSON.stringify` writes for a JavaScript `Date`. A Swift function can take a `Date` argument when JavaScript passes a `Date`, an ISO 8601 string, or a number of milliseconds since 1970. A `Date` that Swift returns or sends with an event arrives in JavaScript as an ISO 8601 string, which `new Date(value)` turns back into a `Date`.
+
 To type the module, declare its functions and events:
 
 ```ts

@@ -17,7 +17,7 @@ public enum JSONValue: Hashable, Sendable {
     }
 
     public init(_ date: Date) {
-        self = .string(date.ISO8601Format(.init(includingFractionalSeconds: true)))
+        self = .string(BridgeJSON.format(date))
     }
 
     public init(_ url: URL) {
@@ -25,7 +25,7 @@ public enum JSONValue: Hashable, Sendable {
     }
 
     public func decode<T: Decodable>(_: T.Type) throws -> T {
-        try JSONDecoder().decode(T.self, from: JSONEncoder().encode(self))
+        try BridgeJSON.decoder().decode(T.self, from: BridgeJSON.encoder().encode(self))
     }
 
     var string: String? {
@@ -58,8 +58,7 @@ public enum JSONValue: Hashable, Sendable {
 
     var date: Date? {
         guard case let .string(string) = self else { return nil }
-        return (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(string))
-            ?? (try? Date.ISO8601FormatStyle().parse(string))
+        return BridgeJSON.date(from: string)
     }
 
     var object: Any {
@@ -116,5 +115,43 @@ extension JSONValue: ExpressibleByBooleanLiteral, ExpressibleByIntegerLiteral, E
 
     public init(dictionaryLiteral elements: (String, Self)...) {
         self = .object(Dictionary(elements, uniquingKeysWith: { _, last in last }))
+    }
+}
+
+nonisolated enum BridgeJSON {
+    static func encoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(format(date))
+        }
+        return encoder
+    }
+
+    static func decoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            if let milliseconds = try? container.decode(Double.self) {
+                return Date(timeIntervalSince1970: milliseconds / 1000)
+            }
+            let text = try container.decode(String.self)
+            guard let date = date(from: text) else {
+                throw DecodingError.dataCorruptedError(
+                    in: container, debugDescription: "Expected an ISO 8601 date, but found \"\(text)\".")
+            }
+            return date
+        }
+        return decoder
+    }
+
+    static func format(_ date: Date) -> String {
+        date.ISO8601Format(.init(includingFractionalSeconds: true))
+    }
+
+    static func date(from text: String) -> Date? {
+        (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text))
+            ?? (try? Date.ISO8601FormatStyle().parse(text))
     }
 }

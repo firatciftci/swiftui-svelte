@@ -78,14 +78,12 @@ public struct NativeModule {
     }
 
     static func encode(_ value: some Encodable) throws -> Data {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(value)
+        try BridgeJSON.encoder().encode(value)
     }
 
     private static func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         do {
-            return try JSONDecoder().decode(type, from: data)
+            return try BridgeJSON.decoder().decode(type, from: data)
         } catch {
             throw NativeModuleError(code: "invalidArguments", message: Self.describe(error))
         }
@@ -131,7 +129,7 @@ private struct Arguments2<A: Decodable, B: Decodable>: Decodable {
 }
 
 private func next<T: Decodable>(_ type: T.Type, in container: inout any UnkeyedDecodingContainer) throws -> T {
-    if container.isAtEnd, let missing = try? JSONDecoder().decode(T.self, from: Data("null".utf8)) { return missing }
+    if container.isAtEnd, let missing = try? BridgeJSON.decoder().decode(T.self, from: Data("null".utf8)) { return missing }
     return try container.decode(type)
 }
 
@@ -179,7 +177,7 @@ public struct NativeElement {
     }
 
     public func send(_ event: String, _ payload: some Encodable) {
-        guard let data = try? JSONEncoder().encode([payload]),
+        guard let data = try? BridgeJSON.encoder().encode([payload]),
             let values = try? JSONSerialization.jsonObject(with: data) as? Array<Any>,
             let value = values.first
         else { return }

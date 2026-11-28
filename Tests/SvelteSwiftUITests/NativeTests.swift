@@ -55,6 +55,22 @@ struct NativeTests {
         #expect(try await reply(runtime, 4)?["json"] == .string("\"Hello, you\""))
     }
 
+    @Test func passesDatesAsISOStringsBothWays() async throws {
+        let calendar = NativeModule("calendar")
+            .function("later") { (date: Date) -> Date in date.addingTimeInterval(60) }
+        let runtime = try runtime(
+            mount + """
+                __nativeCall(1, "calendar", "later", JSON.stringify([new Date(0)]));
+                __nativeCall(2, "calendar", "later", "[1000]");
+                """,
+            modules: [calendar])
+        #expect(try await reply(runtime, 1)?["json"] == .string(#""1970-01-01T00:01:00.000Z""#))
+        #expect(try await reply(runtime, 2)?["json"] == .string(#""1970-01-01T00:01:01.000Z""#))
+        runtime.emit("changed", from: "calendar", ["at": Date(timeIntervalSince1970: 0)])
+        runtime.settle()
+        #expect(runtime.store.node(2)?.attributes["calendar.changed"] == .string(#"{"at":"1970-01-01T00:00:00.000Z"}"#))
+    }
+
     @Test func repliesWithErrorsForThrowsBadArgumentsAndUnknownFunctions() async throws {
         let runtime = try runtime(
             mount + """
