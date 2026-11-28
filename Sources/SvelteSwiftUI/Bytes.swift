@@ -17,6 +17,21 @@ nonisolated extension JSValue {
         withBytes { Data($0) }
     }
 
+    var utf8String: String? {
+        guard let reference = jsValueRef, let context = context?.jsGlobalContextRef,
+            let string = JSValueToStringCopy(context, reference, nil)
+        else { return nil }
+        defer { JSStringRelease(string) }
+        let capacity = JSStringGetMaximumUTF8CStringSize(string)
+        return String(unsafeUninitializedCapacity: capacity) { buffer in
+            guard let base = buffer.baseAddress else { return 0 }
+            let written = base.withMemoryRebound(to: CChar.self, capacity: capacity) {
+                JSStringGetUTF8CString(string, $0, capacity)
+            }
+            return max(0, written - 1)
+        }
+    }
+
     var isTypedArray: Bool {
         guard let reference = jsValueRef, let context = context?.jsGlobalContextRef else { return false }
         return JSValueGetTypedArrayType(context, reference, nil) != kJSTypedArrayTypeNone

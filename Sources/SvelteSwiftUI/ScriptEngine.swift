@@ -160,8 +160,8 @@ actor ScriptEngine {
     }
 
     private func install(into context: JSContext) {
-        let commit: @convention(block) (String, JSValue) -> Void = { [weak self] json, animation in
-            self?.post(.commit(json, animation.isString ? animation.toString() : nil))
+        let commit: @convention(block) (JSValue, JSValue) -> Void = { [weak self] json, animation in
+            self?.post(.commit(json.utf8String ?? "", animation.isString ? animation.toString() : nil))
         }
         let log: @convention(block) (String, String) -> Void = { Diagnostics.log($1, level: $0) }
         let diagnostics = diagnostics
