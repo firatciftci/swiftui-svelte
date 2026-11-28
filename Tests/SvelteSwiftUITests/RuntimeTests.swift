@@ -61,34 +61,11 @@ struct RuntimeTests {
                 """).write(to: url, atomically: true, encoding: .utf8)
         let runtime = SvelteRuntime(source: url, reloadsOnChange: false)
         let link = try #require(URL(string: "sveltehost://todos/2"))
-        runtime.open(link, from: nil)
-        runtime.open(link, from: nil)
+        runtime.open(link)
+        runtime.open(link)
         runtime.start()
         runtime.settle()
         #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(1), .string("sveltehost://todos/2")]))
-    }
-
-    @Test func opensEachURLOnceWhenSeveralViewsReceiveIt() throws {
-        let runtime = try runtime(
-            mountScript + """
-                globalThis.__svelteMount = () => {};
-                let opened = 0;
-                globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
-                """)
-        let first = runtime.mount("First", props: "{}", actions: [:])
-        let second = runtime.mount("Second", props: "{}", actions: [:])
-        let url = try #require(URL(string: "sveltehost://todos/4"))
-        runtime.open(url, from: second)
-        runtime.open(url, from: first)
-        runtime.settle()
-        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(1), .string("sveltehost://todos/4")]))
-        runtime.unmount(first)
-        runtime.open(url, from: second)
-        runtime.settle()
-        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(2), .string("sveltehost://todos/4")]))
-        runtime.open(url)
-        runtime.settle()
-        #expect(runtime.store.node(2)?.attributes["openurl"] == .array([.number(3), .string("sveltehost://todos/4")]))
     }
 
     @Test func answersMeasurementsOnceTheElementIsLaidOut() throws {

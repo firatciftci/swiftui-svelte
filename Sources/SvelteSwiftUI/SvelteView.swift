@@ -6,6 +6,7 @@ public struct SvelteView: View {
     private let component: String
     private let props: String
     private let actions: [String: @MainActor (JSONValue) -> Void]
+    var urlHandling = URLHandling.automatic
 
     public init(
         source: URL,
@@ -41,7 +42,7 @@ public struct SvelteView: View {
 
     public var body: some View {
         let runtime = owner.runtime(for: runtime)
-        MountedView(runtime: runtime, component: component, props: props, actions: actions)
+        MountedView(runtime: runtime, component: component, props: props, actions: actions, urlHandling: urlHandling)
             .id(ObjectIdentifier(runtime))
     }
 
@@ -55,7 +56,9 @@ private struct MountedView: View {
     let component: String
     let props: String
     let actions: [String: @MainActor (JSONValue) -> Void]
+    let urlHandling: SvelteView.URLHandling
     @State private var handle: MountHandle?
+    @State private var appearance: Int?
     @State private var safeAreaInsets = EdgeInsets()
     @State private var keyboardHeight = 0.0
     @State private var viewportSize = CGSize.zero
@@ -158,8 +161,13 @@ private struct MountedView: View {
             }
         #endif
         .environment(runtime)
-        .onOpenURL { runtime.open($0, from: handle?.id) }
+        .onOpenURL { url in
+            let order = appearance ?? URLRouter.shared.nextAppearance()
+            appearance = order
+            URLRouter.shared.offer(url, to: runtime, appearance: order, handling: urlHandling)
+        }
         .onAppear {
+            if appearance == nil { appearance = URLRouter.shared.nextAppearance() }
             runtime.updateEnvironment(environment.dictionary)
             if handle == nil {
                 let id = runtime.mount(component, props: props, actions: box.forwarding)

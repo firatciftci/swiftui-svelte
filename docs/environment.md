@@ -64,7 +64,7 @@ Each property is tracked separately, so an effect that reads `colorScheme` doesn
 
 - `onActive`, `onInactive`, and `onBackground` run when SwiftUI's scene phase changes to that value. While the app launches, the scene goes from inactive to active, so `onActive` also runs once at startup.
 - `onMemoryWarning` runs when iOS sends a memory warning. Free what you can there. After the listeners run, JavaScriptCore collects garbage.
-- `onOpenURL` receives a `URL` for each link that opens the app, such as a custom URL scheme or a universal link. `SvelteView` forwards SwiftUI's `onOpenURL` for you, and if several views share a runtime, the link still arrives once. A link that opens the app before any component listens, as on a cold launch, waits for the first listener. If your app gets URLs somewhere else, such as in an app delegate, pass them to `runtime.open(url)`.
+- `onOpenURL` receives a `URL` for each link that opens the app, such as a custom URL scheme or a universal link. `SvelteView` forwards SwiftUI's `onOpenURL` for you. When a window shows several `SvelteView`s, SwiftUI hands the link to each of them, and the link goes to just one: the view that appeared first, unless another view is marked `.handlesURLs(.preferred)`. Mark a view `.handlesURLs(.never)` to keep links away from it. Views that share a runtime count as one, so the link arrives once. On a cold launch, a link that opens the app before any component listens waits for the first listener. If your app gets URLs somewhere else, such as in an app delegate, pass them to `runtime.open(url)`.
 
 The example app registers the `sveltehost` scheme, so `xcrun simctl openurl booted sveltehost://todos/2` opens the second to-do.
 

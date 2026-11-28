@@ -526,11 +526,6 @@ extension SvelteRuntime {
         }
     }
 
-    func open(_ url: URL, from mount: Int?) {
-        if let mount, let first = mounts.keys.min(), mount != first { return }
-        open(url)
-    }
-
     private func deliver(_ url: URL) {
         call("__svelteAppEvent", ["openurl", .string(url.absoluteString)], waits: false)
     }
