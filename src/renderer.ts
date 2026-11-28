@@ -292,15 +292,22 @@ function flushTexts(): void {
   changedTexts.clear();
 }
 
+function hasSameAnchor(previous: ChildNode | null, node: ChildNode): boolean {
+  let next = previous?.next;
+  while (next != null && next !== node && next.state !== State.Native)
+    next = next.next;
+  return next === node;
+}
+
 function flushInserts(): void {
-  let follower: ChildNode | null = null;
+  let previous: ChildNode | null = null;
   let anchor = 0;
   for (const node of pending) {
     if (node.state !== State.Pending || node.parent?.state !== State.Native) {
       continue;
     }
-    if (node !== follower) anchor = anchorId(node);
-    follower = node.next;
+    if (!hasSameAnchor(previous, node)) anchor = anchorId(node);
+    previous = node;
     if (!isMaterial(node)) {
       node.state = State.Local;
       continue;
@@ -470,15 +477,23 @@ export function withAnimation<T>(
   flushSync();
   commit();
   animating.isApplying = true;
-  let result: T;
   try {
-    result = flushSync(fn);
+    return flushSync(fn);
   } finally {
-    animating.isApplying = false;
+    try {
+      flushSync();
+    } finally {
+      animating.isApplying = false;
+      commit(animation);
+      for (const later of animating.later.splice(0)) {
+        try {
+          later();
+        } catch (error) {
+          report(error);
+        }
+      }
+    }
   }
-  commit(animation);
-  while (animating.later.length > 0) animating.later.shift()?.();
-  return result;
 }
 
 function changeAttribute(element: ElementNode, name: string): void {

@@ -32,6 +32,7 @@ import Items from "./components/Items.svelte";
 import Lifecycle from "./components/Lifecycle.svelte";
 import { log, signals } from "./components/lifecycle.ts";
 import Lists from "./components/Lists.svelte";
+import ManyBlocks from "./components/ManyBlocks.svelte";
 import ManyRows from "./components/ManyRows.svelte";
 import NativeMap from "./components/NativeMap.svelte";
 import NestedAnimation from "./components/NestedAnimation.svelte";
@@ -828,6 +829,23 @@ describe("withAnimation", () => {
     expect(find("circle")?.attributes.get("opacity")).toBe(0);
   });
 
+  it("animates a throwing callback's changes and still runs the animations it queued", async () => {
+    await render(NestedAnimation);
+    reset();
+    expect(() =>
+      withAnimation(() => {
+        state.show = false;
+        throw new Error("boom");
+      }, "smooth"),
+    ).toThrow("boom");
+    expect(animations).toEqual(['"smooth"', '"snappy"']);
+    expect(find("txt")).toBeUndefined();
+    expect(find("circle")?.attributes.get("opacity")).toBe(0);
+    withAnimation(() => (state.show = true), "bouncy");
+    expect(animations.slice(2)).toEqual(['"bouncy"', '"snappy"']);
+    expect(find("txt")).toBeDefined();
+  });
+
   it("leaves later commits unanimated", async () => {
     await render(Items);
     reset();
@@ -1032,15 +1050,18 @@ describe("text", () => {
   });
 });
 
-async function insertTime(count: number): Promise<number> {
+async function insertTime(
+  component: typeof ManyRows,
+  count: number,
+): Promise<number> {
   let fastest = Infinity;
   for (let round = 0; round < 3; round++) {
     state.show = false;
-    await render(ManyRows, { count });
+    await render(component, { count });
     const start = performance.now();
     await update(() => (state.show = true));
     fastest = Math.min(fastest, performance.now() - start);
-    expect(find("vstack")?.children).toHaveLength(count);
+    expect(findAll("txt")).toHaveLength(count);
     unmount?.();
     unmount = undefined;
     reset();
@@ -1050,8 +1071,14 @@ async function insertTime(count: number): Promise<number> {
 
 describe("inserts", () => {
   it("inserts many rows into a mounted parent in linear time", async () => {
-    const small = await insertTime(2000);
-    const large = await insertTime(16_000);
+    const small = await insertTime(ManyRows, 2000);
+    const large = await insertTime(ManyRows, 16_000);
+    expect(large / small).toBeLessThan(24);
+  });
+
+  it("inserts rows that each follow an empty block's anchor in linear time", async () => {
+    const small = await insertTime(ManyBlocks, 2000);
+    const large = await insertTime(ManyBlocks, 16_000);
     expect(large / small).toBeLessThan(24);
   });
 });
