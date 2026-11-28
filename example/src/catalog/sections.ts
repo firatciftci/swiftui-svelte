@@ -316,15 +316,7 @@ export const modifierGroups: Array<{
   {
     name: "tailwind",
     title: "Tailwind CSS",
-    modifiers: [
-      "class",
-      "margin",
-      "container",
-      "css",
-      "axis",
-      "boxsizing",
-      "selfalign",
-    ],
+    modifiers: ["class", "margin", "container", "boxsizing", "selfalign"],
   },
   {
     name: "tailwind-native",

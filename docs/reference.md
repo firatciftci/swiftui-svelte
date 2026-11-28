@@ -594,10 +594,12 @@ This element doesn't take modifiers.
 
 A `VStack`: lays out its children in a vertical column.
 
-| Attribute   | Type                  | Description                                                                           |
-| ----------- | --------------------- | ------------------------------------------------------------------------------------- |
-| `spacing`   | `number`              | The space between children, in points. Leave it out for SwiftUI's default spacing.    |
-| `alignment` | `HorizontalAlignment` | The horizontal alignment of the children, such as `leading`, `center`, or `trailing`. |
+| Attribute   | Type                         | Description                                                                                                                                 |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `css`       | `boolean`                    | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.     |
+| `axis`      | `"horizontal" \| "vertical"` | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. |
+| `spacing`   | `number`                     | The space between children, in points. Leave it out for SwiftUI's default spacing.                                                          |
+| `alignment` | `HorizontalAlignment`        | The horizontal alignment of the children, such as `leading`, `center`, or `trailing`.                                                       |
 
 ```svelte
 <vstack alignment="leading" spacing={4}>
@@ -610,10 +612,12 @@ A `VStack`: lays out its children in a vertical column.
 
 An `HStack`: lays out its children in a horizontal row.
 
-| Attribute   | Type                | Description                                                                                                    |
-| ----------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `spacing`   | `number`            | The space between children, in points. Leave it out for SwiftUI's default spacing.                             |
-| `alignment` | `VerticalAlignment` | The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. |
+| Attribute   | Type                         | Description                                                                                                                                 |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `css`       | `boolean`                    | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.     |
+| `axis`      | `"horizontal" \| "vertical"` | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. |
+| `spacing`   | `number`                     | The space between children, in points. Leave it out for SwiftUI's default spacing.                                                          |
+| `alignment` | `VerticalAlignment`          | The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`.                              |
 
 ```svelte
 <hstack alignment="firstTextBaseline" spacing={8}>
@@ -982,11 +986,13 @@ A `ScrollView`: scrolls its children, vertically by default.
 
 A `LazyVStack`: a vertical stack that creates its children as they scroll into view.
 
-| Attribute   | Type                  | Description                                                                                                 |
-| ----------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `spacing`   | `number`              | The space between children, in points. Leave it out for SwiftUI's default spacing.                          |
-| `alignment` | `HorizontalAlignment` | The horizontal alignment of the children, such as `leading`, `center`, or `trailing`.                       |
-| `pinned`    | `Pinned`              | Keeps the headers, the footers, or both on screen while their rows scroll: `headers`, `footers`, or `both`. |
+| Attribute   | Type                         | Description                                                                                                                                 |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `css`       | `boolean`                    | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.     |
+| `axis`      | `"horizontal" \| "vertical"` | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. |
+| `spacing`   | `number`                     | The space between children, in points. Leave it out for SwiftUI's default spacing.                                                          |
+| `alignment` | `HorizontalAlignment`        | The horizontal alignment of the children, such as `leading`, `center`, or `trailing`.                                                       |
+| `pinned`    | `Pinned`                     | Keeps the headers, the footers, or both on screen while their rows scroll: `headers`, `footers`, or `both`.                                 |
 
 ```svelte
 <script lang="ts">
@@ -1020,11 +1026,13 @@ A `LazyVStack`: a vertical stack that creates its children as they scroll into v
 
 A `LazyHStack`: a horizontal stack that creates its children as they scroll into view.
 
-| Attribute   | Type                | Description                                                                                                    |
-| ----------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `spacing`   | `number`            | The space between children, in points. Leave it out for SwiftUI's default spacing.                             |
-| `alignment` | `VerticalAlignment` | The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. |
-| `pinned`    | `Pinned`            | Keeps the headers, the footers, or both on screen while their items scroll: `headers`, `footers`, or `both`.   |
+| Attribute   | Type                         | Description                                                                                                                                 |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `css`       | `boolean`                    | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.     |
+| `axis`      | `"horizontal" \| "vertical"` | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. |
+| `spacing`   | `number`                     | The space between children, in points. Leave it out for SwiftUI's default spacing.                                                          |
+| `alignment` | `VerticalAlignment`          | The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`.                              |
+| `pinned`    | `Pinned`                     | Keeps the headers, the footers, or both on screen while their items scroll: `headers`, `footers`, or `both`.                                |
 
 ```svelte
 <script lang="ts">
@@ -1967,6 +1975,7 @@ A `TextField`: an editable text field, or a number field when `format` is set.
 | `oninput`          | `((value: string) => void) \| ((value: number \| null) => void)`                                                                                                                                                                                                                                                                                               | Runs with the new text on each keystroke, or after the `debounce` delay. Runs when the user presses Return or leaves the field, with the parsed number, or `null` if they cleared it. |
 | `format`           | `NumberFormat`                                                                                                                                                                                                                                                                                                                                                 | Leave out `format` for a text field. How the number is formatted: `number`, `integer`, `percent`, or `{ currency }` with an ISO currency code, such as `EUR`.                         |
 | `variant`          | `FieldVariant`                                                                                                                                                                                                                                                                                                                                                 | The look of the field: `automatic`, `plain`, or `roundedBorder`.                                                                                                                      |
+| `axis`             | `"horizontal" \| "vertical"`                                                                                                                                                                                                                                                                                                                                   | Set to `vertical` to let the field grow as the user types more lines, up to `lines`.                                                                                                  |
 | `lines`            | `number \| [ number, number ]`                                                                                                                                                                                                                                                                                                                                 | The maximum number of lines when `axis` is `vertical`, such as `4`, or a range such as `[2, 4]` for a minimum and a maximum.                                                          |
 
 ```svelte
@@ -3470,8 +3479,6 @@ Every element takes these attributes, except the few whose entries say they don'
 | `class`     | `string`                                    | Tailwind CSS utility classes, such as `p-4 bg-white dark:bg-neutral-800`, that set this element's attributes. They're resolved at build time, and explicit attributes on the element take precedence. Utilities without a native equivalent produce a build warning. See [Tailwind CSS](tailwind.md).                                                                    |
 | `margin`    | `Margin`                                    | The space outside the element, in points. A number sets every edge, and an object such as `{ horizontal: 16, top: 4 }` sets each edge separately. An edge can also be `"auto"`, which shares the free space and centers the element along that axis, so `margin="auto"` centers it on both axes. Margin sits outside the background, border, and shadow, unlike padding. |
 | `container` | `string`                                    | Makes the element a query container for                                                                                                                                                                                                                                                                                                                                  |
-| `css`       | `boolean`                                   | Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this.                                                                                                                                                                                                                                  |
-| `axis`      | `"horizontal" \| "vertical"`                | The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this.                                                                                                                                                                                                                              |
 | `boxsizing` | `"content-box" \| "border-box"`             | How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`.                                                                                                                                               |
 | `selfalign` | `"start" \| "center" \| "end" \| "stretch"` | How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this.                                                                                                                                                                                                                                                |
 

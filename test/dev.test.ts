@@ -6,6 +6,10 @@ import { byTestId, dispatch, mountComponent, settle } from "./bridge.ts";
 import FontSize from "./components/FontSize.svelte";
 import Typo from "./components/Typo.svelte";
 
+function fontSizeMessage(element: string): string {
+  return `<${element}> has both font and size, so it ignores font="headline" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`;
+}
+
 const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
 afterEach(() => warn.mockClear());
@@ -43,8 +47,6 @@ describe("development checks", () => {
   });
 
   it("warns once when size replaces font on an element without fontname", async () => {
-    const message = (element: string): string =>
-      `<${element}> has both font and size, so it ignores font="headline" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`;
     const updated = mountComponent(FontSize);
     flushSync();
     await settle();
@@ -54,7 +56,7 @@ describe("development checks", () => {
       flushSync();
       await settle();
     }
-    expect(warn.mock.calls).toEqual([[message("vstack")]]);
+    expect(warn.mock.calls).toEqual([[fontSizeMessage("vstack")]]);
     updated();
     for (const initial of [20, 24]) {
       const created = mountComponent(FontSize, { initial });
@@ -62,7 +64,10 @@ describe("development checks", () => {
       await settle();
       created();
     }
-    expect(warn.mock.calls).toEqual([[message("vstack")], [message("txt")]]);
+    expect(warn.mock.calls).toEqual([
+      [fontSizeMessage("vstack")],
+      [fontSizeMessage("txt")],
+    ]);
   });
 
   it("knows every element and modifier in elements.ts", () => {

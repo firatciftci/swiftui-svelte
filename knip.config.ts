@@ -9,6 +9,7 @@ const config: KnipConfig = {
     "test/web/native.ts",
     "test/size/main.ts",
     "test/jsc/main.ts",
+    "test/element-types.ts",
     "example/src/routes/**/*.{svelte,ts}",
     "test/router/src/**/*.{svelte,ts}",
   ],

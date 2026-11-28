@@ -3,34 +3,43 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { elements, modifiers } from "swiftui-svelte/known";
 
+function captures(text: string, pattern: RegExp): Array<string> {
+  const names: Array<string> = [];
+  for (const [, name] of text.matchAll(pattern))
+    if (name != null) names.push(name);
+  return names;
+}
+
 const directory = path.resolve(import.meta.dirname, "../Sources/SvelteSwiftUI");
-const sources = new Map(
-  readdirSync(directory)
-    .filter((file) => file.endsWith(".swift"))
-    .map((file) => [file, readFileSync(path.join(directory, file), "utf8")]),
-);
-const swift = [...sources.values()].join("\n");
-const quoted = new Set(
-  Array.from(swift.matchAll(/"([A-Za-z][\w-]*)"/g), ([, name]) => name),
-);
+const files = readdirSync(directory)
+  .filter((file) => file.endsWith(".swift"))
+  .map((file) => ({
+    file,
+    text: readFileSync(path.join(directory, file), "utf8"),
+  }));
+const swift = files.map(({ text }) => text).join("\n");
+const quoted = new Set(captures(swift, /"([a-z][\w-]*)"/gi));
 const typed = new Set([...modifiers, ...Object.values(elements).flat()]);
 const resolvedInJavaScript = new Set(["class"]);
-const readByTheParent = new Set(["axis", "css", "selfalign", "completion"]);
+const readByTheParent = new Set(["selfalign", "completion"]);
 const readByStateFeedback = new Set(["pressed", "hovered"]);
 const dispatchedPerAction = new Set(["ona11yaction"]);
 const htmlAndSvgReaders = new Set(["Markup.swift", "Vector.swift"]);
 const internal = new Set(["listens"]);
 
-function between(text: string, start: string, end: string): Set<string> {
-  const section = text.slice(text.indexOf(start), text.indexOf(end));
-  return new Set(
-    Array.from(section.matchAll(/"([a-z\d]+)"/g), ([, name]) => name),
+const modifierSet =
+  files.find(({ file }) => file === "ModifierSet.swift")?.text ?? "";
+
+function between(start: string, end: string): Set<string> {
+  const section = modifierSet.slice(
+    modifierSet.indexOf(start),
+    modifierSet.indexOf(end),
   );
+  return new Set(captures(section, /"([a-z\d]+)"/g));
 }
 
-const modifierSet = sources.get("ModifierSet.swift") ?? "";
-const groupedAttributes = between(modifierSet, "byAttribute", "byEvent");
-const groupedEvents = between(modifierSet, "byEvent", "byAttachment");
+const groupedAttributes = between("byAttribute", "byEvent");
+const groupedEvents = between("byEvent", "byAttachment");
 
 describe("the element schema and the Swift host", () => {
   it("has a Swift reader for every typed attribute", () => {
@@ -44,11 +53,10 @@ describe("the element schema and the Swift host", () => {
 
   it("types every attribute that Swift reads", () => {
     const untyped = new Set<string>();
-    for (const [file, text] of sources) {
+    for (const { file, text } of files) {
       if (htmlAndSvgReaders.has(file)) continue;
-      for (const [, name] of text.matchAll(/attributes\[\s*"([\w-]+)"\s*\]/g)) {
-        if (name != null && !typed.has(name) && !internal.has(name))
-          untyped.add(name);
+      for (const name of captures(text, /attributes\[\s*"([\w-]+)"\s*\]/g)) {
+        if (!typed.has(name) && !internal.has(name)) untyped.add(name);
       }
     }
     expect([...untyped]).toEqual([]);
@@ -67,9 +75,9 @@ describe("the element schema and the Swift host", () => {
   });
 
   it("groups only typed modifiers", () => {
-    const unknown = [...groupedAttributes].filter(
-      (name) => !modifiers.has(name),
-    );
+    const unknown: Array<string> = [];
+    for (const name of groupedAttributes)
+      if (!modifiers.has(name)) unknown.push(name);
     expect(unknown).toEqual([]);
   });
 });
@@ -80,20 +88,19 @@ describe("the bridge globals", () => {
     "utf8",
   );
   const declared = new Set(
-    Array.from(
-      declarations.matchAll(/declare (?:function|var) (__\w+)/g),
-      ([, name]) => name,
-    ),
+    captures(declarations, /declare (?:function|var) (__\w+)/g),
   );
-  const globals = new Set(
-    Array.from(swift.matchAll(/"(__\w+)"/g), ([, name]) => name),
-  );
+  const globals = new Set(captures(swift, /"(__\w+)"/g));
   const named = (prefix: string): Array<string> =>
-    [...globals].filter((name) => name?.startsWith(prefix)).toSorted();
+    [...globals]
+      .filter((name) => name.startsWith(prefix))
+      .toSorted((a, b) => a.localeCompare(b));
 
   it("declares every global that Swift installs, and nothing else", () => {
     expect(named("__native")).toEqual(
-      [...declared].filter((name) => name?.startsWith("__native")).toSorted(),
+      [...declared]
+        .filter((name) => name.startsWith("__native"))
+        .toSorted((a, b) => a.localeCompare(b)),
     );
   });
 

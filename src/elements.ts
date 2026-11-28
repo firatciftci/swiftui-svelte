@@ -367,6 +367,12 @@ type Insets =
       /** The inset of the top and bottom edges, in points. A shorthand for `top` and `bottom`. */
       vertical?: Inset;
     };
+type CSSStack = {
+  /** Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this. */
+  css?: boolean;
+  /** The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. */
+  axis?: "horizontal" | "vertical";
+};
 type MarginEdge = number | "auto";
 type Margin =
   | MarginEdge
@@ -674,10 +680,6 @@ type Modifiers = {
   margin?: Margin;
   /** Makes the element a query container for @container classes, with the width it is laid out at. An empty string is the unnamed container, and any other value names it. The @container class sets this. */
   container?: string;
-  /** Marks a stack as a CSS grid or flex container, so its children stretch across it as they do in CSS. The grid and flex classes set this. */
-  css?: boolean;
-  /** The direction a CSS stack lays out its children in: `horizontal` for a row and `vertical` for a column. The flex and grid classes set this. */
-  axis?: "horizontal" | "vertical";
   /** How a width or height is measured. `border-box` counts the padding and border inside the size, as CSS does, and `content-box` adds them outside it. The sizing classes set `border-box`, and the default is `content-box`. */
   boxsizing?: "content-box" | "border-box";
   /** How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this. */
@@ -1145,19 +1147,21 @@ declare module "svelte/elements" {
     /** The `.contextMenu` preview: a custom view shown above the menu in place of the element. */
     preview: Record<string, never>;
     /** A `VStack`: lays out its children in a vertical column. */
-    vstack: Modifiers & {
-      /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
-      spacing?: number;
-      /** The horizontal alignment of the children, such as `leading`, `center`, or `trailing`. */
-      alignment?: HorizontalAlignment;
-    };
+    vstack: Modifiers &
+      CSSStack & {
+        /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
+        spacing?: number;
+        /** The horizontal alignment of the children, such as `leading`, `center`, or `trailing`. */
+        alignment?: HorizontalAlignment;
+      };
     /** An `HStack`: lays out its children in a horizontal row. */
-    hstack: Modifiers & {
-      /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
-      spacing?: number;
-      /** The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. */
-      alignment?: VerticalAlignment;
-    };
+    hstack: Modifiers &
+      CSSStack & {
+        /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
+        spacing?: number;
+        /** The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. */
+        alignment?: VerticalAlignment;
+      };
     /** A wrapping layout: it puts its children in rows and starts a new row when the next child doesn't fit the width, the way words wrap in a paragraph. `spacing` sets the gap between children in a row, `linespacing` sets the gap between rows, and `alignment` sets how each row is aligned. */
     flowstack: Modifiers & {
       /** The space between children in a row, in points. Defaults to 8. */
@@ -1211,23 +1215,25 @@ declare module "svelte/elements" {
       viewbox?: string;
     };
     /** A `LazyVStack`: a vertical stack that creates its children as they scroll into view. */
-    lazyvstack: Modifiers & {
-      /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
-      spacing?: number;
-      /** The horizontal alignment of the children, such as `leading`, `center`, or `trailing`. */
-      alignment?: HorizontalAlignment;
-      /** Keeps the headers, the footers, or both on screen while their rows scroll: `headers`, `footers`, or `both`. */
-      pinned?: Pinned;
-    };
+    lazyvstack: Modifiers &
+      CSSStack & {
+        /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
+        spacing?: number;
+        /** The horizontal alignment of the children, such as `leading`, `center`, or `trailing`. */
+        alignment?: HorizontalAlignment;
+        /** Keeps the headers, the footers, or both on screen while their rows scroll: `headers`, `footers`, or `both`. */
+        pinned?: Pinned;
+      };
     /** A `LazyHStack`: a horizontal stack that creates its children as they scroll into view. */
-    lazyhstack: Modifiers & {
-      /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
-      spacing?: number;
-      /** The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. */
-      alignment?: VerticalAlignment;
-      /** Keeps the headers, the footers, or both on screen while their items scroll: `headers`, `footers`, or `both`. */
-      pinned?: Pinned;
-    };
+    lazyhstack: Modifiers &
+      CSSStack & {
+        /** The space between children, in points. Leave it out for SwiftUI's default spacing. */
+        spacing?: number;
+        /** The vertical alignment of the children: `top`, `center`, `bottom`, `firstTextBaseline`, or `lastTextBaseline`. */
+        alignment?: VerticalAlignment;
+        /** Keeps the headers, the footers, or both on screen while their items scroll: `headers`, `footers`, or `both`. */
+        pinned?: Pinned;
+      };
     /** A `LazyVGrid`: a grid of columns that creates its children as they scroll into view. */
     lazyvgrid: Modifiers & {
       /** The columns: a number of equal flexible columns, or an array of column items. An item is a number for a fixed width, `{ min, max }` for a flexible column, `{ fixed }` for a fixed width, or `{ adaptive }` for as many columns of at least that width as fit. */
