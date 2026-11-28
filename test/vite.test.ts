@@ -5,6 +5,7 @@ import { get } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
+import { VERSION } from "svelte/compiler";
 import { build, createServer } from "vite";
 import { describe, expect, it } from "vitest";
 import { fixSvelte } from "swiftui-svelte/svelte-fixes";
@@ -165,13 +166,23 @@ describe("the Vite plugin", () => {
     expect(fixed?.code).toContain("new Map()).set(current, stashed.length)");
   });
 
-  it("leaves other files and changed each blocks alone", () => {
+  it("leaves other files and an each block that Svelte already fixed alone", () => {
     const each = "/node_modules/svelte/src/internal/client/dom/blocks/each.js";
     expect(
       fixSvelte("(seen ??= new Set()).add(current);", "/src/each.js"),
     ).toBeNull();
-    expect(fixSvelte("export {};", each)).toBeNull();
-    expect(fixSvelte("(seen ??= new Set()).add(current);", each)).toBeNull();
+    expect(
+      fixSvelte("(seen ??= new Map()).set(current, stashed.length);", each),
+    ).toBeNull();
+  });
+
+  it("stops the build when Svelte's each block no longer matches the fix", () => {
+    const each = "/node_modules/svelte/src/internal/client/dom/blocks/each.js";
+    const message = `swiftui(): swiftui-svelte patches Svelte's keyed each block so that reversing a long list doesn't slow down, but Svelte ${VERSION} changed that code and the patch no longer applies. Install a Svelte version that this version of swiftui-svelte supports, or update swiftui-svelte.`;
+    expect(() => fixSvelte("export {};", each)).toThrow(message);
+    expect(() => fixSvelte("(seen ??= new Set()).add(current);", each)).toThrow(
+      message,
+    );
   });
 
   it("explains a missing entry and an outFile that isn't JavaScript", async () => {
