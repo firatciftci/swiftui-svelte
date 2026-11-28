@@ -1,5 +1,4 @@
 import Foundation
-import JavaScriptCore
 import Network
 import Observation
 import QuartzCore
@@ -49,6 +48,8 @@ public final class SvelteRuntime {
     @ObservationIgnored private var memoryObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var pendingURLs: Array<URL> = []
     @ObservationIgnored private var measureRequests: [Int: Array<Int>] = [:]
+    @ObservationIgnored private var emptyFrames: [Int: Int] = [:]
+    @ObservationIgnored private var settledFrames: Set<Int> = []
     @ObservationIgnored private(set) var unknownMethods: Set<String> = []
     @ObservationIgnored private var requestSerial = 0
     @ObservationIgnored private var settlements: [Int: CheckedContinuation<Void, Never>] = [:]
@@ -126,6 +127,8 @@ public final class SvelteRuntime {
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
         measureRequests.removeAll()
+        emptyFrames.removeAll()
+        settledFrames.removeAll()
         inbox.removeAll()
         engine.sync { $0.stop() }
     }
@@ -254,7 +257,7 @@ public final class SvelteRuntime {
         }
         inbox.removeAll()
         for id in measureRequests.keys where store.node(id) == nil {
-            for request in measureRequests.removeValue(forKey: id) ?? [] { reply(request, frame: nil) }
+            answerMeasurements(of: id, with: nil)
         }
         let nodes = store.nodeCount
         let elapsed = (CACurrentMediaTime() - start) * 1000
@@ -313,11 +316,12 @@ public final class SvelteRuntime {
             scroll(to: target.id, anchor: isBottom ? .bottom : .top, options)
         case "measure":
             guard let request else { return }
-            if let frame = node.frame, frame.size != .zero {
+            if let frame = node.frame, !frame.isEmpty || settledFrames.contains(id) {
                 reply(request, frame: frame)
             } else {
                 measureRequests[id, default: []].append(request)
                 node.isMeasured = true
+                if node.frame != nil { settleEmptyFrame(of: id) }
             }
         default:
             break
@@ -336,13 +340,34 @@ public final class SvelteRuntime {
 
     func measured(_ node: Node, frame: CGRect) {
         node.frame = frame
-        guard frame.size != .zero else { return }
-        for request in measureRequests.removeValue(forKey: node.id) ?? [] { reply(request, frame: frame) }
+        settledFrames.remove(node.id)
+        guard measureRequests[node.id] != nil else { return }
+        if frame.isEmpty {
+            settleEmptyFrame(of: node.id)
+        } else {
+            answerMeasurements(of: node.id, with: frame)
+        }
+    }
+
+    private func settleEmptyFrame(of id: Int) {
+        let serial = (emptyFrames[id] ?? 0) + 1
+        emptyFrames[id] = serial
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard let self, emptyFrames[id] == serial, let frame = store.node(id)?.frame else { return }
+            settledFrames.insert(id)
+            answerMeasurements(of: id, with: frame)
+        }
+    }
+
+    private func answerMeasurements(of id: Int, with frame: CGRect?) {
+        emptyFrames[id] = nil
+        for request in measureRequests.removeValue(forKey: id) ?? [] { reply(request, frame: frame) }
     }
 
     private func reply(_ request: Int, frame: CGRect?) {
         var rect = JSONValue.null
-        if let frame, frame.size != .zero {
+        if let frame {
             rect = [
                 "x": JSONValue(frame.minX), "y": JSONValue(frame.minY), "width": JSONValue(frame.width), "height": JSONValue(frame.height),
             ]
@@ -506,6 +531,8 @@ extension SvelteRuntime {
         for continuation in settlements.values { continuation.resume() }
         settlements.removeAll()
         measureRequests.removeAll()
+        emptyFrames.removeAll()
+        settledFrames.removeAll()
         store.diagnostics.reset()
         diagnostics = []
         reportConfiguration()
@@ -606,70 +633,4 @@ enum MountPhase {
 private struct Inbound {
     let generation: Int
     let message: ScriptEngine.Message
-}
-
-public nonisolated struct ScriptError: Error, Equatable, Sendable, CustomStringConvertible {
-    public enum Kind: Sendable {
-        case script
-        case bridge
-        case load
-    }
-
-    public struct Frame: Equatable, Sendable {
-        public let function: String
-        public let location: String
-    }
-
-    public let kind: Kind
-    public let message: String
-    public let frames: Array<Frame>
-
-    init(kind: Kind = .script, message: String, frames: Array<Frame>) {
-        self.kind = kind
-        self.message = message
-        self.frames = frames
-    }
-
-    public var description: String {
-        ([message] + frames.map { "  at \($0.function.isEmpty ? "<anonymous>" : $0.function) (\($0.location))" })
-            .joined(separator: "\n")
-    }
-}
-
-nonisolated extension ScriptError {
-    init(exception: JSValue, kind: Kind = .script, source: URL, map: SourceMap?) {
-        let stack = exception.objectForKeyedSubscript("stack")
-        let lines = stack?.isString == true ? stack?.toString().split(separator: "\n").map(String.init) ?? [] : []
-        self.init(
-            kind: kind,
-            message: exception.toString() ?? "Unknown error",
-            frames: lines.compactMap { Self.frame($0, source: source, map: map) })
-    }
-
-    static func frame(_ line: String, source: URL, map: SourceMap?) -> Frame? {
-        guard let at = line.lastIndex(of: "@") else {
-            return line == "[native code]" ? nil : Frame(function: line, location: "native")
-        }
-        let function = String(line[..<at])
-        let parts = line[line.index(after: at)...].split(separator: ":", omittingEmptySubsequences: false)
-        guard parts.count >= 3, let lineNumber = Int(parts[parts.count - 2]), let column = Int(parts[parts.count - 1])
-        else { return Frame(function: function, location: String(line[line.index(after: at)...])) }
-        let file = parts.dropLast(2).joined(separator: ":")
-        if file == source.absoluteString || file == source.path(percentEncoded: false),
-            let mapped = map?.location(line: lineNumber, column: column)
-        {
-            return Frame(function: function, location: "\(clean(mapped.file)):\(mapped.line):\(mapped.column)")
-        }
-        let name = file.split(separator: "/").last.map(String.init) ?? file
-        return Frame(function: function, location: "\(name):\(lineNumber):\(column)")
-    }
-
-    private static func clean(_ path: String) -> String {
-        if let range = path.range(of: "node_modules/", options: .backwards) { return String(path[range.upperBound...]) }
-        var path = Substring(path)
-        while path.hasPrefix("../") || path.hasPrefix("./") {
-            path = path.dropFirst(path.hasPrefix("../") ? 3 : 2)
-        }
-        return String(path)
-    }
 }

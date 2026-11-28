@@ -303,7 +303,7 @@ The bundle never sends an invocation to a node that is not yet native. An invoca
 
 ### 4.4 Measuring
 
-`measure` reports the node's frame in points, relative to the top-left of the mounted app's root container, as `{ "x", "y", "width", "height" }`. If the node is not laid out yet, the host must wait until it is. A frame with a zero width or a zero height does not count as laid out, so the host keeps waiting for a later frame. If the node is removed before it is laid out, or it never becomes visible, the host must reply `null` no later than when it removes the node.
+`measure` reports the node's frame in points, in window coordinates, as `{ "x", "y", "width", "height" }`. If the node is not laid out yet, the host must wait until it is. A frame with a nonzero width and height counts as soon as it arrives. A frame with a zero width or a zero height can come from before layout has finished, so the host must reply with it only after 100 ms pass without a newer frame for that node, and it must reply right away to later requests while that frame is still the latest one for the node. If the node is removed before it is laid out, or it never becomes visible, the host must reply `null` no later than when it removes the node.
 
 The bundle waits for the reply, so a host must not leave a `measure` request without a reply. The host delivers each reply by calling `__svelteReply(request, rect)` on the engine queue.
 

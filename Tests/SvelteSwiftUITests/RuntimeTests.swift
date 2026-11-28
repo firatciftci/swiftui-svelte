@@ -92,6 +92,37 @@ struct RuntimeTests {
         #expect(node.attributes["reply3"] == rect)
     }
 
+    @Test func answersWithAZeroSizeOnceTheElementStaysEmpty() async throws {
+        let runtime = try runtime(
+            mountScript + """
+                globalThis.__svelteReply = (request, rect) => attr(2, `reply${request}`, rect ?? "none");
+                __nativeInvoke(2, "measure", JSON.stringify({ request: 1 }));
+                """)
+        runtime.settle()
+        let node = try #require(runtime.store.node(2))
+        runtime.measured(node, frame: CGRect(x: 8, y: 30, width: 0, height: 0))
+        runtime.measured(node, frame: CGRect(x: 8, y: 30, width: 0, height: 20))
+        runtime.settle()
+        #expect(node.attributes["reply1"] == nil)
+        try await eventually {
+            runtime.settle()
+            return node.attributes["reply1"] != nil
+        }
+        let empty: JSONValue = .object(["x": .number(8), "y": .number(30), "width": .number(0), "height": .number(20)])
+        #expect(node.attributes["reply1"] == empty)
+        runtime.evaluate { _ = $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 2 }))"#) }
+        runtime.settle()
+        #expect(node.attributes["reply2"] == empty)
+
+        runtime.measured(node, frame: .zero)
+        runtime.evaluate { _ = $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
+        runtime.settle()
+        #expect(node.attributes["reply3"] == nil)
+        runtime.measured(node, frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        runtime.settle()
+        #expect(node.attributes["reply3"] == .object(["x": .number(0), "y": .number(0), "width": .number(10), "height": .number(10)]))
+    }
+
     @Test func answersPendingMeasurementsWithNullWhenTheElementIsRemoved() throws {
         let runtime = try runtime(
             mountScript + """

@@ -51,6 +51,15 @@ struct SourceMapTests {
         #expect(ScriptError.frame("[native code]", source: source, map: map) == nil)
         #expect(
             ScriptError.frame("forEach@[native code]", source: source, map: map) == .init(function: "forEach", location: "[native code]"))
+        #expect(
+            ScriptError.frame("fetchQuery@file:///app/node_modules/@tanstack/query-core/build/index.js:12:3", source: source, map: map)
+                == .init(function: "fetchQuery", location: "index.js:12:3"))
+        #expect(
+            ScriptError.frame("@http://user@localhost:5173/@fs/app/lib.js:3:4", source: source, map: map)
+                == .init(function: "", location: "lib.js:3:4"))
+        #expect(
+            ScriptError.frame("global code@/app/node_modules/@scope/pkg/x.js:1:2", source: source, map: map)
+                == .init(function: "global code", location: "x.js:1:2"))
     }
 
     @Test func mapsAnExceptionThrownByTheBundle() throws {
