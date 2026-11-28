@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import postcss from "postcss";
+import { parse } from "svelte/compiler";
 import { compile } from "tailwindcss";
 import type {
   Attributes,
@@ -47,6 +48,15 @@ const STRING = /(["'`])((?:\\.|(?!\1)[^\\\n])*)\1/g;
 const STATIC_CLASS = /<([a-z][\w-]*)\b[^>]*?\sclass=(?:"([^"]*)"|'([^']*)')/g;
 const EXPRESSION_CLASS = /\bclass=\{([^{}]*)\}/g;
 const CLASS_CALL = /\b(?:cn|clsx|cx|twMerge|twJoin|tv|cva)\(([^()]*)\)/g;
+const CLASS_HELPERS = new Set([
+  "cn",
+  "clsx",
+  "cx",
+  "twMerge",
+  "twJoin",
+  "tv",
+  "cva",
+]);
 const CLASS_NAME = /\.((?:\\[0-9a-f]{1,6}\s?|\\[^0-9a-f\n]|[\w-])+)/gi;
 const ROOT_SELECTOR = /^:(?:root|host)(?:\s*,\s*:(?:root|host))*$/;
 const DEFAULTS: Record<string, string> = {
@@ -115,10 +125,182 @@ function valuesOf(text: string, pattern: RegExp): Array<string> {
   return values;
 }
 
+type SyntaxNode = Readonly<Record<string, unknown>>;
+
+function isSyntaxNode(value: unknown): value is SyntaxNode {
+  return typeof value === "object" && value != null && !Array.isArray(value);
+}
+
+function childrenOf(node: SyntaxNode): Array<unknown> {
+  const children: Array<unknown> = [];
+  for (const [key, child] of Object.entries(node))
+    if (key !== "loc" && key !== "metadata") children.push(child);
+  return children;
+}
+
+function walk(value: unknown, visit: (node: SyntaxNode) => void): void {
+  const pending: Array<unknown> = [value];
+  for (let index = 0; index < pending.length; index += 1) {
+    const current = pending[index];
+    if (Array.isArray(current)) pending.push(...(current as Array<unknown>));
+    else if (isSyntaxNode(current)) {
+      if (typeof current.type === "string") visit(current);
+      pending.push(...childrenOf(current));
+    }
+  }
+}
+
+function literalOf(node: SyntaxNode): string | undefined {
+  if (node.type === "Literal" && typeof node.value === "string")
+    return node.value;
+  if (node.type !== "TemplateElement" || !isSyntaxNode(node.value))
+    return undefined;
+  const { cooked } = node.value;
+  return typeof cooked === "string" ? cooked : undefined;
+}
+
+const COMPARISONS = new Set(["===", "!==", "==", "!=", "in", "instanceof"]);
+
+function keyOf(property: SyntaxNode): string | undefined {
+  const { key } = property;
+  if (property.computed === true || !isSyntaxNode(key)) return undefined;
+  if (key.type === "Identifier" && typeof key.name === "string")
+    return key.name;
+  return literalOf(key);
+}
+
+function classChildren(node: SyntaxNode, found: Array<string>): Array<unknown> {
+  if (
+    node.type === "BinaryExpression" &&
+    COMPARISONS.has(String(node.operator))
+  )
+    return [];
+  if (node.type === "MemberExpression") return [node.object];
+  if (node.type === "Property") {
+    const key = keyOf(node);
+    if (key != null) found.push(key);
+    return [node.value];
+  }
+  const literal = literalOf(node);
+  if (literal != null && literal.trim() !== "") found.push(literal);
+  return childrenOf(node);
+}
+
+function literalsIn(value: unknown): Array<string> {
+  const found: Array<string> = [];
+  const pending: Array<unknown> = [value];
+  for (let index = 0; index < pending.length; index += 1) {
+    const current = pending[index];
+    if (Array.isArray(current)) pending.push(...(current as Array<unknown>));
+    else if (isSyntaxNode(current))
+      pending.push(...classChildren(current, found));
+  }
+  return found;
+}
+
+function textOf(node: unknown): string | undefined {
+  if (!isSyntaxNode(node) || node.type !== "Text") return undefined;
+  return typeof node.data === "string" ? node.data : undefined;
+}
+
+function classContexts(
+  element: SyntaxNode,
+  value: unknown,
+  file: string,
+): Array<Context> {
+  const parts: Array<unknown> = Array.isArray(value) ? value : [value];
+  const texts = parts.map((part) => textOf(part));
+  const tag =
+    element.type === "RegularElement" && typeof element.name === "string"
+      ? element.name
+      : undefined;
+  if (texts.every((text) => text != null))
+    return [{ tag, text: texts.join(""), file }];
+  const contexts: Array<Context> = [];
+  for (const [index, part] of parts.entries()) {
+    const text = texts[index];
+    const found = text == null ? literalsIn(part) : [text];
+    for (const item of found) contexts.push({ text: item, file });
+  }
+  return contexts;
+}
+
+function helperContexts(node: SyntaxNode, file: string): Array<Context> {
+  const { callee } = node;
+  const isHelper =
+    node.type === "CallExpression" &&
+    isSyntaxNode(callee) &&
+    callee.type === "Identifier" &&
+    CLASS_HELPERS.has(String(callee.name));
+  return isHelper
+    ? literalsIn(node.arguments).map((text) => ({ text, file }))
+    : [];
+}
+
+function attributeContexts(
+  node: SyntaxNode,
+  file: string,
+  words: Array<string>,
+): Array<Context> {
+  const contexts: Array<Context> = [];
+  const attributes: Array<unknown> = Array.isArray(node.attributes)
+    ? node.attributes
+    : [];
+  for (const attribute of attributes) {
+    if (!isSyntaxNode(attribute) || attribute.type !== "Attribute") continue;
+    if (attribute.name === "class") {
+      contexts.push(...classContexts(node, attribute.value, file));
+      continue;
+    }
+    const parts: Array<unknown> = Array.isArray(attribute.value)
+      ? attribute.value
+      : [];
+    for (const part of parts) {
+      const text = textOf(part);
+      if (text != null) words.push(text);
+    }
+  }
+  return contexts;
+}
+
+function svelteContextsOf(
+  file: string,
+  text: string,
+): { contexts: Array<Context>; words: Array<string> } | undefined {
+  let root: unknown;
+  try {
+    root = parse(text, { modern: true });
+  } catch {
+    return undefined;
+  }
+  const contexts: Array<Context> = [];
+  const words: Array<string> = [];
+  walk(root, (node) => {
+    const literal = literalOf(node);
+    if (literal != null) words.push(literal);
+    if (node.type === "ClassDirective" && typeof node.name === "string")
+      words.push(node.name);
+    contexts.push(
+      ...helperContexts(node, file),
+      ...attributeContexts(node, file, words),
+    );
+  });
+  return {
+    contexts,
+    words: [...words, ...contexts.map((context) => context.text)]
+      .flatMap((value) => value.split(/\s+/))
+      .filter((word) => word !== ""),
+  };
+}
+
 function contextsOf(
   file: string,
   text: string,
 ): { contexts: Array<Context>; words: Array<string> } {
+  if (file.endsWith(".svelte")) {
+    const parsed = svelteContextsOf(file, text);
+    if (parsed != null) return parsed;
+  }
   const contexts: Array<Context> = Array.from(
     text.matchAll(STATIC_CLASS),
     (match) => ({ tag: match[1], text: match[2] ?? match[3] ?? "", file }),

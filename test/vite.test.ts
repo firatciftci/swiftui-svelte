@@ -12,7 +12,11 @@ import { fixSvelte } from "swiftui-svelte/svelte-fixes";
 import { swiftui } from "swiftui-svelte/vite";
 import type { State } from "../src/tailwind/runtime.ts";
 import { buildClassTable } from "../src/tailwind/build.ts";
-import { arithmetic, resolveClasses } from "../src/tailwind/runtime.ts";
+import {
+  arithmetic,
+  classKey,
+  resolveClasses,
+} from "../src/tailwind/runtime.ts";
 import { parseColor } from "../src/tailwind/values.ts";
 import { tailwind } from "../src/tailwind/vite.ts";
 
@@ -282,6 +286,54 @@ describe("tailwind class table", () => {
         /^Tailwind class "grid-cols-2" in .*App\.svelte isn't supported by swiftui-svelte: .+\.$/,
       ),
     ]);
+  }, 60_000);
+});
+
+describe("tailwind class scanning", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "swiftui-svelte-scan-"));
+  writeFileSync(path.join(dir, "app.css"), '@import "tailwindcss";\n');
+  writeFileSync(
+    path.join(dir, "Scan.svelte"),
+    [
+      '<script lang="ts">',
+      '  import { cn } from "./cn.ts";',
+      '  let { checked = false, color = "red", wide = false } = $props();',
+      '  const extra = cn("p-2", wide && "m-1");',
+      "</script>",
+      "<txt class=\"text-emerald-500 {checked ? 'font-bold' : ''}\">Don't</txt>",
+      "<txt class=\"{color === 'red' ? 'text-orange-500' : 'text-teal-500'}\">It's</txt>",
+      '<txt class:underline={checked} labelclass="italic">Plain</txt>',
+      '<vstack class="p-4 bg-white"></vstack>',
+      "<vstack class={extra}></vstack>",
+      '<vstack class={{ "gap-3": wide, truncate: checked }}></vstack>',
+      "",
+    ].join("\n"),
+  );
+
+  it("reads class names from mixed attributes, expressions, directives, and helper calls", async () => {
+    const { table, warnings } = await buildClassTable({
+      root: process.cwd(),
+      css: path.join(dir, "app.css"),
+      sources: [dir],
+      fonts: {},
+    });
+    for (const token of [
+      "text-emerald-500",
+      "font-bold",
+      "text-orange-500",
+      "text-teal-500",
+      "underline",
+      "italic",
+      "p-2",
+      "m-1",
+      "p-4",
+      "bg-white",
+      "gap-3",
+      "truncate",
+    ])
+      expect(table.tokens[token], token).toBeDefined();
+    expect(table.statics[classKey("vstack", "p-4 bg-white")]).toBeDefined();
+    expect(warnings).toEqual([]);
   }, 60_000);
 });
 
