@@ -1468,7 +1468,7 @@ declare module "svelte/elements" {
       rendering?: "monochrome" | "hierarchical" | "palette" | "multicolor";
       /** Up to three colors for the `palette` rendering mode. */
       colors?: Array<Color>;
-      /** An animation for the symbol: `bounce`, `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, or `scale`. Repeating effects run while `active` is `true`. */
+      /** An animation for the symbol: `bounce`, `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, or `scale`. Without `trigger`, it repeats while `active` is `true`. */
       effect?:
         | "bounce"
         | "pulse"
@@ -1477,7 +1477,7 @@ declare module "svelte/elements" {
         | "rotate"
         | "wiggle"
         | "scale";
-      /** A value that plays `effect` once each time it changes. `bounce` works only this way, and `scale` ignores it. */
+      /** When this value changes, `effect` plays once instead of repeating. `scale` scales the symbol up and back down. */
       trigger?: string | number | boolean;
       /** Whether a repeating `effect` runs. Defaults to `true`. */
       active?: boolean;

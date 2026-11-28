@@ -43,4 +43,12 @@ struct ImageTests {
         label.children = [icon, title]
         #expect(label.renderedChildren.map(\.id) == [4])
     }
+
+    @Test func knowsEverySymbolEffectWithAndWithoutATrigger() {
+        for name in ["bounce", "pulse", "variableColor", "breathe", "rotate", "wiggle", "scale"] {
+            #expect(SymbolAnimation(name) != nil, "\(name)")
+        }
+        #expect(SymbolAnimation("spin") == nil)
+        #expect(SymbolAnimation(nil) == nil)
+    }
 }

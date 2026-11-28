@@ -65,33 +65,62 @@ private struct Palette3: ViewModifier {
     }
 }
 
+enum SymbolAnimation: String {
+    case bounce, pulse, variableColor, breathe, rotate, wiggle, scale
+
+    init?(_ name: String?) {
+        guard let name, let animation = Self(rawValue: name) else { return nil }
+        self = animation
+    }
+}
+
 private struct SymbolEffect: ViewModifier {
     let effect: String?
     let trigger: JSONValue?
     let attributes: [String: JSONValue]
+    @State private var isScaled = false
 
     func body(content: Content) -> some View {
-        if let trigger {
-            switch effect {
-            case "bounce": content.symbolEffect(.bounce, value: trigger)
-            case "pulse": content.symbolEffect(.pulse, value: trigger)
-            case "variableColor": content.symbolEffect(.variableColor, value: trigger)
-            case "breathe": content.symbolEffect(.breathe, value: trigger)
-            case "rotate": content.symbolEffect(.rotate, value: trigger)
-            case "wiggle": content.symbolEffect(.wiggle, value: trigger)
-            default: content
+        if let animation = SymbolAnimation(effect) {
+            if let trigger {
+                triggered(content, animation, trigger)
+            } else {
+                repeating(content, animation, isActive: attributes["active"]?.isTrue ?? true)
             }
         } else {
-            let isActive = attributes["active"]?.isTrue ?? true
-            switch effect {
-            case "pulse": content.symbolEffect(.pulse, isActive: isActive)
-            case "variableColor": content.symbolEffect(.variableColor, isActive: isActive)
-            case "breathe": content.symbolEffect(.breathe, isActive: isActive)
-            case "rotate": content.symbolEffect(.rotate, isActive: isActive)
-            case "wiggle": content.symbolEffect(.wiggle, isActive: isActive)
-            case "scale": content.symbolEffect(.scale.up, isActive: isActive)
-            default: content
-            }
+            content
+        }
+    }
+
+    @ViewBuilder private func triggered(_ content: Content, _ animation: SymbolAnimation, _ trigger: JSONValue) -> some View {
+        switch animation {
+        case .bounce: content.symbolEffect(.bounce, value: trigger)
+        case .pulse: content.symbolEffect(.pulse, value: trigger)
+        case .variableColor: content.symbolEffect(.variableColor, value: trigger)
+        case .breathe: content.symbolEffect(.breathe, value: trigger)
+        case .rotate: content.symbolEffect(.rotate, value: trigger)
+        case .wiggle: content.symbolEffect(.wiggle, value: trigger)
+        case .scale:
+            content
+                .symbolEffect(.scale.up, isActive: isScaled)
+                .task(id: isScaled) {
+                    guard isScaled else { return }
+                    try? await Task.sleep(for: .milliseconds(300))
+                    isScaled = false
+                }
+                .onChange(of: trigger) { isScaled = true }
+        }
+    }
+
+    @ViewBuilder private func repeating(_ content: Content, _ animation: SymbolAnimation, isActive: Bool) -> some View {
+        switch animation {
+        case .bounce: content.symbolEffect(.bounce, isActive: isActive)
+        case .pulse: content.symbolEffect(.pulse, isActive: isActive)
+        case .variableColor: content.symbolEffect(.variableColor, isActive: isActive)
+        case .breathe: content.symbolEffect(.breathe, isActive: isActive)
+        case .rotate: content.symbolEffect(.rotate, isActive: isActive)
+        case .wiggle: content.symbolEffect(.wiggle, isActive: isActive)
+        case .scale: content.symbolEffect(.scale.up, isActive: isActive)
         }
     }
 }

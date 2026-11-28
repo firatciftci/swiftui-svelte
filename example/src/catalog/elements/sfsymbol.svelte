@@ -13,4 +13,7 @@
   <btn onclick={() => rings++}>
     <sfsymbol name="bell" effect="bounce" trigger={rings} label="Ring" />
   </btn>
+  <btn onclick={() => rings++}>
+    <sfsymbol name="star" effect="scale" trigger={rings} label="Grow" />
+  </btn>
 </hstack>

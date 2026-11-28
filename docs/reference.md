@@ -1415,17 +1415,17 @@ A `Text`: displays text. Its `txt` children style spans of it, and it can render
 
 An SF Symbol, rendered as an `Image(systemName:)`. _iOS-specific._
 
-| Attribute   | Type                                                                                     | Description                                                                                                                                                 |
-| ----------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`      | `string`                                                                                 | The SF Symbol name, such as `trash` or `wifi`.                                                                                                              |
-| `label`     | `string`                                                                                 | The accessibility label that VoiceOver reads, such as `Delete to-do`. Without it, VoiceOver reads the symbol's built-in description.                        |
-| `value`     | `number`                                                                                 | A value from 0 to 1 that fills a variable symbol, such as `wifi`, part of the way.                                                                          |
-| `variant`   | `SymbolVariant \| `${SymbolVariant} ${SymbolVariant}``                                   | Symbol variants: `fill`, `slash`, `circle`, `square`, or `rectangle`. Combine them with a space, such as `circle fill`.                                     |
-| `rendering` | `"monochrome" \| "hierarchical" \| "palette" \| "multicolor"`                            | The rendering mode: `monochrome`, `hierarchical`, `palette`, or `multicolor`.                                                                               |
-| `colors`    | `Array<Color>`                                                                           | Up to three colors for the `palette` rendering mode.                                                                                                        |
-| `effect`    | `"bounce" \| "pulse" \| "variableColor" \| "breathe" \| "rotate" \| "wiggle" \| "scale"` | An animation for the symbol: `bounce`, `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, or `scale`. Repeating effects run while `active` is `true`. |
-| `trigger`   | `string \| number \| boolean`                                                            | A value that plays `effect` once each time it changes. `bounce` works only this way, and `scale` ignores it.                                                |
-| `active`    | `boolean`                                                                                | Whether a repeating `effect` runs. Defaults to `true`.                                                                                                      |
+| Attribute   | Type                                                                                     | Description                                                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`      | `string`                                                                                 | The SF Symbol name, such as `trash` or `wifi`.                                                                                                                      |
+| `label`     | `string`                                                                                 | The accessibility label that VoiceOver reads, such as `Delete to-do`. Without it, VoiceOver reads the symbol's built-in description.                                |
+| `value`     | `number`                                                                                 | A value from 0 to 1 that fills a variable symbol, such as `wifi`, part of the way.                                                                                  |
+| `variant`   | `SymbolVariant \| `${SymbolVariant} ${SymbolVariant}``                                   | Symbol variants: `fill`, `slash`, `circle`, `square`, or `rectangle`. Combine them with a space, such as `circle fill`.                                             |
+| `rendering` | `"monochrome" \| "hierarchical" \| "palette" \| "multicolor"`                            | The rendering mode: `monochrome`, `hierarchical`, `palette`, or `multicolor`.                                                                                       |
+| `colors`    | `Array<Color>`                                                                           | Up to three colors for the `palette` rendering mode.                                                                                                                |
+| `effect`    | `"bounce" \| "pulse" \| "variableColor" \| "breathe" \| "rotate" \| "wiggle" \| "scale"` | An animation for the symbol: `bounce`, `pulse`, `variableColor`, `breathe`, `rotate`, `wiggle`, or `scale`. Without `trigger`, it repeats while `active` is `true`. |
+| `trigger`   | `string \| number \| boolean`                                                            | When this value changes, `effect` plays once instead of repeating. `scale` scales the symbol up and back down.                                                      |
+| `active`    | `boolean`                                                                                | Whether a repeating `effect` runs. Defaults to `true`.                                                                                                              |
 
 ```svelte
 <script lang="ts">
@@ -1442,6 +1442,9 @@ An SF Symbol, rendered as an `Image(systemName:)`. _iOS-specific._
   />
   <btn onclick={() => rings++}>
     <sfsymbol name="bell" effect="bounce" trigger={rings} label="Ring" />
+  </btn>
+  <btn onclick={() => rings++}>
+    <sfsymbol name="star" effect="scale" trigger={rings} label="Grow" />
   </btn>
 </hstack>
 ```
