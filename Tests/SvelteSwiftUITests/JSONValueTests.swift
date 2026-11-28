@@ -96,10 +96,15 @@ struct JSONValueTests {
         (.bool(false), false),
         (.string(""), true),
         (.string("false"), false),
+        (.string("true"), true),
+        (.string("0"), true),
+        (.string("no"), true),
         (.number(0), false),
+        (.number(-1), true),
         (.number(2), true),
         (.null, false),
         (.object([:]), true),
+        (.array([]), true),
     ])
     func readsTruth(value: JSONValue, expected: Bool) {
         #expect(value.isTrue == expected)

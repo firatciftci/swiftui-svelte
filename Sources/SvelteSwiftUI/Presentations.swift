@@ -30,8 +30,8 @@ enum Presenting {
 
     static func backgroundInteraction(_ value: JSONValue?) -> PresentationBackgroundInteraction {
         switch value {
-        case .bool(true), .string("enabled"): .enabled
-        case .bool(false), .string("disabled"): .disabled
+        case .bool(true), .string(""), .string("enabled"): .enabled
+        case .bool(false), .string("false"), .string("disabled"): .disabled
         case let value?: detent(value).map { .enabled(upThrough: $0) } ?? .automatic
         case nil: .automatic
         }

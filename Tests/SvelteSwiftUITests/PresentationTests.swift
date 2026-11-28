@@ -30,6 +30,8 @@ struct PresentationTests {
         let describe = { (value: JSONValue?) in String(describing: Presenting.backgroundInteraction(value)) }
         #expect(describe(.bool(true)) == String(describing: PresentationBackgroundInteraction.enabled))
         #expect(describe(.string("disabled")) == String(describing: PresentationBackgroundInteraction.disabled))
+        #expect(describe(.string("")) == String(describing: PresentationBackgroundInteraction.enabled))
+        #expect(describe(.string("false")) == String(describing: PresentationBackgroundInteraction.disabled))
         #expect(describe(.string("medium")) == String(describing: PresentationBackgroundInteraction.enabled(upThrough: .medium)))
         #expect(describe(nil) == String(describing: PresentationBackgroundInteraction.automatic))
         #expect(describe(.bool(true)) != describe(.bool(false)))

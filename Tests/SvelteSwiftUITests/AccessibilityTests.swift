@@ -20,12 +20,13 @@ struct AccessibilityTests {
         #expect(Accessibility.heading(.number(1)) == .h1)
         #expect(Accessibility.heading(.number(6)) == .h6)
         #expect(Accessibility.heading(.bool(true)) == .unspecified)
+        #expect(Accessibility.heading(.string("")) == .unspecified)
+        #expect(Accessibility.heading(.string("false")) == nil)
         #expect(Accessibility.heading(.string("unspecified")) == nil)
         #expect(Accessibility.heading(.number(7)) == nil)
         #expect(Accessibility.names(.array([.string("Reset"), .string(""), .number(2)])) == ["Reset", "2"])
         #expect(Accessibility.names(.string("Reset")) == ["Reset"])
         #expect(Accessibility.names(.string("")).isEmpty)
-        #expect(JSONValue.string("").isTrue)
     }
 
     @Test func reportsAccessibilitySettingsInTheEnvironment() {

@@ -131,6 +131,7 @@ The bundle emits `move` for keyed reordering. Svelte's keyed `{#each}` blocks, a
 Attribute values are JSON values with these rules:
 
 - **Strings, numbers, and booleans** are used as given.
+- **Booleans follow HTML.** A bare attribute such as `<btn disabled>` arrives as the empty string, the same as `disabled=""` and `disabled={""}`, so where a host expects a boolean it must read the empty string as true. `false`, `0`, `null`, and the string `"false"` read as false, and every other value reads as true. Attributes that take either a flag or a value, such as `a11yheading` and `backgroundinteraction`, follow the same rule: the empty string means `true` and `"false"` means `false`.
 - **`null` is absence.** A host must treat a JSON `null` value the same as `unattr`. The bundle does not use `null` to mean "set to nothing." The host must not store `null` as a present value.
 - **Arrays and objects** are passed whole. Nested objects, such as a color stop list or a ShapeStyle, are encoded as JSON objects with the keys that `src/elements.ts` defines for that type. The host must not flatten them.
 - **Functions are never sent.** Event handlers and actions are handled through `listens` and `actions` (Sections 3.6 and 6.3.3).

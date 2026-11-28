@@ -31,6 +31,8 @@ struct MotionTests {
         #expect(MotionCurve.from(.bool(false)) == nil)
         #expect(MotionCurve.from(.bool(true)) == MotionCurve())
         #expect(MotionCurve.from(nil) == MotionCurve())
+        #expect(MotionCurve.from(.string("")) == MotionCurve())
+        #expect(MotionCurve.from(.string("false")) == nil)
     }
 
     @Test func readsAnimationOptionsInMilliseconds() throws {
