@@ -28,6 +28,8 @@ public final class SvelteRuntime {
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
+    @ObservationIgnored private var inbox: Array<(generation: Int, message: ScriptEngine.Message)> = []
+    @ObservationIgnored private var isDraining = false
     @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
     @ObservationIgnored private var nextMountID = 1
@@ -189,13 +191,18 @@ public final class SvelteRuntime {
     }
 
     func drain() {
-        let messages = engine.takeMessages()
-        guard !messages.isEmpty else { return }
-        let start = CACurrentMediaTime()
         let generation = generation
+        for message in engine.takeMessages() { inbox.append((generation, message)) }
+        guard !isDraining, !inbox.isEmpty else { return }
+        isDraining = true
+        defer { isDraining = false }
+        let start = CACurrentMediaTime()
         var isStopped = false
-        for message in messages {
-            guard generation == self.generation else { break }
+        var index = 0
+        while index < inbox.count {
+            let (generation, message) = inbox[index]
+            index += 1
+            guard generation == self.generation else { continue }
             switch message {
             case let .commit(json, animation) where !isStopped:
                 if !store.apply(json, animation: animation) {
@@ -221,6 +228,7 @@ public final class SvelteRuntime {
             default: break
             }
         }
+        inbox.removeAll()
         for id in measureRequests.keys where store.node(id) == nil {
             for request in measureRequests.removeValue(forKey: id) ?? [] { reply(request, frame: nil) }
         }

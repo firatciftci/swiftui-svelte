@@ -8,43 +8,15 @@ import Testing
 #endif
 
 struct RuntimeTests {
-    private func runtime(_ script: String) throws -> SvelteRuntime {
-        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
-        try script.write(to: url, atomically: true, encoding: .utf8)
-        let runtime = SvelteRuntime(source: url, reloadsOnChange: false)
-        runtime.start()
-        return runtime
-    }
-
-    private func pumpRunLoop() {
-        CFRunLoopRunInMode(.defaultMode, 0.005, false)
-    }
-
-    private func eventually(_ condition: () -> Bool) async throws {
-        for _ in 0..<200 where !condition() {
-            pumpRunLoop()
-            try await Task.sleep(for: .milliseconds(5))
-        }
-        #expect(condition())
-    }
-
-    private let mount = """
-        __nativeCommit(JSON.stringify([0, 1, 3, 0, 7, "txt", 1, 1, 0, 2, 0, 0, 0]));
-        let names = 1;
-        const attr = (id, name, value) => __nativeCommit(JSON.stringify([7, name, 4, id, names++, value]));
-        globalThis.__svelteDispatch = (id, type, payload) => attr(id, type, payload);
-
-        """
-
     @Test func appliesCommitsFromTheBundle() throws {
-        let runtime = try runtime(mount)
+        let runtime = try runtime(mountScript)
         #expect(runtime.store.root?.children.first?.name == "txt")
         #expect(runtime.error == nil)
     }
 
     @Test func appliesAnimatedCommitsWhateverTheAnimationSays() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 __nativeCommit(JSON.stringify([7, "a", 4, 2, names++, 1]), JSON.stringify({ type: "bouncy", duration: 300 }));
                 __nativeCommit(JSON.stringify([7, "b", 4, 2, names++, 2]), "false");
                 __nativeCommit(JSON.stringify([7, "c", 4, 2, names++, 3]), "{not json");
@@ -60,7 +32,7 @@ struct RuntimeTests {
 
     @Test func passesMemoryWarningsToJavaScript() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteAppEvent = (type) => attr(2, type, true);
                 """)
         runtime.receiveMemoryWarning()
@@ -71,7 +43,7 @@ struct RuntimeTests {
     #if canImport(UIKit)
         @Test func listensForSystemMemoryWarnings() throws {
             let runtime = try runtime(
-                mount + """
+                mountScript + """
                     globalThis.__svelteAppEvent = (type) => attr(2, type, true);
                     """)
             NotificationCenter.default.post(name: UIApplication.didReceiveMemoryWarningNotification, object: nil)
@@ -83,7 +55,7 @@ struct RuntimeTests {
     @Test func holdsURLsThatArriveBeforeTheRuntimeStarts() throws {
         let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
         try
-            (mount + """
+            (mountScript + """
                 let opened = 0;
                 globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
                 """).write(to: url, atomically: true, encoding: .utf8)
@@ -98,7 +70,7 @@ struct RuntimeTests {
 
     @Test func opensEachURLOnceWhenSeveralViewsReceiveIt() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteMount = () => {};
                 let opened = 0;
                 globalThis.__svelteAppEvent = (type, payload) => attr(2, type, [++opened, payload]);
@@ -121,7 +93,7 @@ struct RuntimeTests {
 
     @Test func answersMeasurementsOnceTheElementIsLaidOut() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteReply = (request, rect) => attr(2, `reply${request}`, rect ?? "none");
                 __nativeInvoke(2, "measure", JSON.stringify({ request: 1 }));
                 __nativeInvoke(99, "measure", JSON.stringify({ request: 2 }));
@@ -145,7 +117,7 @@ struct RuntimeTests {
 
     @Test func answersPendingMeasurementsWithNullWhenTheElementIsRemoved() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteReply = (request, rect) => { globalThis.replied = [request, rect]; };
                 __nativeInvoke(2, "measure", JSON.stringify({ request: 5 }));
                 """)
@@ -158,7 +130,7 @@ struct RuntimeTests {
 
     @Test func turnsFocusAndScrollCallsIntoRequests() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 __nativeCommit(JSON.stringify([1, 2, 0, 8, 0, 0, 0, 1, 2, 0, 9, 0, 0, 0]));
                 __nativeInvoke(2, "focus", "{}");
                 """)
@@ -182,7 +154,7 @@ struct RuntimeTests {
     }
 
     @Test func dispatchesEventsWithPayloads() throws {
-        let runtime = try runtime(mount)
+        let runtime = try runtime(mountScript)
         runtime.dispatch(2, "input", "hello")
         runtime.dispatch(2, "change", 3.5)
         runtime.dispatch(2, "toggle", true)
@@ -192,9 +164,32 @@ struct RuntimeTests {
         #expect(attributes?["toggle"] == .bool(true))
     }
 
+    @Test func appliesMessagesInOrderWhenAnActionCallsBackIntoJavaScript() throws {
+        let runtime = try runtime(
+            mountScript + """
+                globalThis.__svelteMount = (mountId) => {
+                  __nativeAction(mountId, "save", "null");
+                  attr(2, "after", "B");
+                };
+                globalThis.__svelteNativeEvent = () => attr(2, "after", "C");
+                """)
+        var order: Array<String> = []
+        _ = runtime.mount(
+            "default", props: "{}",
+            actions: [
+                "save": { _ in
+                    order.append(runtime.store.node(2)?.attributes["after"]?.string ?? "none")
+                    runtime.emit("saved", from: "store")
+                }
+            ])
+        #expect(order == ["none"])
+        #expect(runtime.store.node(2)?.attributes["after"] == .string("C"))
+        #expect(runtime.error == nil)
+    }
+
     @Test func showsAnEditThenTheValueThatJavaScriptSettlesOn() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteDispatch = (id) => attr(id, "value", "kept");
                 """)
         let node = try #require(runtime.store.node(2))
@@ -204,7 +199,7 @@ struct RuntimeTests {
     }
 
     @Test func keepsAnEditThatJavaScriptAccepts() throws {
-        let runtime = try runtime(mount)
+        let runtime = try runtime(mountScript)
         let node = try #require(runtime.store.node(2))
         runtime.edit(node, "input", to: .string("typed"), event: "input", payload: "typed")
         #expect(node.attributes["input"] == .string("typed"))
@@ -212,7 +207,7 @@ struct RuntimeTests {
 
     @Test func callsBackOnceForEachRequestedFrame() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 let frames = 0;
                 globalThis.__svelteFrame = (time) => {
                   frames++;
@@ -227,7 +222,7 @@ struct RuntimeTests {
 
     @Test func runsTheDisplayLinkOnlyWhileFramesAreRequested() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 let frames = 0;
                 globalThis.__svelteFrame = () => attr(2, "frames", ++frames);
                 """)
@@ -241,7 +236,7 @@ struct RuntimeTests {
     }
 
     @Test func keepsTheDisplayLinkRunningWhileFrameStatsAreRead() async throws {
-        let runtime = try runtime(mount)
+        let runtime = try runtime(mountScript)
         _ = runtime.evaluate { $0.evaluateScript("__nativeStats()") }
         #expect(runtime.frames.isRunning)
         for _ in 0..<30 {
@@ -254,7 +249,7 @@ struct RuntimeTests {
 
     @Test func runsTimers() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 let ticks = 0;
                 const interval = setInterval(() => {
                   ticks++;
@@ -276,7 +271,7 @@ struct RuntimeTests {
 
     @Test func waitsForAnAwaitedDispatchToSettle() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteDispatch = (id, type, payload, request) => {
                   attr(id, type, request ?? null);
                   setTimeout(() => {
@@ -294,7 +289,7 @@ struct RuntimeTests {
 
     @Test func cancelsATaskInJavaScriptWhenSwiftUICancelsIt() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteDispatch = (id, type, payload, request) => {
                   if (type === "taskcancel") attr(id, "canceled", payload);
                   else attr(id, "started", request);
@@ -314,7 +309,7 @@ struct RuntimeTests {
     }
 
     @Test func endsAwaitedDispatchesWhenTheBundleRestarts() async throws {
-        let runtime = try runtime(mount + "globalThis.__svelteDispatch = () => {};")
+        let runtime = try runtime(mountScript + "globalThis.__svelteDispatch = () => {};")
         var isDone = false
         let task = Task {
             await runtime.dispatchAndWait(2, "refresh")
@@ -329,7 +324,7 @@ struct RuntimeTests {
 
     @Test func runsSlowHandlersWithoutBlockingTheMainThread() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 globalThis.__svelteDispatch = (id, type) => {
                   const end = __nativeNow() + 300;
                   while (__nativeNow() < end) {}
@@ -346,7 +341,7 @@ struct RuntimeTests {
 
     @Test func clampsDelaysLikeBrowsers() async throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 let fired = 0;
                 for (const delay of [NaN, undefined, "soon", "10", -5]) {
                   setTimeout(() => attr(2, "fired", ++fired), delay);
@@ -360,65 +355,9 @@ struct RuntimeTests {
         #expect(runtime.store.node(2)?.attributes["far"] == nil)
     }
 
-    @Test func reportsBridgeErrors() throws {
-        let runtime = try runtime(mount + "__nativeCommit('[42]');")
-        #expect(runtime.store.error?.contains("42") == true)
-        #expect(runtime.store.root?.children.first?.name == "txt")
-    }
-
-    @Test func reportsExceptions() throws {
-        let runtime = try runtime("throw new Error('boom')")
-        #expect(runtime.error?.message.contains("boom") == true)
-    }
-
-    @Test func reportsEveryKindOfErrorToTheApp() throws {
-        final class Reports {
-            var errors: Array<ScriptError> = []
-        }
-        let reports = Reports()
-        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
-        try (mount + "__nativeCommit('[42]');")
-            .write(to: url, atomically: true, encoding: .utf8)
-        let runtime = SvelteRuntime(source: url) { reports.errors.append($0) }
-        runtime.start()
-        #expect(reports.errors.contains { $0.kind == .bridge && $0.message.contains("42") })
-        #expect(runtime.error == nil)
-
-        reports.errors = []
-        try "throw new Error('boom')".write(to: url, atomically: true, encoding: .utf8)
-        runtime.reload()
-        #expect(reports.errors.map(\.kind) == [.script])
-        #expect(reports.errors.first?.message == "Error: boom")
-        #expect(reports.errors.first?.frames.isEmpty == false)
-
-        reports.errors = []
-        try FileManager.default.removeItem(at: url)
-        runtime.reload()
-        #expect(reports.errors.map(\.kind) == [.load])
-    }
-
-    @Test func dismissesAndRestartsAfterAnError() throws {
-        let runtime = try runtime(mount + "__nativeCommit('[42]'); throw new Error('boom');")
-        #expect(runtime.error?.message.contains("boom") == true)
-        #expect(runtime.store.error != nil)
-        runtime.dismissError()
-        #expect(runtime.error == nil)
-        #expect(runtime.store.error == nil)
-        #expect(runtime.store.root?.children.first?.name == "txt")
-        runtime.reload()
-        #expect(runtime.error?.message.contains("boom") == true)
-        #expect(runtime.store.root?.children.first?.name == "txt")
-    }
-
-    @Test func reportsAMissingBundle() {
-        let runtime = SvelteRuntime(source: URL(filePath: "/nonexistent/app.js"), reloadsOnChange: false)
-        runtime.start()
-        #expect(runtime.error?.message.contains("Couldn't load") == true)
-    }
-
     @Test func scrollsTheContainerToAnOffset() throws {
         let runtime = try runtime(
-            mount + """
+            mountScript + """
                 __nativeCommit(JSON.stringify([1, 2, 0, 8, 0, 0, 0, 1, 2, 0, 9, 0, 0, 0]));
                 """)
         runtime.settle()

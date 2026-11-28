@@ -18,14 +18,6 @@ struct NativeTests {
 
         """
 
-    private func runtime(_ script: String, modules: Array<NativeModule>) throws -> SvelteRuntime {
-        let url = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).js")
-        try script.write(to: url, atomically: true, encoding: .utf8)
-        let runtime = SvelteRuntime(source: url, modules: modules)
-        runtime.start()
-        return runtime
-    }
-
     private func reply(_ runtime: SvelteRuntime, _ id: Int) async throws -> [String: JSONValue]? {
         for _ in 0..<200 where runtime.store.node(2)?.attributes["reply\(id)"] == nil {
             runtime.settle()

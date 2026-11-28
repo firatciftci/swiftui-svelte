@@ -27,7 +27,7 @@ The host should run the engine on one serial queue, separate from the UI thread.
 
 The engine's microtask queue drains after each host call returns. A host must not assume that JavaScript work is finished when a call returns, because promises continue to run.
 
-A render batch is applied on the UI thread, in order, before the host renders the next frame. If the host applies batches on a different thread from the one that runs the engine, it must copy the batch before it returns control to the engine.
+A render batch is applied on the UI thread, in order, before the host renders the next frame. If the host applies batches on a different thread from the one that runs the engine, it must copy the batch before it returns control to the engine. Batches, actions, and invocations arrive in one stream, and the host must handle them in the order the bundle sent them. A host call into the engine can produce new messages while the host is still handling an earlier one, for example when an action calls back into JavaScript. The host must queue those messages behind the ones it has not handled yet, and it must not apply them first.
 
 ## 3. Render protocol
 
