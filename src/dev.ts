@@ -83,3 +83,16 @@ export function checkAttribute(element: string, name: string): void {
     `<${element}> doesn't have an attribute named "${name}".${suggestion == null ? "" : ` Did you mean "${suggestion}"?`}`,
   );
 }
+
+export function checkFont(
+  element: string,
+  font: unknown,
+  size: unknown,
+  fontname: unknown,
+): void {
+  if (font == null || size == null || fontname != null) return;
+  warnOnce(
+    `<${element}> font size`,
+    `<${element}> has both font and size, so it ignores font="${String(font)}" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`,
+  );
+}

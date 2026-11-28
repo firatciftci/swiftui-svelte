@@ -2,7 +2,8 @@ import { flushSync } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { checkAttribute, checkElement } from "swiftui-svelte/dev";
 import { elements, modifiers } from "swiftui-svelte/known";
-import { mountComponent, settle } from "./bridge.ts";
+import { byTestId, dispatch, mountComponent, settle } from "./bridge.ts";
+import FontSize from "./components/FontSize.svelte";
 import Typo from "./components/Typo.svelte";
 
 const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -39,6 +40,29 @@ describe("development checks", () => {
     expect(warn).toHaveBeenCalledWith(
       `<vstack> doesn't have an attribute named "zzzzzzzzzz".`,
     );
+  });
+
+  it("warns once when size replaces font on an element without fontname", async () => {
+    const message = (element: string): string =>
+      `<${element}> has both font and size, so it ignores font="headline" and uses a fixed-size system font that doesn't follow Dynamic Type. Remove one of them, or set fontname to scale a custom font relative to that text style.`;
+    const updated = mountComponent(FontSize);
+    flushSync();
+    await settle();
+    expect(warn).not.toHaveBeenCalled();
+    for (let tap = 0; tap < 2; tap++) {
+      dispatch(byTestId("updated"), "tap");
+      flushSync();
+      await settle();
+    }
+    expect(warn.mock.calls).toEqual([[message("vstack")]]);
+    updated();
+    for (const initial of [20, 24]) {
+      const created = mountComponent(FontSize, { initial });
+      flushSync();
+      await settle();
+      created();
+    }
+    expect(warn.mock.calls).toEqual([[message("vstack")], [message("txt")]]);
   });
 
   it("knows every element and modifier in elements.ts", () => {

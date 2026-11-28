@@ -690,7 +690,7 @@ type Modifiers = {
   fontname?: string;
   /** PostScript names of fonts to try, in order, for characters that `fontname` doesn't have, such as an Arabic font for Arabic text. Each fallback is used when the font before it lacks the character. @platform ios */
   fontfallbacks?: Array<string>;
-  /** A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. */
+  /** A font size in points. Without `fontname`, it's a fixed size, like `.system(size:)`, and it doesn't follow Dynamic Type. When an element has both, it replaces `font`, and development builds warn. With `fontname` and `font`, it's the base size that scales with Dynamic Type relative to that text style. */
   size?: number;
   /** The font design: `default`, `rounded`, `serif`, or `monospaced`. */
   design?: "default" | "rounded" | "serif" | "monospaced";

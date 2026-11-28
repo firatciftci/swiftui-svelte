@@ -10,7 +10,13 @@ import type {
   Resolution,
 } from "./tailwind/runtime.ts";
 import type { HostEnvironment } from "./web/environment.ts";
-import { checkAttribute, checkElement, isMarkup, warnOnce } from "./dev.ts";
+import {
+  checkAttribute,
+  checkElement,
+  checkFont,
+  isMarkup,
+  warnOnce,
+} from "./dev.ts";
 import { textContainers } from "./markup.ts";
 import { opcodes, protocol, version } from "./protocol.ts";
 import { resolveWith } from "./tailwind/runtime.ts";
@@ -205,6 +211,16 @@ function encodeAttributes(node: ElementNode, record: Array<unknown>): void {
     record.push(nameRef(name), sendable(value));
     (record[count] as number)++;
   }
+  if (isDevelopment) checkFonts(node);
+}
+
+function checkFonts(element: ElementNode): void {
+  checkFont(
+    element.name,
+    effective(element, "font"),
+    effective(element, "size"),
+    effective(element, "fontname"),
+  );
 }
 
 function encode(node: ChildNode, record: Array<unknown>): void {
@@ -253,6 +269,8 @@ function flushAttributes(): void {
         send(opcodes.attr, element.id, ref, sendable(value));
       }
     }
+    if (isDevelopment && (changed.has("font") || changed.has("size")))
+      checkFonts(element);
   }
   changedAttributes.clear();
 }
