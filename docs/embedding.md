@@ -40,6 +40,8 @@ var body: some View {
 
 Sharing a runtime also saves time and memory, because each runtime loads and runs the whole bundle before it can mount anything. With the example app's 580 KB bundle, in an iPhone 18 Pro simulator, another runtime took about 90 ms and 20 MB to mount its first screen, and another view on a shared runtime took under 10 ms and about 3 MB. [Performance](performance.md#one-runtime-or-several) has the details. Start separate runtimes only when views must not share state, or when you want to stop one without stopping the others.
 
+Each runtime's JavaScript work starts when the first view that uses it appears. To start it earlier, while iOS is still setting up the app's first scene, call `start()` on the runtime when you create it, for example in your `App`'s `init`. [Performance](performance.md#startup) shows the numbers.
+
 A component stays mounted as long as its `SvelteView` exists, including while it's in a tab that isn't selected, and unmounts when the view goes away.
 
 A `SvelteView(source:)` creates its runtime the first time it appears and keeps it while the parent view re-renders, so the component's state survives. It starts a new runtime, and mounts the component again from scratch, only when you change `source`, `storage`, or `reloadsOnChange`, or the names of the modules or components you pass in. Passing a different `SvelteRuntime` to `SvelteView(runtime:)` also mounts the component again, this time on the new runtime.

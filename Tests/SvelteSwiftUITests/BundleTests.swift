@@ -81,6 +81,18 @@ struct BundleTests {
         #expect(dump(other.store.root(for: separate)) == "#fragment\n  <btn>\n    #text \"Tally 0\"")
     }
 
+    @Test func loadsTheBundleOnceWhenStartedBeforeItsFirstView() throws {
+        let runtime = try runtime()
+        runtime.start()
+        runtime.settle()
+        #expect(runtime.loads == 1)
+        let id = runtime.mount("Greeting", props: #"{"name":"Ada","count":3}"#, actions: [:])
+        runtime.settle()
+        #expect(runtime.loads == 1)
+        #expect(runtime.error == nil)
+        #expect(dump(runtime.store.root(for: id)) == greeting("Ada: 3"))
+    }
+
     @Test func mountsAgainAfterAReload() throws {
         let runtime = try runtime()
         let id = runtime.mount("Greeting", props: #"{"name":"Ada"}"#, actions: [:])

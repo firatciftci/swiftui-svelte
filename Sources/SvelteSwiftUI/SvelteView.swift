@@ -96,6 +96,7 @@ private struct MountedView: View {
             case let .mounted(root):
                 NodeView(node: root)
                     .ifLet(Self.appLanguage) { $0.typesettingLanguage($1) }
+                    .onAppear { Diagnostics.signposter.emitEvent("Show component", "\(component, privacy: .public)") }
             case .incompatible:
                 ContentUnavailableView(
                     "Version mismatch",

@@ -108,7 +108,7 @@ actor ScriptEngine {
     ) {
         stop()
         outbox.withLock { $0.generation = generation }
-        switch downloaded ?? BundleLoader.load(source) {
+        switch downloaded ?? Diagnostics.signposter.withIntervalSignpost("Load bundle", around: { BundleLoader.load(source) }) {
         case let .success(bundle):
             post(.loaded(evaluate(bundle, source: source, environment: environment, mounts: mounts)))
         case let .failure(failure):
@@ -136,7 +136,9 @@ actor ScriptEngine {
         }
         install(into: context)
         self.context = context
-        context.evaluateScript(bundle.script, withSourceURL: source)
+        Diagnostics.signposter.withIntervalSignpost("Evaluate bundle") {
+            _ = context.evaluateScript(bundle.script, withSourceURL: source)
+        }
         let identity = BundleIdentity(context.objectForKeyedSubscript("__svelteBundle"))
         for mount in mounts { call("__svelteMount", mount) }
         return identity
@@ -156,7 +158,9 @@ actor ScriptEngine {
 
     func call(_ function: String, _ arguments: Array<ScriptArgument>) {
         guard let callee = context?.objectForKeyedSubscript(function), !callee.isUndefined else { return }
+        let interval = Diagnostics.signposter.beginInterval("Call", "\(function, privacy: .public)")
         callee.call(withArguments: arguments.map(\.bridged))
+        Diagnostics.signposter.endInterval("Call", interval)
     }
 
     private func install(into context: JSContext) {

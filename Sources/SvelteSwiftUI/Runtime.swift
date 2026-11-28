@@ -133,7 +133,7 @@ public final class SvelteRuntime {
         engine.sync { $0.stop() }
     }
 
-    func start() {
+    public func start() {
         guard !isStarted else { return }
         isStarted = true
         frames.onFrame = { [weak self] timestamp, gap in self?.frame(timestamp, gap: gap) ?? false }
@@ -221,7 +221,7 @@ public final class SvelteRuntime {
             }
             switch inbound.message {
             case let .commit(json, animation) where !isStopped:
-                if store.apply(json, animation: animation) {
+                if Diagnostics.signposter.withIntervalSignpost("Apply batch", around: { store.apply(json, animation: animation) }) {
                     if isLoaded { isRecovering = false }
                 } else {
                     onError?(ScriptError(kind: .bridge, message: store.error ?? "The bundle sent a malformed batch.", frames: []))

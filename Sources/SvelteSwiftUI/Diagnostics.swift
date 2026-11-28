@@ -18,6 +18,7 @@ nonisolated struct Diagnostic: Hashable, Sendable, Decodable {
 nonisolated final class Diagnostics: Sendable {
     static let logger = Logger(subsystem: "swiftui-svelte", category: "diagnostics")
     static let javascript = Logger(subsystem: "swiftui-svelte", category: "javascript")
+    static let signposter = OSSignposter(subsystem: "swiftui-svelte", category: .pointsOfInterest)
 
     static func log(_ message: String, level: String) {
         switch level {

@@ -39,6 +39,43 @@ Released nodes are cleaned up on both sides: after 6,000 rows were created and c
 
 Lazy containers keep memory flat while scrolling. In an iPhone 18 Pro simulator with a Debug build, a `list` of 10,000 rows took 240 MB when it opened and 170 MB after scrolling through 3,000 rows. A lazy stack of the same rows went from 140 MB to 156 MB. Before version 1.0, SwiftUI built every row of a `list` when it opened, which took 980 MB, and a lazy stack kept 160 MB of rows it had scrolled past. To measure it yourself, open the Playground tab of the example app, open one of the 10,000-row screens in the Navigation section, and tap **Scroll through 3,000 rows**. The label next to the button shows the memory when the screen opened, before scrolling, and after.
 
+### Startup
+
+A runtime starts the first time a `SvelteView` that uses it appears. It then reads the bundle, creates a JavaScript context, runs the bundle, mounts the component, and hands the first batch of nodes to SwiftUI. All of that happens after iOS has finished setting up the app's first scene. To overlap the JavaScript work with that setup, create the runtime when the app starts and call `start()`:
+
+```swift
+@main
+struct MyApp: App {
+    private let runtime: SvelteRuntime
+
+    init() {
+        runtime = SvelteRuntime(source: Bundle.main.bundleURL.appending(path: "app.js"))
+        runtime.start()
+    }
+
+    var body: some Scene {
+        WindowGroup { SvelteView(runtime: runtime) }
+    }
+}
+```
+
+`start()` loads and runs the bundle on the JavaScript thread right away, so by the time the view appears, only the mount is left. Calling it again does nothing.
+
+The example app does this. In an iPhone 18 Pro simulator with a Release build and the JIT off, over five cold launches each, the time from launch until the first screen appeared went from a median of 544ms (513–577ms) with `SvelteView(source:)` to 508ms (502–575ms) with `start()` in the app's `init`. With the JIT on, it went from 534ms to 508ms. A typical launch with the JIT off spent its time this way:
+
+| Step                                          | Time      | Thread     |
+| --------------------------------------------- | --------- | ---------- |
+| iOS loads the app and sets up its first scene | 400–470ms | Main       |
+| Create the JavaScript context                 | 8–9ms     | JavaScript |
+| Run the 580 KB bundle                         | 24–28ms   | JavaScript |
+| Mount the Playground screen                   | 20–22ms   | JavaScript |
+| Apply the first batch of 1,187 nodes          | 9–14ms    | Main       |
+| SwiftUI builds the screen                     | 43–47ms   | Main       |
+
+The first row was measured under Instruments, which slows it down. With `start()` in `init`, the context and the bundle are ready before the first scene is, so only the last three rows remain after the view appears.
+
+To see these steps in your own app, record it with the Points of Interest instrument in Instruments. swiftui-svelte marks each step under the `swiftui-svelte` subsystem: `Load bundle`, `Evaluate bundle`, `Call` (each call into JavaScript, such as `__svelteMount` or an event, with the function's name), `Apply batch`, and a `Show component` event when a mounted component first appears.
+
 ### One runtime or several
 
 Each `SvelteRuntime` has its own JavaScript context, and it loads and runs the whole bundle before it mounts anything. Views that share a runtime pay that cost once. In an iPhone 18 Pro simulator with a Debug build, the example app's 580 KB bundle and its Playground screen of 1,187 nodes gave these medians over five runs. The time runs until Swift holds the mounted nodes, before SwiftUI draws them:

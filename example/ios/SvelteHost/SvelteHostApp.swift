@@ -3,12 +3,18 @@ import SwiftUI
 
 @main
 struct SvelteHostApp: App {
+    private let runtime: SvelteRuntime
+
     init() {
         if ProcessInfo.processInfo.arguments.contains("-resetStorage") {
             SvelteRuntime.clearStorage(SvelteRuntime.storageName(for: Self.source))
         }
+        runtime = SvelteRuntime(
+            source: Self.source, reloadsOnChange: Self.reloadsOnChange, modules: Self.modules, components: Self.components)
+        if !Self.isNativeBench { runtime.start() }
     }
 
+    private static let isNativeBench = ProcessInfo.processInfo.arguments.contains("-NativeBench")
     private static let modules = [CameraModule.module, DiagnosticsModule.module]
     private static let components = [NativeComponent("mapview") { MapElement(element: $0) }]
 
@@ -45,12 +51,10 @@ struct SvelteHostApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if ProcessInfo.processInfo.arguments.contains("-NativeBench") {
+            if Self.isNativeBench {
                 NativeBench()
             } else {
-                SvelteView(
-                    source: Self.source, props: Self.props, reloadsOnChange: Self.reloadsOnChange,
-                    modules: Self.modules, components: Self.components)
+                SvelteView(runtime: runtime, props: Self.props)
             }
         }
     }
