@@ -56,6 +56,45 @@ struct DiagnosticsTests {
         #expect(diagnostics.generation == 1)
     }
 
+    @MainActor @Test func reportsColorsSymbolsAndFontsThatTheHostCannotFind() async throws {
+        let runtime = try runtime(
+            mountScript + """
+                attr(2, "color", "blue");
+                attr(2, "background", "ultraThinMaterial");
+                attr(2, "tint", "rgb(51 102 255)");
+                attr(2, "color", "chartreuse-ish");
+                attr(2, "symbol", "star.fill");
+                attr(2, "symbol", "no.such.symbol");
+                attr(2, "fontname", "Helvetica");
+                attr(2, "fontname", "NoSuchFont-Regular");
+                attr(2, "fontfallbacks", ["Helvetica", "NoSuchFallback"]);
+                attr(2, "color", "");
+                """)
+        let expected = [
+            Diagnostic(
+                element: "txt", attribute: "color", value: "chartreuse-ish",
+                message:
+                    "<txt> color=\"chartreuse-ish\" isn't a color or style, so it has no effect. Use a color name such as \"blue\", a system color such as \"systemGray4\", or a CSS color such as \"#3366ff\" or \"rgb(51 102 255)\"."
+            ),
+            Diagnostic(
+                element: "txt", attribute: "symbol", value: "no.such.symbol",
+                message:
+                    "<txt> symbol=\"no.such.symbol\" isn't an SF Symbol on this OS version, so nothing shows. Check the name in the SF Symbols app, which also lists the OS version each symbol needs."
+            ),
+            Diagnostic(
+                element: "txt", attribute: "fontname", value: "NoSuchFont-Regular",
+                message:
+                    "<txt> fontname=\"NoSuchFont-Regular\" isn't a font this app has, so it uses the system font instead. Add the font file to the app target, list it under UIAppFonts in Info.plist, and use the font's PostScript name, which Font Book shows."
+            ),
+            Diagnostic(
+                element: "txt", attribute: "fontfallbacks", value: "NoSuchFallback",
+                message:
+                    "<txt> fontfallbacks=\"NoSuchFallback\" isn't a font this app has, so it uses the system font instead. Add the font file to the app target, list it under UIAppFonts in Info.plist, and use the font's PostScript name, which Font Book shows."
+            ),
+        ]
+        try await eventually { runtime.diagnostics == expected }
+    }
+
     @MainActor @Test func collectsTheRuntimesDiagnosticsForTheCurrentBundle() async throws {
         let duplicate = NativeModule("clipboard")
         let runtime = try runtime(

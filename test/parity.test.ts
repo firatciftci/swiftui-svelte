@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { elements, modifiers } from "swiftui-svelte/known";
+import { colorAttributes } from "../scripts/elements.ts";
 
 function captures(text: string, pattern: RegExp): Array<string> {
   const names: Array<string> = [];
@@ -78,6 +79,18 @@ describe("the element schema and the Swift host", () => {
           !readByStateFeedback.has(name),
     );
     expect(ungrouped).toEqual([]);
+  });
+
+  it("checks every attribute whose type takes a color", () => {
+    const checks =
+      files.find(({ file }) => file === "AttributeChecks.swift")?.text ?? "";
+    const styles = checks.slice(
+      checks.indexOf("static let styles"),
+      checks.indexOf("private static let vector"),
+    );
+    expect(
+      captures(styles, /"([a-z]+)"/g).toSorted((a, b) => a.localeCompare(b)),
+    ).toEqual(colorAttributes());
   });
 
   it("groups only typed modifiers", () => {

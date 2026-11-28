@@ -34,6 +34,8 @@ Debug builds also collect the library's warnings in a tray. When the current bun
 
 In a development build, a warning about an element also says where that element is in your source, such as `src/App.svelte:12:5`. To make that possible, the `swiftui()` plugin gives every element a `data-loc` attribute in development builds. Production builds leave it out.
 
+The Swift host adds its own warnings in every build, for problems that only the device can see: a color it can't read, an SF Symbol name that doesn't exist on the OS version the app runs on, and a font that the app doesn't include.
+
 ## Bridge statistics
 
 `stats` from `swiftui-svelte` counts the renderer's work. `live` is the number of element nodes that haven't been released yet, `commits` and `ops` count the batches and operations sent to the host, `bytes` is their total size, and `serializeMs` and `nativeMs` are the time spent encoding batches and the time spent inside the host's commit call. Read it to look for leaks and to compare performance between builds. `protocol` is the bridge protocol version the bundle was built with.

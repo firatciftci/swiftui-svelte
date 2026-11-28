@@ -135,6 +135,35 @@ export function generate(): string {
   return lines.join("\n");
 }
 
+function hasColorForm(type: ts.Type): boolean {
+  return variants(type).some(
+    (member) =>
+      (member.flags & ts.TypeFlags.TemplateLiteral) !== 0 &&
+      (member as ts.TemplateLiteralType).texts[0] === "#",
+  );
+}
+
+export function colorAttributes(): Array<string> {
+  const { checker, elements, modifiers } = load();
+  const found = new Set<string>();
+  const collect = (type: ts.Type, node: ts.Node): void => {
+    for (const member of variants(type)) {
+      for (const property of checker.getPropertiesOfType(member)) {
+        const value = checker.getNonNullableType(
+          checker.getTypeOfSymbolAtLocation(property, node),
+        );
+        if (hasColorForm(value)) found.add(property.getName());
+      }
+    }
+  };
+  collect(checker.getTypeAtLocation(modifiers), modifiers);
+  for (const member of elements.members) {
+    if (ts.isPropertySignature(member) && member.type != null)
+      collect(checker.getTypeFromTypeNode(member.type), member);
+  }
+  return [...found].toSorted((a, b) => a.localeCompare(b));
+}
+
 if (import.meta.main) {
   const { writeFileSync } = await import("node:fs");
   writeFileSync(path.join(root, "src/known.ts"), generate());

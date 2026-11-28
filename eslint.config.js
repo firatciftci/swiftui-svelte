@@ -121,6 +121,7 @@ export default antfu({
       "test/catalog.test.ts",
       "test/jsc/main.ts",
       "test/jsc/run.ts",
+      "test/parity.test.ts",
       "test/vite.test.ts",
     ],
     rules: { "no-restricted-imports": "off" },

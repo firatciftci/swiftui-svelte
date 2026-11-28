@@ -444,7 +444,9 @@ final class NodeStore {
                 if !hostIDs.isEmpty { needsHosting = true }
                 if node.kind == .fragment { roots = roots.filter { $0.value !== node } }
             case let .attribute(id, name, value):
-                nodes[id]?.setOwnAttribute(name, value)
+                guard let node = nodes[id] else { continue }
+                node.setOwnAttribute(name, value)
+                if let value { AttributeChecks.check(name, value, on: node, diagnostics: diagnostics) }
             case let .text(id, text):
                 if let node = nodes[id], node.kind == .text, node.text != text { node.text = text }
             }
@@ -462,6 +464,9 @@ final class NodeStore {
         nodes[record.id] = node
         if Presenting.hoisted.contains(name) { presentationIDs.insert(record.id) }
         node.attributes = record.attributes
+        for (attribute, value) in record.attributes {
+            AttributeChecks.check(attribute, value, on: node, diagnostics: diagnostics)
+        }
         guard !record.children.isEmpty else { return node }
         var children: Array<Node> = []
         children.reserveCapacity(record.children.count)
