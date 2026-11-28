@@ -202,35 +202,29 @@ struct ToggleElement: View {
 
 struct TextInputControl: View {
     let node: Node
-    @State private var text: String
-
-    init(node: Node) {
-        self.node = node
-        _text = State(initialValue: node.attributes["value"]?.string ?? "")
-    }
 
     var body: some View {
-        field
-            .modifier(TextInputTraits(attributes: node.attributes))
-            .modifier(ControlledText(node: node, text: $text, submits: .text))
-            .modifier(Focusable(node: node))
+        ControlledText(node: node, submits: .text) { text in
+            field(text).modifier(TextInputTraits(attributes: node.attributes))
+        }
+        .modifier(Focusable(node: node))
     }
 
-    @ViewBuilder private var field: some View {
+    @ViewBuilder private func field(_ text: Binding<String>) -> some View {
         let attributes = node.attributes
         switch node.name {
         case "texteditor":
-            TextEditor(text: $text)
+            TextEditor(text: text)
                 .ifLet(Bars.visibility(attributes["scrollcontentbackground"])) { $0.scrollContentBackground($1) }
         case "securefield":
-            SecureField(placeholder, text: $text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
+            SecureField(placeholder, text: text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
         default:
             if attributes["axis"]?.string == "vertical" {
-                TextField(placeholder, text: $text, prompt: prompt, axis: .vertical)
+                TextField(placeholder, text: text, prompt: prompt, axis: .vertical)
                     .ifLet(Inputs.lineLimit(attributes["lines"])) { $0.lineLimit($1) }
                     .modifier(FieldStyle(variant: attributes["variant"]?.string))
             } else {
-                TextField(placeholder, text: $text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
+                TextField(placeholder, text: text, prompt: prompt).modifier(FieldStyle(variant: attributes["variant"]?.string))
             }
         }
     }
@@ -246,17 +240,25 @@ struct TextInputControl: View {
     }
 }
 
-struct ControlledText: ViewModifier {
+struct ControlledText<Content: View>: View {
     let node: Node
-    @Binding var text: String
     let submits: SubmitTriggers
+    let content: (Binding<String>) -> Content
     @Environment(SvelteRuntime.self) private var runtime
+    @State private var text: String
     @State private var pending: Task<Void, Never>?
     @State private var isComposing = false
     @State private var sentBeforeChange: String?
 
-    func body(content: Content) -> some View {
-        content
+    init(node: Node, submits: SubmitTriggers, @ViewBuilder content: @escaping (Binding<String>) -> Content) {
+        self.node = node
+        self.submits = submits
+        self.content = content
+        _text = State(initialValue: node.attributes["value"]?.string ?? "")
+    }
+
+    var body: some View {
+        content($text)
             .onSubmit(of: submits, submit)
             .onReceive(NotificationCenter.default.publisher(for: Composition.fieldChange)) { composed($0) }
             .onReceive(NotificationCenter.default.publisher(for: Composition.editorChange)) { composed($0) }

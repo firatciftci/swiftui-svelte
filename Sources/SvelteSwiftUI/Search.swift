@@ -71,43 +71,38 @@ enum Searches {
 struct Searching: ViewModifier {
     let node: Node
     @Environment(SvelteRuntime.self) private var runtime
-    @State private var text: String
-
-    init(node: Node) {
-        self.node = node
-        _text = State(initialValue: node.attributes["value"]?.string ?? "")
-    }
 
     func body(content: Content) -> some View {
         let attributes = node.attributes
         let scopes = SearchScope.scopes(attributes["scopes"])
         let suggestions = node.renderedChildren
-        content
-            .searchable(
-                text: $text,
-                tokens: Binding {
-                    SearchToken.tokens(node.attributes["tokens"])
-                } set: { tokens in
-                    let value = JSONValue.array(tokens.map(\.value))
-                    runtime.edit(node, "tokens", to: value, event: "tokenschange")
-                },
-                isPresented: Binding {
-                    node.attributes["presented"]?.isTrue ?? false
-                } set: { presented in
-                    runtime.edit(node, "presented", to: .bool(presented), event: "presentedchange")
-                },
-                placement: Searches.placement(attributes["placement"]?.string, drawer: attributes["drawer"]?.string),
-                prompt: attributes["prompt"]?.string.map { Text($0) }
-            ) { TokenLabel(token: $0) }
-            .searchSuggestions {
-                ForEach(SearchToken.tokens(attributes["suggestedtokens"])) { TokenLabel(token: $0).searchCompletion($0) }
-                ForEach(suggestions) { child in
-                    NodeView(node: child).ifLet(child.attributes["completion"]?.string) { $0.searchCompletion($1) }
+        ControlledText(node: node, submits: .search) { text in
+            content
+                .searchable(
+                    text: text,
+                    tokens: Binding {
+                        SearchToken.tokens(node.attributes["tokens"])
+                    } set: { tokens in
+                        let value = JSONValue.array(tokens.map(\.value))
+                        runtime.edit(node, "tokens", to: value, event: "tokenschange")
+                    },
+                    isPresented: Binding {
+                        node.attributes["presented"]?.isTrue ?? false
+                    } set: { presented in
+                        runtime.edit(node, "presented", to: .bool(presented), event: "presentedchange")
+                    },
+                    placement: Searches.placement(attributes["placement"]?.string, drawer: attributes["drawer"]?.string),
+                    prompt: attributes["prompt"]?.string.map { Text($0) }
+                ) { TokenLabel(token: $0) }
+                .searchSuggestions {
+                    ForEach(SearchToken.tokens(attributes["suggestedtokens"])) { TokenLabel(token: $0).searchCompletion($0) }
+                    ForEach(suggestions) { child in
+                        NodeView(node: child).ifLet(child.attributes["completion"]?.string) { $0.searchCompletion($1) }
+                    }
                 }
-            }
-            .modifier(Scopes(node: node, scopes: scopes))
-            .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
-            .modifier(ControlledText(node: node, text: $text, submits: .search))
+                .modifier(Scopes(node: node, scopes: scopes))
+                .modifier(SearchMinimizing(isMinimized: attributes["minimize"]?.string == "always"))
+        }
     }
 }
 
