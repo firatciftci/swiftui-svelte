@@ -693,6 +693,7 @@ export const elementValues: Readonly<
     tabbarvisibility: ["hidden", "automatic", "visible"],
   },
   sheet: {
+    detents: ["medium", "large"],
     dragindicator: ["hidden", "automatic", "visible"],
     backgroundinteraction: [
       "medium",
@@ -703,6 +704,7 @@ export const elementValues: Readonly<
     ],
   },
   popover: {
+    detents: ["medium", "large"],
     dragindicator: ["hidden", "automatic", "visible"],
     backgroundinteraction: [
       "medium",
@@ -715,6 +717,7 @@ export const elementValues: Readonly<
     adaptation: ["automatic", "none", "popover", "sheet", "fullScreenCover"],
   },
   inspector: {
+    detents: ["medium", "large"],
     dragindicator: ["hidden", "automatic", "visible"],
     backgroundinteraction: [
       "medium",

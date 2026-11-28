@@ -50,11 +50,24 @@ function variants(type: ts.Type): ReadonlyArray<ts.Type> {
   return type.isUnion() ? type.types : [type];
 }
 
-function literals(type: ts.Type): Array<string> | null {
+function literals(
+  checker: ts.TypeChecker,
+  type: ts.Type,
+): Array<string> | null {
   const found: Array<string> = [];
   for (const member of variants(type)) {
-    if (member.isStringLiteral()) found.push(member.value);
-    else if (
+    if (member.isStringLiteral()) {
+      found.push(member.value);
+      continue;
+    }
+    if (checker.isArrayType(member)) {
+      const [item] = checker.getTypeArguments(member as ts.TypeReference);
+      const items = item == null ? null : literals(checker, item);
+      if (items == null) return null;
+      found.push(...items);
+      continue;
+    }
+    if (
       (member.flags &
         (ts.TypeFlags.String |
           ts.TypeFlags.TemplateLiteral |
@@ -89,6 +102,7 @@ export function generate(): string {
       for (const property of checker.getPropertiesOfType(member)) {
         const name = property.getName();
         const allowed = literals(
+          checker,
           checker.getNonNullableType(
             checker.getTypeOfSymbolAtLocation(property, node),
           ),

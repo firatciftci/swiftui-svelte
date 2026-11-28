@@ -139,6 +139,7 @@ describe("development checks", () => {
     checkValue("txt", "font", "headline");
     checkValue("txt", "font", 17);
     checkValue("txt", "fixedsize", "");
+    checkValue("vstack", "a11ytraits", ["header", "headr"]);
     checkValue("txt", "color", "chartreuse-ish");
     checkValue("vstack", "blendmode", "zzzz");
     expect(
@@ -148,6 +149,7 @@ describe("development checks", () => {
     ).toEqual([
       `<txt> font="headlin" isn't a value font accepts, so it has no effect. Did you mean "headline"?`,
       `<vstack> dir="sideways" isn't a value dir accepts, so it has no effect. Use "ltr" or "rtl".`,
+      `<vstack> a11ytraits="headr" isn't a value a11ytraits accepts, so it has no effect. Did you mean "header"?`,
       `<vstack> blendmode="zzzz" isn't a value blendmode accepts, so it has no effect. docs/reference.md lists the values it takes.`,
     ]);
   });

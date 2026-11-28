@@ -131,6 +131,10 @@ export function checkValue(
   value: unknown,
   location?: string,
 ): void {
+  if (Array.isArray(value)) {
+    for (const item of value) checkValue(element, name, item, location);
+    return;
+  }
   if (typeof value !== "string" || value === "") return;
   const allowed = elementValues[element]?.[name] ?? modifierValues[name];
   if (allowed == null || allowed.includes(value)) return;
