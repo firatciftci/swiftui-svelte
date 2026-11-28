@@ -177,9 +177,8 @@ public struct NativeElement {
     }
 
     public func send(_ event: String, _ payload: some Encodable) {
-        guard let data = try? BridgeJSON.encoder().encode([payload]),
-            let values = try? JSONSerialization.jsonObject(with: data) as? Array<Any>,
-            let value = values.first
+        guard let data = try? BridgeJSON.encoder().encode(payload),
+            let value = try? JSONDecoder().decode(JSONValue.self, from: data)
         else { return }
         runtime.dispatch(node.id, event, value)
     }
@@ -261,6 +260,6 @@ extension SvelteRuntime {
             } ?? #"{"code":"native","message":"The native error couldn't be encoded."}"#
         }
         let resultJSON = result.flatMap { String(bytes: $0, encoding: .utf8) }
-        call("__svelteNativeReply", [id, errorJSON ?? NSNull(), resultJSON ?? NSNull()])
+        call("__svelteNativeReply", [JSONValue(id), errorJSON.map(JSONValue.string) ?? .null, resultJSON.map(JSONValue.string) ?? .null])
     }
 }

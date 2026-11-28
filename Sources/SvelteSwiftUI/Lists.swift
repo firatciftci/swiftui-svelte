@@ -59,7 +59,7 @@ struct ListElement: View {
             node.attributes["selection"].flatMap { $0 == .null ? nil : $0 }
         } set: { value in
             let value = value ?? .null
-            runtime.edit(node, "selection", to: value, event: "selectionchange", payload: value.object)
+            runtime.edit(node, "selection", to: value, event: "selectionchange")
         }
     }
 
@@ -69,7 +69,7 @@ struct ListElement: View {
             return Set(values)
         } set: { values in
             let value = JSONValue.array(Lists.tags(in: node).filter(values.contains))
-            runtime.edit(node, "selection", to: value, event: "selectionchange", payload: value.object)
+            runtime.edit(node, "selection", to: value, event: "selectionchange")
         }
     }
 }
@@ -92,12 +92,12 @@ struct Rows: View {
             rows
             .onDelete(
                 perform: node.listens(to: "delete")
-                    ? { offsets in runtime.dispatch(id, "delete", Array(offsets)) } : nil
+                    ? { offsets in runtime.dispatch(id, "delete", .array(offsets.map { JSONValue($0) })) } : nil
             )
             .onMove(
                 perform: node.listens(to: "move")
                     ? { source, destination in
-                        runtime.dispatch(id, "move", ["from": Array(source), "to": destination] as [String: Any])
+                        runtime.dispatch(id, "move", ["from": .array(source.map { JSONValue($0) }), "to": JSONValue(destination)])
                     } : nil
             )
     }
@@ -174,7 +174,7 @@ private struct Editing: ViewModifier {
                 .onChange(of: mode) { _, mode in
                     let isActive = mode == .active
                     guard mode != .transient, isActive != isEditing else { return }
-                    runtime.edit(node, "editing", to: .bool(isActive), event: "editingchange", payload: isActive)
+                    runtime.edit(node, "editing", to: .bool(isActive), event: "editingchange")
                 }
         #else
             content

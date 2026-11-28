@@ -115,7 +115,7 @@ private struct AccessibleActions: ViewModifier {
             .ifLet(names.isEmpty ? nil : names) { view, names in
                 view.accessibilityActions {
                     ForEach(names, id: \.self) { name in
-                        Button(name) { runtime.dispatch(id, "a11yaction", name) }
+                        Button(name) { runtime.dispatch(id, "a11yaction", .string(name)) }
                     }
                 }
             }

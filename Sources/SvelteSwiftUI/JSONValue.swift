@@ -61,7 +61,7 @@ public enum JSONValue: Hashable, Sendable {
         return BridgeJSON.date(from: string)
     }
 
-    var object: Any {
+    nonisolated var object: Any {
         switch self {
         case .null: NSNull()
         case let .bool(value): value

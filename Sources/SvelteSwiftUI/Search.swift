@@ -90,12 +90,12 @@ struct Searching: ViewModifier {
                     SearchToken.tokens(node.attributes["tokens"])
                 } set: { tokens in
                     let value = JSONValue.array(tokens.map(\.value))
-                    runtime.edit(node, "tokens", to: value, event: "tokenschange", payload: value.object)
+                    runtime.edit(node, "tokens", to: value, event: "tokenschange")
                 },
                 isPresented: Binding {
                     node.attributes["presented"]?.isTrue ?? false
                 } set: { presented in
-                    runtime.edit(node, "presented", to: .bool(presented), event: "presentedchange", payload: presented)
+                    runtime.edit(node, "presented", to: .bool(presented), event: "presentedchange")
                 },
                 placement: Searches.placement(attributes["placement"]?.string, drawer: attributes["drawer"]?.string),
                 prompt: attributes["prompt"]?.string.map { Text($0) }
@@ -112,7 +112,7 @@ struct Searching: ViewModifier {
             .onChange(of: text) { _, typed in
                 guard typed != node.attributes["value"]?.string else { return }
                 node.attributes["value"] = .string(typed)
-                runtime.dispatch(node.id, "input", typed)
+                runtime.dispatch(node.id, "input", .string(typed))
                 if let settled = node.attributes["value"]?.string, settled != typed { text = settled }
             }
             .onChange(of: value) { _, value in
@@ -146,7 +146,7 @@ private struct Scopes: ViewModifier {
                 Binding {
                     node.attributes["selectedscope"]?.string ?? scopes[0].value
                 } set: { scope in
-                    runtime.edit(node, "selectedscope", to: .string(scope), event: "scopechange", payload: scope)
+                    runtime.edit(node, "selectedscope", to: .string(scope), event: "scopechange")
                 },
                 activation: Searches.activation(node.attributes["scopeactivation"]?.string)
             ) {

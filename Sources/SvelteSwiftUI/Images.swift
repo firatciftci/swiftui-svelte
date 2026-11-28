@@ -261,7 +261,7 @@ struct RemoteImage: View {
                 Image(systemName: "photo").foregroundStyle(.tertiary)
             }
         }
-        .onAppear { runtime.dispatch(node.id, "error", message, waits: false) }
+        .onAppear { runtime.dispatch(node.id, "error", .string(message), waits: false) }
     }
 }
 

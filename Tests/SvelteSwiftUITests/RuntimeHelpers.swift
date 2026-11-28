@@ -6,13 +6,12 @@ import Testing
 
 extension SvelteRuntime {
     func settle() {
-        engine.queue.sync {}
+        engine.sync { _ in }
         drain()
     }
 
-    func evaluate<Result>(_ body: (JSContext) -> Result) -> Result? {
-        let engine = engine
-        let result = engine.queue.sync { engine.context.map(body) }
+    func evaluate<Result: Sendable>(_ body: @Sendable (JSContext) -> Result) -> Result? {
+        let result = engine.sync { $0.context.map(body) }
         drain()
         return result
     }

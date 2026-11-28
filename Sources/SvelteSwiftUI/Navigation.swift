@@ -151,7 +151,7 @@ struct Tabs: View {
         let selection = Binding {
             node.attributes["selection"] ?? tabs.first.map { Self.value(of: $0, in: tabs) } ?? .null
         } set: { value in
-            runtime.edit(node, "selection", to: value, event: "change", payload: value.object)
+            runtime.edit(node, "selection", to: value, event: "change")
         }
         switch node.attributes["variant"]?.string {
         case "page":
@@ -281,13 +281,13 @@ struct SplitView: View {
             Self.visibility(node.attributes["visibility"]?.string)
         } set: { value in
             let name = Self.name(of: value)
-            runtime.edit(node, "visibility", to: .string(name), event: "visibilitychange", payload: name)
+            runtime.edit(node, "visibility", to: .string(name), event: "visibilitychange")
         }
         let compact = Binding {
             Self.column(node.attributes["compactcolumn"]?.string, count: columns.count)
         } set: { value in
             let name = Self.name(of: value)
-            runtime.edit(node, "compactcolumn", to: .string(name), event: "compactcolumnchange", payload: name)
+            runtime.edit(node, "compactcolumn", to: .string(name), event: "compactcolumnchange")
         }
         Group {
             if columns.count >= 3 {

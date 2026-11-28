@@ -49,10 +49,14 @@ nonisolated final class Diagnostics: Sendable {
     }
 
     private let state = Mutex(State())
-    private let onReport: @Sendable (Diagnostic, Int) -> Void
+    private let handler = Mutex<(@Sendable (Diagnostic, Int) -> Void)?>(nil)
 
-    init(onReport: @escaping @Sendable (Diagnostic, Int) -> Void = { _, _ in }) {
-        self.onReport = onReport
+    init(onReport: (@Sendable (Diagnostic, Int) -> Void)? = nil) {
+        handler.withLock { $0 = onReport }
+    }
+
+    func onReport(_ onReport: @escaping @Sendable (Diagnostic, Int) -> Void) {
+        handler.withLock { $0 = onReport }
     }
 
     var generation: Int { state.withLock { $0.generation } }
@@ -64,7 +68,7 @@ nonisolated final class Diagnostics: Sendable {
         }
         guard let generation else { return false }
         Self.logger.warning("\(diagnostic.description, privacy: .public)")
-        onReport(diagnostic, generation)
+        handler.withLock { $0 }?(diagnostic, generation)
         return true
     }
 

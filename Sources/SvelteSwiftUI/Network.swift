@@ -1,7 +1,7 @@
 import Foundation
 import JavaScriptCore
 
-nonisolated final class NetworkClient: @unchecked Sendable {
+nonisolated final class NetworkClient {
     private struct FetchRequest: Decodable {
         let url: String
         let method: String
@@ -30,9 +30,9 @@ nonisolated final class NetworkClient: @unchecked Sendable {
         var expectsNoStatus = false
     }
 
-    private let queue: DispatchQueue
+    private let queue: DispatchSerialQueue
     private let operations = OperationQueue()
-    private let events = SessionEvents()
+    weak var engine: ScriptEngine?
     private var session: URLSession?
     private var fetches: [Int: Fetch] = [:]
     private var fetchTasks: [Int: URLSessionTask] = [:]
@@ -40,16 +40,15 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     private var socketIDs: [Int: Int] = [:]
     var origin: String?
 
-    init(queue: DispatchQueue) {
+    init(queue: DispatchSerialQueue) {
         self.queue = queue
         operations.underlyingQueue = queue
         operations.maxConcurrentOperationCount = 1
-        events.owner = self
     }
 
     private var currentSession: URLSession {
         if let session { return session }
-        let session = URLSession(configuration: .default, delegate: events, delegateQueue: operations)
+        let session = URLSession(configuration: .default, delegate: SessionEvents(engine: engine), delegateQueue: operations)
         self.session = session
         return session
     }
@@ -164,10 +163,14 @@ nonisolated final class NetworkClient: @unchecked Sendable {
             message = .string(text)
             count = text.utf8.count
         }
-        socket.task.send(message) { [weak self, queue] _ in
-            guard let self else { return }
-            queue.async { _ = self.sockets[id]?.handlers.invokeMethod("sent", withArguments: [count]) }
+        let engine = engine
+        socket.task.send(message) { [queue] _ in
+            queue.async { engine?.assumeIsolated { $0.network.sent(count, on: id) } }
         }
+    }
+
+    private func sent(_ count: Int, on id: Int) {
+        _ = sockets[id]?.handlers.invokeMethod("sent", withArguments: [count])
     }
 
     func closeSocket(id: Int, code: Int?, reason: String) {
@@ -179,24 +182,26 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     }
 
     private func receive(_ id: Int) {
-        sockets[id]?.task.receive { [weak self, queue] result in
-            guard let self else { return }
-            queue.async {
-                guard let socket = self.sockets[id], !socket.isClosed, case .success(let message) = result
-                else { return }
-                switch message {
-                case .string(let text):
-                    socket.handlers.invokeMethod("message", withArguments: [text])
-                case .data(let data):
-                    if let context = socket.handlers.context {
-                        socket.handlers.invokeMethod("message", withArguments: [context.bytes(data)])
-                    }
-                @unknown default:
-                    break
-                }
-                self.receive(id)
-            }
+        let engine = engine
+        sockets[id]?.task.receive { [queue] result in
+            queue.async { engine?.assumeIsolated { $0.network.received(result, on: id) } }
         }
+    }
+
+    func received(_ result: Result<URLSessionWebSocketTask.Message, any Error>, on id: Int) {
+        guard let socket = sockets[id], !socket.isClosed, case .success(let message) = result
+        else { return }
+        switch message {
+        case .string(let text):
+            socket.handlers.invokeMethod("message", withArguments: [text])
+        case .data(let data):
+            if let context = socket.handlers.context {
+                socket.handlers.invokeMethod("message", withArguments: [context.bytes(data)])
+            }
+        @unknown default:
+            break
+        }
+        receive(id)
     }
 
     func didReceive(_ response: URLResponse, task: URLSessionTask) {
@@ -295,48 +300,50 @@ nonisolated final class NetworkClient: @unchecked Sendable {
     }
 }
 
-nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate, URLSessionWebSocketDelegate,
-    @unchecked Sendable
-{
-    weak var owner: NetworkClient?
+nonisolated private final class SessionEvents: NSObject, URLSessionDataDelegate, URLSessionWebSocketDelegate, Sendable {
+    private weak let engine: ScriptEngine?
+
+    init(engine: ScriptEngine?) {
+        self.engine = engine
+    }
 
     func urlSession(
         _: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
         completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void
     ) {
-        owner?.didReceive(response, task: dataTask)
+        engine?.assumeIsolated { $0.network.didReceive(response, task: dataTask) }
         completionHandler(.allow)
     }
 
     func urlSession(_: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        owner?.didReceive(data, task: dataTask)
+        engine?.assumeIsolated { $0.network.didReceive(data, task: dataTask) }
     }
 
     func urlSession(
         _: URLSession, task: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse,
         newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
     ) {
-        guard let owner else {
+        guard let engine else {
             completionHandler(request)
             return
         }
-        completionHandler(owner.redirect(task: task, to: request))
+        completionHandler(engine.assumeIsolated { $0.network.redirect(task: task, to: request) })
     }
 
     func urlSession(_: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
-        owner?.didComplete(task: task, error: error)
+        engine?.assumeIsolated { $0.network.didComplete(task: task, error: error) }
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?
     ) {
-        owner?.didOpen(task: webSocketTask, protocol: `protocol`)
+        engine?.assumeIsolated { $0.network.didOpen(task: webSocketTask, protocol: `protocol`) }
     }
 
     func urlSession(
         _: URLSession, webSocketTask: URLSessionWebSocketTask,
         didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?
     ) {
-        owner?.didClose(task: webSocketTask, code: closeCode, reason: reason)
+        engine?.assumeIsolated { $0.network.didClose(task: webSocketTask, code: closeCode, reason: reason) }
     }
 }

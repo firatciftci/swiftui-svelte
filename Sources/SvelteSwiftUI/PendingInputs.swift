@@ -51,7 +51,7 @@ extension SvelteRuntime {
 
     func flushInputs(waits: Bool) {
         while let (id, text) = inputs.next() {
-            call("__svelteDispatch", [id, "input", text], waits: waits)
+            call("__svelteDispatch", [JSONValue(id), "input", .string(text)], waits: waits)
         }
     }
 }

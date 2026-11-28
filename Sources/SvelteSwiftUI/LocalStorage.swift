@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated final class LocalStorage: @unchecked Sendable {
+nonisolated final class LocalStorage {
     private let domain: String
     private let defaults: UserDefaults
     private var known: [String: String] = [:]

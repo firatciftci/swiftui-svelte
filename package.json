@@ -122,7 +122,7 @@
     "compile-paraglide": "paraglide-js compile --project ./example/project.inlang --outdir ./example/src/paraglide --strategy preferredLanguage baseLocale --silent",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:swift": "xcrun swift test",
+    "test:swift": "xcrun swift test -Xswiftc -warnings-as-errors",
     "lint": "knip && eslint . && swiftlint lint --strict --quiet",
     "lint:fix": "knip --fix && eslint --fix . && swiftlint lint --fix --quiet && swiftlint lint --strict --quiet",
     "format": "oxfmt --check && xcrun swift-format lint --strict --recursive Package.swift Sources Tests example/ios/SvelteHost example/ios/SvelteHostUITests template/ios/__APP_NAME__",

@@ -184,7 +184,7 @@ struct ToggleElement: View {
             isOn: Binding {
                 node.attributes["checked"]?.isTrue ?? false
             } set: { value in
-                runtime.edit(node, "checked", to: .bool(value), event: "change", payload: value)
+                runtime.edit(node, "checked", to: .bool(value), event: "change")
             }
         ) {
             Children(node: node)
@@ -346,7 +346,7 @@ struct NumberFieldControl: View {
             node.attributes["value"]?.number
         } set: { number in
             let value = number.map(JSONValue.number) ?? .null
-            runtime.edit(node, "value", to: value, event: "input", payload: value.object)
+            runtime.edit(node, "value", to: value, event: "input")
         }
         Group {
             switch attributes["format"] {

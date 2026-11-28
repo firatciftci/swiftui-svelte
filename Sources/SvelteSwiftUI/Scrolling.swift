@@ -28,12 +28,12 @@ struct ScrollOptions: ViewModifier {
                 view.onScrollGeometryChange(
                     for: ScrollPayload.self,
                     of: ScrollPayload.init,
-                    action: { _, payload in runtime.dispatch(id, "scroll", payload.dictionary, waits: false) }
+                    action: { _, payload in runtime.dispatch(id, "scroll", payload.json, waits: false) }
                 )
             }
             .ifLet(node.listens(to: "scrollphase") ? node.id : nil) { view, id in
                 view.onScrollPhaseChange { _, phase in
-                    runtime.dispatch(id, "scrollphase", ["phase": Self.phase(phase)], waits: false)
+                    runtime.dispatch(id, "scrollphase", ["phase": .string(Self.phase(phase))], waits: false)
                 }
             }
     }
@@ -88,7 +88,7 @@ struct ScrollVisibility: ViewModifier {
             let id = node.id
             let threshold = CGFloat(node.attributes["visibilitythreshold"]?.number ?? 0)
             content.onScrollVisibilityChange(threshold: threshold) { visible in
-                runtime.dispatch(id, "scrollvisibility", ["visible": visible], waits: false)
+                runtime.dispatch(id, "scrollvisibility", ["visible": .bool(visible)], waits: false)
             }
         } else {
             content
@@ -113,8 +113,11 @@ struct ScrollPayload: Equatable {
         contentHeight = points(geometry.contentSize.height)
     }
 
-    var dictionary: [String: Double] {
-        ["x": x, "y": y, "width": width, "height": height, "contentWidth": contentWidth, "contentHeight": contentHeight]
+    var json: JSONValue {
+        [
+            "x": .number(x), "y": .number(y), "width": .number(width), "height": .number(height),
+            "contentWidth": .number(contentWidth), "contentHeight": .number(contentHeight),
+        ]
     }
 }
 
@@ -143,7 +146,8 @@ struct Resizing: ViewModifier {
                 for: CGSize.self,
                 of: { $0.size },
                 action: { size in
-                    runtime.dispatch(id, "resize", ["width": points(size.width), "height": points(size.height)], waits: false)
+                    runtime.dispatch(
+                        id, "resize", ["width": .number(points(size.width)), "height": .number(points(size.height))], waits: false)
                 }
             )
         } else {

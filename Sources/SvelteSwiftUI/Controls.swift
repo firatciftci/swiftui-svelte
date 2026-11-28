@@ -9,7 +9,7 @@ struct PickerControl: View {
             selection: Binding {
                 node.attributes["value"] ?? .null
             } set: { value in
-                runtime.edit(node, "value", to: value, event: "change", payload: value.object)
+                runtime.edit(node, "value", to: value, event: "change")
             }
         ) {
             ForEach(node.renderedChildren.filter { $0.name == "choice" }) { choice in
@@ -45,7 +45,7 @@ struct SliderControl: View {
         let value = Binding {
             node.attributes["value"]?.number ?? bounds.lowerBound
         } set: { value in
-            runtime.edit(node, "value", to: .number(value), event: "input", payload: value)
+            runtime.edit(node, "value", to: .number(value), event: "input")
         }
         if let step = node.attributes["step"]?.number {
             Slider(value: value, in: bounds, step: step, label: { Children(node: node) }, onEditingChanged: editingChanged)
@@ -56,7 +56,7 @@ struct SliderControl: View {
 
     private func editingChanged(_ editing: Bool) {
         if !editing {
-            runtime.dispatch(node.id, "change", node.attributes["value"]?.number ?? 0)
+            runtime.dispatch(node.id, "change", .number(node.attributes["value"]?.number ?? 0))
         }
     }
 }
@@ -71,7 +71,7 @@ struct StepperControl: View {
             value: Binding {
                 node.attributes["value"]?.number ?? 0
             } set: { value in
-                runtime.edit(node, "value", to: .number(value), event: "change", payload: value)
+                runtime.edit(node, "value", to: .number(value), event: "change")
             },
             in: lower...max(lower, node.attributes["max"]?.number ?? .infinity),
             step: node.attributes["step"]?.number ?? 1
@@ -92,7 +92,7 @@ struct DatePickerControl: View {
                 node.attributes["value"]?.date ?? .now
             } set: { date in
                 let value = JSONValue(date)
-                runtime.edit(node, "value", to: value, event: "change", payload: date)
+                runtime.edit(node, "value", to: value, event: "change", payload: .date(date))
             },
             in: lower...max(lower, node.attributes["max"]?.date ?? .distantFuture),
             displayedComponents: components
@@ -255,7 +255,7 @@ struct MultiPickerControl: View {
 
     private func toggle(_ choice: Node, choices: Array<Node>) {
         let values = Choices.toggled(choice.attributes["value"] ?? .null, in: selection, order: choices)
-        runtime.edit(node, "value", to: .array(values), event: "change", payload: values.map(\.object))
+        runtime.edit(node, "value", to: .array(values), event: "change")
     }
 }
 
@@ -304,7 +304,7 @@ struct MultiDatePickerControl: View {
             return Set(values.compactMap { $0.string.flatMap { Days.components($0, in: calendar) } })
         } set: { components in
             let days = components.compactMap { Days.day($0, in: calendar) }.sorted()
-            runtime.edit(node, "value", to: .array(days.map(JSONValue.string)), event: "change", payload: days)
+            runtime.edit(node, "value", to: .array(days.map(JSONValue.string)), event: "change")
         }
         #if os(macOS)
             Text("<multidatepicker> isn't available on macOS").foregroundStyle(.red)
@@ -339,7 +339,7 @@ struct ColorPickerControl: View {
             } set: { color in
                 let hex = Palette.hex(color.resolve(in: environment))
                 guard hex != node.attributes["value"]?.string else { return }
-                runtime.edit(node, "value", to: .string(hex), event: "change", payload: hex)
+                runtime.edit(node, "value", to: .string(hex), event: "change")
             },
             supportsOpacity: node.attributes["supportsopacity"]?.isTrue ?? true
         ) {

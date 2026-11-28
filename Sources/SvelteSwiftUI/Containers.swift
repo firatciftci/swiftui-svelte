@@ -129,7 +129,7 @@ private struct DisclosureControl: View {
             isExpanded: Binding {
                 node.attributes["expanded"]?.isTrue ?? false
             } set: { value in
-                runtime.edit(node, "expanded", to: .bool(value), event: "toggle", payload: value)
+                runtime.edit(node, "expanded", to: .bool(value), event: "toggle")
             }
         ) {
             Children(node: node)

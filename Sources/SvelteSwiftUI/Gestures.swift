@@ -1,21 +1,21 @@
 import SwiftUI
 
 enum Gestures {
-    static func point(_ point: CGPoint) -> [String: Double] {
-        ["x": rounded(point.x), "y": rounded(point.y)]
+    static func point(_ point: CGPoint) -> JSONValue {
+        ["x": .number(rounded(point.x)), "y": .number(rounded(point.y))]
     }
 
-    static func vector(_ size: CGSize) -> [String: Double] {
-        ["x": rounded(size.width), "y": rounded(size.height)]
+    static func vector(_ size: CGSize) -> JSONValue {
+        ["x": .number(rounded(size.width)), "y": .number(rounded(size.height))]
     }
 
     static func rounded(_ value: CGFloat) -> Double {
         (Double(value) * 100).rounded() / 100
     }
 
-    static func drag(_ value: DragGesture.Value, phase: String) -> [String: Any] {
+    static func drag(_ value: DragGesture.Value, phase: String) -> JSONValue {
         [
-            "phase": phase,
+            "phase": .string(phase),
             "location": point(value.location),
             "start": point(value.startLocation),
             "translation": vector(value.translation),
@@ -24,17 +24,20 @@ enum Gestures {
         ]
     }
 
-    static func hover(_ phase: String, _ location: CGPoint?) -> [String: Any] {
-        guard let location else { return ["phase": phase] }
-        return ["phase": phase, "location": point(location)]
+    static func hover(_ phase: String, _ location: CGPoint?) -> JSONValue {
+        guard let location else { return ["phase": .string(phase)] }
+        return ["phase": .string(phase), "location": point(location)]
     }
 
-    static func magnify(_ value: MagnifyGesture.Value, phase: String) -> [String: Any] {
-        ["phase": phase, "magnification": rounded(value.magnification), "velocity": rounded(value.velocity)]
+    static func magnify(_ value: MagnifyGesture.Value, phase: String) -> JSONValue {
+        ["phase": .string(phase), "magnification": .number(rounded(value.magnification)), "velocity": .number(rounded(value.velocity))]
     }
 
-    static func rotate(_ value: RotateGesture.Value, phase: String) -> [String: Any] {
-        ["phase": phase, "degrees": rounded(value.rotation.degrees), "velocity": rounded(value.velocity.degrees)]
+    static func rotate(_ value: RotateGesture.Value, phase: String) -> JSONValue {
+        [
+            "phase": .string(phase), "degrees": .number(rounded(value.rotation.degrees)),
+            "velocity": .number(rounded(value.velocity.degrees)),
+        ]
     }
 }
 

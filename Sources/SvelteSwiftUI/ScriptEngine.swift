@@ -4,11 +4,19 @@ import JavaScriptCore
 import QuartzCore
 import Synchronization
 
-nonisolated struct Unchecked<Value>: @unchecked Sendable {
-    let value: Value
+nonisolated enum ScriptArgument: Sendable {
+    case json(JSONValue)
+    case date(Date)
+
+    var bridged: Any {
+        switch self {
+        case let .json(value): value.object
+        case let .date(date): date
+        }
+    }
 }
 
-nonisolated final class ScriptEngine: @unchecked Sendable {
+actor ScriptEngine {
     enum Message: Sendable {
         case commit(String, String?)
         case action(Int, String, String)
@@ -25,27 +33,49 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         var applyTime = 0.0
     }
 
-    let queue: DispatchQueue
-    let stats = Mutex(Stats())
-    private let outbox = Mutex<(messages: Array<Message>, isScheduled: Bool)>(([], false))
-    private let deliver: @Sendable () -> Void
-    private(set) var context: JSContext?
-    private var timers: [Int: any DispatchSourceTimer] = [:]
-    private var nextTimerID = 1
-    private var environment = "{}"
-    private let network: NetworkClient
-    private let storage: LocalStorage
-    private let diagnostics: Diagnostics
-
-    init(storage: LocalStorage, diagnostics: Diagnostics = Diagnostics(), deliver: @escaping @Sendable () -> Void) {
-        self.storage = storage
-        self.diagnostics = diagnostics
-        self.deliver = deliver
-        queue = DispatchQueue(label: "SvelteSwiftUI.JavaScript", qos: .userInteractive)
-        network = NetworkClient(queue: queue)
+    private struct Timer {
+        let source: any DispatchSourceTimer
+        let callback: JSValue
+        let arguments: Array<JSValue>
+        let repeats: Bool
     }
 
-    func takeMessages() -> Array<Message> {
+    nonisolated let queue: DispatchSerialQueue
+    nonisolated let stats = Mutex(Stats())
+    private nonisolated let outbox = Mutex<(messages: Array<Message>, isScheduled: Bool)>(([], false))
+    private nonisolated let deliver = Mutex<(@Sendable () -> Void)?>(nil)
+    private(set) var context: JSContext?
+    private var timers: [Int: Timer] = [:]
+    private var nextTimerID = 1
+    private var environment = "{}"
+    let network: NetworkClient
+    private let storage: LocalStorage
+    private nonisolated let diagnostics: Diagnostics
+
+    nonisolated var unownedExecutor: UnownedSerialExecutor { queue.asUnownedSerialExecutor() }
+
+    init(storage: sending LocalStorage, diagnostics: Diagnostics = Diagnostics()) {
+        let queue = DispatchSerialQueue(label: "SvelteSwiftUI.JavaScript", qos: .userInteractive)
+        self.queue = queue
+        self.storage = storage
+        self.diagnostics = diagnostics
+        network = NetworkClient(queue: queue)
+        network.engine = self
+    }
+
+    nonisolated func onMessages(_ deliver: @escaping @Sendable () -> Void) {
+        self.deliver.withLock { $0 = deliver }
+    }
+
+    nonisolated func sync<T: Sendable>(_ body: (isolated ScriptEngine) -> T) -> T {
+        queue.sync { assumeIsolated(body) }
+    }
+
+    nonisolated func async(_ body: @escaping @Sendable (isolated ScriptEngine) -> Void) {
+        queue.async { self.assumeIsolated(body) }
+    }
+
+    nonisolated func takeMessages() -> Array<Message> {
         outbox.withLock { box in
             box.isScheduled = false
             defer { box.messages = [] }
@@ -53,19 +83,18 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         }
     }
 
-    private func post(_ message: Message) {
+    private nonisolated func post(_ message: Message) {
         let shouldSchedule = outbox.withLock { box in
             box.messages.append(message)
             defer { box.isScheduled = true }
             return !box.isScheduled
         }
-        if shouldSchedule { deliver() }
+        if shouldSchedule { deliver.withLock { $0 }?() }
     }
 
     func load(
-        script: String, source: URL, map: SourceMap?, environment: String, mounts: Array<Unchecked<Array<Any>>>
+        script: String, source: URL, map: SourceMap?, environment: String, mounts: Array<Array<ScriptArgument>>
     ) -> BundleIdentity? {
-        dispatchPrecondition(condition: .onQueue(queue))
         stop()
         self.environment = environment
         network.origin = NetworkClient.origin(of: source)
@@ -90,8 +119,7 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     }
 
     func stop() {
-        dispatchPrecondition(condition: .onQueue(queue))
-        for timer in timers.values { timer.cancel() }
+        for timer in timers.values { timer.source.cancel() }
         timers = [:]
         network.reset()
         context = nil
@@ -99,14 +127,12 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
     }
 
     func collectGarbage() {
-        dispatchPrecondition(condition: .onQueue(queue))
         if let context { JSGarbageCollect(context.jsGlobalContextRef) }
     }
 
-    func call(_ function: String, _ arguments: Unchecked<Array<Any>>) {
-        dispatchPrecondition(condition: .onQueue(queue))
+    func call(_ function: String, _ arguments: Array<ScriptArgument>) {
         guard let callee = context?.objectForKeyedSubscript(function), !callee.isUndefined else { return }
-        callee.call(withArguments: arguments.value)
+        callee.call(withArguments: arguments.map(\.bridged))
     }
 
     private func install(into context: JSContext) {
@@ -116,14 +142,14 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let log: @convention(block) (String, String) -> Void = { Diagnostics.log($1, level: $0) }
         let diagnostics = diagnostics
         let diagnostic: @convention(block) (String) -> Void = { diagnostics.report(json: $0) }
-        let setTimeout: @convention(block) (JSValue, JSValue) -> Int = { [weak self] callback, delay in
-            self?.schedule(callback, after: delay, repeats: false) ?? 0
+        let setTimeout: @convention(block) (JSValue, JSValue) -> Int = { callback, delay in
+            self.schedule(callback, after: delay, repeats: false)
         }
-        let setInterval: @convention(block) (JSValue, JSValue) -> Int = { [weak self] callback, delay in
-            self?.schedule(callback, after: delay, repeats: true) ?? 0
+        let setInterval: @convention(block) (JSValue, JSValue) -> Int = { callback, delay in
+            self.schedule(callback, after: delay, repeats: true)
         }
-        let clearTimer: @convention(block) (Int) -> Void = { [weak self] id in
-            self?.timers.removeValue(forKey: id)?.cancel()
+        let clearTimer: @convention(block) (Int) -> Void = { id in
+            self.timers.removeValue(forKey: id)?.source.cancel()
         }
         let now: @convention(block) () -> Double = {
             CACurrentMediaTime() * 1000
@@ -154,16 +180,16 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
                 return ["nodes": Double(stats.nodes), "maxFrameGapMs": stats.maxFrameGap, "applyMs": stats.applyTime]
             }
         }
-        let loadStorage: @convention(block) () -> String = { [weak self, weak context] in
-            guard let self, let context, self.context === context else { return "{}" }
-            return storage.load()
+        let loadStorage: @convention(block) () -> String = { [weak context] in
+            guard let context, self.context === context else { return "{}" }
+            return self.storage.load()
         }
-        let saveStorage: @convention(block) (String) -> Void = { [weak self, weak context] json in
-            guard let self, let context, self.context === context else { return }
-            storage.save(json)
+        let saveStorage: @convention(block) (String) -> Void = { [weak context] json in
+            guard let context, self.context === context else { return }
+            self.storage.save(json)
         }
-        let environment: @convention(block) () -> String = { [weak self] in
-            self?.environment ?? "{}"
+        let environment: @convention(block) () -> String = {
+            self.environment
         }
         let globals: [String: Any] = [
             "__nativeCommit": commit,
@@ -191,21 +217,21 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
 
     private func installHostAPIs(into context: JSContext) {
         typealias Fetch = @convention(block) (Int, String, JSValue, JSValue, JSValue, JSValue) -> Void
-        let fetch: Fetch = { [weak self] id, json, body, onResponse, onData, onEnd in
+        let fetch: Fetch = { id, json, body, onResponse, onData, onEnd in
             let callbacks = NetworkClient.FetchCallbacks(onResponse: onResponse, onData: onData, onEnd: onEnd)
-            self?.network.fetch(id: id, json: json, body: body, callbacks: callbacks)
+            self.network.fetch(id: id, json: json, body: body, callbacks: callbacks)
         }
-        let cancelFetch: @convention(block) (Int) -> Void = { [weak self] id in
-            self?.network.cancelFetch(id: id)
+        let cancelFetch: @convention(block) (Int) -> Void = { id in
+            self.network.cancelFetch(id: id)
         }
-        let openSocket: @convention(block) (Int, String, String, JSValue) -> Void = { [weak self] id, url, protocols, handlers in
-            self?.network.openSocket(id: id, url: url, protocols: protocols, handlers: handlers)
+        let openSocket: @convention(block) (Int, String, String, JSValue) -> Void = { id, url, protocols, handlers in
+            self.network.openSocket(id: id, url: url, protocols: protocols, handlers: handlers)
         }
-        let sendSocket: @convention(block) (Int, JSValue) -> Void = { [weak self] id, data in
-            self?.network.send(id: id, data: data)
+        let sendSocket: @convention(block) (Int, JSValue) -> Void = { id, data in
+            self.network.send(id: id, data: data)
         }
-        let closeSocket: @convention(block) (Int, JSValue, String) -> Void = { [weak self] id, code, reason in
-            self?.network.closeSocket(id: id, code: code.isNull ? nil : Int(code.toInt32()), reason: reason)
+        let closeSocket: @convention(block) (Int, JSValue, String) -> Void = { id, code, reason in
+            self.network.closeSocket(id: id, code: code.isNull ? nil : Int(code.toInt32()), reason: reason)
         }
         let randomFill: @convention(block) (JSValue) -> Void = { bytes in
             guard let context = JSContext.current() else { return }
@@ -257,17 +283,21 @@ nonisolated final class ScriptEngine: @unchecked Sendable {
         let milliseconds = delay.toDouble()
         let requested = milliseconds > 0 ? Int(min(milliseconds, Double(Int32.max))) : 0
         let interval = DispatchTimeInterval.milliseconds(max(requested, repeats ? 1 : 0))
-        let timer = DispatchSource.makeTimerSource(queue: queue)
-        timer.schedule(deadline: .now() + interval, repeating: repeats ? interval : .never, leeway: .milliseconds(1))
+        let source = DispatchSource.makeTimerSource(queue: queue)
+        source.schedule(deadline: .now() + interval, repeating: repeats ? interval : .never, leeway: .milliseconds(1))
         let extra = Array((JSContext.currentArguments() as? Array<JSValue> ?? []).dropFirst(2))
-        let handler = Unchecked(value: (callback, extra))
-        timer.setEventHandler { [weak self] in
-            if !repeats { self?.timers[id] = nil }
-            handler.value.0.call(withArguments: handler.value.1)
+        source.setEventHandler { [weak self] in
+            self?.assumeIsolated { $0.fire(id) }
         }
-        timers[id] = timer
-        timer.resume()
+        timers[id] = Timer(source: source, callback: callback, arguments: extra, repeats: repeats)
+        source.resume()
         return id
+    }
+
+    private func fire(_ id: Int) {
+        guard let timer = timers[id] else { return }
+        if !timer.repeats { timers[id] = nil }
+        timer.callback.call(withArguments: timer.arguments)
     }
 }
 

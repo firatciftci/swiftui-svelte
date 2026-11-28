@@ -110,7 +110,7 @@ struct RuntimeTests {
         runtime.settle()
         let rect: JSONValue = .object(["x": .number(16), "y": .number(120), "width": .number(370), "height": .number(44)])
         #expect(node.attributes["reply1"] == rect)
-        _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
+        runtime.evaluate { _ = $0.evaluateScript(#"__nativeInvoke(2, "measure", JSON.stringify({ request: 3 }))"#) }
         runtime.settle()
         #expect(node.attributes["reply3"] == rect)
     }
@@ -122,7 +122,7 @@ struct RuntimeTests {
                 __nativeInvoke(2, "measure", JSON.stringify({ request: 5 }));
                 """)
         runtime.settle()
-        _ = runtime.evaluate { $0.evaluateScript("__nativeCommit(JSON.stringify([3, 2]))") }
+        runtime.evaluate { _ = $0.evaluateScript("__nativeCommit(JSON.stringify([3, 2]))") }
         runtime.settle()
         let replied = runtime.evaluate { $0.evaluateScript("JSON.stringify(globalThis.replied)")?.toString() }
         #expect(replied == "[5,null]")
@@ -137,8 +137,8 @@ struct RuntimeTests {
         runtime.settle()
         let node = try #require(runtime.store.node(2))
         #expect(node.focusRequest.isFocused)
-        _ = runtime.evaluate {
-            $0.evaluateScript(
+        runtime.evaluate {
+            _ = $0.evaluateScript(
                 #"__nativeInvoke(2, "blur", "{}"); __nativeInvoke(2, "scrollTo", JSON.stringify({ edge: "bottom", animated: false }))"#)
         }
         runtime.settle()
@@ -146,7 +146,7 @@ struct RuntimeTests {
         #expect(runtime.scrollRequest?.target == 9)
         #expect(runtime.scrollRequest?.anchor == .bottom)
         #expect(runtime.scrollRequest?.isAnimated == false)
-        _ = runtime.evaluate { $0.evaluateScript(#"__nativeInvoke(8, "scrollIntoView", JSON.stringify({ anchor: "center" }))"#) }
+        runtime.evaluate { _ = $0.evaluateScript(#"__nativeInvoke(8, "scrollIntoView", JSON.stringify({ anchor: "center" }))"#) }
         runtime.settle()
         #expect(runtime.scrollRequest?.target == 8)
         #expect(runtime.scrollRequest?.anchor == .center)
@@ -193,7 +193,7 @@ struct RuntimeTests {
                 globalThis.__svelteDispatch = (id) => attr(id, "value", "kept");
                 """)
         let node = try #require(runtime.store.node(2))
-        runtime.edit(node, "value", to: .string("typed"), event: "input", payload: "typed")
+        runtime.edit(node, "value", to: .string("typed"), event: "input")
         #expect(node.attributes["value"] == .string("typed"))
         try await eventually { node.attributes["value"] == .string("kept") }
     }
@@ -201,7 +201,7 @@ struct RuntimeTests {
     @Test func keepsAnEditThatJavaScriptAccepts() throws {
         let runtime = try runtime(mountScript)
         let node = try #require(runtime.store.node(2))
-        runtime.edit(node, "input", to: .string("typed"), event: "input", payload: "typed")
+        runtime.edit(node, "input", to: .string("typed"), event: "input")
         #expect(node.attributes["input"] == .string("typed"))
     }
 
@@ -227,17 +227,17 @@ struct RuntimeTests {
                 globalThis.__svelteFrame = () => attr(2, "frames", ++frames);
                 """)
         #expect(!runtime.frames.isRunning)
-        _ = runtime.evaluate { $0.evaluateScript("__nativeRequestFrame()") }
+        runtime.evaluate { _ = $0.evaluateScript("__nativeRequestFrame()") }
         #expect(runtime.frames.isRunning)
         try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(1) }
         try await eventually { !runtime.frames.isRunning }
-        _ = runtime.evaluate { $0.evaluateScript("__nativeRequestFrame()") }
+        runtime.evaluate { _ = $0.evaluateScript("__nativeRequestFrame()") }
         try await eventually { runtime.store.node(2)?.attributes["frames"] == .number(2) }
     }
 
     @Test func keepsTheDisplayLinkRunningWhileFrameStatsAreRead() async throws {
         let runtime = try runtime(mountScript)
-        _ = runtime.evaluate { $0.evaluateScript("__nativeStats()") }
+        runtime.evaluate { _ = $0.evaluateScript("__nativeStats()") }
         #expect(runtime.frames.isRunning)
         for _ in 0..<30 {
             pumpRunLoop()
@@ -382,8 +382,8 @@ struct RuntimeTests {
                 __nativeCommit(JSON.stringify([1, 2, 0, 8, 0, 0, 0, 1, 2, 0, 9, 0, 0, 0]));
                 """)
         runtime.settle()
-        _ = runtime.evaluate {
-            $0.evaluateScript(#"__nativeInvoke(2, "scrollTo", JSON.stringify({ y: 120, animated: false }))"#)
+        runtime.evaluate {
+            _ = $0.evaluateScript(#"__nativeInvoke(2, "scrollTo", JSON.stringify({ y: 120, animated: false }))"#)
         }
         runtime.settle()
         #expect(runtime.scrollOffsetRequest?.container == 2)

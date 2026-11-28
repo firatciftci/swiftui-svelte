@@ -189,7 +189,7 @@ private struct MenuToggle: View {
             isOn: Binding {
                 node.attributes["checked"]?.isTrue ?? false
             } set: { value in
-                runtime.edit(node, "checked", to: .bool(value), event: "change", payload: value)
+                runtime.edit(node, "checked", to: .bool(value), event: "change")
             }
         ) {
             PlainLabel(node: node)

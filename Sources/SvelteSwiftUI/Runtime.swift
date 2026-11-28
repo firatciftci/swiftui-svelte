@@ -85,15 +85,15 @@ public final class SvelteRuntime {
             }
             self.components[component.name] = component
         }
-        let runtime = Unchecked(value: WeakBox<SvelteRuntime>())
-        let diagnostics = Diagnostics { diagnostic, generation in
-            DispatchQueue.main.async { MainActor.assumeIsolated { runtime.value.object?.show(diagnostic, from: generation) } }
-        }
+        let diagnostics = Diagnostics()
         store = NodeStore(diagnostics: diagnostics)
-        engine = ScriptEngine(storage: LocalStorage(name: storage ?? Self.storageName(for: source)), diagnostics: diagnostics) {
-            DispatchQueue.main.async { MainActor.assumeIsolated { runtime.value.object?.drain() } }
+        engine = ScriptEngine(storage: LocalStorage(name: storage ?? Self.storageName(for: source)), diagnostics: diagnostics)
+        diagnostics.onReport { [weak self] diagnostic, generation in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.show(diagnostic, from: generation) } }
         }
-        runtime.value.object = self
+        engine.onMessages { [weak self] in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.drain() } }
+        }
         reportConfiguration()
     }
 
@@ -117,8 +117,7 @@ public final class SvelteRuntime {
         settlements.removeAll()
         measureRequests.removeAll()
         inbox.removeAll()
-        let engine = engine
-        engine.queue.sync { engine.stop() }
+        engine.sync { $0.stop() }
     }
 
     func start() {
@@ -173,22 +172,30 @@ public final class SvelteRuntime {
         guard mount.props != props || namesChanged else { return }
         mounts[id]?.props = props
         flushInputs(waits: true)
-        call("__svelteProps", namesChanged ? [id, props, Self.json(names)] : [id, props])
+        let arguments: Array<JSONValue> = [JSONValue(id), .string(props)]
+        call("__svelteProps", namesChanged ? arguments + [.string(Self.json(names))] : arguments)
     }
 
     func unmount(_ id: Int) {
         guard mounts.removeValue(forKey: id) != nil else { return }
-        call("__svelteUnmount", [id], waits: false)
+        call("__svelteUnmount", [JSONValue(id)], waits: false)
     }
 
-    private func arguments(for id: Int) -> Array<Any> {
+    private func arguments(for id: Int) -> Array<JSONValue> {
         guard let mount = mounts[id] else { return [] }
-        return [id, mount.component, "{\"props\":\(mount.props),\"actions\":\(Self.json(mount.actions.keys.sorted()))}"]
+        return [
+            JSONValue(id), .string(mount.component),
+            .string("{\"props\":\(mount.props),\"actions\":\(Self.json(mount.actions.keys.sorted()))}"),
+        ]
     }
 
-    func dispatch(_ id: Int, _ type: String, _ payload: Any = NSNull(), waits: Bool = true) {
+    func dispatch(_ id: Int, _ type: String, _ payload: JSONValue = .null, waits: Bool = true) {
+        dispatch(id, type, argument: .json(payload), waits: waits)
+    }
+
+    func dispatch(_ id: Int, _ type: String, argument: ScriptArgument, waits: Bool = true) {
         flushInputs(waits: waits)
-        call("__svelteDispatch", [id, type, payload], waits: waits)
+        call("__svelteDispatch", [.json(JSONValue(id)), .json(.string(type)), argument], waits: waits)
     }
 
     func dispatchAndWait(_ id: Int, _ type: String) async {
@@ -198,7 +205,7 @@ public final class SvelteRuntime {
         await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 settlements[request] = continuation
-                call("__svelteDispatch", [id, type, NSNull(), request])
+                call("__svelteDispatch", [JSONValue(id), .string(type), .null, JSONValue(request)])
             }
         } onCancel: {
             Task { @MainActor [weak self] in self?.cancelTask(request, of: id) }
@@ -207,18 +214,20 @@ public final class SvelteRuntime {
 
     private func cancelTask(_ request: Int, of id: Int) {
         guard let continuation = settlements.removeValue(forKey: request) else { return }
-        call("__svelteDispatch", [id, "taskcancel", request, NSNull()])
+        call("__svelteDispatch", [JSONValue(id), "taskcancel", JSONValue(request), .null])
         continuation.resume()
     }
 
-    func call(_ function: String, _ arguments: Array<Any>, waits: Bool = true) {
-        let engine = engine
-        let arguments = Unchecked(value: arguments)
+    func call(_ function: String, _ arguments: Array<JSONValue>, waits: Bool = true) {
+        call(function, arguments.map(ScriptArgument.json), waits: waits)
+    }
+
+    func call(_ function: String, _ arguments: Array<ScriptArgument>, waits: Bool = true) {
         if waits {
-            engine.queue.sync { engine.call(function, arguments) }
+            engine.sync { $0.call(function, arguments) }
             drain()
         } else {
-            engine.queue.async { engine.call(function, arguments) }
+            engine.async { $0.call(function, arguments) }
         }
     }
 
@@ -342,16 +351,17 @@ public final class SvelteRuntime {
     }
 
     private func reply(_ request: Int, frame: CGRect?) {
-        var rect: Any = NSNull()
+        var rect = JSONValue.null
         if let frame, frame.size != .zero {
-            rect = ["x": frame.minX, "y": frame.minY, "width": frame.width, "height": frame.height]
+            rect = [
+                "x": JSONValue(frame.minX), "y": JSONValue(frame.minY), "width": JSONValue(frame.width), "height": JSONValue(frame.height),
+            ]
         }
-        call("__svelteReply", [request, rect], waits: false)
+        call("__svelteReply", [JSONValue(request), rect], waits: false)
     }
 
     private func stopEngine() {
-        let engine = engine
-        engine.queue.sync { engine.stop() }
+        engine.sync { $0.stop() }
     }
 
     private func perform(_ mount: Int, _ name: String, _ json: String) {
@@ -363,13 +373,13 @@ public final class SvelteRuntime {
         engine.stats.withLock { $0.maxFrameGap = max($0.maxFrameGap, gap) }
         guard isFrameRequested else { return timestamp < watchesFramesUntil }
         isFrameRequested = false
-        call("__svelteFrame", [timestamp * 1000], waits: false)
+        call("__svelteFrame", [JSONValue(timestamp * 1000)], waits: false)
         return true
     }
 
-    func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: Any) {
+    func edit(_ node: Node, _ name: String, to value: JSONValue, event: String, payload: ScriptArgument? = nil) {
         node.setOwnAttribute(name, value)
-        dispatch(node.id, event, payload)
+        dispatch(node.id, event, argument: payload ?? .json(value))
         let settled = node.ownAttributes[name]
         guard settled != value else { return }
         node.setOwnAttribute(name, value)
@@ -380,9 +390,9 @@ public final class SvelteRuntime {
 
     func receiveMemoryWarning() {
         guard isStarted else { return }
-        call("__svelteAppEvent", ["memorywarning", NSNull()], waits: false)
+        call("__svelteAppEvent", ["memorywarning", .null], waits: false)
         let engine = engine
-        engine.queue.async { engine.collectGarbage() }
+        engine.async { $0.collectGarbage() }
     }
 
     #if DEBUG
@@ -447,7 +457,7 @@ extension SvelteRuntime {
         case let .success(loaded):
             bundle = loaded
         case let .failure(failure):
-            engine.queue.sync { engine.stop() }
+            engine.sync { $0.stop() }
             bundleIdentity = nil
             loads += 1
             report(ScriptError(kind: .load, message: failure.message, frames: []))
@@ -455,12 +465,12 @@ extension SvelteRuntime {
         }
         loadedVersion = bundle.version
         let map = bundle.map.flatMap { try? SourceMap(json: $0) }
-        let mounts = self.mounts.keys.sorted().map { Unchecked(value: arguments(for: $0)) }
+        let mounts = self.mounts.keys.sorted().map { arguments(for: $0).map(ScriptArgument.json) }
         let environment = Self.json(environment)
         let source = source
         let script = bundle.script
-        bundleIdentity = engine.queue.sync {
-            engine.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
+        bundleIdentity = engine.sync {
+            $0.load(script: script, source: source, map: map, environment: environment, mounts: mounts)
         }
         loads += 1
         receive(isInitial: true)
@@ -486,7 +496,7 @@ extension SvelteRuntime {
     }
 
     private func deliver(_ url: URL) {
-        call("__svelteAppEvent", ["openurl", url.absoluteString], waits: false)
+        call("__svelteAppEvent", ["openurl", .string(url.absoluteString)], waits: false)
     }
 
     func updateEnvironment(_ changes: [String: Any]) {
@@ -496,7 +506,7 @@ extension SvelteRuntime {
             changed[key] = value
         }
         guard !changed.isEmpty, isStarted else { return }
-        call("__svelteEnvironment", [Self.json(changed)], waits: false)
+        call("__svelteEnvironment", [.string(Self.json(changed))], waits: false)
     }
 
     private static func json(_ value: Any) -> String {
@@ -541,13 +551,13 @@ extension SvelteRuntime {
 
     public func emit(_ event: String, from module: String) {
         flushInputs(waits: true)
-        call("__svelteNativeEvent", [module, event, NSNull()])
+        call("__svelteNativeEvent", [.string(module), .string(event), .null])
     }
 
     public func emit(_ event: String, from module: String, _ payload: some Encodable) {
         guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
         flushInputs(waits: true)
-        call("__svelteNativeEvent", [module, event, json])
+        call("__svelteNativeEvent", [.string(module), .string(event), .string(json)])
     }
 }
 
@@ -563,10 +573,6 @@ private struct Inbound {
     let generation: Int
     let isInitial: Bool
     let message: ScriptEngine.Message
-}
-
-nonisolated private final class WeakBox<Object: AnyObject> {
-    weak var object: Object?
 }
 
 public nonisolated struct ScriptError: Error, Equatable, Sendable, CustomStringConvertible {

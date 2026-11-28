@@ -124,7 +124,7 @@ jobs:
         run: pnpm run template && git diff --exit-code -- template
 
       - name: Test the Swift package
-        run: xcrun swift test --enable-code-coverage
+        run: xcrun swift test --enable-code-coverage -Xswiftc -warnings-as-errors
 
       - name: Report Swift coverage
         run: |

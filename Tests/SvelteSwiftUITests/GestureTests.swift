@@ -12,10 +12,7 @@ struct GestureTests {
 
     @Test func reportsHoverPhasesWithAndWithoutALocation() {
         let enter = Gestures.hover("enter", CGPoint(x: 4.5, y: 2))
-        #expect(enter["phase"] as? String == "enter")
-        #expect(enter["location"] as? [String: Double] == ["x": 4.5, "y": 2])
-        let exit = Gestures.hover("exit", nil)
-        #expect(exit["phase"] as? String == "exit")
-        #expect(exit["location"] == nil)
+        #expect(enter == ["phase": "enter", "location": ["x": 4.5, "y": 2]])
+        #expect(Gestures.hover("exit", nil) == ["phase": "exit"])
     }
 }

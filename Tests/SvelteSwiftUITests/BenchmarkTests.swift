@@ -21,7 +21,7 @@ struct BenchmarkTests {
 
     private func apply(_ runtime: SvelteRuntime, _ operation: String, _ count: Int) -> Double {
         let before = runtime.engine.stats.withLock(\.applyTime)
-        _ = runtime.evaluate { $0.evaluateScript("__bench('\(operation)', \(count))") }
+        runtime.evaluate { _ = $0.evaluateScript("__bench('\(operation)', \(count))") }
         runtime.settle()
         return runtime.engine.stats.withLock(\.applyTime) - before
     }

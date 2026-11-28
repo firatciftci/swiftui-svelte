@@ -36,7 +36,7 @@ struct TeardownTests {
         try await eventually { released == nil }
         #expect(monitor == nil)
         let stopped = try #require(engine)
-        #expect(stopped.queue.sync { stopped.context == nil })
+        #expect(stopped.sync { $0.context == nil })
         try await Task.sleep(for: .milliseconds(50))
         #expect(stopped.takeMessages().isEmpty)
         try await eventually { server.openSockets == 0 }
@@ -50,7 +50,7 @@ struct TeardownTests {
         try await eventually { runtime.store.node(2)?.attributes["socket"] == .string("open") }
         runtime.stop()
         #expect(runtime.frames.link == nil)
-        #expect(runtime.engine.queue.sync { runtime.engine.context == nil })
+        #expect(runtime.engine.sync { $0.context == nil })
         let ticks = runtime.store.node(2)?.attributes["ticks"]
         try await Task.sleep(for: .milliseconds(50))
         runtime.settle()

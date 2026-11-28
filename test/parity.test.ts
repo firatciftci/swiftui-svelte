@@ -127,3 +127,13 @@ describe("the bridge globals", () => {
     expect(named("__svelte").filter((name) => !declared.has(name))).toEqual([]);
   });
 });
+
+it("leaves concurrency checking on everywhere in the Swift package", () => {
+  const escapes = files.flatMap(({ file, text }) =>
+    captures(
+      text,
+      /(@unchecked Sendable|nonisolated\(unsafe\)|\bUnchecked\b|dispatchPrecondition)/g,
+    ).map((escape) => `${file}: ${escape}`),
+  );
+  expect(escapes).toEqual([]);
+});
