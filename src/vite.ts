@@ -34,6 +34,7 @@ export function swiftui({
   const source = (): string => path.resolve(root, path.dirname(entry));
   return {
     name: "swiftui-svelte",
+    api: { sync: () => syncRoutes(root, source()) },
     config: (user, { mode }) => {
       const isDevelopment = mode === "development" || user.build?.watch != null;
       isSourceless = !isDevelopment && user.build?.sourcemap == null;

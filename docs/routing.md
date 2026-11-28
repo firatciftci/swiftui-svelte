@@ -49,7 +49,7 @@ The screen reads the result from `data`, typed through `PageProps`:
 </script>
 ```
 
-The `./$types` module is generated from your route files each time the app builds. It types `data` and `params` for each route.
+The `./$types` module is generated from your route files each time the app builds, and each time `swiftui-svelte sync` runs. It holds the TypeScript types that describe each route's `data` and `params`. The template's `npm run check` runs `swiftui-svelte sync` first, so a new route type-checks before you build it.
 
 ## Navigate
 

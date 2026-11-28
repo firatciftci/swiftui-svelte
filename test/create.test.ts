@@ -1,8 +1,23 @@
-import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { create, names } from "swiftui-svelte/create";
+import { sync } from "swiftui-svelte/sync";
+
+function project(config: string): string {
+  const cache = path.resolve(import.meta.dirname, "../node_modules/.cache");
+  mkdirSync(cache, { recursive: true });
+  const root = mkdtempSync(path.join(cache, "sync-"));
+  writeFileSync(path.join(root, "vite.config.ts"), config);
+  return root;
+}
 
 function files(directory: string): Array<string> {
   return readdirSync(directory, { recursive: true, withFileTypes: true })
@@ -89,4 +104,35 @@ describe("the app template", () => {
       "src isn't empty. Pick a new folder for the app.",
     );
   });
+});
+
+describe("swiftui-svelte sync", () => {
+  it("writes the route types without a build", async () => {
+    const plugin = JSON.stringify(
+      path.resolve(import.meta.dirname, "../src/vite.ts"),
+    );
+    const root = project(
+      `import { swiftui } from ${plugin};\nexport default { plugins: [swiftui({ outFile: "app.js" })] };\n`,
+    );
+    const route = path.join(root, "src/routes/items/[id]");
+    mkdirSync(route, { recursive: true });
+    writeFileSync(path.join(route, "+page.svelte"), "<txt>Item</txt>\n");
+    await sync(root);
+    const types = readFileSync(
+      path.join(
+        root,
+        ".swiftui-svelte/types/src/routes/items/[id]/$types.d.ts",
+      ),
+      "utf8",
+    );
+    expect(types).toContain("export type Params = { id: string; };");
+    expect(types).toContain("export type PageProps");
+  }, 60_000);
+
+  it("explains a Vite config without the plugin", async () => {
+    const root = project("export default {};\n");
+    await expect(sync(root)).rejects.toThrow(
+      `swiftui-svelte sync: the Vite config in ${root} doesn't use the swiftui() plugin`,
+    );
+  }, 60_000);
 });

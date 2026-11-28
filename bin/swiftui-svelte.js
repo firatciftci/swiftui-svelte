@@ -2,4 +2,4 @@
 import process from "node:process";
 import { run } from "../dist/create.js";
 
-run(process.argv.slice(2));
+await run(process.argv.slice(2));

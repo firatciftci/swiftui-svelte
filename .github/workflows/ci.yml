@@ -243,6 +243,18 @@ jobs:
           npm pkg set "devDependencies.swiftui-svelte=file:$tarball"
           npm install --no-audit --no-fund
 
+      - name: Type-check a new route before the first build
+        working-directory: build/template/hello-app
+        run: |
+          mkdir -p "src/routes/items/[id]"
+          printf '%s\n' 'import type { PageLoadEvent } from "./$types";' "" \
+            'export const load = ({ params }: PageLoadEvent) => ({ id: params.id });' \
+            > "src/routes/items/[id]/+page.ts"
+          printf '%s\n' '<script lang="ts">' '  import type { PageProps } from "./$types";' "" \
+            '  const { data }: PageProps = $props();' '</script>' "" '<txt>{data.id}</txt>' \
+            > "src/routes/items/[id]/+page.svelte"
+          npm run check
+
       - name: Build, check, and lint the app
         working-directory: build/template/hello-app
         run: npm run build && npm run check && npm run lint

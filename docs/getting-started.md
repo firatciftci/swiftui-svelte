@@ -58,11 +58,17 @@ mountApp(App);
 
 Finally, add `"swiftui-svelte/elements"` to `compilerOptions.types` in `tsconfig.json`, so `svelte-check` can find the elements and their attributes. Run `vite build` to write `app.js`, minified, with `app.js.map` beside it. `vite build --watch` and `--mode development` skip the minification, so the code stays readable in Safari's Web Inspector. To choose for yourself, set `build.minify` in your Vite config.
 
-The package also has presets for TypeScript and ESLint. To start from compiler options that match the iOS runtime, extend the TypeScript preset in `tsconfig.json`. It already includes the element types and Vite's `import.meta.env` types:
+The package also has presets for TypeScript and ESLint. To start from compiler options that match the iOS runtime, extend the TypeScript preset in `tsconfig.json`. It already includes the element types and Vite's `import.meta.env` types. `rootDirs` and the `.swiftui-svelte/types` entry let routes import their generated `./$types`, and they supply types for the `$app/*` modules:
 
 ```json
-{ "extends": "swiftui-svelte/tsconfig", "include": ["src"] }
+{
+  "extends": "swiftui-svelte/tsconfig",
+  "compilerOptions": { "rootDirs": [".", "./.swiftui-svelte/types"] },
+  "include": ["src", ".swiftui-svelte/types"]
+}
 ```
+
+Run `swiftui-svelte sync` before `svelte-check`, as the template's `check` script does, so the generated types exist before the first build.
 
 The ESLint preset reports browser globals that the iOS app doesn't have, such as `document`, `ResizeObserver`, and `XMLHttpRequest`, and says what to use instead. Add it to a flat config:
 

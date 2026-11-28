@@ -112,7 +112,7 @@ export function create(directory: string): { app: string; target: string } {
       dev: "vite build --watch",
       serve: "vite --host",
       build: "vite build",
-      check: "svelte-check",
+      check: "swiftui-svelte sync && svelte-check",
       lint: "eslint .",
     },
     devDependencies: sorted,
@@ -124,10 +124,22 @@ export function create(directory: string): { app: string; target: string } {
   return { app, target };
 }
 
-export function run(args: Array<string>): void {
+export async function run(args: Array<string>): Promise<void> {
   const [command, directory = "my-app"] = args;
+  if (command === "sync") {
+    try {
+      const { sync } = await import("./sync.ts");
+      await sync();
+    } catch (error) {
+      console.warn(error instanceof Error ? error.message : String(error));
+      process.exitCode = 1;
+    }
+    return;
+  }
   if (command !== "create") {
-    console.warn("Usage: swiftui-svelte create [folder]");
+    console.warn(
+      "Usage: swiftui-svelte create [folder]\n       swiftui-svelte sync",
+    );
     process.exitCode = 1;
     return;
   }

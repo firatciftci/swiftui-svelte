@@ -1,1 +1,5 @@
-{ "extends": "swiftui-svelte/tsconfig", "include": ["src", "*.ts", "*.js"] }
+{
+  "extends": "swiftui-svelte/tsconfig",
+  "compilerOptions": { "rootDirs": [".", "./.swiftui-svelte/types"] },
+  "include": ["src", "*.ts", ".swiftui-svelte/types"]
+}
