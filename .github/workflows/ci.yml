@@ -259,6 +259,33 @@ jobs:
             -derivedDataPath ../../derived \
             CODE_SIGNING_ALLOWED=NO
 
+  platforms:
+    name: Build for ${{ matrix.platform }}
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: xcode-27
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [iOS, macOS, visionOS]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the Swift package for ${{ matrix.platform }}
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          xcodebuild build \
+            -scheme SvelteSwiftUI \
+            -destination "generic/platform=$PLATFORM" \
+            -derivedDataPath build/platform \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            CODE_SIGNING_ALLOWED=NO
+
   swift-simulator:
     name: Swift tests on a simulator
     needs: changes

@@ -1,6 +1,7 @@
 import SwiftUI
 
 enum Overrides {
+    @available(visionOS 26, *)
     static func feedback(_ value: JSONValue?) -> SensoryFeedback? {
         switch value {
         case let .string(name): named(name)
@@ -9,6 +10,7 @@ enum Overrides {
         }
     }
 
+    @available(visionOS 26, *)
     private static func named(_ name: String) -> SensoryFeedback? {
         switch name {
         case "success": .success
@@ -26,6 +28,7 @@ enum Overrides {
         }
     }
 
+    @available(visionOS 26, *)
     private static func impact(_ options: [String: JSONValue]) -> SensoryFeedback? {
         guard options["type"]?.string ?? "impact" == "impact" else { return named(options["type"]?.string ?? "") }
         let intensity = min(max(options["intensity"]?.number ?? 1, 0), 1)
@@ -65,7 +68,7 @@ enum Overrides {
         }
     }
 
-    #if os(iOS) || os(visionOS)
+    #if os(iOS)
         static func keyboardDismissal(_ name: String?) -> ScrollDismissesKeyboardMode? {
             switch name {
             case "automatic": .automatic
@@ -83,9 +86,7 @@ struct Preferences: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .ifLet(Overrides.feedback(attributes["sensoryfeedback"])) {
-                $0.sensoryFeedback($1, trigger: attributes["feedbacktrigger"] ?? .null)
-            }
+            .modifier(Feedback(attributes: attributes))
             .ifLet(Overrides.colorScheme(attributes["colorscheme"]?.string)) { $0.environment(\.colorScheme, $1) }
             .ifLet(Overrides.colorScheme(attributes["preferredcolorscheme"]?.string)) { $0.preferredColorScheme($1) }
             .modifier(TypeSize(value: attributes["dynamictypesize"]))
@@ -93,11 +94,23 @@ struct Preferences: ViewModifier {
     }
 }
 
+private struct Feedback: ViewModifier {
+    let attributes: [String: JSONValue]
+
+    func body(content: Content) -> some View {
+        if #available(visionOS 26, *), let feedback = Overrides.feedback(attributes["sensoryfeedback"]) {
+            content.sensoryFeedback(feedback, trigger: attributes["feedbacktrigger"] ?? .null)
+        } else {
+            content
+        }
+    }
+}
+
 private struct KeyboardDismissal: ViewModifier {
     let name: String?
 
     func body(content: Content) -> some View {
-        #if os(iOS) || os(visionOS)
+        #if os(iOS)
             content.ifLet(Overrides.keyboardDismissal(name)) { $0.scrollDismissesKeyboard($1) }
         #else
             content

@@ -76,6 +76,8 @@ struct Presentations: ViewModifier {
     private var showsInspectorColumn: Bool {
         #if os(iOS)
             sizeClass != .compact
+        #elseif os(visionOS)
+            false
         #else
             true
         #endif
@@ -148,17 +150,21 @@ private struct InspectorHost: ViewModifier {
     let isPresented: Binding<Bool>
 
     func body(content: Content) -> some View {
-        if node.hostsInspector, isColumn {
-            content.inspector(isPresented: isPresented) {
-                if let inspector = node.presented.first(where: { $0.name == "inspector" }) {
-                    NodeView(node: inspector)
-                        .modifier(SheetOptions(node: inspector))
-                        .modifier(ColumnWidth(value: inspector.attributes["columnwidth"], isInspector: true))
-                }
-            }
-        } else {
+        #if os(visionOS)
             content
-        }
+        #else
+            if node.hostsInspector, isColumn {
+                content.inspector(isPresented: isPresented) {
+                    if let inspector = node.presented.first(where: { $0.name == "inspector" }) {
+                        NodeView(node: inspector)
+                            .modifier(SheetOptions(node: inspector))
+                            .modifier(ColumnWidth(value: inspector.attributes["columnwidth"], isInspector: true))
+                    }
+                }
+            } else {
+                content
+            }
+        #endif
     }
 }
 
@@ -195,11 +201,15 @@ private struct GlassBackdrop: View {
     let variant: String?
 
     var body: some View {
-        if #available(iOS 26, macOS 26, visionOS 26, *) {
-            let glass: Glass = variant == "clear" ? .clear : .regular
-            Color.clear.glassEffect(glass, in: .rect)
-        } else {
+        #if os(visionOS)
             Rectangle().fill(.regularMaterial)
-        }
+        #else
+            if #available(iOS 26, macOS 26, *) {
+                let glass: Glass = variant == "clear" ? .clear : .regular
+                Color.clear.glassEffect(glass, in: .rect)
+            } else {
+                Rectangle().fill(.regularMaterial)
+            }
+        #endif
     }
 }

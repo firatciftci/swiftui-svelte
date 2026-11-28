@@ -150,17 +150,25 @@ struct ButtonElement: View {
             case "bordered": button.buttonStyle(.bordered)
             case "prominent": button.buttonStyle(.borderedProminent)
             case "glass":
-                if #available(iOS 26, macOS 26, visionOS 26, *) {
-                    button.buttonStyle(.glass)
-                } else {
+                #if os(visionOS)
                     button.buttonStyle(.bordered)
-                }
+                #else
+                    if #available(iOS 26, macOS 26, *) {
+                        button.buttonStyle(.glass)
+                    } else {
+                        button.buttonStyle(.bordered)
+                    }
+                #endif
             case "glassProminent":
-                if #available(iOS 26, macOS 26, visionOS 26, *) {
-                    button.buttonStyle(.glassProminent)
-                } else {
+                #if os(visionOS)
                     button.buttonStyle(.borderedProminent)
-                }
+                #else
+                    if #available(iOS 26, macOS 26, *) {
+                        button.buttonStyle(.glassProminent)
+                    } else {
+                        button.buttonStyle(.borderedProminent)
+                    }
+                #endif
             default: button.buttonStyle(.borderless)
             }
         }

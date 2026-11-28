@@ -33,7 +33,12 @@ enum Bars {
             switch name {
             case "leading": return .topBarLeading
             case "bottom": return .bottomBar
-            case "keyboard": return .keyboard
+            case "keyboard":
+                #if os(visionOS)
+                    return .automatic
+                #else
+                    return .keyboard
+                #endif
             default: return .topBarTrailing
             }
         #endif
@@ -107,14 +112,16 @@ private struct ToolbarGap: ToolbarContent {
     let node: Node
 
     var body: some ToolbarContent {
-        if #available(iOS 26, macOS 26, visionOS 26, *) {
-            let placement = Bars.placement(node.attributes["placement"]?.string)
-            if node.attributes["variant"]?.string == "fixed" {
-                ToolbarSpacer(.fixed, placement: placement)
-            } else {
-                ToolbarSpacer(.flexible, placement: placement)
+        #if !os(visionOS)
+            if #available(iOS 26, macOS 26, *) {
+                let placement = Bars.placement(node.attributes["placement"]?.string)
+                if node.attributes["variant"]?.string == "fixed" {
+                    ToolbarSpacer(.fixed, placement: placement)
+                } else {
+                    ToolbarSpacer(.flexible, placement: placement)
+                }
             }
-        }
+        #endif
     }
 }
 
@@ -122,11 +129,15 @@ private struct Subtitle: ViewModifier {
     let text: String?
 
     func body(content: Content) -> some View {
-        if let text, #available(iOS 26, macOS 26, visionOS 26, *) {
-            content.navigationSubtitle(text)
-        } else {
+        #if os(visionOS)
             content
-        }
+        #else
+            if let text, #available(iOS 26, macOS 26, *) {
+                content.navigationSubtitle(text)
+            } else {
+                content
+            }
+        #endif
     }
 }
 
@@ -360,16 +371,24 @@ struct ColumnWidth: ViewModifier {
     func body(content: Content) -> some View {
         switch value {
         case let .number(width):
-            if isInspector { content.inspectorColumnWidth(width) } else { content.navigationSplitViewColumnWidth(width) }
+            #if os(visionOS)
+                content.navigationSplitViewColumnWidth(width)
+            #else
+                if isInspector { content.inspectorColumnWidth(width) } else { content.navigationSplitViewColumnWidth(width) }
+            #endif
         case let .object(widths):
             let minimum: CGFloat? = widths["min"]?.number.map { CGFloat($0) }
             let maximum: CGFloat? = widths["max"]?.number.map { CGFloat($0) }
             let ideal = CGFloat(widths["ideal"]?.number ?? 320)
-            if isInspector {
-                content.inspectorColumnWidth(min: minimum, ideal: ideal, max: maximum)
-            } else {
+            #if os(visionOS)
                 content.navigationSplitViewColumnWidth(min: minimum, ideal: ideal, max: maximum)
-            }
+            #else
+                if isInspector {
+                    content.inspectorColumnWidth(min: minimum, ideal: ideal, max: maximum)
+                } else {
+                    content.navigationSplitViewColumnWidth(min: minimum, ideal: ideal, max: maximum)
+                }
+            #endif
         default:
             content
         }

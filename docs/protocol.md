@@ -645,6 +645,8 @@ Each enum value in `src/elements.ts` is part of the contract. A host must accept
 
 These enum values are iOS-only in this version: sensory feedback names (`sensoryfeedback`), navigation title display modes, tab bar minimization, the glass attributes (`glasseffect`, `glassid`, `glassunion`, `glasseffectcontainer`, and glass button styles), search placement `navigationBarDrawer`, popover adaptation, list styles `grouped` and `insetGrouped`, picker styles `wheel` and `navigation`, the date picker `wheel` style, keyboard types `twitter`, `webSearch`, `namePhone`, and `asciiNumber`, text content types, submit labels `join`, `route`, `continue`, and `return`, PostScript font names (`fontname` and `fontfallbacks`), and the symbol attributes (Section 9.7).
 
+The SwiftUI host builds for iOS, macOS, and visionOS, and on visionOS it uses these fallbacks. visionOS has no Liquid Glass, so the glass attributes have no effect there, the `glass` and `glassProminent` button styles look like `bordered` and `borderedProminent`, and a sheet's glass background uses the regular material. Toolbar spacers, navigation subtitles, and `scrolldismisseskeyboard` have no effect, a toolbar item placed on the `keyboard` uses the `automatic` placement, and an inspector is presented as a sheet. Sensory feedback needs visionOS 26 or later.
+
 ### 9.7 iOS-only concepts
 
 Every host that does not have these concepts must document them as iOS-only, or give them a documented fallback:
