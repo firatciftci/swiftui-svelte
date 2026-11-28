@@ -1,7 +1,60 @@
 import SwiftUI
 
 public struct SvelteView: View {
-    @State private var runtime: SvelteRuntime
+    @State private var owner = RuntimeOwner()
+    private let runtime: RuntimeSource
+    private let component: String
+    private let props: String
+    private let actions: [String: @MainActor (JSONValue) -> Void]
+
+    public init(
+        source: URL,
+        component: String = "default",
+        props: [String: JSONValue] = [:],
+        actions: [String: @MainActor (JSONValue) -> Void] = [:],
+        reloadsOnChange: Bool = false,
+        storage: String? = nil,
+        modules: Array<NativeModule> = [],
+        components: Array<NativeComponent> = [],
+        onError: (@MainActor (ScriptError) -> Void)? = nil
+    ) {
+        runtime = .owned(
+            RuntimeConfiguration(
+                source: source, reloadsOnChange: reloadsOnChange, storage: storage, modules: modules,
+                components: components, onError: onError))
+        self.component = component
+        self.props = Self.json(props)
+        self.actions = actions
+    }
+
+    public init(
+        runtime: SvelteRuntime,
+        component: String = "default",
+        props: [String: JSONValue] = [:],
+        actions: [String: @MainActor (JSONValue) -> Void] = [:]
+    ) {
+        self.runtime = .shared(runtime)
+        self.component = component
+        self.props = Self.json(props)
+        self.actions = actions
+    }
+
+    public var body: some View {
+        let runtime = owner.runtime(for: runtime)
+        MountedView(runtime: runtime, component: component, props: props, actions: actions)
+            .id(ObjectIdentifier(runtime))
+    }
+
+    static func json(_ props: [String: JSONValue]) -> String {
+        (try? BridgeJSON.encoder().encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+    }
+}
+
+private struct MountedView: View {
+    let runtime: SvelteRuntime
+    let component: String
+    let props: String
+    let actions: [String: @MainActor (JSONValue) -> Void]
     @State private var handle: MountHandle?
     @State private var safeAreaInsets = EdgeInsets()
     @State private var keyboardHeight = 0.0
@@ -29,45 +82,10 @@ public struct SvelteView: View {
         @Environment(\.horizontalSizeClass) private var horizontalSizeClass
         @Environment(\.verticalSizeClass) private var verticalSizeClass
     #endif
-    private let component: String
-    private let props: String
-    private let actions: [String: @MainActor (JSONValue) -> Void]
-
-    public init(
-        source: URL,
-        component: String = "default",
-        props: [String: JSONValue] = [:],
-        actions: [String: @MainActor (JSONValue) -> Void] = [:],
-        reloadsOnChange: Bool = false,
-        storage: String? = nil,
-        modules: Array<NativeModule> = [],
-        components: Array<NativeComponent> = [],
-        onError: (@MainActor (ScriptError) -> Void)? = nil
-    ) {
-        self.init(
-            runtime: SvelteRuntime(
-                source: source, reloadsOnChange: reloadsOnChange, storage: storage, modules: modules,
-                components: components, onError: onError),
-            component: component,
-            props: props,
-            actions: actions)
-    }
-
-    public init(
-        runtime: SvelteRuntime,
-        component: String = "default",
-        props: [String: JSONValue] = [:],
-        actions: [String: @MainActor (JSONValue) -> Void] = [:]
-    ) {
-        _runtime = State(initialValue: runtime)
-        self.component = component
-        self.props = Self.json(props)
-        self.actions = actions
-    }
 
     private static let appLanguage = Bundle.main.preferredLocalizations.first.map { Locale.Language(identifier: $0) }
 
-    public var body: some View {
+    var body: some View {
         let phase = runtime.phase(of: handle?.id, isOverdue: isOverdue)
         let box = actionBox.holding(actions)
         VStack(spacing: 0) {
@@ -225,9 +243,56 @@ public struct SvelteView: View {
             return max(0, screenHeight - frame.minY)
         }
     #endif
+}
 
-    static func json(_ props: [String: JSONValue]) -> String {
-        (try? BridgeJSON.encoder().encode(props)).flatMap { String(bytes: $0, encoding: .utf8) } ?? "{}"
+private nonisolated struct RuntimeKey: Equatable {
+    let source: URL
+    let reloadsOnChange: Bool
+    let storage: String?
+    let modules: Array<String>
+    let components: Array<String>
+}
+
+private struct RuntimeConfiguration {
+    let source: URL
+    let reloadsOnChange: Bool
+    let storage: String?
+    let modules: Array<NativeModule>
+    let components: Array<NativeComponent>
+    let onError: (@MainActor (ScriptError) -> Void)?
+
+    var key: RuntimeKey {
+        RuntimeKey(
+            source: source, reloadsOnChange: reloadsOnChange, storage: storage, modules: modules.map(\.name),
+            components: components.map(\.name))
+    }
+}
+
+private enum RuntimeSource {
+    case owned(RuntimeConfiguration)
+    case shared(SvelteRuntime)
+}
+
+private final class RuntimeOwner {
+    private var owned: (key: RuntimeKey, runtime: SvelteRuntime)?
+
+    func runtime(for source: RuntimeSource) -> SvelteRuntime {
+        switch source {
+        case let .shared(runtime):
+            owned = nil
+            return runtime
+        case let .owned(configuration):
+            let key = configuration.key
+            if let owned, owned.key == key {
+                owned.runtime.onError = configuration.onError
+                return owned.runtime
+            }
+            let runtime = SvelteRuntime(
+                source: configuration.source, reloadsOnChange: configuration.reloadsOnChange, storage: configuration.storage,
+                modules: configuration.modules, components: configuration.components, onError: configuration.onError)
+            owned = (key, runtime)
+            return runtime
+        }
     }
 }
 

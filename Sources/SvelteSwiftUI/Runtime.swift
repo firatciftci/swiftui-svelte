@@ -62,6 +62,7 @@ public final class SvelteRuntime {
     @ObservationIgnored private var configurationWarnings: Array<String> = []
     @ObservationIgnored private let reloadsOnChange: Bool
     @ObservationIgnored public var onError: (@MainActor (ScriptError) -> Void)?
+    @ObservationIgnored static private(set) var created = 0
 
     public init(
         source: URL,
@@ -71,6 +72,7 @@ public final class SvelteRuntime {
         components: Array<NativeComponent> = [],
         onError: (@MainActor (ScriptError) -> Void)? = nil
     ) {
+        Self.created += 1
         self.source = source
         self.reloadsOnChange = reloadsOnChange
         self.onError = onError

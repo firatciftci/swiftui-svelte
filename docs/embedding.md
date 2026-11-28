@@ -40,6 +40,8 @@ var body: some View {
 
 A component stays mounted as long as its `SvelteView` exists, including while it's in a tab that isn't selected, and unmounts when the view goes away.
 
+A `SvelteView(source:)` creates its runtime the first time it appears and keeps it while the parent view re-renders, so the component's state survives. It starts a new runtime, and mounts the component again from scratch, only when you change `source`, `storage`, or `reloadsOnChange`, or the names of the modules or components you pass in. Passing a different `SvelteRuntime` to `SvelteView(runtime:)` also mounts the component again, this time on the new runtime.
+
 A runtime shuts down when nothing references it anymore: its timers stop, its requests and WebSockets close, and its JavaScript context is released. To shut one down earlier, for example when the user signs out and you're about to show a screen that doesn't use it, call `stop()`. If a view mounts a component on a stopped runtime, the runtime loads the bundle again and starts from scratch.
 
 ## Reporting errors

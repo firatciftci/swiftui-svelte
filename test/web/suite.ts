@@ -1295,7 +1295,11 @@ hostTest(
   "matchMedia evaluates color scheme and motion queries and reports changes",
   (web) => {
     const environment = host(web);
-    environment.setEnvironment({ colorScheme: "light", reduceMotion: false });
+    environment.setEnvironment({
+      colorScheme: "light",
+      systemColorScheme: "light",
+      reduceMotion: false,
+    });
     const dark = environment.matchMedia("(prefers-color-scheme: dark)");
     equal(dark.matches, false);
     equal(
