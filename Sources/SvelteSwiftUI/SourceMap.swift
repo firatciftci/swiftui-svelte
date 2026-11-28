@@ -75,7 +75,9 @@ nonisolated struct SourceMap: Sendable {
             default:
                 let digit = byte < 128 ? base64[Int(byte)] : -1
                 guard digit >= 0 else { throw BridgeError(description: "Invalid source map character") }
+                guard shift <= 30 else { throw BridgeError(description: "Source map value too large") }
                 value += (digit & 31) << shift
+                guard value <= Int(UInt32.max) else { throw BridgeError(description: "Source map value too large") }
                 if digit & 32 != 0 {
                     shift += 5
                 } else {

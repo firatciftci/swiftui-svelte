@@ -394,6 +394,22 @@ extension NodeStoreTests {
         #expect(store.error == nil)
     }
 
+    @Test func rejectsBatchesNestedDeeperThanTheReaderAllows() {
+        let store = store([])
+        let deepValue = "[1,2,0,6,0,1,1," + String(repeating: "[", count: 513) + String(repeating: "]", count: 513) + ",0]"
+        #expect(!store.apply(deepValue))
+        #expect(store.error?.contains("nested") == true)
+        let shallowValue = "[1,2,0,8,0,1,1," + String(repeating: "[", count: 512) + String(repeating: "]", count: 512) + ",0]"
+        #expect(store.apply(shallowValue))
+        var records = "[1,2,0"
+        for id in 10..<1035 { records += ",\(id),0,0,1" }
+        records += ",-2000,\"leaf\"]"
+        #expect(!store.apply(records))
+        #expect(store.error?.contains("nested") == true)
+        #expect(!store.apply("[1,2,0,7,0,0,1000000000000]"))
+        #expect(store.node(7) == nil)
+    }
+
     @Test func rejectsAnInsertIntoAnUnknownParent() {
         let store = self.store([7, "screen", 1, 999, 0, 20, 3, 0, 0])
         #expect(store.node(20) == nil)

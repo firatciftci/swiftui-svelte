@@ -37,6 +37,12 @@ struct SourceMapTests {
     @Test func rejectsInvalidMappings() {
         #expect(throws: (any Error).self) { try SourceMap(json: Data(#"{"version":3,"sources":[],"mappings":"!"}"#.utf8)) }
         #expect(throws: (any Error).self) { try SourceMap(json: Data("{}".utf8)) }
+        let overlong = String(repeating: "/", count: 13) + "D"
+        #expect(throws: (any Error).self) {
+            try SourceMap(json: Data(#"{"version":3,"sources":["a.ts"],"mappings":"\#(overlong)"}"#.utf8))
+        }
+        let largest = try? SourceMap(json: Data(#"{"version":3,"sources":["a.ts"],"mappings":"A,+/////D"}"#.utf8))
+        #expect(largest != nil)
     }
 
     @Test func mapsStackFramesFromTheBundle() throws {

@@ -105,7 +105,7 @@ jobs:
         run: pnpm run fixtures
 
       - name: Check that the test fixtures are up to date
-        run: git diff --exit-code -- Tests/SvelteSwiftUITests/Fixtures
+        run: git diff --exit-code -- Tests/SvelteSwiftUITests/Fixtures conformance
 
       - name: Check that the known element names are up to date
         run: pnpm run elements && git diff --exit-code -- src/known.ts

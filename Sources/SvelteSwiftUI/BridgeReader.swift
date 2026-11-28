@@ -5,6 +5,8 @@ struct BridgeError: Error, CustomStringConvertible {
 struct BridgeReader {
     private let bytes: UnsafeBufferPointer<UInt8>
     private var index = 0
+    private var depth = 0
+    static let maximumDepth = 512
 
     init(_ bytes: UnsafeBufferPointer<UInt8>) {
         self.bytes = bytes
@@ -190,17 +192,19 @@ struct BridgeReader {
         case UInt8(ascii: "f"):
             return try literal("false", .bool(false))
         case UInt8(ascii: "["):
-            index += 1
+            try nest()
             var values: Array<JSONValue> = []
             while try !isAtEnd() { values.append(try value()) }
+            depth -= 1
             return .array(values)
         case UInt8(ascii: "{"):
-            index += 1
+            try nest()
             var values: [String: JSONValue] = [:]
             while true {
                 separator()
                 if current == UInt8(ascii: "}") {
                     index += 1
+                    depth -= 1
                     return .object(values)
                 }
                 let key = try string()
@@ -210,6 +214,12 @@ struct BridgeReader {
         default:
             return try number()
         }
+    }
+
+    private mutating func nest() throws(BridgeError) {
+        depth += 1
+        guard depth <= Self.maximumDepth else { throw fail("Value nested more than \(Self.maximumDepth) levels deep") }
+        index += 1
     }
 
     mutating func finish() throws(BridgeError) {

@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 import Testing
 
@@ -26,9 +27,19 @@ struct NativeComponentTests {
         #expect(node.nativeAttributes["listens"] == .array([.string("hover")]))
     }
 
-    @Test func tellsBuiltInElementNamesFromNativeComponentNames() {
-        for name in ["toggle", "txt", "sheet", "overlay", "textfield", "vstack"] { #expect(NodeShape.isBuiltIn(name), "\(name)") }
+    @Test func tellsBuiltInElementNamesFromNativeComponentNames() throws {
+        for name in ["toggle", "txt", "sheet", "overlay", "textfield", "vstack", "label", "header"] {
+            #expect(NodeShape.isBuiltIn(name), "\(name)")
+        }
         for name in ["mapview", "probe", "chart"] { #expect(!NodeShape.isBuiltIn(name), "\(name)") }
+        let known = try String(
+            contentsOf: URL(filePath: #filePath).deletingLastPathComponent().appending(path: "../../src/known.ts"), encoding: .utf8)
+        let start = try #require(known.range(of: "export const elements"))
+        let end = try #require(known.range(of: "export const modifierValues"))
+        let vocabulary = known[start.upperBound..<end.lowerBound].matches(of: /\n  "?([a-z0-9]+)"?: \[/).map { String($0.output.1) }
+        #expect(vocabulary.count > 70)
+        let missing = vocabulary.filter { !NodeShape.isBuiltIn($0) }
+        #expect(missing.isEmpty, "\(missing)")
     }
 
     @Test func declaresOwnedNamesFromItsAttributesAndEvents() {
