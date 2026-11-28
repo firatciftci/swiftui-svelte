@@ -15,7 +15,6 @@ export const modifiers: ReadonlySet<string> = new Set([
   "aspectratio",
   "axis",
   "background",
-  "balanced",
   "blendmode",
   "blur",
   "border",
@@ -337,6 +336,7 @@ export const elements: Readonly<Record<string, ReadonlyArray<string>>> = {
   divider: [],
   txt: [
     "alignment",
+    "balanced",
     "baselineoffset",
     "href",
     "kerning",

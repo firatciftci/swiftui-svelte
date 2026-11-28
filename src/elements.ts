@@ -682,8 +682,6 @@ type Modifiers = {
   boxsizing?: "content-box" | "border-box";
   /** How this element aligns across its stack: start, center, end, or stretch. The self-* and justify-self-* classes set this. */
   selfalign?: "start" | "center" | "end" | "stretch";
-  /** Balances the lines of a text element, so they come out an even width. The text-balance class sets this. */
-  balanced?: boolean;
   /** The text style, which follows Dynamic Type, such as `headline` or `caption`. Applies to all the text inside the element. */
   font?: Font;
   /** The PostScript name of a font to use instead of a system font, such as `Georgia-Bold`. With `size`, the font has that fixed size. With `font`, the size scales with Dynamic Type relative to that text style. @platform ios */
@@ -1333,6 +1331,8 @@ declare module "svelte/elements" {
     txt: Modifiers & {
       /** The maximum number of lines. Leave it out for no limit. */
       lines?: number;
+      /** Balances the lines of the text, so they come out an even width. The text-balance class sets this. */
+      balanced?: boolean;
       /** The alignment of wrapped lines: `leading`, `center`, or `trailing`. */
       alignment?: "leading" | "center" | "trailing";
       /** Underlines the text. */

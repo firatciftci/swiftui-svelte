@@ -324,7 +324,6 @@ export const modifierGroups: Array<{
       "axis",
       "boxsizing",
       "selfalign",
-      "balanced",
     ],
   },
   {
