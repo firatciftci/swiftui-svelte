@@ -21,4 +21,14 @@ struct ListTests {
             ])
         #expect(Lists.tags(in: list) == [.string("b"), .number(3), .string("a"), .string("nested")])
     }
+
+    @Test func bindsSelectionWhenEitherTheValueOrTheHandlerIsThere() {
+        let listens = JSONValue.array([.string("selectionchange")])
+        #expect(Lists.selection(of: element("list")) == .disabled)
+        #expect(Lists.selection(of: element("list", ["selection": .string("a")])) == .single)
+        #expect(Lists.selection(of: element("list", ["listens": listens])) == .single)
+        #expect(Lists.selection(of: element("list", ["multiple": .string("")])) == .multiple)
+        #expect(Lists.selection(of: element("list", ["multiple": .bool(true), "selection": .array([])])) == .multiple)
+        #expect(Lists.selection(of: element("list", ["multiple": .string("false"), "selection": .string("a")])) == .single)
+    }
 }

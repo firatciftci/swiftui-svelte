@@ -1,6 +1,16 @@
 import SwiftUI
 
 enum Lists {
+    enum Selection {
+        case disabled, single, multiple
+    }
+
+    static func selection(of node: Node) -> Selection {
+        if node.attributes["multiple"]?.isTrue == true { return .multiple }
+        if node.attributes["selection"] != nil || node.listens(to: "selectionchange") { return .single }
+        return .disabled
+    }
+
     static func tags(in node: Node) -> Array<JSONValue> {
         var tags: Array<JSONValue> = []
         for child in node.children where child.kind == .element {
@@ -37,12 +47,10 @@ struct ListElement: View {
     }
 
     @ViewBuilder private var list: some View {
-        if node.attributes["multiple"]?.isTrue == true {
-            List(selection: multipleSelection) { Rows(node: node) }
-        } else if node.listens(to: "selectionchange") {
-            List(selection: singleSelection) { Rows(node: node) }
-        } else {
-            List { Rows(node: node) }
+        switch Lists.selection(of: node) {
+        case .multiple: List(selection: multipleSelection) { Rows(node: node) }
+        case .single: List(selection: singleSelection) { Rows(node: node) }
+        case .disabled: List { Rows(node: node) }
         }
     }
 
