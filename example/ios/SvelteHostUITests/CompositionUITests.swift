@@ -5,10 +5,10 @@ extension SvelteHostUITests {
         let field = openCodeField(keyboards: "(\"ja_JP-Romaji@sw=QWERTY-Japanese;hw=Automatic\")")
         for letter in ["k", "a", "n", "a"] { key(letter).tap() }
         XCTAssertEqual(field.value as? String, "かな")
-        app.keyboards.buttons["確定"].tap()
+        app.keyboards.buttons["Return"].tap()
         XCTAssertEqual(field.value as? String, "かな")
         key("a").tap()
-        app.keyboards.buttons["確定"].tap()
+        app.keyboards.buttons["Return"].tap()
         XCTAssertEqual(field.value as? String, "かなあ")
     }
 
