@@ -361,6 +361,42 @@ extension NodeStoreTests {
         #expect(store.root?.presented.map(\.id) == [13])
     }
 
+    @Test func tracksButtonFeedbackAnywhereInASubtreeWithoutObservingTheSubtree() throws {
+        let store = self.store([
+            7, "btn", 7, "pressed", 7, "color",
+            1, 2, 0, 10, 5, 0, 1, 11, 4, 0, 1, 12, 4, 1, 7, "blue", 0,
+        ])
+        let button = try #require(store.node(10))
+        #expect(!button.hasButtonFeedback)
+        let flag = Flag()
+        withObservationTracking {
+            _ = button.hasButtonFeedback
+        } onChange: {
+            flag.isSet = true
+        }
+        store.apply(batch([4, 12, 7, "red", 4, 11, 7, "green", 1, 11, 0, 13, 4, 0, 0]))
+        #expect(!flag.isSet)
+        store.apply(batch([4, 12, 6, ["opacity": 0.5]]))
+        #expect(flag.isSet)
+        #expect(button.hasButtonFeedback)
+        #expect(store.node(11)?.hasButtonFeedback == true)
+        store.apply(batch([5, 12, 6]))
+        #expect(!button.hasButtonFeedback)
+        store.apply(batch([1, 13, 0, 14, 4, 1, 6, ["opacity": 0.4], 0]))
+        #expect(button.hasButtonFeedback)
+        store.apply(batch([2, 2, 0, 13]))
+        #expect(!button.hasButtonFeedback)
+        #expect(store.node(11)?.hasButtonFeedback == false)
+        #expect(store.node(2)?.hasButtonFeedback == true)
+        store.apply(batch([2, 11, 0, 13]))
+        #expect(button.hasButtonFeedback)
+        #expect(store.node(11)?.hasButtonFeedback == true)
+        store.apply(batch([3, 13]))
+        #expect(!button.hasButtonFeedback)
+        let made = self.store([7, "btn", 7, "pressed", 1, 2, 0, 20, 5, 0, 1, 21, 4, 1, 6, ["opacity": 0.5], 0])
+        #expect(made.node(20)?.hasButtonFeedback == true)
+    }
+
     @Test func reassignsHostsOnlyWhenAPresentationCanChangeHost() {
         let store = self.store([
             7, "screen", 7, "vstack", 7, "alert",

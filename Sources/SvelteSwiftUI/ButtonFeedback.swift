@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ButtonFeedback {
+    static let attributes = ["pressed", "hovered"]
+
     let overrides: [String: JSONValue]
     let animation: Animation?
 

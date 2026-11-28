@@ -17,6 +17,7 @@ final class NodeStore {
     @ObservationIgnored private var hostIDs: Set<Int> = []
     @ObservationIgnored private var needsHosting = false
     @ObservationIgnored private(set) var hostingPasses = 0
+    @ObservationIgnored private var feedbackIDs: Set<Int> = []
     @ObservationIgnored private var ownedNames: [String: Set<String>] = [:]
     @ObservationIgnored let diagnostics: Diagnostics
 
@@ -45,6 +46,7 @@ final class NodeStore {
         presentationIDs = []
         hostIDs = []
         needsHosting = false
+        feedbackIDs = []
         self.ownedNames = ownedNames
     }
 
@@ -88,6 +90,8 @@ final class NodeStore {
             }
         }
         dirty.removeAll(keepingCapacity: true)
+        for id in feedbackIDs { refreshButtonFeedback(from: id) }
+        feedbackIDs.removeAll()
         transitions.removeAll(keepingCapacity: true)
         return true
     }
@@ -235,6 +239,7 @@ final class NodeStore {
             case let .attribute(id, name, value):
                 guard let node = nodes[id] else { continue }
                 node.setOwnAttribute(name, value)
+                if ButtonFeedback.attributes.contains(name) { feedbackIDs.insert(id) }
                 if let value { AttributeChecks.check(name, value, on: node, diagnostics: diagnostics) }
             case let .text(id, text):
                 if let node = nodes[id], node.kind == .text, node.text != text { node.text = text }
@@ -260,7 +265,10 @@ final class NodeStore {
         for (attribute, value) in record.attributes {
             AttributeChecks.check(attribute, value, on: node, diagnostics: diagnostics)
         }
-        guard !record.children.isEmpty else { return node }
+        guard !record.children.isEmpty else {
+            if ButtonFeedback.attributes.contains(where: { record.attributes[$0] != nil }) { node.refreshButtonFeedback() }
+            return node
+        }
         var children: Array<Node> = []
         children.reserveCapacity(record.children.count)
         for childRecord in record.children {
@@ -273,7 +281,15 @@ final class NodeStore {
         node.firstID = children.first?.id
         node.lastID = children.last?.id
         node.children = children
+        node.refreshButtonFeedback()
         return node
+    }
+
+    private func refreshButtonFeedback(from id: Int) {
+        var current = nodes[id]
+        while let node = current, node.refreshButtonFeedback() {
+            current = node.parentID.flatMap { nodes[$0] }
+        }
     }
 
     private func forget(_ node: Node) {
@@ -288,6 +304,7 @@ final class NodeStore {
 
     private func detach(_ node: Node) {
         guard let parentID = node.parentID, let parent = nodes[parentID] else { return }
+        if node.hasButtonFeedback { feedbackIDs.insert(parentID) }
         if let previousID = node.previousID {
             nodes[previousID]?.nextID = node.nextID
         } else {
@@ -307,6 +324,7 @@ final class NodeStore {
     private func insert(_ node: Node, into parent: Node, before next: Node?) {
         guard next !== node else { return }
         detach(node)
+        if node.hasButtonFeedback { feedbackIDs.insert(parent.id) }
         let next = next?.parentID == parent.id ? next : nil
         let previousID = next.map(\.previousID) ?? parent.lastID
         node.previousID = previousID

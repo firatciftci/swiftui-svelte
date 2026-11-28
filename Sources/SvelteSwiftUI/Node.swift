@@ -76,9 +76,7 @@ final class Node: Identifiable {
     var ownsButtonFeedback: Bool {
         ButtonFeedback(attributes["pressed"]) != nil || ButtonFeedback(attributes["hovered"]) != nil
     }
-    var hasButtonFeedback: Bool {
-        ownsButtonFeedback || children.contains(where: \.hasButtonFeedback)
-    }
+    private(set) var hasButtonFeedback = false
     var tracksPresses: Bool {
         name != "btn" && ["tap", "longpress", "drag"].contains(where: listens(to:)) && hasButtonFeedback
     }
@@ -200,6 +198,14 @@ final class Node: Identifiable {
         guard ownAttributes[name] != value else { return }
         ownAttributes[name] = value
         if let value { enable(ModifierSet(attribute: name, value: value)) }
+    }
+
+    @discardableResult
+    func refreshButtonFeedback() -> Bool {
+        let hasFeedback = ownsButtonFeedback || children.contains(where: \.hasButtonFeedback)
+        guard hasFeedback != hasButtonFeedback else { return false }
+        hasButtonFeedback = hasFeedback
+        return true
     }
 
     private func invalidate() {

@@ -3,6 +3,11 @@ import Testing
 
 @testable import SvelteSwiftUI
 
+private func batch(_ tokens: Array<Any>) -> String {
+    let data = (try? JSONSerialization.data(withJSONObject: tokens)) ?? Data()
+    return String(bytes: data, encoding: .utf8) ?? ""
+}
+
 struct ButtonFeedbackTests {
     @Test func keepsEveryKeyExceptTheAnimationAsAnOverride() throws {
         let feedback = try #require(
@@ -46,35 +51,41 @@ struct ButtonFeedbackTests {
         #expect(node.attributes["opacity"] == .number(0.5))
     }
 
-    @Test func tracksPressesOnElementsWithTapLongPressOrDragHandlersAndFeedback() {
+    @Test func tracksPressesOnElementsWithTapLongPressOrDragHandlersAndFeedback() throws {
         for type in ["tap", "longpress", "drag"] {
-            let card = Node(id: 1, kind: .element, name: "vstack", text: "")
-            let label = Node(id: 2, kind: .element, name: "txt", text: "")
-            card.setOwnAttributes(["listens": .array([.string(type)])])
-            card.children = [label]
+            let store = NodeStore()
+            store.apply(
+                batch([
+                    0, 1, NodeStore.protocolVersion, 0, 7, "vstack", 7, "txt", 7, "listens", 7, "hovered",
+                    1, 1, 0, 2, 0, 1, 2, [type], 1, 3, 1, 0, 0,
+                ]))
+            let card = try #require(store.node(2))
             #expect(!card.tracksPresses)
-            label.setOwnAttributes(["hovered": .object(["opacity": .number(0.5)])])
+            store.apply(batch([4, 3, 3, ["opacity": 0.5]]))
             #expect(card.tracksPresses, "\(type)")
         }
-        let button = Node(id: 3, kind: .element, name: "btn", text: "")
-        button.setOwnAttributes(["listens": .array([.string("tap")]), "pressed": .object(["scale": .number(0.9)])])
-        #expect(!button.tracksPresses)
-        let scroller = Node(id: 4, kind: .element, name: "vstack", text: "")
-        scroller.setOwnAttributes(["listens": .array([.string("scroll")]), "pressed": .object(["scale": .number(0.9)])])
-        #expect(!scroller.tracksPresses)
+        let store = NodeStore()
+        store.apply(
+            batch([
+                0, 1, NodeStore.protocolVersion, 0, 7, "btn", 7, "vstack", 7, "listens", 7, "pressed",
+                1, 1, 0, 2, 0, 2, 2, ["tap"], 3, ["scale": 0.9], 0,
+                1, 1, 0, 3, 1, 2, 2, ["scroll"], 3, ["scale": 0.9], 0,
+            ]))
+        #expect(store.node(2)?.hasButtonFeedback == true)
+        #expect(store.node(2)?.tracksPresses == false)
+        #expect(store.node(3)?.hasButtonFeedback == true)
+        #expect(store.node(3)?.tracksPresses == false)
     }
 
     @Test func findsFeedbackOnAnyDescendantIncludingAttachments() {
-        let button = Node(id: 1, kind: .element, name: "btn", text: "")
-        let stack = Node(id: 2, kind: .element, name: "hstack", text: "")
-        let text = Node(id: 3, kind: .element, name: "txt", text: "")
-        let background = Node(id: 4, kind: .element, name: "background", text: "")
-        background.setOwnAttributes(["pressed": .object(["shadow": .bool(false)])])
-        text.children = [background]
-        stack.children = [text]
-        button.children = [stack]
-        #expect(button.hasButtonFeedback)
-        #expect(!stack.ownsButtonFeedback)
-        #expect(!Node(id: 5, kind: .element, name: "txt", text: "").hasButtonFeedback)
+        let store = NodeStore()
+        store.apply(
+            batch([
+                0, 1, NodeStore.protocolVersion, 0, 7, "btn", 7, "hstack", 7, "txt", 7, "background", 7, "pressed",
+                1, 1, 0, 2, 0, 0, 1, 3, 1, 0, 1, 4, 2, 0, 1, 5, 3, 1, 4, ["shadow": false], 0,
+            ]))
+        #expect(store.node(2)?.hasButtonFeedback == true)
+        #expect(store.node(3)?.ownsButtonFeedback == false)
+        #expect(!Node(id: 6, kind: .element, name: "txt", text: "").hasButtonFeedback)
     }
 }
