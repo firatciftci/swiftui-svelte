@@ -192,7 +192,7 @@ describe("props and actions", () => {
     await update(() =>
       globalThis.__svelteProps(
         lastMount(),
-        JSON.stringify({ name: "Ada", onsave: 1 }),
+        JSON.stringify({ name: "Ada" }),
         JSON.stringify([]),
       ),
     );
