@@ -28,7 +28,7 @@ public final class SvelteRuntime {
     @ObservationIgnored let engine: ScriptEngine
     @ObservationIgnored private var isStarted = false
     @ObservationIgnored private var isFrameRequested = false
-    @ObservationIgnored private var inbox: Array<(generation: Int, isInitial: Bool, message: ScriptEngine.Message)> = []
+    @ObservationIgnored private var inbox: Array<Inbound> = []
     @ObservationIgnored private var isDraining = false
     @ObservationIgnored private var watchesFramesUntil: CFTimeInterval = 0
     @ObservationIgnored private var mounts: [Int: Mount] = [:]
@@ -199,13 +199,13 @@ public final class SvelteRuntime {
         var isStopped = false
         var index = 0
         while index < inbox.count {
-            let (generation, isInitial, message) = inbox[index]
+            let inbound = inbox[index]
             index += 1
-            guard generation == self.generation else { continue }
-            switch message {
+            guard inbound.generation == generation else { continue }
+            switch inbound.message {
             case let .commit(json, animation) where !isStopped:
                 if store.apply(json, animation: animation) {
-                    if !isInitial { isRecovering = false }
+                    if !inbound.isInitial { isRecovering = false }
                 } else {
                     onError?(ScriptError(kind: .bridge, message: store.error ?? "The bundle sent a malformed batch.", frames: []))
                     if isRecovering {
@@ -427,7 +427,7 @@ public final class SvelteRuntime {
 
     private func receive(isInitial: Bool) {
         let generation = generation
-        for message in engine.takeMessages() { inbox.append((generation, isInitial, message)) }
+        for message in engine.takeMessages() { inbox.append(Inbound(generation: generation, isInitial: isInitial, message: message)) }
     }
 }
 
@@ -483,6 +483,12 @@ extension SvelteRuntime {
         guard let data = try? NativeModule.encode(payload), let json = String(bytes: data, encoding: .utf8) else { return }
         call("__svelteNativeEvent", [module, event, json])
     }
+}
+
+private struct Inbound {
+    let generation: Int
+    let isInitial: Bool
+    let message: ScriptEngine.Message
 }
 
 nonisolated private final class WeakBox<Object: AnyObject> {
