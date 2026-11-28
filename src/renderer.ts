@@ -985,7 +985,8 @@ globalThis.__svelteDispatch = (id, type, payload, request) => {
     if (typeof payload === "number") tasks.get(payload)?.abort();
     return;
   }
-  const element = elements.get(id)?.deref();
+  const found = elements.get(id)?.deref();
+  const element = found?.state === State.Native ? found : undefined;
   if (
     type === "resize" &&
     element != null &&

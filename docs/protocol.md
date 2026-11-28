@@ -197,7 +197,9 @@ The following types may be sent even when they are not in `listens`: `click`, `f
 
 #### 3.6.2 Requests and replies
 
-Some events carry a `request` integer. The bundle runs its handlers and waits for them to finish. When they settle, the bundle sends `settled` as an invocation with `{ "request": n }` (Section 4). If no handler is registered, the bundle sends `settled` right away.
+Some events carry a `request` integer. The bundle runs its handlers and waits for them to finish. When they settle, the bundle sends `settled` as an invocation with `{ "request": n }` (Section 4). If no handler is registered, or if the bundle has already removed the node, the bundle sends `settled` right away.
+
+The bundle drops an event for a node that it has removed, even when the host hasn't applied the `remove` yet. The node's handlers don't run, so a host can send events until the batch with the `remove` arrives.
 
 The host must keep the request ID until it receives `settled` for it. For `refresh` and `task`, the host must wait for `settled` before it finishes the native operation (for example, before it ends a pull-to-refresh spinner).
 

@@ -516,6 +516,25 @@ describe("refresh", () => {
     }
   });
 
+  it("ignores a refresh for an element that was already removed", async () => {
+    await render(Refresh);
+    const id = byTestId("feed")?.id;
+    await update(() => dispatch(byTestId("hide"), "click"));
+    await update(() => globalThis.__svelteDispatch(id, "refresh", null, 10));
+    expect(pending).toEqual([]);
+    expect(settled()).toEqual([10]);
+  });
+
+  it("ignores events for elements of an unmounted app", async () => {
+    await render(Refresh);
+    const id = byTestId("feed")?.id;
+    unmount?.();
+    unmount = undefined;
+    await update(() => globalThis.__svelteDispatch(id, "refresh", null, 11));
+    expect(pending).toEqual([]);
+    expect(settled()).toEqual([11]);
+  });
+
   it("settles a refresh whose element was removed", async () => {
     await render(Refresh);
     await update(() => refresh("feed", 8));
