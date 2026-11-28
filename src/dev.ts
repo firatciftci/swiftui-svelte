@@ -2,15 +2,15 @@ import { elements, modifiers } from "./known.ts";
 import { textContainers } from "./markup.ts";
 
 const warned = new Set<string>();
-const markupOnly = "hr img ol table tbody tfoot thead tr ul";
-const vectorOnly = "svg g path rect circle ellipse line polyline polygon title";
+const markup = new Set([
+  ...textContainers,
+  ..."hr img ol table tbody tfoot thead tr ul".split(" "),
+  ..."svg g path rect circle ellipse line polyline polygon title".split(" "),
+]);
+markup.delete("txt");
 
 export function isMarkup(name: string): boolean {
-  if (name === "txt") return false;
-  return (
-    textContainers.has(name) ||
-    `${markupOnly} ${vectorOnly}`.split(" ").includes(name)
-  );
+  return markup.has(name);
 }
 
 function distance(a: string, b: string): number {
